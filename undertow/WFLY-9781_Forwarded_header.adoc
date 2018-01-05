@@ -1,0 +1,68 @@
+= EAP7-834 Forwarded Header Handling
+:author:            Stuart Douglas
+:email:             sdouglas@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org
+
+== Overview
+
+Currently when a reverse proxy sends a request to a backend server it informs the backend server
+of the details of the HTTP connection using non-standard X-Forwarded-* headers. A new RFC has
+been proposed to standardise this using a new 'Forwarded' header. This feature will allow all fields
+from the 'Forwarded' header to be processed, and the relevant data used to populate the fields
+of the Undertow HttpServerExchange (and by extension the Servlet HttpServletRequest).
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/WFLY-9781[WFLY-9781]
+
+=== Related Issues:
+
+* {issue-base-url}/UNDERTOW-1207[UNDERTOW-1207]
+* {issue-base-url}/EAP7-834[EAP7-834]
+
+=== Dev Contacts:
+
+* mailto:{email}[{author}]
+
+=== QE Contacts:
+
+=== Affected Projects or Components:
+
+* Undertow
+
+== Requirements
+
+A handler will be implemented to handle all fields of the Forwarded header.
+
+The relevant fields are:
+
+by::
+If host is not specified this sets the desintation address of the exchange
+for::
+This sends the source address on the exchange
+host::
+Replaces the 'Host' header in the request header map, and the destination address on the exchange
+proto::
+This sets the request scheme on the exchange
+
+For now this will just be implemented as a handler and must be enabled via an 'expression-filter'. Even
+though it is tempting to just use the existing proxy-address-forwarding attribute this is a security risk,
+as front end servers may not know to strip this header and let it through, allowing IP address spoofing.
+
+== Test Plan
+
+Testing should be part of the Undertow test suite, as there is no additional functionality provided by WildFly there
+is not real need for downstream tests.
+
+An existing test case already exists done as part of the upstream work:
+
+https://github.com/undertow-io/undertow/blob/master/core/src/test/java/io/undertow/server/handlers/ForwardedHandlerTestCase.java
+
+It tests all of the above fields, with both IPv4 and IPv6 addresses, as well as logical and unknown hosts.
