@@ -1,0 +1,44 @@
+= WFLY-9810 Default Cookie Version
+:author:            Stuart Douglas
+:email:             sdouglas@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org
+
+== Overview
+
+This feature is to allow the default cookie version to be set for Servlet applications.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/WFLY-9810[WFLY-9810]
+
+=== Related Issues:
+
+* {issue-base-url}/UNDERTOW-50[UNDERTOW-50]
+* {issue-base-url}/EAP7-835[EAP7-835]
+
+=== Dev Contacts:
+
+* mailto:{email}[{author}]
+
+=== QE Contacts:
+
+=== Affected Projects or Components:
+
+* Undertow
+
+== Requirements
+
+This will be implemented as an attribute called `default-cookie-version` under the `servlet-container` resource. This will allow the default cookie version to be set, so any cookies created by the
+application will use this version if it is not explicitly set.
+
+=== Test Plan
+
+The test should be implemented in the Wildfly test suite, and should just set the default cookie version to version 1
+and verify that the resulting cookies have the correct version.
