@@ -1,0 +1,95 @@
+= EAP7-858 Session Manager Operations
+:author:            Stuart Douglas
+:email:             sdouglas@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org
+
+== Overview
+
+This feature is to add additional features to the management model to allow additional operations to be
+performed on the web session manager.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/EAP7-858[EAP7-858]
+
+=== Related Issues:
+
+* {issue-base-url}/WFLY-9540[WFLY-9540]
+* {issue-base-url}/PRODMGT-1799[PRODMGT-1799]
+
+=== Dev Contacts:
+
+* mailto:{email}[{author}]
+
+=== QE Contacts:
+
+=== Affected Projects or Components:
+
+* Wildfly
+
+== Requirements
+
+This will be implemented as additional operations under the `deployment=*/subsystem=undertow` management model address.
+
+The extra operations implemented will be:
+
+
+:: invalidate-session(sessionId)
+
+Invalidates the provided session id
+
+:: list-sessions()
+
+Lists all session id's
+
+:: list-session-attribute-names(sessionId)
+
+Lists all attribute names for the given session
+
+:: list-session-attributes(sessionId)
+
+Returns an object that maps attribute names to an attributes string representation
+
+:: get-session-attribute(sessionId, attributeName)
+
+Returns the string representation of the given attribute
+
+:: get-session-last-accessed-time
+
+Gets the session last accessed time in ISO-8601 format
+
+:: get-session-last-accessed-time-millis
+
+Gets the session last accessed time in milliseconds since unix epoch
+
+:: get-session-creation-time
+
+Gets the session creation time in ISO-8601 format
+
+:: get-session-creation-time-millis
+
+Gets the session creation time in milliseconds since unix epoch
+
+=== Test Plan
+
+A test will be added to the web test suite that will make the following assertions:
+
+- Deploy a web deployment that can create a session
+- call list-sessions and verify that the list is empty
+- Store current time C1
+- Make an invocation on the web app that results in session creation
+- Store current time C2
+- Invoke `get-session-creation-time` and `get-session-creation-time-millis`, and verify both results are between C1 and C2
+- Store current time A1
+- Make an invocation to store a string attribute in the session
+- Store current time A2
+- Invoke `get-session-last-accessed-time` and `get-session-last-accessed-time-millis`, and verify both results are between A1 and A2
+- invoke `list-session-attributes`, `list-session-attribute-names` and `get-session-attribute` and make sure results are as expected
+
