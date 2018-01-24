@@ -1,0 +1,92 @@
+= Title
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          openshift,kubernetes,jgroups,clustering
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+`KUBE_PING` is a discovery protocol for JGroups cluster nodes managed by Kubernetes.
+Since Kubernetes is in charge of launching nodes, it knows the IP addresses of all pods it started,
+and is therefore the best place to ask for cluster discovery.
+Discovery is done by asking Kubernetes for a list of IP addresses of all cluster nodes.
+
+Given OpenShift is based on Kubernetes `KUBE_PING`, it is an ideal fit.
+
+A separate integration is needed besides just JGroups upgrade.
+Historically all protocols were bundled within main `jgroups-<version>.jar`.
+Since the main JGroups project does not allow runtime dependencies, protocols had to include a lot of unmaintainable copy-pasted and trimmed library code.
+This hinders supportability.
+Protocols needing to fetch dependencies now reside in separate repository in the https://github.com/jgroups-extras repository.
+As such, `KUBE_PING` resides in https://github.com/jgroups-extras/jgroups-kubernetes repository.
+
+Note that the OpenShift team currently maintain their own implementation of PING protocols to be used in OpenShift.
+See the https://github.com/jboss-openshift/openshift-ping repository.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-861[EAP7-861] Integrate KUBE_PING discovery protocol
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-9563[WFLY-9563] Integrate KUBE_PING discovery protocol (upstream issue)
+* https://issues.jboss.org/browse/WFLY-8207[WFLY-8207] Upgrade JGroups to 4.0 (dependency)
+
+=== Dev Contacts
+
+* mailto:rhusar@redhat.com[Radoslav Husar]
+
+=== QE Contacts
+
+* mailto:rjanik@redhat.com[Richard Janik]
+
+=== Affected Projects or Components
+
+* WildFly
+* JBoss EAP
+* OpenShift
+
+=== Other Interested Projects
+
+* JDG
+
+== Requirements
+
+=== Hard Requirements
+
+* `KUBE_PING` discovery protocol can be configured in the application server out of box
+* `KUBE_PING#port_range` defaults to 0
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+* Expose KUBE_PING resource definition override for common configuration items
+
+[options="header"]
+|===============
+| Attribute      | Description
+| namespace      | The namespace to be used (leaving this undefined uses `"default"`)
+| labels         | The labels to use in the discovery request to the Kubernetes server
+|===============
+
+
+* Integrate security configuration with Elytron
+
+[options="header"]
+|===============
+| Attribute         | Description
+| clientCertFile    | Certificate to access the Kubernetes server
+| clientKeyFile     | Client key file (store)
+| clientKeyPassword | The password to access the client key store
+| clientKeyAlgo     | The algorithm used by the client
+| caCertFile        | Client CA certificate
+| saTokenFile       | Token file
+|===============
