@@ -1,0 +1,53 @@
+= EAP7-839 CDI 2.0 Support
+:author:            Matej Novotny
+:email:             manovotn@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org
+
+== Overview
+
+This issue has two parts.
+Firstly it brings Weld 3.x/CDI 2.0 into Wildfly.
+Secondly, it introduces support for switch between CDI 1.2 (EE7) and CDI 2.0 (EE 8) for the sake of certification.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/EAP7-839[EAP7-839]
+
+=== Related Issues:
+
+* {issue-base-url}/WFLY-6465[WFLY-6465]
+* {issue-base-url}/WFLY-9269[WFLY-9269]
+* {issue-base-url}/WFLY-9768[WFLY-9768]
+
+=== Dev Contacts:
+
+* mailto:manovotn@redhat.com[Matej Novotny]
+* mailto:mkouba@redhat.com[Martin Kouba] 
+
+=== QE Contacts:
+
+* mailto:manovotn@redhat.com[Matej Novotny]
+
+=== Affected Projects or Components:
+
+* WildFly
+* Weld
+
+== Requirements
+
+* WildFly will use Weld 3.x implementation
+* Wildfly will, by default, be CDI 1.2 compliant, so that it can pass EE 7 TCKs
+* Wildfly will be able to opt-in into CDI 2.0 API through agreed switch option
+
+=== Test Plan
+
+We should be executing TCK 1.2 with EE 7 mode (default) and TCK 2.0 with EE 8 mode.
+Weld has an easy way of executing both TCKs with given WildFly binary, it is also set to automatically enable EE 8 mode on WildFly for TCK 2.0 testing.
+Furthermore, even now, those TCKs are automatically executed in Jenkins amongst all other TCK TS.
