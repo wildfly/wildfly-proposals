@@ -1,0 +1,65 @@
+= WFLY-9628 / EAP7-907 Bean Validation 2.0 support
+:author:            Guillaume Smet
+:email:             gsmet@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+The goal if this issue is to introduce Bean Validation 2.0 and Hibernate Validator 6.0 into WildFly.
+
+For the sake of certification, it does that by allowing to switch between Bean Validation 1.1 (EE7) and Bean Validation 2.0 (EE8), Bean Validation 1.1 being the default.
+
+Note that in the EE7 case, WildFly uses the plain old Bean Validation 1.1 API and Hibernate Validator 5.3 jars so we don't expect any compatibility issue.
+
+Apart from bringing the EE8 support, Bean Validation 2.0 and Hibernate Validator 6.0 also bring with them Java 9 support, with automatic module names properly defined.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/EAP7-907[EAP7-907]
+* {issue-base-url}/WFLY-9628[WFLY-9628]
+
+=== Related Issues:
+
+* {issue-base-url}/WFLY-9615[WFLY-9615]
+
+=== Dev Contacts:
+
+* mailto:gsmet@redhat.com[Guillaume Smet]
+* mailto:gmorling@redhat.com[Gunnar Morling]
+
+=== QE Contacts:
+
+* TO BE ADDED
+
+=== Affected Projects or Components:
+
+* WildFly
+* Hibernate Validator
+* Bean Validation
+
+== Requirements
+
+* By default, WildFly will use Hibernate Validator 5.3.6.Final and Bean Validation API 1.1.0.Final
+* By default, WildFly will be Bean Validation 1.1 compliant, so that it can pass the EE7 TCK
+* WildFly will be able to opt in to use Hibernate Validator 6.0.7.Final and Bean Validation API 2.0.1.Final using the ee8.preview.mode switch
+* When the ee8.preview.mode switch is enabled, WildFly will be Bean Validation 2.0 compliant
+
+=== Test Plan
+
+==== Default mode - EE7
+
+The EE7 TCK should be used.
+
+==== EE8 preview mode - EE8
+
+The http://beanvalidation.org/2.0/tck/[Bean Validation TCK 2.0] (>= 2.0.2.Final) should be used to validate the Bean Validation 2.0 support.
+
+As for compatibility, running the Bean Validation 1.1 TCK tests is also supported in this mode (obviously the sig test will fail as there are new (but of course no altered or removed) methods in the API, but the tests run fine).
+
