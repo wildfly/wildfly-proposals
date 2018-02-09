@@ -1,0 +1,55 @@
+= WFLY-9787 / EAP7-843 JAX-RS client redirect
+:author:            Alessio Soldano
+:email:             asoldano@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+This is about providing a mechanism for following http redirects when using the JAX-RS client from RESTEasy.
+Currently http redirects are not considered.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/EAP7-843[EAP7-843]
+* {issue-base-url}/WFLY-9787[WFLY-9787]
+
+=== Related Issues:
+
+* {issue-base-url}/RESTEASY-1075[RESTEASY-1075]
+
+=== Dev Contacts:
+
+* mailto:asoldano@redhat.com[Alessio Soldano]
+* mailto:ema@redhat.com[Jim Ma]
+* mailto:rsigal@redhat.com[Ron Sigal]
+* mailto:rsearls@redhat.com[Rebecca Searls]
+* mailto:weli@redhat.com[Wei Nan Li]
+
+=== QE Contacts:
+
+* mailto:rsvoboda@redhat.com[Rostislav Svoboda]
+* mailto:kanovotn@redhat.com[Katerina Novotna]
+* mailto:mkopecky@redhat.com[Marek Kopecky]
+
+=== Affected Projects or Components:
+
+* WildFly
+* RESTEasy
+
+== Requirements
+
+* RESTEasy will offer a mechanism for enabling following redirects on clients. This will work with an underlying http engine that already supports redirects (Apache HTTP Client)
+  and will be triggered by a invoking a setFollowRedirects(boolean b) method on the the http engine instance. Default behavior won't change.
+* WildFly will allow using the new RESTEasy functionality
+
+=== Test Plan
+
+There're few new testcases in RESTEasy testsuite covering the scenario.
+See https://github.com/resteasy/Resteasy/pull/1305/files and https://github.com/resteasy/Resteasy/commit/2f6db580361b318fe6af691ec891a698cb0a9206
