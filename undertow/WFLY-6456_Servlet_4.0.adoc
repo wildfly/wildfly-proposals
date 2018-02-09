@@ -1,0 +1,50 @@
+= WFLY-6456 Servlet 4.0 Support
+:author:            Stuart Douglas
+:email:             sdouglas@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org
+
+== Overview
+
+This issue has two parts.
+Firstly it brings Undertow 2.0/Servlet 4.0 into Wildfly.
+Secondly, it introduces support for switch between Servlet 3.1 (EE7) and Servlet 4.0 (EE 8) for the sake of certification.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/WFLY-6456[WFLY-6456]
+
+=== Related Issues:
+
+* {issue-base-url}/EAP7-902[EAP7-902]
+
+=== Dev Contacts:
+
+* mailto:{email}[{author}]
+
+=== QE Contacts:
+
+* mailto:{email}[{author}]
+
+=== Affected Projects or Components:
+
+* WildFly
+* Undertow
+
+== Requirements
+
+* WildFly will use Undertow 2.0 implementation
+* Wildfly will, by default, be Servlet 3.1 compliant, so that it can pass EE 7 TCKs
+* Wildfly will be able to opt-in into Servlet 4.0 API through the use of the ee8.preview.mode feature flag
+
+=== Test Plan
+
+The Servlet 3.1 TCK will be run as normal as part of EE7 certification. The EE8 TCK will also be run
+however as Servlet 4.0 will initially be considered tech preview it is not necessary to pass this 100%
+until we are aiming to achieve EE8 certification, although every effort will be made to do so.
