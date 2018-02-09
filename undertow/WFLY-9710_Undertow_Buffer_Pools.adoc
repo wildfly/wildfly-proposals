@@ -1,0 +1,64 @@
+= WFLY-9710 Undertow Buffer Pools
+:author:            Stuart Douglas
+:email:             sdouglas@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org
+
+== Overview
+
+This feature is to deprecate the existing XNIO buffer pools, and replace them with Undertow's byte buffer
+implementation.
+
+The old XNIO buffer pool is now no longer used by remoting, so it is not possible to share buffers between Undertow
+and remoting, and the buffer implementation has been deprecated.
+
+In theory we could use the new XNIO pool for Undertow, however this has several issues:
+
+ * It is fixed size, and does not auto scale down for small heaps
+ * It has no protection against double free, we could add this in the Undertow adaptor however it would not guard against a double free by remoting
+ * It does not make sure that the thread local cache only buffers up to the number of allocations, for some use cases this can result in threads holding large amounts of buffers they will not use
+
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/WFLY-9710[WFLY-9710]
+
+=== Related Issues:
+
+* {issue-base-url}/EAP7-866[EAP7-866]
+
+=== Dev Contacts:
+
+* mailto:{email}[{author}]
+
+=== QE Contacts:
+
+=== Affected Projects or Components:
+
+* Wildfly
+
+== Requirements
+
+* This will involve adding a new `byte-buffer-pool` resource under the root of the Undertow subsystem.
+* This resource will expose the capability `org.wildfly.undertow.byte-buffer-pool`.
+* Legacy IO subsystem buffer pools will be modified to also expose this capability.
+* The following options will be configurable:
+** `direct` if this buffer is a direct or heap pool (note that direct pools also have a corresponding heap pool).
+** `bufferSize` the size of the buffers
+** `maximumPoolSize` the maximum number of buffers to keep in the pool. Buffers will still be allocated above this limit but will not be retained if the pool is full
+** `threadLocalCacheSize` the size of the per-thread cache. This is a maximum size, the cache will use smart sizing to only keep buffers on the thread if the thread is actually allocating buffers.
+** `leakDecetionPercent` the percentage of buffers that should be allocated with a leak detector.
+
+=== Test Plan
+
+As buffers are a core part of Undertow no explicit testing should be necessary, other than the normal subsystem/transformer tests.
+
+The existing Undertow test suite already uses the Undertow buffer pool.
+
+The combination of the existing Wildfly test suite and Servlet TCK should be sufficient to verify that everything is working correctly.
