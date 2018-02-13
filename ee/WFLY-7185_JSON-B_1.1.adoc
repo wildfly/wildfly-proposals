@@ -1,0 +1,40 @@
+= JSON-B 1.0 (JSR 367)
+:author:            James R. Perkins
+:email:             jperkins@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+JSR 367 is the Java EE 8 specification for JSON-B 1.0. The reference implementation (RI) will be used and can
+be found at https://github.com/eclipse/yasson or the official http://json-b.net//[RI website].
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-7185[WFLY-7185]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-841[EAP7-841]
+* https://issues.jboss.org/browse/WFLY-6460[WFLY-6460]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Affected Projects or Components
+
+* WildFly Core
+* WildFly
+
+== Requirements
+
+Add conditional support for JSON-B 1.0. This will be controlled by the `ee8.preview.mode` system property. If
+the property is not present or not set to `true` no resources will be loaded from the module.
