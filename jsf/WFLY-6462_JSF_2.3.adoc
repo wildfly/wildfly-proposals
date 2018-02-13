@@ -1,0 +1,49 @@
+= WFLY-6462 JSF 2.3 Support
+:author:            Farah Juma
+:email:             fjuma@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+This issue has two parts.
+First, it brings Mojarra 2.3.3 into WildFly.
+In addition, it introduces support for a switch between JSF 2.2.x (EE 7) and JSF 2.3.x (EE 8) for the sake of certification.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/WFLY-6462[WFLY-6462]
+
+=== Related Issues:
+
+* {issue-base-url}/EAP7-893[EAP7-893]
+
+=== Dev Contacts:
+
+* mailto:fjuma@redhat.com[Farah Juma]
+
+=== QE Contacts:
+
+* TBD
+
+=== Affected Projects or Components:
+
+* WildFly
+* JSF
+
+== Requirements
+
+* By default, WildFly will use the JSF 2.2.x API and implementation.
+* By default, WildFly will be JSF 2.2 compliant, so that it can pass the EE 7 TCK.
+* WildFly will be able to opt-in to use the JSF 2.3.x API and implementation through the use of the ee8.preview.mode switch.
+
+=== Test Plan
+
+We should be executing the JSF 2.2 TCK when running in EE 7 mode (the default mode).
+We should be executing the JSF 2.3 TCK when running in EE 8 mode.
