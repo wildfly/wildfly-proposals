@@ -1,0 +1,44 @@
+= JavaMail 1.6 
+:author:            Tomaz Cerar
+:email:             tcerar@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+JavaMail 1.6 is the Java EE 8 specification & implemenation for JavaMail 1.6. The reference implementation (RI) will be used and can
+be found at https://javaee.github.io/javamail/[RI website].
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-912[EAP7-912]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-6458[WFLY-6458]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Affected Projects or Components
+
+* WildFly
+
+== Requirements
+
+Add conditional support for JavaMail 1.6.x This will be controlled by the `ee8.preview.mode` system property. If
+the property is not present or not set to `true` JavaMail 1.5.x will be used instead.
+
+Changes in JavaMail that affect api compatibilty are 
+
+ ** https://github.com/javaee/javamail/issues/232[GH 232]	Update public API to use generics
+ ** https://github.com/javaee/javamail/issues/226[GH 226]	MailSessionDefinition should use the Repeatable annotation for Java EE 8
+ 
