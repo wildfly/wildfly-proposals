@@ -46,6 +46,7 @@ This is about providing an implementation of the Microprofile REST Client 1.0 sp
 
 * RESTEasy provides an implementation of Microprofile REST Client 1.0.
 * Existing RESTEasy functionalities are not affected by the addition.
+* I propose the new feature to be considered as Tech Preview in WildFly 12, aiming at full support for WildFly 13.
 
 === Test Plan
 
