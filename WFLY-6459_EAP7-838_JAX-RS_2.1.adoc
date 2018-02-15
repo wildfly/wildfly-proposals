@@ -26,6 +26,7 @@ Secondly, it introduces support for switch between JAX-RS 2.0 (EE7) and JAX-RS 2
 * {issue-base-url}/WFLY-6460[WFLY-6460]
 * {issue-base-url}/WFLY-7185[WFLY-7185]
 * {issue-base-url}/RESTEASY-1679[RESTEASY-1679]
+* {issue-base-url}/RESTEASY-1794[RESTEASY-1794]
 
 === Dev Contacts:
 
