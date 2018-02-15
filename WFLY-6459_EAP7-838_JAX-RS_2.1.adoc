@@ -1,0 +1,61 @@
+= WFLY-6459 / EAP7-838 JAX-RS 2.1 Support
+:author:            Alessio Soldano
+:email:             asoldano@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+This issue has two parts.
+Firstly it brings JAX-RS 2.1 into Wildfly.
+Secondly, it introduces support for switch between JAX-RS 2.0 (EE7) and JAX-RS 2.1 (EE 8) for the sake of certification.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/EAP7-838[EAP7-838]
+* {issue-base-url}/WFLY-6459[WFLY-6459]
+
+=== Related Issues:
+
+* {issue-base-url}/WFLY-6460[WFLY-6460]
+* {issue-base-url}/WFLY-7185[WFLY-7185]
+* {issue-base-url}/RESTEASY-1679[RESTEASY-1679]
+* {issue-base-url}/RESTEASY-1794[RESTEASY-1794]
+
+=== Dev Contacts:
+
+* mailto:{asoldano@redhat.com}[{Alessio Soldano}]
+* mailto:{ema@redhat.com}[{Jim Ma}]
+* mailto:{rsigal@redhat.com}[{Ron Sigal}]
+* mailto:{rsearls@redhat.com}[{Rebecca Searls}]
+* mailto:{weli@redhat.com}[{Wei Nan Li}]
+
+=== QE Contacts:
+
+* mailto:{rsvoboda@redhat.com}[{Rostislav Svoboda}]
+* mailto:{kanovotn@redhat.com}[{Katerina Novotna}]
+* mailto:{mkopecky@redhat.com}[{Marek Kopecky}]
+
+=== Affected Projects or Components:
+
+* WildFly
+* RESTEasy
+
+== Requirements
+
+* WildFly will use RESTEasy 3.5 implementation
+* Wildfly will, by default, be JAX-RS 2.0 compliant, so that it can pass EE 7 TCKs
+* Wildfly will be able to opt-in into JAX-RS 2.1 API through agreed switch option
+
+=== Test Plan
+
+We should be executing TCK7 with default mode and standalone JAXRS 2.1 TCK in ee8.preview.mode (the full TCK8 is not properly set yet).
+For backward compatibility, the testsuite of latest RESTEasy 3.0.x version can be run against WFLY with RESTEasy 3.5 running in default (JAX-RS 2.0) mode.
+The RESTEasy 3.5 testsuite can be used against WFLY with RESTEasy 3.5 running in ee8.preview mode to verify JAX-RS 2.1 and additional new features.
+
