@@ -1,0 +1,75 @@
+= Title
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          clustering,failover,datagrid,hotrod,security
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Remote cache store/loader is employed to offload data into remote Infinispan Server/JDG cluster.
+Connection to the remote cluster could be secured using SSL.
+Since remote cache container is a generic concept usable in multiple areas,
+rather than duplicating configuration in multiple places,
+a new remote cache store configuration is established with schema and model.
+Capabilities are provided for `RemoteCacheContainer` type (extends `BasicCacheContainer`).
+A new and optimized implementation of the remote cache store is introduced which references the above capabilities.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-9294[WFLY-9294] Add security configuration for Infinispan remote cache store
+* https://issues.jboss.org/browse/EAP7-942[EAP7-942] Add security configuration for Infinispan remote cache store
+
+=== Related Issues
+
+Incorporates
+
+* https://issues.jboss.org/browse/WFLY-6634[WFLY-6634] Add remote-cache-container configuration to Infinispan subsystem
+* https://issues.jboss.org/browse/WFLY-9860[WFLY-9860] Infinispan store implementation based on remote-cache-container configuration
+
+Dependencies / Transitive Dependencies
+
+* https://issues.jboss.org/browse/WFLY-6973[WFLY-6973] Upgrade Infinispan to 9.x
+* https://issues.jboss.org/browse/WFLY-8207[WFLY-8207] Upgrade JGroups to 4.0
+
+=== Dev Contacts
+
+* mailto:rhusar@redhat.com[Radoslav Husar]
+
+=== QE Contacts
+
+* mailto:mvinkler@redhat.com[Michal Vinkler]
+
+=== Affected Projects or Components
+
+* WildFly/EAP
+* Infinispan Server/JDG
+
+=== Other Interested Projects
+
+N/A
+
+== Requirements
+
+=== Hard Requirements
+
+* A remote-cache-container can be configured
+* The remote-cache-container can be secured using SSL Context from Elytron subsystem
+* A remote cache store can be configured using reference to the remote-cache-container
+
+=== Nice-to-Have Requirements
+
+* Test cases are introduced in upstream testsuite
+
+=== Non-Requirements
+
+N/A
+
+== Test Plan
+
+QE should run the standard set of performance/failover/soak tests with invalidation-cache configured with the new store (`store=hotrod`) referencing remote-cache-configuration.
+Performance should be compared with the original implementation (`store=remote`).
