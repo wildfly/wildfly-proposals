@@ -1,0 +1,42 @@
+= JSON-P 1.1 (JSR 374)
+:author:            James R. Perkins
+:email:             jperkins@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+JSR 374 is the Java EE 8 specification for JSON-P 1.1. The reference implementation (RI) will be used and can
+be found at https://github.com/javaee/jsonp or the official https://javaee.github.io/jsonp/[RI website].
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-6460[WFLY-6460]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-840[EAP7-840]
+* https://issues.jboss.org/browse/WFCORE-3600[WFCORE-3600]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Affected Projects or Components
+
+* WildFly Core
+* WildFly
+
+== Requirements
+
+Add conditional support for JSON-P 1.1. This will be controlled by the `ee8.preview.mode` system property. If
+the property is not present or not set to `true` JSON-P 1.0 will be used instead.
+
+NOTE: The JMS client will continue to use JSON-P 1.0.
