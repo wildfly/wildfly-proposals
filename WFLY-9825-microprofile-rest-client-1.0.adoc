@@ -1,0 +1,53 @@
+= WFLY-9825 Microprofile REST Client 1.0 support
+:author:            Alessio Soldano
+:email:             asoldano@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+This is about providing an implementation of the Microprofile REST Client 1.0 spec (https://github.com/eclipse/microprofile-rest-client/releases/tag/microprofile-rest-client-1.0).
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/WFLY-9825[WFLY-9825]
+
+=== Related Issues:
+
+* {issue-base-url}/RESTEASY-1795[RESTEASY-1795]
+
+=== Dev Contacts:
+
+* mailto:asoldano@redhat.com[Alessio Soldano]
+* mailto:hbraun@redhat.com[Heiko Braun]
+* mailto:ema@redhat.com[Jim Ma]
+* mailto:rsigal@redhat.com[Ron Sigal]
+* mailto:rsearls@redhat.com[Rebecca Searls]
+* mailto:weli@redhat.com[Wei Nan Li]
+
+=== QE Contacts:
+
+* mailto:rsvoboda@redhat.com[Rostislav Svoboda]
+* mailto:kanovotn@redhat.com[Katerina Novotna]
+* mailto:mkopecky@redhat.com[Marek Kopecky]
+
+=== Affected Projects or Components:
+
+* WildFly
+* RESTEasy
+
+== Requirements
+
+* RESTEasy provides an implementation of Microprofile REST Client 1.0.
+* Existing RESTEasy functionalities are not affected by the addition.
+* I propose the new feature to be considered as Tech Preview in WildFly 12, aiming at full support for WildFly 13.
+
+=== Test Plan
+
+Build and run RESTEasy testsuite, which pulls the TCK for MP REST Client 1.0 in a dedicated testsuite submodule.
