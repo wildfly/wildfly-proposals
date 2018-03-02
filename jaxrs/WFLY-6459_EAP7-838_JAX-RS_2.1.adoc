@@ -30,17 +30,17 @@ Secondly, it introduces support for switch between JAX-RS 2.0 (EE7) and JAX-RS 2
 
 === Dev Contacts:
 
-* mailto:{asoldano@redhat.com}[{Alessio Soldano}]
-* mailto:{ema@redhat.com}[{Jim Ma}]
-* mailto:{rsigal@redhat.com}[{Ron Sigal}]
-* mailto:{rsearls@redhat.com}[{Rebecca Searls}]
-* mailto:{weli@redhat.com}[{Wei Nan Li}]
+* mailto:asoldano@redhat.com[Alessio Soldano]
+* mailto:ema@redhat.com[Jim Ma]
+* mailto:rsigal@redhat.com[Ron Sigal]
+* mailto:rsearls@redhat.com[Rebecca Searls]
+* mailto:weli@redhat.com[Wei Nan Li]
 
 === QE Contacts:
 
-* mailto:{rsvoboda@redhat.com}[{Rostislav Svoboda}]
-* mailto:{kanovotn@redhat.com}[{Katerina Novotna}]
-* mailto:{mkopecky@redhat.com}[{Marek Kopecky}]
+* mailto:rsvoboda@redhat.com[Rostislav Svoboda]
+* mailto:kanovotn@redhat.com[Katerina Novotna]
+* mailto:mkopecky@redhat.com[Marek Kopecky]
 
 === Affected Projects or Components:
 
@@ -50,8 +50,8 @@ Secondly, it introduces support for switch between JAX-RS 2.0 (EE7) and JAX-RS 2
 == Requirements
 
 * WildFly will use RESTEasy 3.5 implementation
-* Wildfly will, by default, be JAX-RS 2.0 compliant, so that it can pass EE 7 TCKs
-* Wildfly will be able to opt-in into JAX-RS 2.1 API through agreed switch option
+* WildFly will, by default, be JAX-RS 2.0 compliant, so that it can pass EE 7 TCKs
+* WildFly will be able to opt-in into JAX-RS 2.1 API through agreed switch option
 
 === Test Plan
 
