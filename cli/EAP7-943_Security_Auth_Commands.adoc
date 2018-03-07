@@ -1,0 +1,241 @@
+= EAP7-943, [CLI] Auth security commands
+:author:            Jean-François Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Extend the existing CLI security command with a set of actions to configure 
+elytron authentication.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-3672
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-943
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:mchoma@redhat.com[Martin Choma]
+
+=== Affected Projects or Components
+
+CLI
+
+=== Other Interested Projects
+
+elytron
+
+== Requirements
+
+* Offer simple actions to enable/disable HTTP and SASL authentication for both 
+Http server and management interfaces.
+* Hide complexity of elytron management model as much as possible without introducing 
+unwanted simplification.
+* Take benefit of existing Out Of The Box elytron configuration.
+* Drive users to select the right set of options thanks to CLI completion that 
+controls visibility of options.
+* Help users discover the underlying elytron model thanks to the echo-dmr command 
+to print out the set of sent model operations.
+* Allow user to visualise the management or application authentication configuration.
+
+=== Hard Requirements
+
+* For SASL supported mechanisms are EXTERNAL, DIGEST-MD5. PLAIN, JBOSS-LOCAL-USER, SCRAM-\*, DIGEST-SHA-*
+* For HTTP supported mechanisms are CLIENT-CERT, BASIC, DIGEST and FORM
+
+==== Configure SASL Authentication for management interfaces
+ 
+==== enable-sasl-management
+Associate an elytron SASL factory to the management interface. In case a SASL factory already exists,
+ the factory is extended (or updated) with the selected mechanism. 
+If no mechanism is provided, the out of the box SASL factory is associated to the management interface. 
+This command creates all the non existing resources required to configure authentication. 
+This command can be called multiple times to configure the referenced SASL factory.
+ 
+   
+_security enable-sasl-management ( [--file-system-realm=<a string>]
+                                    [--user-role-decoder=<a string>] |
+                                    [--user-properties-file=<null>]
+                                    [--group-properties-file=<null>]
+                                    [--relative-to=<a string>] )
+                                    [--mechanism=<a string>]
+                                    [--exposed-realm-name=<a string>]
+                                    [--external-trust-store=<a string>]
+                                    [--management-interface=<a string>]
+                                    [--new-auth-factory-name=<a string>]
+                                    [--new-realm-name=<a string>]
+                                    [--new-security-domain-name=<a string>]
+                                    [--no-reload] [--super-user]_
+ 
+ 
+The mininal command to associate the out of the box elytron SASL factory to the HTTP interface +
+_security enable-sasl-management_
+ 
+The mininal command to enable EXTERNAL: +
+_security enable-sasl-management --mechanism=EXTERNAL --external-trust-store=my-trusted-users-key-store-name_
+ 
+By default, if no _--management-interface_ is provided, we default to http-interface. 
+Command would force the server to reload except if _--no-reload_ is set.
+
+==== Options
+
+===== Mechanisms:
+
+--mechanism: The mechanism to enable. CLI completer exposes all supported SASL mechanisms.
+
+===== Truststore realm:
+
+--external-trust-store=Must be specified when the mechanisms is EXTERNAL, 
+this is the name of the trust-store. Completion propose the existing key-stores.
+
+===== Filesystem realm (enabled when the mechanism requires this configuration):
+
+--file-system-realm=The filesystem-realm name. +
+--user-role-decoder=Only if --file-system-realm is in use. The name of the role 
+decoder to extract the roles from the users repository. +
+--exposed-realm-name=The realm-name exposed to the user.
+
+===== Properties file realm (enabled when the mechanism requires this configuration):
+
+--users-properties-file=A path to the properties file. +
+--groups-properties-file=A path to the properties file. +
+--exposed-realm-name=The realm-name located in users properties file and exposed 
+to the user. must be set for this realm. +
+--relative-to=Server property to make properties file relative.
+
+===== Local user properties:
+
+--super-user: In order to configure local user with super-user permissions.
+
+===== Names for generated resources:
+
+--new-auth-factory-name=To name the factory with the specified name, by default computed based on the mechanism name. +
+--new-security-domain=To name the security domain with the specified name, by default computed based on the realm name. +
+--new-realm-name=To name the realm with the specified name, by default computed based on the realm realm name.
+
+===== Management interface
+
+--management-interface=The management interface to configure, by default is http-interface+http-upgrade
+
+===== Server directives
+
+--no-reload=By default server is reloaded, use this option to not reload the server.
+
+==== disable-sasl-management
+ 
+This command removes the active SASL factory or a mechanism from the active SASL factory.  
+Without any mechanism provided, this command erases the factory from the http-upgrade or native interface. 
+NB: Existing resources are not removed from management model. +
+ 
+_security disable-sasl-management [--management-interface=<a string>]
+                                     [--mechanism=<a string>] [--no-reload]_
+ 
+==== reorder-sasl-management
+ 
+Re-order the SASL mechanisms. The --mechanisms-order option is a comma separated 
+list of mechanisms names. CLI completion proposes the mechanisms present in the targeted factory. 
+By default http-interface is used. +
+ 
+_security reorder-sasl-management --mechanisms-order=<a string>
+                                     [--management-interface=<a string>]
+                                     [--no-reload]_
+ 
+==== Enabling/Disabling HTTP Authentication for http management interface
+ 
+==== enable-http-auth-management
+
+This command targets only the management http-interface. Similar behaviour than enable-sasl-management command. +
+ 
+_security enable-http-auth-management ( [--file-system-realm=<a string>]
+                                         [--user-role-decoder=<a string>] |
+                                         [--user-properties-file=<null>]
+                                         [--group-properties-file=<null>]
+                                         [--relative-to=<a string>] )
+                                         [--mechanism=<a string>]
+                                         [--exposed-realm-name=<a string>]
+                                         [--external-trust-store=<a string>]
+                                         [--new-auth-factory-name=<a string>]
+                                         [--new-realm-name=<a string>]
+                                         [--new-security-domain-name=<a
+                                         string>] [--no-reload]_
+ 
+The mininal command to associate the out of the box elytron HTTP factory to the HTTP interface: +
+_security enable-http-auth-management_
+ 
+==== Options
+
+Same options than _enable-sasl-management_. The completer for _--mechanism_ exposes HTTP mechanisms.
+ 
+==== disable-http-auth-management
+ 
+This command removes the active HTTP factory or a mechanism from the active HTTP factory. 
+Without any mechanism provided, this command erases the factory from the interface. 
+NB: Existing resources are not removed from management model. +
+ 
+_security disable-http-auth-management [--mechanism=<a string>]
+                                          [--no-reload]_
+
+==== Enabling/Disabling HTTP Authentication for undertow security domain
+ 
+==== enable-http-auth-http-server
+
+Associate an elytron HTTP factory to the security domain. In case a SASL factory already exists, 
+the factory is extended(or updated) with the selected mechanism. 
+If no mechanism is provided, the Out of The Box Application HTTP factory is 
+associated to the security domain. This command creates all the non existing 
+resources required to configure authentication. This command can be called multiple 
+times to configure the referenced HTTP factory. Similar behaviour than _enable-http-auth-management_ command. +
+ 
+_security enable-http-auth-http-server --security-domain=<a string> (
+                                          [--file-system-realm=<a string>]
+                                          [--user-role-decoder=<a string>] |
+                                          [--user-properties-file=<null>]
+                                          [--group-properties-file=<null>]
+                                          [--relative-to=<a string>] )
+                                          [--mechanism=<a string>]
+                                          [--exposed-realm-name=<a string>]
+                                          [--external-trust-store=<a string>]
+                                          [--new-auth-factory-name=<a string>]
+                                          [--new-realm-name=<a string>]
+                                          [--new-security-domain-name=<a
+                                          string>] [--no-reload]_
+ 
+ 
+The mininal command to associate the out of the box elytron HTTP factory to the Foo security-domain: +
+_security enable-http-auth-http-server --security-domain=Foo_
+ 
+==== Options
+
+--security-domain=Mandatory, the undertow security domain. +
+Other options are the same than enable-sasl-management. The completer for _--mechanism_ exposes HTTP mechanisms.
+ 
+==== disable-http-auth-http-server
+ 
+This command removes the security domain or a mechanism from the active HTTP factory. 
+Without a mechanism, the security domain is removed. 
+NB: Elytron existing resources are not removed from management model. +
+ 
+_security disable-http-auth-http-server --security-domain=<a string>
+                                           [--mechanism=<a string>]
+                                           [--no-reload]_
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+No support for mechanisms not listed in Hard Requirements. +
+Domain mode is out of scope for this version of this feature but may be considered in the future.
+
+== Test Plan
