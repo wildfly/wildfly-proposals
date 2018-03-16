@@ -1,0 +1,54 @@
+= WFLY-9786 / EAP7-886 RESTEasy JDK9 support
+:author:            Alessio Soldano
+:email:             asoldano@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+This is about being able to build and run RESTEasy with JDK9, as well as use its functionalities on WildFly with JDK9.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/EAP7-886[EAP7-886]
+* {issue-base-url}/WFLY-9786[WFLY-9786]
+
+=== Related Issues:
+
+* {issue-base-url}/RESTEASY-1724[RESTEASY-1724]
+* {issue-base-url}/RESTEASY-1781[RESTEASY-1781]
+
+=== Dev Contacts:
+
+* mailto:asoldano@redhat.com[Alessio Soldano]
+* mailto:ema@redhat.com[Jim Ma]
+* mailto:rsigal@redhat.com[Ron Sigal]
+* mailto:rsearls@redhat.com[Rebecca Searls]
+* mailto:weli@redhat.com[Wei Nan Li]
+
+=== QE Contacts:
+
+* mailto:rsvoboda@redhat.com[Rostislav Svoboda]
+* mailto:kanovotn@redhat.com[Katerina Novotna]
+* mailto:mkopecky@redhat.com[Marek Kopecky]
+
+=== Affected Projects or Components:
+
+* WildFly
+* RESTEasy
+
+== Requirements
+
+* WildFly will allow using RESTEasy functionalities with JDK9 (classpath mode) at runtime
+* RESTEasy will build and run with JDK9 (classpath mode)
+
+=== Test Plan
+
+Build and run RESTEasy testsuite with JDK9.
+Run RESTEasy testsuite with JDK9 against WFLY patched with latest RESTEasy artifacts.
