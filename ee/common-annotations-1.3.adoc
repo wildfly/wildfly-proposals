@@ -11,7 +11,7 @@
 
 
 Commons Annotations 1.3 is a small change update to 1.2 MR.
-Main change is allowing @Repeatble on @DatasourceDefintion and @Priority annotation is allowed to also on methods now.
+Main change is allowing @Repeatble on @DatasourceDefintion and @Priority annotation is allowed to also on parameters now.
 We are using our fork of upstream's https://github.com/javaee/javax.annotation
 
 == Issue Metadata
@@ -30,6 +30,7 @@ We are using our fork of upstream's https://github.com/javaee/javax.annotation
 * mailto:{email}[{author}]
 
 === QE Contacts
+* Michal Jurc
 
 === Affected Projects or Components
 
