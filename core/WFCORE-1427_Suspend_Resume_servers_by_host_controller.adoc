@@ -1,0 +1,128 @@
+= Convenient declaration of server suspend timeouts
+:author:            Brian Stansberry
+:email:             brian.stansberry@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+In WildFly 10 we introduced the server suspend / graceful shutdown feature. This feature allows the server to complete the active requests normally, without accepting any new requests. A timeout value specifies how long the suspend or shutdown operation waits for active request to complete.
+
+The concept of graceful shutdown includes not only the 'shutdown' operation but also all the remaining operations that trigger the server to stop handling new requests. Those operations include stop, reload and restart and its variants stop-servers, reload-servers, restart-servers.
+
+The stop operation is adapted to use the "timeout" param and hence allowing a graceful stop. Technically, what the stop operation does is to suspend the affected servers before stopping them.
+
+An analysis of all the lifecycle management operations susceptible to use "timeout" parameter concluded that the use of the timeout parameter in all of them would increase the code complexity and will bring to the user confusion with corner cases.
+
+The graceful shutdown for those operations is available to the users via suspend operation. For example, if the user wants to reload all the servers in a domain, the following operations can be executed:
+
+[source]
+--
+[domain@localhost:9990 /] :suspend-servers(suspend-timeout=X)
+[domain@localhost:9990 /] :reload-servers
+--
+
+However, the user is unable to apply this feature conveniently to all the appropriate set of servers, specifically, the users cannot suspend or shutdown gracefully all the servers managed by a single host in a simple manner.
+
+For example, if they want to suspend the servers managed by a specific host, they have to identify which servers are being managed by that host and execute a suspend operation on each server.
+
+The objective of this RFE is to ensure there is a way to suspend and shutdown all the servers managed by a specific host.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/EAP7-601[EAP7-601]
+* {issue-base-url}/WFCORE-1427[WFCORE-1427]
+
+=== Related Issues
+
+* {issue-base-url}/WFCORE-1632[WFCORE-1632]
+* {issue-base-url}/WFCORE-1917[WFCORE-1917]
+* {issue-base-url}/WFCORE-3804[WFCORE-3804]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+* mailto:yborgess@redhat.com[Yeray Borges]
+* mailto:jdenise@redhat.com[Jean-Francois Denise]
+
+=== QE Contacts
+
+* mailto:jstourac@redhat.com[Jan Stourac]
+
+=== Affected Projects or Components
+* WildFly Core kernel
+* WildFly Core CLI
+* HAL
+
+=== Other Interested Projects
+* N/A
+
+== Requirements
+
+=== Hard Requirements
+
+* Users should be able to suspend the servers managed by a specific host using a new host level operation called 'suspend-servers'.
+* Users should be able to resume the servers managed by a specific host using a new host level operation called 'resume-servers'.
+* Host level suspend operation should behave like any other suspend operations available for another set of servers, for example, the suspend-servers operation available at server-group level.
+* The host level operation 'suspend-servers' will have a timeout parameter named 'suspend-timeout' that controls how long the suspend operation should wait for in-flight requests to complete before returning.
+* The timeout is per server, not an aggregate overall timeout for operations that affect multiple servers.
+* Host controllers will send the suspend operation to the managed servers in parallel.
+* There are already operations which use a timeout parameter for similar purposes. The name of this parameter leads to confusion because it can be interpreted as an operation timeout. In order to have a consistency and to fix this confusion, this 'timeout' parameter will be deprecated in all relevant operations. A 'suspend-timeout' parameter will be added to be used instead of the deprecated one.
+
+=== Nice-to-Have Requirements
+* HAL support. This should be a hard requirement for a subsequent release but is a nice to have initially.
+* The use of 'suspend-timeout' param of the high level shutdown operation and adding a 'suspend-timeout' param to the low level 'shutdown' host operation in domain mode to get the host level graceful shutdown not oly via the suspend operation, but also using the shutdown operation.
+
+
+=== Non-Requirements
+* For host level 'suspend-servers' operation affecting multiple servers, treating the 'suspend-timeout' as being some overall timeout. The 'suspend-timeout' applies to each server.
+
+=== Design notes
+
+These are just examples of how the new operations looks like:
+
+- If the user wants to reload a host restarting its servers gracefully:
+
+[source]
+--
+[domain@localhost:9990 /] /host=master:suspend-servers(suspend-timeout=20)
+[domain@localhost:9990 /] /host=master:reload(restart-servers=true)
+--
+
+
+- If the user wants to shutdown gracefully a host
+
+[source]
+--
+[domain@localhost:9990 /] /host=master:shutdown(suspend-timeout=20)
+--
+
+The 'timeout' parameter will be deprecated in the following operations and 'suspend-timeout' parameter will be added to replace its function:
+
+[source]
+--
+[domain@localhost:9990 /] :stop-servers(timeout=X)
+[domain@localhost:9990 /] /host=*/server=*:stop(timeout=X)
+[domain@localhost:9990 /] /server-group=*:stop-servers(timeout=X)
+[domain@localhost:9990 /] :suspend-servers(timeout=X)
+[domain@localhost:9990 /] /host=*/server=*:suspend(timeout=X)
+[domain@localhost:9990 /] /server-group=*:suspend-servers(timeout=X)
+
+[standalone@localhost:9990  /] :suspend(timeout=X)
+[standalone@localhost:9990  /] :shutdown(timeout=X)
+[standalone@localhost:9990  /] shutdown --timeout
+--
+
+Notice the following: +
+{issue-base-url}/WFCORE-1917[WFCORE-1917] _stop_ and _suspend_ operations were deprecated under +/host=*/server-config=*+ resource. We are not going to modify the 'timeout' attribute on those operations. +
+{issue-base-url}/WFCORE-3804[WFCORE-3804] _stop_ and _suspend_ operations will be available under +/host=*/server=*+ resource once this issue is merged.
+
+== Test Plan
+
+Tests will be added to verify that a web application gets suspended and resumed when the operation is executed in a host.
