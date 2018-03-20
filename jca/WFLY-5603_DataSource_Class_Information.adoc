@@ -1,0 +1,80 @@
+= WFLY-5603 - Get Datasource Class Information
+:author:            Lin Gao
+:email:             lgao@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          datasource,metadata
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+The JDBC `datasource-class` is the recommended way to set up the DataSource connections in the WildFly `datasources` subsystem,
+but it requires user to know what `connection-properties` are defined in the `datasource-class`.
+
+This feature will facilitate it to show basic connection properties information somehow.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/WFLY-5603[WFLY-5603]
+
+=== Related Issues:
+
+* {issue-base-url}/EAP7-940[EAP7-940]
+
+=== Dev Contacts:
+
+* mailto:{email}[{author}]
+
+=== QE Contacts:
+
+* mailto:msimka@redhat.com[Martin Simka]
+
+=== Affected Projects or Components:
+
+* WildFly
+
+== Requirements
+
+* One runtime only attribute is introduced for this information with name: `datasource-class-info` 
+* The information will be integrated in the output of the operation: `/subsystem=datasources/jdbc-driver=<JDBC-DRIVER>:read-resource(include-runtime=true)`
+
+Example of the information for `h2` JDBC dirver is following:
+[source]
+--
+[standalone@localhost:9990 /] /subsystem=datasources/jdbc-driver=h2:read-resource(include-runtime=true)
+{
+    "outcome" => "success",
+    "result" => {
+        "datasource-class-info" => [{"org.h2.jdbcx.JdbcDataSource" => {
+            "URL" => "java.lang.String",
+            "description" => "java.lang.String",
+            "loginTimeout" => "int",
+            "password" => "java.lang.String",
+            "url" => "java.lang.String",
+            "user" => "java.lang.String"
+        }}],
+        ......
+    }
+}
+--
+
+* The output is a list type of DMR contains maximum 2 elements with DMR type as Object.
+** One element is for the `datasource-class` if any, the other element is for the `xa-datasource-class` if any.
+** The key is the Java FQCN of the `(xa-)datasource-class`.
+** The value is another Object DMR which contains connection-property name and Java FQCN mappings.
+** The connection-property names are sorted alphabetically.
+* The current model version of `datasources` subsystem should bump up to indicate the model changes.
+* There is no domain transformer needed.
+* In domain mode, if the JDBC driver module is not installed on a host or the JDBC driver deployment is not deployed in a server group,
+the `datasource-class-info` will be ignored when calling against that host/server.
+* The `/subsystem=datasources:get-installed-driver(driver-name=xx)` and `/subsystem=datasources/:installed-drivers-list()` should display these properties too if `(xa-)datasource-class` is defined.
+
+=== Test Plan
+
+* https://github.com/wildfly/wildfly/blob/master/testsuite/integration/basic/src/test/java/org/jboss/as/test/integration/jca/DataSourceClassInfoTestCase.java[DataSourceClassInfoTestCase.java] will be created for the integration test in the folder: `testsuite/integration/basic` in WildFly full repository
+
+* The test covers the operations: `read-resource(include-runtime=true)` and `read-attribute(name=datasource-class-info)` for `h2` JDBC driver to get expected result.
