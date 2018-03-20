@@ -1,0 +1,49 @@
+= WFLY-9724 Allow unescaped characters in URL
+:author:            Stuart Douglas
+:email:             sdouglas@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org
+
+== Overview
+
+This feature is to add an additional option into the Undertow subsystem configuration to allow unescaped
+characters to be processed directly.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/WFLY-9724[WFLY-9724]
+
+=== Related Issues:
+
+* {issue-base-url}/EAP7-965[EAP7-965]
+
+=== Dev Contacts:
+
+* mailto:{email}[{author}]
+
+=== QE Contacts:
+
+* Jan Stourac
+
+=== Affected Projects or Components:
+
+* Wildfly
+
+== Requirements
+
+This will be implemented as an additional listener option under the Undertow subsystem called
+`allow-unescaped-characters-in-url`. This will be false by default for security reasons, however if it is set to true
+then this will let Undertow process unescaped non ASCII characters in the URL.
+
+=== Test Plan
+
+A new test will be created that adds a new listener with this option enabled. A request with UTF-8 in the URL
+will be sent to both the new listener and the current listener that is part of the standard configuration, it
+is expected that the new listener will accept it, and process the request, while the existing listener will reject
+it with a 400 response.
