@@ -1,0 +1,189 @@
+= Java Platform Module Support
+:author:            David Lloyd
+:email:             david.lloyd@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          jigsaw,jpms,java9,jboss-modules
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+In Java 9, the platform classes are divided up into modules; the core set being:
+
+.List of core Java 9 modules
+[cols="3*m"]
+|======
+|java.base|java.compiler|java.datatransfer
+|java.desktop|java.instrument|java.jnlp
+|java.logging|java.management|java.management.rmi
+|java.naming|java.prefs|java.rmi
+|java.scripting|java.security.jgss|java.security.sasl
+|java.smartcardio|java.sql|java.sql.rowset
+|java.xml|java.xml.crypto|
+|======
+
+In addition, the ``java.se`` module re-exports many of these.
+
+As a first step towards alignment, we need to
+introduce the ability for modules to create module dependencies on
+these module names.  However, unless we want to require Java 9 or later from
+now on, the names must also work on Java 8.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-3705[WFCORE-3705]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/MODULES-254[MODULES-254]
+* https://issues.jboss.org/browse/WFBUILD-37[WFBUILD-37]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:mjurc@redhat.com[Michal Jurc]
+
+=== Affected Projects or Components
+
+* JBoss Modules
+* Selected WildFly Core modules
+* WildFly Build Tools
+
+=== Other Interested Projects
+
+* WildFly Swarm
+
+== Requirements
+
+=== Hard Requirements
+
+* Support all standard OpenJDK 9.x platform module names as built-in modules
+* Support ``org.jboss.modules`` as a built-in module
+* Allow the boot module loader to load platform modules like ``java.logging`` or ``jdk.sctp``
+** When running on Java 8, emulate these modules as built-in system classpath aggregations
+** Exclude modules which are not present on Java 11+ such as ``java.transaction`` and ``java.corba``
+* Remove the magical ``java`` from the system package list, and rely on standard module dependency resolution instead
+* Always add ``java.base`` as a dependency as per the Java Language Specification
+* Move modules whose names differ from their standard names, such as ``java.corba``
+** Introduce a deprecated compatibility module which has the old name and delegates to the new name
+* Deprecate the existing JDK aggregation modules, such as ``javax.api`` and ``sun.jdk``
+** These modules should be updated to aggregate standard modules e.g. ``java.se`` or ``jdk.*``
+* The ``system`` dependency type will be disallowed in the ``urn:jboss:module:1.8`` schema and later
+** It must still be supported for older ``module.xml`` files
+** At some later point, the behavior may change to some emulation behavior.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+* It is not a requirement to support Java 9+ modules as deployments.
+* It is not a requirement to cause JBoss Modules to be JPMS modules.
+* It is not yet a requirement to support JBoss Modules running as a JPMS module.
+** This support may be added in a future enhancement.
+
+== Test Plan
+
+* Ensure that the existing test suite shows no regression running on Java 8 or Java 10.
+* Introduce test(s) which add deployment dependencies on a sampling of platform modules and ``org.jboss.modules``.
+** Ensure that the deployment can access the platform modules.
+** Ensure that the deployment succeeds and functions correctly.
+
+== Other Information
+
+.Complete list of JPMS modules emulated by JBoss Modules on Java 8
+[cols="1*m"]
+|=====
+|java.base
+|java.compiler
+|java.datatransfer
+|java.desktop
+|java.instrument
+|java.jnlp
+|java.logging
+|java.management
+|java.management.rmi
+|java.naming
+|java.prefs
+|java.rmi
+|java.scripting
+|java.security.jgss
+|java.security.sasl
+|java.smartcardio
+|java.sql
+|java.sql.rowset
+|java.xml
+|java.xml.crypto
+|javafx.base
+|javafx.controls
+|javafx.fxml
+|javafx.graphics
+|javafx.media
+|javafx.swing
+|javafx.web
+|jdk.accessibility
+|jdk.attach
+|jdk.compiler
+|jdk.httpserver
+|jdk.jartool
+|jdk.javadoc
+|jdk.jconsole
+|jdk.jdi
+|jdk.jfr
+|jdk.jsobject
+|jdk.management
+|jdk.management.cmm
+|jdk.management.jfr
+|jdk.management.resource
+|jdk.net
+|jdk.plugin.dom
+|jdk.scripting.nashorn
+|jdk.sctp
+|jdk.security.auth
+|jdk.security.jgss
+|jdk.unsupported
+|jdk.xml.dom
+|org.jboss.modules
+|=====
+
+.List of modules present in Java 9 and/or 10 but removed in Java 11
+[cols="1*m"]
+|=====
+|java.activation
+|java.corba
+|java.jnlp
+|java.se.ee
+|java.transaction
+|java.xml.bind
+|java.xml.ws
+|java.xml.ws.annotation
+|javafx.base
+|javafx.controls
+|javafx.deploy
+|javafx.fxml
+|javafx.graphics
+|javafx.media
+|javafx.swing
+|javafx.web
+|jdk.deploy
+|jdk.deploy.controlpanel
+|jdk.javaws
+|jdk.jfr
+|jdk.management.cmm
+|jdk.management.jfr
+|jdk.management.resource
+|jdk.packager
+|jdk.packager.services
+|jdk.plugin
+|jdk.plugin.dom
+|jdk.plugin.server
+|jdk.policytool
+|jdk.snmp
+|jdk.xml.bind
+|jdk.xml.ws
+|=====
