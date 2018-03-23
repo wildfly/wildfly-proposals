@@ -47,6 +47,9 @@ Once this proposal is implemented, we can move to changing dependency order, whi
 
 * The deployer must provide a way for subsystems to register packages and resources that are indicative of invalid deployment content.
 This likely entails introducing a multi-valued capability which is consumed by the deployment system.
+** The deployer must correlate this information in such a way that if the subsystem is disabled for a given deployment via ``exclude-subsystem`` in ``jboss-deployment-structure.xml``, the deployment can proceed without error.
+** There may be APIs that must always be forbidden, even when the ``exclude-subsystem`` flag is set.
+In these cases, the subsystem must have a way to indicate this situation.
 * The deployer must ignore invalid content.
 * The deployer must produce clear, user-friendly warnings about invalid content, ideally with a suggested remedy.
 
@@ -58,6 +61,8 @@ This could become the default setting in some future version.
 ** For example, ``aa.jar and bb.jar contain 294 conflicting or duplicated classes in 25 packages, which may result in class loading problems``
 ** It may be necessary to iterate N×M archives to print the comprehensive report
 ** List individual packages at DEBUG, classes at TRACE
+* Perhaps implement a "second level" of verification for packages which "benignly" conflict
+** An example would be, a deployment includes a Java EE API but the corresponding subsystem was disabled for the deployment
 
 === Non-Requirements
 
