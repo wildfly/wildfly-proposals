@@ -1,0 +1,81 @@
+= Return Context Data to EJB Clients
+:author:            Stuart Douglas
+:email:             sdouglas@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This will allow for some data that has been placed in the InvocationContext by an EJB or Interceptor to
+be returned to the client so it can be processed by client interceptors. Only data that has explicitly
+been requested by the interceptor will be returned.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-8449[WFLY-8449]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-976[EAP7-976]
+
+=== Dev Contacts
+
+* mailto:mjurc@redhat.com[Michal Jurc]
+
+=== QE Contacts
+
+=== Affected Projects or Components
+
+ * Wildfly
+ * EJB Client
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+An `EJBClientInterceptor` will be able to request data that it is interested in by calling
+`org.jboss.ejb.client.EJBClientInvocationContext#addReturnedContextDataKey(String key)`. This tells the server that the
+client interceptor would like any data that is stored under the provided key in the context data map to be returned
+to the client.
+
+Internally this will create/add to a `Set` in the clients context data stored under
+`jboss.returned.keys`, which will then be sent to the server as part of the invocations
+context data, so no protocol change is required.
+
+If the server receives this set of keys then after the invocation has completed it will iterate the set of keys,
+and if a corresponding key name is found in the context data of the invocation then it will be copied into the
+context data map that is returned to the remote client. Any EJBClientInterceptor will be able to examine this data
+in the invocations context data map.
+
+This approach allows for a very fine grained approach to returning data to the client, so that only data that is actually
+required is returned.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+It is not a requirement that all data in the context data map be returned to the client. This approach would
+be problematic for several reasons:
+
+ *  Most invocations simply do not want or need this data, so for the majority of clients this would increase network
+ and CPU usage for no reason
+ * There is no requirement that data that is placed in the context data map be Serializable. The only way to actually
+ determine this is to try and serialize it. As such any working implementation of this would need to catch and ignore
+ exceptions which happen during the Serialization process, or break backwards compatibility by causing invocations that
+ previously would have worked to fail.
+ * More seriously the client may not always be able to deserialize this context data, as it may not have the relevant
+ class definitions on the class path. This will break deserialization and cause applications that were previously working
+ to fail, breaking our backwards compatibility guarantees.
+
+== Test Plan
+
+This will be tested in the WildFly test suite. A test will be created that performs a remote invocation on an EJB with
+a client interceptor that requests keys from the server. The test will verify that the interceptor received the keys
+that it requested. This will be tested for both an actual remote client and an in-vm invocations using LocalEJBReceiver.
