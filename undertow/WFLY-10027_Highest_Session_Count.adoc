@@ -1,0 +1,50 @@
+= WFLY-10027 Highest Session Count Metric
+:author:            Stuart Douglas
+:email:             sdouglas@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org
+
+== Overview
+
+This feature is to add an additional metric called `highest-session-count` to the management model to allow
+users to see the largest number of sessions that have been active concurrently since the statistics were last
+reset.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/WFLY-10027[WFLY-10027]
+
+=== Related Issues:
+
+* {issue-base-url}/EAP7-962[EAP7-962]
+* {issue-base-url}/PRODMGT-1753[PRODMGT-1753]
+
+=== Dev Contacts:
+
+* mailto:{email}[{author}]
+
+=== QE Contacts:
+
+=== Affected Projects or Components:
+
+* Wildfly
+
+== Requirements
+
+This will be implemented as an additional metric under the `deployment=*/subsystem=undertow` management model address.
+
+This will be a simple integer attribute called `highest-session-count` that represents the maximum number of sessions
+that have been active at any given time.
+
+=== Test Plan
+
+A new test will be added to the test suite to make sure the metric is working as expected. As no tests exist for
+current metrics it will also cover existing metrics.
+
+This test will create and destroy several sessions, and make sure the metrics match the expected values.
