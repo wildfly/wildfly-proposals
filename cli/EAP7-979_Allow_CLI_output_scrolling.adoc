@@ -1,0 +1,106 @@
+= EAP7-979 WFCORE-3568 Allow CLI output scrolling
+:author:            Marek Marusic
+:email:             mmarusic@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          cli,output,scrolling
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Since https://issues.jboss.org/browse/WFCORE-426[WFCORE-426] and https://issues.jboss.org/browse/EAP7-735[EAP7-735]
+mouse scrolling is forbidden to large CLI out and user has to press Down or Enter to navigate.
+After pressing Down or Enter to display more output, user can not go up by pressing Up.
+Therefore, it would be convenient to allow CLI output scrolling by mouse and by Up/Down and PgUp/PgDown keys.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-979[EAP7-979]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFCORE-3568[WFCORE-3568]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+* mailto:jdenise@redhat.com[Jean-François Denise]
+
+=== QE Contacts
+
+* mailto:eduda@redhat.com[Erich Duda]
+
+=== Affected Projects or Components
+
+* CLI
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+* Fast scrolling using PgUp / PgDn. (ATM there is possibility to use space for fast scroll down)
+* Scrolling by mouse
+* Ability to scroll up
+* Since as mentioned in https://developer.jboss.org/wiki/CLI-PagingLongCLIOutput#comment-16541
+  the "less" behaviour would result in buffer alternation and therefore after
+  exiting the reading of output the output wouldn't be visible any more in the main buffer of the CLI.
+  This is not convenient since users may want to see at least part of the output
+  in the main buffer.
+  Therefore I would propose to print a part of the output from start to the last scrolled position
+  into the main buffer of the CLI
+  when exiting the more/less reading.
+
+
+==== List of keys and actions:
+Composed keys are unstable during the testing
+(this is tracked in https://issues.jboss.org/browse/WFCORE-3545[WFCORE-3545])
+Therefore I propose to use for every action a noncomposed key as well.
+This will enable us to create a stable tests.
+
+* PGDOWN / SPACE : scroll one page down
+* PGUP / BACKSLASH : scroll one page up
+* UP / SEMI_COLON: scroll one line up
+* DOWN / ENTER / CTRL_M : scroll one line down
+* Mouse scroll up : scroll up
+* Mouse scroll down : scroll down
+* ESC / 'q' / CTRL_C : quit
+* HOME / 'g' : go to start of the document
+* END / 'G' : go to end of the document
+
+=== Nice-to-Have Requirements
+
+
+=== Non-Requirements
+
+== Limitations
+
+* On Windows, this feature is only available starting with Windows 10. There are some terminal limitations that make
+ANSI alternate buffer not usable.
+
+== Test Plan
+I propose to extend
+https://github.com/wildfly/wildfly-core/blob/master/testsuite/standalone/src/test/java/org/jboss/as/test/integration/management/cli/MoreTestCase.java[MoreTestCase.java]
+with following test scenario:
+
+1. Start console and run command ":read-resource"
+2. Save the last before last line of output in variable (last line will be the %More string)
+3. Move output one line down
+.. Send ENTER to the console
+.. Check if the output was moved down by one line
+4. Move output one line up
+.. Send SEMI_COLON to the console
+.. Check if the line is the same as the saved one from step 2.
+5. Move output one page down
+.. Send SPACE to the console
+.. Check if the output was moved down by one page (terminal height)
+6. Move output one page up
+.. Send BACKSLASH to the console
+.. Check if the before last line is the same as the saved one from step 1. (last line will be the %More string)
+7. Send 'q' to the console
+8. Repeat step 1.
+9. Send ESC to the console
+.. Check if the main buffer contains part of the output from start to the last scrolled position
