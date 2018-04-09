@@ -1,0 +1,73 @@
+= JSON and XML Formatters
+:author:            James R. Perkins
+:email:             jperkins@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          logging,formatter
+:idprefix:
+:idseparator:       -
+
+== Overview
+Pushing log messages to a centralized log collector/server seems to be a more common practice, especially with
+microservices. This can currently be done with a syslog-handler. However new collectors like fluentd or logstash accept
+JSON formatted logs. Having the ability format log messages in JSON will be a requirement in order to support newer log
+collectors.
+
+This will also be used in OpenShift as it currently uses an alpha version of the
+`org.jboss.logmanager:jboss-logmanager-ext` which is not meant to be consumed. Adding first class support for JSON
+formatting will allow OpenShift to not have to install a custom module and use standard configurations.
+
+Note that while XML may not be a requirement it may be useful to have and is essentially free since it's not much
+different than the JSON formatter implementation.
+
+== Issue Metadata
+
+=== Issue
+
+* JSON Formatter: https://issues.jboss.org/browse/WFCORE-2951[WFCORE-2951]
+* XML Formatter: https://issues.jboss.org/browse/WFCORE-2952[WFCORE-2952]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFCORE-2953[WFCORE-2953]
+* https://issues.jboss.org/browse/CLOUD-1517[CLOUD-1517]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Affected Projects or Components
+
+* WildFly Core
+* WildFly
+
+=== Other Interested Projects
+
+* OpenShift
+* WildFly Swarm
+
+== Requirements
+
+=== Hard Requirements
+
+* A log record must be well formatted in JSON or XML.
+* There should be the ability to define if a stack trace is formatted as a complex object or a simple string.
+* The ability to add various metadata should be to the formatted message should also be available.
+    ** This is useful in situations where a log collector might require a special key/value pair. For example the
+     @version=1 in logstash.
+
+=== Nice-to-Have Requirements
+
+* Having the ability to override they keys/element names used when formatting the log record.
+
+=== Non-Requirements
+
+* The ability to write valid JSON or XML documents. What this means is if a JSON or XML formatter is used to write to a
+file, that file will not be well formed data. A separate handler would need to be created to ensure a full document is
+well formatted.
+
+== Test Plan
+
+Standard unit and integration tests will be used.
