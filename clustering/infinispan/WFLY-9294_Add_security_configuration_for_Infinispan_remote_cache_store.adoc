@@ -73,3 +73,63 @@ N/A
 
 QE should run the standard set of performance/failover/soak tests with invalidation-cache configured with the new store (`store=hotrod`) referencing remote-cache-configuration.
 Performance should be compared with the original implementation (`store=remote`).
+
+---
+
+To ease QE into testing, the following guide provides quick configuration steps to secure the point-to-point communication with a self-signed certificate.
+
+WARNING: These are by no means binding.
+
+First create the self-signed certificate on the booted server:
+
+----
+$ wget https://localhost:8443/
+----
+
+----
+16:20:07,735 WARN  [org.jboss.as.domain.management.security] (default I/O-8) WFLYDM0113: Generated self signed certificate at ~/wildfly/dist/target/wildfly-13.0.0.Alpha1-SNAPSHOT/standalone/configuration/application.keystore. Please note that self signed certificates are not secure, and should only be used for testing purposes. Do not use this self signed certificate in production.
+SHA-1 fingerprint of the generated key is 37:d0:41:9e:f4:32:fc:12:8f:d3:5a:d1:87:5f:aa:1e:ea:59:da:c7
+SHA-256 fingerprint of the generated key is c1:95:86:4f:90:21:2c:a5:d8:26:e2:b1:8b:c5:09:88:ec:24:c3:0c:10:bb:f5:2a:9a:a8:2c:c2:fb:f2:44:8f
+----
+
+Copy the generated key store into Infinispan Server:
+
+----
+$ cp ~/wildfly/build/target/wildfly-13.0.0.Alpha1-SNAPSHOT/standalone/configuration/application.keystore standalone/configuration/
+----
+
+Setup stores and secure existing `remote-cache-container`:
+
+----
+batch
+/subsystem=elytron/key-store=hotrod:add(relative-to="jboss.server.config.dir",path="application.keystore",required=true,type=JKS,credential-reference={clear-text=password})
+/subsystem=elytron/key-manager=hotrod:add(algorithm=SunX509,key-store=hotrod,credential-reference={clear-text=password})
+/subsystem=elytron/trust-manager=hotrod:add(algorithm=SunX509,key-store=hotrod)
+/subsystem=elytron/client-ssl-context=hotrod:add(key-manager=hotrod,trust-manager=hotrod)
+/subsystem=infinispan/remote-cache-container=web-sessions/component=security:write-attribute(name=ssl-context,value=hotrod)
+run-batch
+----
+
+Now reconfigure Infinispan Server to use the copied store and secure the endpoint:
+
+[source,xml]
+----
+<security-realm name="ApplicationRealm">
+    <server-identities>
+        <ssl>
+            <keystore path="application.keystore" relative-to="jboss.server.config.dir" keystore-password="password"/>
+        </ssl>
+    </server-identities>
+</security-realm>
+----
+
+
+[source,xml]
+----
+<hotrod-connector cache-container="local" socket-binding="hotrod">
+    <topology-state-transfer lazy-retrieval="false" lock-timeout="1000" replication-timeout="5000"/>
+    <encryption require-ssl-client-auth="false" security-realm="ApplicationRealm"/>
+</hotrod-connector>
+----
+
+Reload the servers.
