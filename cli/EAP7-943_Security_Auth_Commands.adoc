@@ -54,7 +54,7 @@ to print out the set of sent model operations.
 === Hard Requirements
 
 * For SASL supported mechanisms are EXTERNAL, DIGEST-MD5. PLAIN, JBOSS-LOCAL-USER, SCRAM-\*, DIGEST-SHA-*
-* For HTTP supported mechanisms are CLIENT-CERT, BASIC, DIGEST and FORM
+* For HTTP supported mechanisms are CLIENT_CERT, BASIC, DIGEST and FORM
 
 ==== Configure SASL Authentication for management interfaces
  
@@ -66,26 +66,29 @@ This command creates all the non existing resources required to configure authen
 This command can be called multiple times to configure the referenced SASL factory.
  
    
-_security enable-sasl-management ( [--file-system-realm=<a string>]
-                                    [--user-role-decoder=<a string>] |
-                                    [--user-properties-file=<null>]
-                                    [--group-properties-file=<null>]
-                                    [--relative-to=<a string>] )
-                                    [--mechanism=<a string>]
-                                    [--exposed-realm-name=<a string>]
-                                    [--external-trust-store=<a string>]
-                                    [--management-interface=<a string>]
-                                    [--new-auth-factory-name=<a string>]
-                                    [--new-realm-name=<a string>]
-                                    [--new-security-domain-name=<a string>]
-                                    [--no-reload] [--super-user]_
+_security enable-sasl-management ( [--file-system-realm-name=<realm name>]
+                                   [--user-role-decoder=<role-decoder name>] |
+                                   [--user-properties-file=<file path>]
+                                   [--group-properties-file=<file path>]
+                                   [--relative-to=<system property>] |
+                                   [--properties-realm-name=<realm name>] |
+                                   [--key-store-realm-name=<a string>] |
+                                   [--key-store-name=<key-store name>] )
+                                   [--mechanism=<mechanism name>]
+                                   [--exposed-realm=<exposed realm>]
+                                   [--roles=<list of roles>]
+                                   [--management-interface=<name>]
+                                   [--new-auth-factory-name=<name>]
+                                   [--new-realm-name=<name>]
+                                   [--new-security-domain-name=<name>]
+                                   [--no-reload] [--super-user]_
  
  
 The mininal command to associate the out of the box elytron SASL factory to the HTTP interface +
 _security enable-sasl-management_
  
 The mininal command to enable EXTERNAL: +
-_security enable-sasl-management --mechanism=EXTERNAL --external-trust-store=my-trusted-users-key-store-name_
+_security enable-sasl-management --mechanism=EXTERNAL --key-store-name=my-trusted-users-key-store-name_
  
 By default, if no _--management-interface_ is provided, we default to http-interface. 
 Command would force the server to reload except if _--no-reload_ is set.
@@ -96,24 +99,31 @@ Command would force the server to reload except if _--no-reload_ is set.
 
 --mechanism: The mechanism to enable. CLI completer exposes all supported SASL mechanisms.
 
-===== Truststore realm:
+===== Key-store realm:
 
---external-trust-store=Must be specified when the mechanisms is EXTERNAL, 
+--key-store-name=Must be specified (if --key-store-realm-name is not used) when the mechanisms is EXTERNAL, 
 this is the name of the trust-store. Completion propose the existing key-stores.
+
+--key-store-realm-name=Must be specified (if --key-store-name is not used) when the mechanisms is EXTERNAL, 
+this is the name of the trust-store. Completion propose the existing key-store realm names.
+
+--roles=Optional. Optional, a comma separated list of roles associated to the current identity. 
+If no existing constant role mapper exists for this list of roles, a constant role mapper will be generated.
 
 ===== Filesystem realm (enabled when the mechanism requires this configuration):
 
---file-system-realm=The filesystem-realm name. +
+--file-system-realm-name=The filesystem-realm name. +
 --user-role-decoder=Only if --file-system-realm is in use. The name of the role 
 decoder to extract the roles from the users repository. +
---exposed-realm-name=The realm-name exposed to the user.
+--exposed-realm=The realm exposed to the user.
 
 ===== Properties file realm (enabled when the mechanism requires this configuration):
 
+--properties-realm-name=Name of an existing properties realm to use. + 
 --users-properties-file=A path to the properties file. +
 --groups-properties-file=A path to the properties file. +
---exposed-realm-name=The realm-name located in users properties file and exposed 
-to the user. must be set for this realm. +
+--exposed-realm=The realm-name located in users properties file and exposed 
+to the user. Must be set for this realm. +
 --relative-to=Server property to make properties file relative.
 
 ===== Local user properties:
@@ -122,9 +132,9 @@ to the user. must be set for this realm. +
 
 ===== Names for generated resources:
 
---new-auth-factory-name=To name the factory with the specified name, by default computed based on the mechanism name. +
---new-security-domain=To name the security domain with the specified name, by default computed based on the realm name. +
---new-realm-name=To name the realm with the specified name, by default computed based on the realm realm name.
+--new-auth-factory-name=To name the factory with the specified name, by default a name is computed. +
+--new-security-domain=To name the security domain with the specified name, by default a name is computed. +
+--new-realm-name=To name a not existing realm with the specified name, by default computed based on the passed realm name.
 
 ===== Management interface
 
@@ -159,18 +169,21 @@ _security reorder-sasl-management --mechanisms-order=<a string>
 
 This command targets only the management http-interface. Similar behaviour than enable-sasl-management command. +
  
-_security enable-http-auth-management ( [--file-system-realm=<a string>]
-                                         [--user-role-decoder=<a string>] |
-                                         [--user-properties-file=<null>]
-                                         [--group-properties-file=<null>]
-                                         [--relative-to=<a string>] )
-                                         [--mechanism=<a string>]
-                                         [--exposed-realm-name=<a string>]
-                                         [--external-trust-store=<a string>]
-                                         [--new-auth-factory-name=<a string>]
-                                         [--new-realm-name=<a string>]
-                                         [--new-security-domain-name=<a
-                                         string>] [--no-reload]_
+_security enable-http-auth-management ( [--file-system-realm-name=<realm name>]
+                                        [--user-role-decoder=<role-decoder name>] |
+                                        [--user-properties-file=<file path>] 
+                                        [--group-properties-file=<file path>] 
+                                        [--relative-to=<system property>] |
+                                        [--properties-realm-name=<realm name>] |
+                                        [--key-store-realm-name=<a string>] |
+                                        [--key-store-name=<key-store name>] )
+                                        [--mechanism=<mechanism name>]
+                                        [--exposed-realm=<exposed realm>]
+                                        [--roles=<list of roles>]
+                                        [--new-auth-factory-name=<name>]
+                                        [--new-realm-name=<name>]
+                                        [--new-security-domain-name=<name>]
+                                        [--no-reload] [--super-user]_
  
 The mininal command to associate the out of the box elytron HTTP factory to the HTTP interface: +
 _security enable-http-auth-management_
@@ -192,26 +205,30 @@ _security disable-http-auth-management [--mechanism=<a string>]
  
 ==== enable-http-auth-http-server
 
-Associate an elytron HTTP factory to the security domain. In case a SASL factory already exists, 
+Associate an elytron HTTP factory to the security domain. In case an HTTP factory already exists, 
 the factory is extended(or updated) with the selected mechanism. 
 If no mechanism is provided, the Out of The Box Application HTTP factory is 
 associated to the security domain. This command creates all the non existing 
 resources required to configure authentication. This command can be called multiple 
 times to configure the referenced HTTP factory. Similar behaviour than _enable-http-auth-management_ command. +
  
-_security enable-http-auth-http-server --security-domain=<a string> (
-                                          [--file-system-realm=<a string>]
-                                          [--user-role-decoder=<a string>] |
-                                          [--user-properties-file=<null>]
-                                          [--group-properties-file=<null>]
-                                          [--relative-to=<a string>] )
-                                          [--mechanism=<a string>]
-                                          [--exposed-realm-name=<a string>]
-                                          [--external-trust-store=<a string>]
-                                          [--new-auth-factory-name=<a string>]
-                                          [--new-realm-name=<a string>]
-                                          [--new-security-domain-name=<a
-                                          string>] [--no-reload]_
+_security enable-http-auth-http-server --security-domain=<name> (
+                                          [--file-system-realm-name=<realm name>]
+                                          [--user-role-decoder=<role-decoder name>] |
+                                          [--user-properties-file=<file path>]
+                                          [--group-properties-file=<file path>]
+                                          [--relative-to=<system property>] |
+                                          [--properties-realm-name=<realm name>] | 
+                                          [--key-store-realm-name=<a string>] |
+                                          [--key-store-name=<key-store name>] )
+                                          [--mechanism=<mechanism name>]
+                                          [--exposed-realm=<exposed realm>]
+                                          [--roles=<list of roles>]
+                                          [--new-auth-factory-name=<name>]
+                                          [--new-realm-name=<name>]
+                                          [--new-security-domain-name=<name>]
+                                          [--no-reload] [--super-user]_
+
  
  
 The mininal command to associate the out of the box elytron HTTP factory to the Foo security-domain: +
