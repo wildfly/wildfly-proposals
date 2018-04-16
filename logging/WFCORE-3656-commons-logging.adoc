@@ -1,0 +1,53 @@
+= Title
+:author:            James Perkins
+:email:             jperkins@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Current we use https://github.com/jboss-logging/commons-logging-jboss-logmanager[`org.jboss.logmanager:commons-logging-jboss-logmanager`]
+for the Apache Commons Logging implementation. This causes issues with the embedded server API's as there is np
+requirement that the JBoss Log Manager is the log manager.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-3656[WFCORE-3656]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:nziakova@redhat.com[Nikoleta Ziakova]
+
+=== Affected Projects or Components
+
+* WildFly Core
+* WildFly
+* Any projects based on WildFly
+* New provisioning
+
+== Requirements
+
+=== Hard Requirements
+
+* Support the same `LogFactory` methods we currently support in `org.jboss.logmanager:commons-logging-jboss-logmanager`
+* Commons Logging should work with per-deployment logging and logging profiles
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+* Not all methods of the `LogFactory` API will be supported.
+
+== Test Plan
+
+New tests will be in the PR that will test all supported logging API's with logging profiles. This should cover test
+that the new Apache Commons Logging implementation works.
