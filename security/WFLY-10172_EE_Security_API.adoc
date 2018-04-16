@@ -1,0 +1,61 @@
+= EE Security API
+:author:            Stuart Douglas
+:email:             sdouglas@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This issue is about integrating the Java EE Security RI in order to become Java EE8 compliant.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-10172[WFLY-10172]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-904[EAP7-904]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Affected Projects or Components
+
+ * Wildfly
+
+=== Other Interested Projects
+
+ * Elytron?
+
+== Requirements=
+
+=== Hard Requirements
+
+The reference implementation for the Java EE security API will be integrated into WildFly. This will be done by creating
+a new subsystem (`ee-security`) that will perform any integration work required.
+
+As the RI depends on CDI and JASPIC API's only at present no configuration or Elytron specific integration is planned.
+Users of this API will simply inherit whatever JASPIC config WildFly is configured to use, either Elytron or the legacy
+security subsystem.
+
+At some point we may wish to provide additional authentication mechanisms or identity stores, however that is outside the
+scope of this feature and not something that we should be holding up Java EE8 over.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+This work does not depend on Elytron support for JASPIC. As the RI uses standard JASPIC APIs it can be implemented
+regardless of the underlying JASPIC implementation.
+
+== Test Plan
+
+The TCK provides extensive testing of this feature.
