@@ -1,0 +1,62 @@
+= Enhance CommandDispatcher API to leverage CompletableFutures
+:author:            Paul Ferraro
+:email:             paul.ferraro@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          clustering,CommandDispatcher
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The CommandDispatcher is a construct of the public clustering API for performing cluster command execution.
+It is implemented as an abstraction over the JGroups MessageDispatcher mechanism, as well as a local implementation for use in non-clustered environments.
+The current API contains synchronous and asynchronous variants of methods for dispatching commands to a single member or all group members.
+
+As of JGroups 4, MessageDispatcher group communication methods were enhanced to leverage JDK8 CompletableFutures.
+By exposing the CompletableFuture return types in the CommandDispatcher API itself, we can allow users to easily react to command completion, etc.
+
+An initial consumer of this new behavior will be the CommandDispatcher-based DiscoveryProvider decorator, which can easily feed discovery results by leveraging a whenComplete(...) handler.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-9842
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-9847
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:mvinkler@redhat.com[Michal Vinkler]
+
+=== Affected Projects or Components
+
+WildFly, Clustering
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* Add methods for single node and group-wide command execution that return CompletableFuture.
+* Deprecate existing asynchronous submit*(...) methods that return Future<R>.
+** Add default implementations that delegate to the methods returning CompletableFuture.
+
+=== Nice-to-Have Requirements
+
+* Deprecate existing synchronous execute*(...) methods, made redundant by CompletableFuture.join()
+** Add default implementations that delegate to the methods returning CompletableFuture.join()
+
+=== Non-Requirements
+
+== Test Plan
+
+Existing CommandDispatcher tests in the clustering testsuite will be adapted to use the new API methods.
