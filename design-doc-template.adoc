@@ -1,9 +1,8 @@
-= Title
+= <INSERT TITLE HERE>
 :author:            Your Name
 :email:             your.email@redhat.com
 :toc:               left
 :icons:             font
-:keywords:          comma,separated,tags
 :idprefix:
 :idseparator:       -
 
