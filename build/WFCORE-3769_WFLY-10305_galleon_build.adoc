@@ -9,11 +9,15 @@
 
 == Overview
 
-The Galleon tool (https://github.com/wildfly/galleon) is a powerful new tool for doing platform 
-independent provisioning and updating of a software installation. The WildFly project intends 
-to use Galleon for its provisioning needs. This initial proposal is for a very limited use of
-Galleon -- using it produce the 'thin' and 'fat' distribution zips that are part of a
-WildFly Core and WildFly release.
+The Galleon tool is a powerful new tool for doing platform independent provisioning 
+and updating of a software installation. The overall Galleon project consists of 
+core tooling (https://github.com/wildfly/galleon) that isn't specific to provisioning 
+any particular kind of software, and then plugin s(https://github.com/wildfly/galleon-plugins) 
+that allow the tool to deal with particular types of software, e.g. WildFly.
+
+The WildFly project intends to use Galleon for its provisioning needs. This initial proposal 
+is for a very limited use of Galleon -- using it produce the 'thin' and 'fat' distribution 
+zips that are part of a WildFly Core and WildFly release.
 
 This initial work is not really a feature, it is an internal detail of the builds.
 
@@ -34,10 +38,13 @@ This initial work is not really a feature, it is an internal detail of the build
 
 === QE Contacts
 
+ * mailto:msimka@redhat.com
+
 === Affected Projects or Components
 
  * WildFly
  * WildFly Core
+ * EAP Installer
 
 === Other Interested Projects
 
