@@ -10,15 +10,18 @@
 
 == Overview
 
+This feature adds support for the new attribute `proxy-protocol` on Undertow listeners.
+
 == Issue Metadata
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE[WFCORE-XXXX]
+* {issue-base-url}/EAP7-985[EAP7-985]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFLY[WFLY-XXXX]
+* {issue-base-url}/WFLY-10084[WFLY-10084]
+* {issue-base-url}/EAP7-974[EAP7-974]
 
 === Dev Contacts
 
@@ -34,5 +37,7 @@
 * HAL
 
 == Requirements
+
+The console adds support for the new attribute `proxy-protocol` in the configuration section of Undertow listeners.
 
 == Test Plan

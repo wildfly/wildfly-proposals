@@ -10,6 +10,8 @@
 
 == Overview
 
+In domain mode the console shows also hosts which are no longer connected to the domain controller. The dropdown menu of the host column provides actions to prune expired and disconnected hosts.
+
 == Issue Metadata
 
 === Issue
@@ -34,5 +36,8 @@
 * HAL
 
 == Requirements
+
+* In runtime, the console shows also dicsonnected hosts which are no longer connected to the domain controller.
+* There are actions to prune disconnected and expired hosts. These actions call the management operations `/core-service=management/host-connection=<host>:prune-disconnected` resp. `/core-service=management/host-connection=<host>:prune-expired`
 
 == Test Plan
