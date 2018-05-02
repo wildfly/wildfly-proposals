@@ -1,0 +1,68 @@
+= Title
+:author:            Stuart Douglas
+:email:             sdouglas@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WFLY-6493 changed the default behaviour of the server to queue requests while the server
+is starting, instead of just rejecting them (or potentially letting a request through
+to an incomplete deployments).
+
+This feature is about making this feature configurable, so that a user can choose
+between the current behaviour of queueing requests until the server has started,
+or between rejecting requests until the server has started.
+
+Note that neither of these selections will allow request processing to start
+until the server has completely started, which is an improvement on the original
+behaviour.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-6493
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-958
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:jstourac@redhat.com[Jan Stourac]
+
+=== Affected Projects or Components
+
+ * Undertow
+
+== Requirements
+
+=== Hard Requirements
+
+This feature will provide an attribute on the host called `queue-requests-on-start`, this attribute
+will default to `true`.
+
+If this attribute is true then there will be no deviation from the current behaviour, requests
+that arrive when the server is starting will be held until the server is ready.
+
+If this attribute is false then requests that arrive before the server has completely
+started will be rejected with the default response code.
+
+No matter the value of this attribute request processing will not start until the
+server is completely started, making it impossible for requests to be processed
+by an incomplete deployment.
+
+== Test Plan
+
+This is complex to test, as our existing test infrastructure is not set up to perform
+tests while the server is starting up. As such tests will be confined to the QE internal
+test suites, rather than being part of the main WildFly test suite.
