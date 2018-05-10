@@ -1,0 +1,79 @@
+= EAP7-924 Coloured output for CLI
+:author:            Ingo Weiss
+:email:             ingo@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+The intent of this feature is to provide a better user experience by means of colouring important parts of the CLI workflow, this includes error messages, warning messages, successful outputs and better visual feedback when using batch and flow control mechanisms if/for/try.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}EAP7-924[EAP7-924]
+
+=== Related Issues:
+
+* {issue-base-url}WFCORE-3450
+* {issue-base-url}WFCORE-3577
+
+=== Dev Contacts:
+
+* mailto:ingo@redhat.com[Ingo Weiss]
+* mailto:jdenise@redhat.com[Jean-François Denise]
+
+=== QE Contacts:
+
+* mailto:eduda@redhat.com[Erich Duda]
+
+=== Affected Projects or Components:
+
+* WildFly Core CLI
+
+
+== Requirements
+
+=== Hard requirements
+
+* Ability to disable colour output via CLI argument
+* Ability to disable colour output using `jboss-cli.xml`
+* Ability to configure the colours for each allowed type: `warning`, `error`, `success`, `batch/workflow`, `required` and `prompt`
+* Mark required attributes in bold and with a different colour from the default
+* Colour the output of DMR output based on its outcome
+* Add colours to CLI prompt
+
+=== Soft requirements
+
+* Have a different prompt for each workflow step
+
+== Test Plan
+
+Tests should include:
+
+* CLI argument and `jboss-cli.xml` effectiveness
+* Colour configurations
+* Verify new prompt display works accordingly to its mode
+* Work on different operating systems and shells
+
+== Design Notes
+
+The current prototype assumes the following defaults:
+
+[width="75%",options="header,footer"]
+|===
+| Type | Colour | Intensity
+| Error | Red | Bright
+| Warning | Yellow | Normal
+| Success | Default | Normal
+| Required | Magenta | Bright
+| Batch/Workflow | Green | Bright
+| Prompt | Blue | Normal
+|===
+
+These defaults might need to be adjusted depending on the target platform. For example, Windows doesn't render the colour yellow with normal intensity. The UX team might be of great help in setting these defaults.
