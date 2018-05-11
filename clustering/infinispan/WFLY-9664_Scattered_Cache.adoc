@@ -1,0 +1,67 @@
+= Scattered Cache
+:author:            Paul Ferraro
+:email:             paul.ferraro@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          clustering,infinispan,scattered
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+Infinispan 9.1.x introduced a new cache mode, scattered-cache [1][2] A scattered cache is similar to a distributed cache, except that primary ownership is determined not by consistent hash, but by which node originates access to a given cache entry. This has a potential use case in EAP for distributed web sessions, since load balancer failover tends to direct traffic to a non-primary owner (or even backup) node. This has potential of reducing contention and improving performance following a cluster topology change. This issue involves exposing this cache mode via configuration. Once exposed, further testing will be required to determine whether this cache mode offers any improvements to our distributed web session manager use case.
+
+[1] https://github.com/infinispan/infinispan-designs/blob/master/Scattered-Cache-design-doc.md
+[2] http://blog.infinispan.org/2017/07/scattered-cache.html
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/EAP7-867
+
+=== Related Issues:
+
+* {issue-base-url}/WFLY-9664
+
+=== Dev Contacts:
+
+* mailto:{email}[{author}]
+
+=== QE Contacts:
+
+* mailto:mvinkler@redhat.com[Michal Vinkler]
+
+=== Affected Projects or Components:
+
+WildFly, Clustering
+
+=== Other Interested Projects:
+
+Infinispan, JDG
+
+== Requirements
+
+=== Hard Requirements
+
+Add a new /subsytem=infinispan/cache-container=*/scattered-cache=* resource to the Infinispan subsystem model.
+
+The definition of this new resource will largely inherit the child components of a distributed cache, with the exception of the following attributes: capacity-factor, l1-lifespan, and owners.
+The resource will produce the same set of capabilities as all caches, including: Service<Cache>, Service<Configuration>, and services per cache-based clustering API abstraction.
+
+When transforming the model for legacy slaves, any scattered-cache=* resource should be rejected.
+
+Routing behavior for a scattered-cache should prefer the originator over the primary owner.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+Scattered cache does not yet implement transactions, nor L1 caching - so these configuration aspects will not be supported.
+
+== Test plan
+
+Run the standard suite of failover, stress, and scalability smartfrog tests with configured scattered cache for web sessions and SFSBs.
+
+We should produce a performance comparison between scattered cache and DIST_SYNC cache, especially for the ejb-servlet-based tests.
