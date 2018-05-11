@@ -1,0 +1,59 @@
+= WFLY-10361 / EAP7-997 Async (NIO) request processing support in RESTEasy ClientHttpEngine
+:author:            Alessio Soldano
+:email:             asoldano@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+This is about providing an asynch version of the ClientHttpEngine abstraction within RESTEasy, to have non-blocking behavior on client side basically down up to the socket.
+A default implementation based on Apache HttpComponents HttpAsyncClient is also implemented.
+Further details and usage examples in the RESTEasy documentation:
+* http://docs.jboss.org/resteasy/docs/3.5.0.Final/userguide/html/RESTEasy_Client_Framework.html#transport_layer
+* http://docs.jboss.org/resteasy/docs/3.5.0.Final/userguide/html/RESTEasy_Client_Framework.html#apache_asynch
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/EAP7-997[EAP7-997]
+* {issue-base-url}/WFLY-10361[WFLY-10361]
+
+=== Related Issues:
+
+* {issue-base-url}/RESTEASY-1025[RESTEASY-1025]
+
+=== Dev Contacts:
+
+* mailto:asoldano@redhat.com[Alessio Soldano]
+* mailto:ema@redhat.com[Jim Ma]
+* mailto:rsigal@redhat.com[Ron Sigal]
+* mailto:rsearls@redhat.com[Rebecca Searls]
+* mailto:weli@redhat.com[Wei Nan Li]
+
+=== QE Contacts:
+
+* mailto:rsvoboda@redhat.com[Rostislav Svoboda]
+* mailto:kanovotn@redhat.com[Katerina Novotna]
+* mailto:mkopecky@redhat.com[Marek Kopecky]
+
+=== Affected Projects or Components:
+
+* WildFly
+* RESTEasy
+
+== Requirements
+
+* The default implementation of the asynch client engine interface will be backed by an Apache HttpComponents HttpAsyncClient based component
+* The new client engine will be off by default and enabled on demand with ResteasyClientBuilder's useAsyncHttpEngine() method; the user will evaluate which engine best fits his usage scenario.
+
+=== Test Plan
+
+Besides for basic checks in the RESTEasy testsuite, like common JAX-RS client usage scenario, we might want to run some meaningful performance test to actually get numbers on the advantages
+when running in scenarios usually well served by a NIO model.
+
+
