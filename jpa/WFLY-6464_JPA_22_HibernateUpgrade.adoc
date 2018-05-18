@@ -1,0 +1,106 @@
+= EE8 preview mode: JPA 2.2 support: ability to enable latest Hibernate ORM
+:author:            Sanne Grinovero
+:email:             sanne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Support JPA 2.2 by including Hibernate ORM 5.3.x and matching dependencies.
+
+The new libraries will be added in addition to the existing version of Hibernate ORM so that EE7 certification can happen via the existing implementations based on JPA 2.1.
+
+The new Hibernate ORM version will need to be activated explicitly via the `ee8.preview.mode=true` flag.
+
+An Hibernate ORM upgrade implies an Hibernate Search upgrade, which in turn implies an Apache Lucene upgrade.
+
+Compatibility analysis of Hibernate ORM (from 5.1 to 5.3):
+
+ - https://docs.google.com/document/d/1ZjdVuNzYPjjmvVd7mDLw9zwy9c0By_FP0oj8DkHgiBE/edit?usp=sharing
+
+Compatibility analysis of Hibernate Search:
+
+ - https://docs.google.com/document/d/1X0MR6jSGZHM3vKy-uoku0WxKXnP6mAglQ7PUxtUcFC8/edit?usp=sharing
+
+Compatibility analysis of the new Lucene version:
+
+ - https://docs.google.com/document/d/11WjkAqnLH7bUnq1P_Ed3PDd8sz2DVrOl4ZRYLa1jnXw/edit?usp=sharing
+ - https://developer.jboss.org/wiki/LuceneBinaryAndSourceCompatibilityForHibernateSearchUsersBetween531redhat-2And555
+
+While most of the backwards compatibility issues have been resolved, some will need us to enable a _Compatibility Transformer_ created by David LLoyd.
+A working proof of concept can be found here:
+
+ - https://github.com/dmlloyd/wildfly/commit/hib-xform
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-6464 JPA 2.2 container support
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-905 JPA 2.2 Support
+* https://issues.jboss.org/browse/WFLY-10327 Upgrade Hibernate ORM to 5.3.0.Final and Hibernate Search to 5.10.0.Final
+* https://issues.jboss.org/browse/WFLY-10329 Have JipiJapa enable Hibernate Search backward compatibility properties
+* https://issues.jboss.org/browse/ISPN-8972 Create Hibernate 5.3 module
+* https://issues.jboss.org/browse/WFLY-10393 Upgrade Infinispan to 9.2.3.Final
+
+=== Dev Contacts
+
+* mailto:{Scott Marlow}[{smarlow@redhat.com}] JPA / WildFly integration lead
+* mailto:{Paul Ferraro}[{pferraro@redhat.com}] WildFly clustering lead
+* mailto:{Steve Ebersole}[{steve@hibernate.org}] Hibernate ORM, project lead
+* mailto:{Sanne Grinovero}[{sanne@hibernate.org}] Hibernate, integration coordinator
+* mailto:{Gail Badner}[{gail@hibernate.org}] Hibernate, primary author of all backwards compatibility analysis
+
+=== QE Contacts
+
+TBD
+
+=== Affected Projects or Components
+
+Hibernate Search needs to be updated to match the new Hibernate ORM version.
+
+Byte Buddy is a new dependency introduced by the new Hibernate ORM version.
+
+WildFly clustering components need to integrate with both new and legacy 2nd Level Cache integrations.
+
+JipiJapa is the WildFly component managing the JPA providers, needs to handle this.
+
+David Lloyd created the _Compatibility Transformer_ tool within WildFly which will be used to enhance backwards compatibility.
+
+=== Other Interested Projects
+
+Infinispan project created the compatible set of 2nd Level Cache components.
+
+== Requirements
+
+Included JPA 2.2, Hibernate ORM 5.3+, Hibernate Search 5.10+ and have them automatically enabled when the ee8 preview mode is enabled.
+
+=== Hard Requirements
+
+EE7 compatibility not affected in this release, so using the existing Hibernate libraries by default.
+
+When `ee8.preview.mode=true` is set, use the new libraries instead.
+
+=== Nice-to-Have Requirements
+
+It would be nice to have Hibernate ORM and Hibernate Search fully backwards compatible but this might not be possible during a single WildFly release cycle.
+
+In particular verifying this accurately and implement further improvements will need more time and would benefit from users feedback.
+
+=== Non-Requirements
+
+This will not replace the existing Hibernate ORM 5.1.x version.
+
+The legacy version will be removed once the transition to EE8 is complete.
+
+== Test Plan
+
+Unchanged: the EE7 testsuite should be running using the default Hibernate ORM version, which is the existing version, just to confirm that this work didn't introduce regressions.
+
+Some basic tests to verify that the new Hibernate ORM is available when `ee8.preview.mode=true` is set would be welcome.
