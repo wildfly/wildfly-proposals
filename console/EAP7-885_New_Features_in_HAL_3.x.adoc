@@ -21,8 +21,6 @@ This issue summaries the enhancements and new features in HAL 3.x.
 * Macro recording
 * PatternFly compliance
 * Enhanced form items
-* JavaScript API
-* Support for (dynamic) extensions written in JavaScript
 * Second level cache for metadata (based on IndexDB and web workers)
 
 === Finder
