@@ -1,0 +1,60 @@
+= WFCORE-3404 Separate stream flushing and file syncing in file-audit-endpoint
+:author:            Jan Kalina
+:email:             jkalina@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          elytron
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/WFCORE-3404
+
+== Overview
+
+`file-audit-endpoint` currently provides `synchronized` attribute, which allows to set whether should
+be output stream flushed and file descriptor synced after writing every audit log message.
+To have it enabled entail big performance drop, while have it disabled provides minimal data safety.
+Should be possible to use compromise - as in legacy audit log, to flush stream only.
+
+More fine-tuned settings will be possible if the two can be set separately - standalone
+atttribute for stream flushing (`autoflush` for example) and for file descriptor syncing
+(`synchronized` for example).
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-3404[WFCORE-3404]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/JBEAP-10639[JBEAP-10639]
+
+=== Dev Contacts
+
+* mailto:jkalina@redhat.com[Jan Kalina]
+
+=== QE Contacts
+
+* TBD
+
+=== Affected Projects or Components
+
+* WildFly core
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* It should be possible to configure file descriptor syncing and output stream flushing independently.
+* For backward compatibility, when new attribute(s) will not be used, current behavior needs to be preserved - attribute `synchronized` will set both options.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+Subsystem parsing and transformer tests will be added.
+
