@@ -1,0 +1,74 @@
+= Embedded Logging Changes
+:author:            James R. Perkins
+:email:             jperkins@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          embedded,logging
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The embedded server should not require the JBoss Log Manager to be used. A user should be able to use their
+own log manager/logging configuration. The server itself uses JBoss Logging which works with several log
+managers. The embedded server should honor the log manager being used.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-3205[WFCORE-3205]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:nziakova@redhat.com[Nikoleta Ziakova]
+
+=== Affected Projects or Components
+
+* Any consumer of the WildFly Embedded Server
+* Offline CLI
+* The new provisioning tool
+* Arquillian Embedded
+
+== Requirements
+
+=== Hard Requirements
+
+* Needs to work in:
+** Offline CLI
+** In the provisioning tool
+** Any environment created by a user; an executable main method, custom user configuration, maven/gradle plugin, etc.
+
+* This should also work with any log manager supported by JBoss Logging.
+** JUL
+** JBoss Log Manager
+** Logback
+** Log4j (1.x)
+** log4j2
+
+* The logging subsystem should be configurable, however it should not override the current user configuration.
+
+* The logging subsystem itself should contain the logic on how the JBoss Log Manager will be used. If the
+logging subsystem is not present then the embedded server should not make assumptions that the JBoss Log
+Manager will be available or even configurable.
+
+* We should not be initializing the JBoss Log Manager, e.g. the `logging.properties` should not be processed.
+
+* Offline CLI requires the `--stdout=echo` to log messages to the console. This _must_ work as
+  http://wildfly.org/news/2015/03/13/Offline-CLI/[documented].
+
+=== Nice-to-Have Requirements
+
+* Not requiring the user to specify the `org.jboss.logging.provider` system property for the log manager being used
+** This _might_ not be an issue but it should be checked. Initial testing did show some messages going through the
+   JBoss Log Manager, though making the subsystem not execute runtime steps may resolve this issue.
+
+=== Non-Requirements
+
+== Test Plan
+
+Add a new test suite for embedded servers.

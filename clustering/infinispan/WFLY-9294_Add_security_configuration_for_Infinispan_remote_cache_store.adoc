@@ -1,0 +1,135 @@
+= Title
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          clustering,failover,datagrid,hotrod,security
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Remote cache store/loader is employed to offload data into remote Infinispan Server/JDG cluster.
+Connection to the remote cluster could be secured using SSL.
+Since remote cache container is a generic concept usable in multiple areas,
+rather than duplicating configuration in multiple places,
+a new remote cache store configuration is established with schema and model.
+Capabilities are provided for `RemoteCacheContainer` type (extends `BasicCacheContainer`).
+A new and optimized implementation of the remote cache store is introduced which references the above capabilities.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-9294[WFLY-9294] Add security configuration for Infinispan remote cache store
+* https://issues.jboss.org/browse/EAP7-942[EAP7-942] Add security configuration for Infinispan remote cache store
+
+=== Related Issues
+
+Incorporates
+
+* https://issues.jboss.org/browse/WFLY-6634[WFLY-6634] Add remote-cache-container configuration to Infinispan subsystem
+* https://issues.jboss.org/browse/WFLY-9860[WFLY-9860] Infinispan store implementation based on remote-cache-container configuration
+
+Dependencies / Transitive Dependencies
+
+* https://issues.jboss.org/browse/WFLY-6973[WFLY-6973] Upgrade Infinispan to 9.x
+* https://issues.jboss.org/browse/WFLY-8207[WFLY-8207] Upgrade JGroups to 4.0
+
+=== Dev Contacts
+
+* mailto:rhusar@redhat.com[Radoslav Husar]
+
+=== QE Contacts
+
+* mailto:mvinkler@redhat.com[Michal Vinkler]
+
+=== Affected Projects or Components
+
+* WildFly/EAP
+* Infinispan Server/JDG
+
+=== Other Interested Projects
+
+N/A
+
+== Requirements
+
+=== Hard Requirements
+
+* A remote-cache-container can be configured
+* The remote-cache-container can be secured using SSL Context from Elytron subsystem
+* A remote cache store can be configured using reference to the remote-cache-container
+
+=== Nice-to-Have Requirements
+
+* Test cases are introduced in upstream testsuite
+
+=== Non-Requirements
+
+N/A
+
+== Test Plan
+
+QE should run the standard set of performance/failover/soak tests with invalidation-cache configured with the new store (`store=hotrod`) referencing remote-cache-configuration.
+Performance should be compared with the original implementation (`store=remote`).
+
+---
+
+To ease QE into testing, the following guide provides quick configuration steps to secure the point-to-point communication with a self-signed certificate.
+
+WARNING: These are by no means binding.
+
+First create the self-signed certificate on the booted server:
+
+----
+$ wget https://localhost:8443/
+----
+
+----
+16:20:07,735 WARN  [org.jboss.as.domain.management.security] (default I/O-8) WFLYDM0113: Generated self signed certificate at ~/wildfly/dist/target/wildfly-13.0.0.Alpha1-SNAPSHOT/standalone/configuration/application.keystore. Please note that self signed certificates are not secure, and should only be used for testing purposes. Do not use this self signed certificate in production.
+SHA-1 fingerprint of the generated key is 37:d0:41:9e:f4:32:fc:12:8f:d3:5a:d1:87:5f:aa:1e:ea:59:da:c7
+SHA-256 fingerprint of the generated key is c1:95:86:4f:90:21:2c:a5:d8:26:e2:b1:8b:c5:09:88:ec:24:c3:0c:10:bb:f5:2a:9a:a8:2c:c2:fb:f2:44:8f
+----
+
+Copy the generated key store into Infinispan Server:
+
+----
+$ cp ~/wildfly/build/target/wildfly-13.0.0.Alpha1-SNAPSHOT/standalone/configuration/application.keystore standalone/configuration/
+----
+
+Setup stores and secure existing `remote-cache-container`:
+
+----
+batch
+/subsystem=elytron/key-store=hotrod:add(relative-to="jboss.server.config.dir",path="application.keystore",required=true,type=JKS,credential-reference={clear-text=password})
+/subsystem=elytron/key-manager=hotrod:add(algorithm=SunX509,key-store=hotrod,credential-reference={clear-text=password})
+/subsystem=elytron/trust-manager=hotrod:add(algorithm=SunX509,key-store=hotrod)
+/subsystem=elytron/client-ssl-context=hotrod:add(key-manager=hotrod,trust-manager=hotrod)
+/subsystem=infinispan/remote-cache-container=web-sessions/component=security:write-attribute(name=ssl-context,value=hotrod)
+run-batch
+----
+
+Now reconfigure Infinispan Server to use the copied store and secure the endpoint:
+
+[source,xml]
+----
+<security-realm name="ApplicationRealm">
+    <server-identities>
+        <ssl>
+            <keystore path="application.keystore" relative-to="jboss.server.config.dir" keystore-password="password"/>
+        </ssl>
+    </server-identities>
+</security-realm>
+----
+
+
+[source,xml]
+----
+<hotrod-connector cache-container="local" socket-binding="hotrod">
+    <topology-state-transfer lazy-retrieval="false" lock-timeout="1000" replication-timeout="5000"/>
+    <encryption require-ssl-client-auth="false" security-realm="ApplicationRealm"/>
+</hotrod-connector>
+----
+
+Reload the servers.

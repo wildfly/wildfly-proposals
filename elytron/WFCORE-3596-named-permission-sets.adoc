@@ -1,0 +1,112 @@
+= WFCORE-3596 Add support for named permission sets to the Elytron subsystem configuration
+:author:            Farah Juma
+:email:             fjuma@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+Currently, permission mappings and constant permission mappers in the Elytron subsystem configuration
+can only reference individual permissions. This task is to introduce named permission sets and allow
+these to be referenced from permission mappings and constant permission mappers. Referencing individual
+permissions from permission mappings and constant permission mappers will still be allowed but will
+deprecated to discourage further use.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-3596[WFCORE-3596]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-978[EAP7-978]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TBD
+
+=== Affected Projects or Components
+
+* WildFly, Security
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* It should be possible to configure named permission sets in the Elytron subsystem configuration. Each permission
+  set should contain zero or more permissions. It should be possible to reference permission sets from permission
+  mappings and from constant permission mappers. As an example, the default configuration would be as shown below.
+  Notice that the default permissions will be in a default permission set, "default-permissions", that is referenced by
+  the "default-permission-mapper". For the provisioning tool, the default permission set will be the single place to add
+  permissions as subsystems are being added and it will be the single place to remove permissions as subsystems are being
+  removed. Without named permission sets, the provisioning tool would not know which permission mapping a subsystem
+  permission should be added to or removed from. Note that the provisioning tool will only be touching the "default-permissions".
+  It won't attempt to touch any user-specified permission sets.
+
+[source,xml]
+----
+<mappers>
+...
+    <simple-permission-mapper name="default-permission-mapper" mapping-mode="first">
+        <permission-mapping>
+            <principal name="anonymous"/>
+            <permission-set name="default-permissions"/>
+        </permission-mapping>
+        <permission-mapping match-all="true">
+            <permission-set name="login-permission" />
+            <permission-set name="default-permissions"/>
+        </permission-mapping>
+    </simple-permission-mapper>
+...
+</mappers>
+
+<permission-sets>
+    <permission-set name="login-permission">
+        <permission class-name="org.wildfly.security.auth.permission.LoginPermission"/>
+    </permission-set>
+    <permission-set name="default-permissions">
+        <permission class-name="org.wildfly.extension.batch.jberet.deployment.BatchPermission" module="org.wildfly.extension.batch.jberet" target-name="*"/>
+        <permission class-name="org.wildfly.transaction.client.RemoteTransactionPermission" module="org.wildfly.transaction.client"/>
+        <permission class-name="org.jboss.ejb.client.RemoteEJBPermission" module="org.jboss.ejb-client"/>
+    </permission-set>
+</permission-sets>
+----
+
+* A permission set should be a private capability.
+
+* When transforming the model for legacy slaves, the permission sets should be in-lined, i.e., a permission set that's
+  referenced from a permission mapping or from a constant permission mapper would just be replaced with the permissions
+  that make up the permission set. For example, the "default-permissions" permission set referenced from the permission
+  mappings in the above example would be transformed to:
+
+[source,xml]
+----
+<permission class-name="org.wildfly.extension.batch.jberet.deployment.BatchPermission" module="org.wildfly.extension.batch.jberet" target-name="*"/>
+<permission class-name="org.wildfly.transaction.client.RemoteTransactionPermission" module="org.wildfly.transaction.client"/>
+<permission class-name="org.jboss.ejb.client.RemoteEJBPermission" module="org.jboss.ejb-client"/>
+----
+
+* Referencing individual permissions from permission mappings and constant permission mappers should still be allowed but
+  should deprecated to discourage further use.
+
+* Since we are not removing the permission element from permission mappings or constant permission mappers, there is no
+  need to migrate XML configuration for prior versions to the new version.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+Subsystem parsing and transformer tests will be added.

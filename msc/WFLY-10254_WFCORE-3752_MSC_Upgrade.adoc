@@ -1,0 +1,129 @@
+= MSC Multi-Value Service API
+:author:            Richard Opálka
+:email:             ropalka@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          msc,service,value,management
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+=== Background
+
+==== Complex Injectors and Values Framework
+
+Packages ``org.jboss.msc.inject`` and ``org.jboss.msc.value`` are over-designed. +
+Their usage has lead to complex code with non-trivial impact on memory.
+
+==== Services Provide Single Value
+
+This is limiting and has caused difficulties in some scenarios.
+
+==== Insufficient Encapsulation
+
+The previous API exposed state machine and implementation details. +
+Service objects are accessible from any other service.
+
+=== Proposed API Change
+
+==== New Services Configuration API
+
+We will introduce new *Multi-Value Services API* that will +
+consist of 1 additional interface and 4 additional methods in existing API. +
+ +
+We will introduce ``org.jboss.msc.Service`` interface superseding existing +
+``org.jboss.msc.service.Service`` interface. +
+ +
+We will add 4 new methods to existing API, concretely: +
+ +
+
+[.result]
+====
+* org.jboss.msc.service.ServiceTarget
+** ``<T> ServiceBuilder<T> addService(ServiceName)``
+* org.jboss.msc.service.ServiceBuilder
+** ``<V> java.util.function.Supplier<V> requires(ServiceName name)``
+** ``<V> java.util.function.Consumer<V> provides(ServiceName... names)``
+** ``ServiceBuilder<T> setInstance(Service<T> service)``
+====
+
+==== Old Services Configuration API
+
+We will deprecate old *Single-Value Services API*, concretely:
+
+[.result]
+====
+* all types in ``org.jboss.msc.inject`` package
+* all types in ``org.jboss.msc.value`` package
+* ``org.jboss.msc.service.Service`` interface
+* all three ``org.jboss.msc.service.ServiceController`` value retrieval methods
+* ``org.jboss.msc.service.BatchServiceTarget`` interface
+* ``org.jboss.msc.service.ServiceController.Substate`` enum
+* ``org.jboss.msc.service.ServiceController.Transition`` enum
+* all API methods with deprecated types in its signature
+====
+
+==== Examples
+
+New API usage example:
+
+ ServiceName HTTP_CONFIG = ServiceName.of("http", "config");
+ ServiceName HTTP_HOST = ServiceName.of("http", "host");
+ ServiceName HTTP_PORT = ServiceName.of("http", "port");
+ ServiceName HTTP_SERVER = ServiceName.of("http", "server");
+
+ ServiceBuilder configBuilder = serviceContainer.addService(HTTP_CONFIG);
+ Consumer<String> hostInjector = configBuilder.provides(HTTP_HOST);
+ Consumer<Integer> portInjector = configBuilder.provides(HTTP_PORT);
+ configBuilder.setInstance(new HttpConfigService(hostInjector, portInjector));
+ configBuilder.install();
+
+ ServiceBuilder serverBuilder = serviceContainer.addService(HTTP_SERVER);
+ Supplier<String> host = serverBuilder.requires(HTTP_HOST);
+ Supplier<Integer> port = serverBuilder.requires(HTTP_PORT);
+ serverBuilder.setInstance(new HttpServer(host, port));
+ serverBuilder.install();
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-3752[WFCORE-3752]
+* https://issues.jboss.org/browse/WFLY-10254[WFLY-10254]
+
+=== Related Issues
+
+=== Dev Contacts
+
+* mailto:david.lloyd@redhat.com[David Lloyd]
+* mailto:ropalka@redhat.com[Richard Opalka]
+
+=== QE Contacts
+
+* mailto:msimka@redhat.com[Martin Simka]
+
+=== Affected Projects or Components
+
+* All subsystems
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* Multiple values per service. +
+* 100% API backward compatibility. +
+* 100% services interoperability. +
+
+=== Nice-to-Have Requirements
+
+Reduce memory consumption.
+
+=== Non-Requirements
+
+== Test Plan
+
+Ensure that the existing test suite shows no regression in both WildFly Core and WildFly projects. +
+Unit tests will be added to MSC project ensuring backward compatibility and new functionality.

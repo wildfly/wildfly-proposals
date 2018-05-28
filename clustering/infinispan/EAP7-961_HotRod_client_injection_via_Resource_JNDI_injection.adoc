@@ -1,0 +1,63 @@
+= HotRod client injection via @Resource JNDI injection
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          clustering,failover,datagrid,hotrod,security
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+A new remote cache store configuration is established with schema and model.
+Capabilities are provided for `RemoteCacheContainer` type (extends `BasicCacheContainer`).
+Connection to the remote cluster could be secured using SSL.
+I should be able to inject a hotrod client to connect to remote JDG cluster via @Resource JNDI injection.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-961[EAP7-961] HotRod client injection via @Resource JNDI injection
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-6634[WFLY-6634] Add remote-cache-container configuration to Infinispan subsystem
+
+=== Dev Contacts
+
+* mailto:rhusar@redhat.com[Radoslav Husar]
+
+=== QE Contacts
+
+* mailto:rjanik@redhat.com[Richard Janik]
+
+=== Affected Projects or Components
+
+* WildFly/EAP
+* Infinispan Server/JDG
+
+=== Other Interested Projects
+
+* OpenShift
+
+== Requirements
+
+=== Hard Requirements
+
+* A remote-cache-container can be configured
+* The remote-cache-container can be secured using SSL Context from Elytron subsystem
+* `org.wildfly.clustering.infinispan.spi.RemoteCacheContainer` instances could be injected using `@Resource` injection
+
+=== Nice-to-Have Requirements
+
+* Test cases are introduced in upstream testsuite
+
+=== Non-Requirements
+
+N/A
+
+== Test Plan
+
+QE could run the standard set of performance/failover/soak tests with clusterbench modification using
+HotRod client injection to maintain the session data.

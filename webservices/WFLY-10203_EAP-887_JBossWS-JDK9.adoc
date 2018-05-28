@@ -1,0 +1,57 @@
+= WFLY-10203 + WFLY-9128 / EAP7-887 JBossWS JDK9 support
+:author:            Alessio Soldano
+:email:             asoldano@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+This is about being able to build and run JBossWS with JDK9, as well as use its functionalities on WildFly with JDK9.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/EAP7-887[EAP7-887]
+* {issue-base-url}/WFLY-9128[WFLY-9128]
+* {issue-base-url}/WFLY-10203[WFLY-10203]
+
+=== Related Issues:
+
+* {issue-base-url}/JBWS-4027[JBWS-4027]
+* {issue-base-url}/JBWS-4107[JBWS-4107]
+* {issue-base-url}/JBWS-4113[JBWS-4113]
+* {issue-base-url}/JBWS-4119[JBWS-4119]
+* {issue-base-url}/JBWS-4081[JBWS-4081]
+* {issue-base-url}/JBWS-4075[JBWS-4075]
+
+=== Dev Contacts:
+
+* mailto:asoldano@redhat.com[Alessio Soldano]
+* mailto:ema@redhat.com[Jim Ma]
+* mailto:rsearls@redhat.com[Rebecca Searls]
+
+=== QE Contacts:
+
+* mailto:rsvoboda@redhat.com[Rostislav Svoboda]
+* mailto:jbliznak@redhat.com[Jan Bliznak]
+
+=== Affected Projects or Components:
+
+* WildFly
+* JBossWS
+* Apache CXF
+
+== Requirements
+
+* WildFly will allow using JBossWS functionalities with JDK9 (classpath mode) at runtime
+* JBossWS will build and run with JDK9 (classpath mode)
+
+=== Test Plan
+
+Build and run JBossWS testsuite with JDK9.
+Run JBossWS testsuite with JDK9 against WFLY patched with latest JBossWS artifacts.
