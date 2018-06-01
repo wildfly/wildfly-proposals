@@ -1,0 +1,53 @@
+= Support for Keycloak SSO
+:author:            Claudio Miranda
+:email:             claudio@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Provide authentication to Keycloak SSO, once it is configured in wildfly http management interface, HAL should redirects the login attempt to keycloak to authenticate the user, if successful redirect back to HAL. Provide the logout option in HAL to call the logout page on keycloak, also there should be a link on HAL to show the user information on a keycloak page.
+
+How to configure Wildfly to enable keycloak: https://docs.jboss.org/author/display/WFLY/Protecting+Wildfly+Adminstration+Console+With+Keycloak
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/HAL-1471
+* https://issues.jboss.org/browse/EAP7-1011
+
+=== Dev Contacts
+
+* mailto:claudio@redhat.com[Claudio Miranda]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+=== Affected Projects or Components
+
+* HAL
+* WildFly
+
+=== Other Interested Projects
+
+* Keycloak
+
+== Requirements
+
+* Keycloak adapters installed in wildfly
+* HTTP management interface configured with a keycloak http authentication factory
+* The /subsystem=keycloak/secure-server resource must be named wildfly-console, in order to HAL recognize this is the keycloak configuration to protect http management interface.
+
+The keycloak wildfly adapter provides a public http endpoint that publish the keycloak configuration [1]. HAL will check if the address exists and will redirects the login to keycloak.
+
+1. <wildfly-http-management>/keycloak/adapter/wildfly-console
+
+=== Hard Requirements
+
+* Upon first access to WildFly console at 9990 port, redirect to keycloak login page if HTTP GET to /keycloak/adapter/wildfly-console response is 200
+* Logout link will call keycloak logout action
+* Provide a link to view user profile on keycloak.
