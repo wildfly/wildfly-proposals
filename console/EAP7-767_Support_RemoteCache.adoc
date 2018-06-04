@@ -1,0 +1,55 @@
+= EAP7-767 Support RemoteCache configuration to Infinispan subsystem
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+Provide a user interface to configure the `/subsystem=infinispan/remote-cache-container=*` and its sub resources.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/HAL-1468[HAL-1468]
+* https://issues.jboss.org/browse/EAP7-767[EAP7-767]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-6634[WFLY-6634]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+* The existing column "Configuration / Subsystem / Infinispan / Cache Container" lists boths resources: cache container and remote cache container
+* The add column action is expanded to add both resources: cache container and the remote cache container
+* An icon is used to make the difference between the two resources obvious to the user.
+* The view action for remote cache container opens a new view to configure remote cache containers and its subresources:
+** `/subsystem=infinispan/remote-cache-container=*`
+** `/subsystem=infinispan/remote-cache-container=*/component=connection-pool`
+** `/subsystem=infinispan/remote-cache-container=*/component=security`
+** `/subsystem=infinispan/remote-cache-container=*/near-cache=none`
+** `/subsystem=infinispan/remote-cache-container=*/near-cache=invalidation`
+** `/subsystem=infinispan/remote-cache-container=*/remote-cluster=*`
+** `/subsystem=infinispan/remote-cache-container=*/thread-pool=async`
+
+== Test Plan
+
+TBD
