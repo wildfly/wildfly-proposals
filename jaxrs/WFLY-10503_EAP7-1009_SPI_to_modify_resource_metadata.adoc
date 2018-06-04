@@ -1,0 +1,62 @@
+= WFLY-10503 / EAP7-1009 RESTEasy SPI to modify resource metadata
+:author:            Alessio Soldano
+:email:             asoldano@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+Provide a SPI allowing to modify the resource metadata which is created from ResourceBuilder
+
+The idea is to create a SPI in RESTEasy to allow altering the metadata of resource classes. The interface for such a SPI would be something like:
+
+[source,java]
+----
+public interface ResourceClassProcessor {
+    ResourceClass process( ResourceClass clazz );
+}
+----
+
+The new processors are meant to be stored using the usual ResteasyProviderFactory.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/EAP7-1009[EAP7-1009]
+* {issue-base-url}/WFLY-10503[WFLY-10503]
+
+=== Related Issues:
+
+* {issue-base-url}/RESTEASY-1805[RESTEASY-1805]
+
+=== Dev Contacts:
+
+* mailto:asoldano@redhat.com[Alessio Soldano]
+* mailto:ema@redhat.com[Jim Ma]
+* mailto:rsigal@redhat.com[Ron Sigal]
+* mailto:rsearls@redhat.com[Rebecca Searls]
+* mailto:weli@redhat.com[Wei Nan Li]
+
+=== QE Contacts:
+
+* mailto:rsvoboda@redhat.com[Rostislav Svoboda]
+* mailto:kanovotn@redhat.com[Katerina Novotna]
+* mailto:mkopecky@redhat.com[Marek Kopecky]
+
+=== Affected Projects or Components:
+
+* RESTEasy
+
+== Requirements
+
+* Server side only support (client side (proxy) support possibly comimg in future as a new RFE).
+* processor processing after annotation processing
+
+=== Test Plan
+
+Run RESTEasy testsuite with includes additional tests for this new feature.
