@@ -1,0 +1,164 @@
+= Support JMS Java EE resources definition for remote Artemis-based broker
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-10493[WFLY-10493]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1006[EAP71006]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:mnovak@redhat.com[Miroslav Novak]
+
+== User Story
+
+* Use standard Java EE JMS resource definition, either with the (https://docs.oracle.com/javaee/7/api/javax/jms/JMSConnectionFactoryDefinition.html[@JMSConnectionFactoryDefinition]
+  and https://docs.oracle.com/javaee/7/api/javax/jms/JMSDestinationDefinition.html[JMSDestinationDefinition] annotations or XML configuration, to define JMS resources that connects to a remote Artemis-based broker (including AMQ-7 instances).
+
+
+=== Affected Projects or Components
+
+* This is a internal restructuring of the `messaging-activemq` subsystem that requires no changes
+from Artemis or other messaging components.
+
+== Requirements
+
+* Java EE JMS resource definitions must be able to connect to remote Artemis-based brokers.
+* When an archive containing a `JMSDestinationDefinition` is deployed, it MUST create the resources corresponding to the
+  JMS Queue or Topic on the remote Artemis-based brokers. When the archive containing the definitions is
+  undeployed, the resources on the remote Artemis broker MUST be destroyed.
+* When a resource definitions is used to connect to a remote Artemis-based brokers, it MUST not
+  require *any* resources under the `/subsystem=messaging-activemq` (other than the subsystem itself).
+
+=== Hard Requirements
+
+* There must be no local Artemis broker running in order to connect to a remote Artemis-based brokers
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+* This RFE does not address the issue that `pooled-connection-factory` resources that connect
+  to a remote Artemis broker requires the presence of a local Artemis broker (that is not used).
+
+== Current Design
+
+The Java EE7 resource definitions behave differently depending on the presence of the `resourceAdapter` property.
+
+If that property is set, the `messaging-activemq` subsystem will delegate to the `resource-adapters` subsystem
+(and IronJacamar) to create the JMS resources based on the resource adapter's
+`admin-objects` and `connection-definitions` resources.
+
+Artemis Resource adapter does not support Administrated Objects and thus it needs a specific
+way to create JMS destinations.
+This special case is handled by the `messaging-activemq` subsystem by delegating the creation
+of JMS destination (and JMS connection factory) to a `server` resource that corresponds
+to a local Artemis broker.
+
+== Proposed Design
+
+This feature requires no change to the `messaging-activemq` subsystem structure.
+
+Depending on a well-known `server-locator` property of the JMS resource definitions,
+the subsystem will use this property to setup any remote connections without the need
+of any `messaging-activemq` resources.
+
+The Java EE7 specification also expects that a JMS resource definitions works out of the box without
+having to specify a `resourceAdapter` name.
+
+The new behaviour will be:
+----
+1. if `resourceAdapter` attribute is specified
+  1.1 delegate to the resource-adapters subsystem to use any other JCA resource adapters
+2. else
+  2.1. if a server-locator is defined in the JMS resource definitions
+    2.1.1 use its value to create an Artemis ServerLocator
+    2.1.2 If the definition is a JMS queue or topic
+      2.1.2.1 use the ServerLocator to create the corresponding resources on the remote Artemis server
+    2.1.3 else
+      2.1.3.1 Combine the ServerLocator properties with any other definitions properties to create
+          a ConnectionDefinition using Artemis Resource Adapter
+  2.2 if server-locator property is not defined
+    2.2.1 verify that there are `server` resources and pick one named "default" or the first one
+    2.2.2 use the Artemis objects corresponding to the resource to create a JMS connection factory,
+    queue or topics and bind it in JNDI
+----
+
+Note that the URI specified in `server-locator` is specific to Artemis and documented
+in its http://activemq.apache.org/artemis/docs/latest/configuring-transports.html[documentation].
+
+=== Examples
+
+==== Use the default local Artemis broker
+
+It corresponds to [2.2.2] of the new behaviour.
+
+* create a `/subsystem=messaging/server=default` resource
+* use the annotation
+
+[source,java]
+----
+@JMSConnectionFactoryDefinition(
+        name="java:app/myCF"
+)
+----
+
+==== Use a remote Artemis broker
+
+It corresponds to [2.1.1] of the new behaviour.
+
+* use the annotation
+
+[source,java]
+----
+@JMSConnectionFactoryDefinition(
+        name="java:app/myCF"
+        properties= {
+          "server-locator=tcp://example.com:61617/",
+          "initial-connect-attempts=5",
+          "ha=true"
+        }
+)
+----
+
+==== Use a 3rd party JMS resource adapter
+
+It corresponds to [1.1] of the new behaviour.
+
+* define a `resource-adapter` (e.g. named `wsmq`) in the `/subsystem=resource-adapters` subsystem.
+* use the annotation
+
+[source,java]
+----
+@JMSConnectionFactoryDefinition(
+        name="java:app/myCF"
+        resourceAdapter="wsmq"
+)
+----
+
+== Test Plan
+
+* WildFly test suite covers the default use case (no `resourceAdapter` attribute, use the `default` messaging-activemq's server)
+* Additional test coverage will be added to support connection to a "remote" Artemis broker (that uses a `invm` server locator to connect
+  to the default local server)
+* Coverage for the 3rd party resource adapters is handled by QE and will not require any change
+* QE Test suite will be enhanced with further test for connections to remote Artemis-based brokers (including for example
+  other WildFly instances, AMQ-7 brokers, etc).
