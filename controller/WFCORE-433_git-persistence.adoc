@@ -1,0 +1,100 @@
+= Adding support for Git backend for configuration files
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org
+
+== Overview
+
+Supplement the current persistence mechanism for configuration files and history by one using a real version control system.
+
+== Background
+
+Instead of relying on the current mechanism for history and snapshot of configuration files, the idea is to use a real versioning system. +
+One of the advantage of a DVCS is that you don’t need a central server to take advantage of its features. Using git would allow us to be able to replace the current implementation while gaining more features if we use a remote repository. Thus we would be able to start a server without any pre defined configuration and pull it from a remote repository, allowing an easy way to share configuration between multiple nodes. +
+We could also define a reference instance from which we could push the configuration files to the repository and then upgrade all the clones.
+
+== Issue Metadata
+
+
+=== Issue
+
+*  {issue-base-url}/browse/WFCORE-433[WFCORE-433]
+
+=== Related Issues
+
+* {issue-base-url}/browse/EAP7-728[EAP7-728]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:msimka@redhat.com[Martin Simka]
+
+=== Affected Projects or Components
+
+WildFly Core kernel
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+These items must be satisfied in order to have a satisfactory feature.
+
+* We are adding more parameters on the startup command line so that the user can configure the git repository (or its remote alias if the repository is already present) the branch (defaulting to master) or the tag to use. Something looking like:
+----
+    ./standalone --git-repository=file:///my_repo/test/.git --git-branch=my_branch
+----
+* Support for local only repository, initializing it on the first start-up:
+----
+    ./standalone --git-repository=local
+----
+* Support for remote repository pulling/cloning/pushing it before starting-up.
+* Automatic detection of a .git directory in the jboss.server.base.dir will activate this feature.
+* Support for the same features as the current persistence feature :
+** snapshots should be managed as tags
+** browsing history: list all the commits with their comments.
+** automatic persistence : committing each time the configuration files or content change.
+** restoring previous version: use the configuration state of a previous commit and revert to it.
+** try to use authentication information to store the user tagging or committing
+** publishing (aka pushing to a remote repository defined in the git configuration)
+* Adding support for comments when taking a snapshot: the comment will be used to create the tag name.
+* Extension to more elements of the configuration (aka managed contents) being versioned. When a managed content is no longer relevant it should be removed from the repository. +
+This supposes that the directory structure of the content directory and the configuration directory are the same as in the default configuration. Changing the jboss.server.base.dir is not a problem but we can’t manage several different places on a filesystem through Git.
+* Integration with Elytron for authentication : as we might need to authenticate on the remote repository instead of passing the username/password in clear text we could be using Elytron and pass the authentication credentials through a wildfly-config.xml.
+* Conflicts are to be resolved automatically. If that fails then it is up to the user to clean the mess using git itself as the tool is not meant to provide a full git implementation in jboss-cli.
+
+=== Nice-to-Have Requirements
+These items are not required but would be nice to have if possible:
+
+* Support for branch selection, but you can’t change the branch being used once the server has started-up.
+* Support for tag selection, but selecting a tag means that we are in a read-only mode.
+* Support for automatic conflict resolution with strategies.
+* Support for Git Large File Storage https://git-lfs.github.com/[https://git-lfs.github.com/]
+
+=== Non-Requirements
+These are items that are explicitly not required:
+
+* Managing conflicts thought the management API / HAL / CLI
+* Support for commit signature and verification.
+* Support for a different directory layout than the default one.
+* Support for domain mode.
+
+== Implementation Plan
+Using Git for history management of configuration files locally is a nice feature but it doesn't bring much value to the existing mechanism. In my opinion the real value comes from being able to share those configurations through a single or several Git repositories.
+In that case it makes sense to be able to share also the managed deployments because those are also part of the configuration, then you would be cloning not just a server configuration but an application configuration thus allowing you to just (re) start or revert an update of a full service by just pointing to the right repository and tag / branch.
+In that use case maybe further investigation on using GLFS makes sense as we don't want to overload our git repositories with big binaries.
+Also using .gitignore we might allow the user to choose which use case he wants to be into : just the configuration files or the full application mode.
+
+== Test Plan
+There will be integration tests in WF test suite.
+
+== Community Documentation
+The feature will be documented in WildFly Admin Guide (in the Configuration file history section of Management tasks).
