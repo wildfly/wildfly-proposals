@@ -46,3 +46,7 @@ Provide an user interface to configure the resources of the new subsystem `/subs
 == Test Plan
 
 TBD
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
