@@ -1,0 +1,81 @@
+Export manual configuration changes as a Galleon Feature Pack
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+A Galleon provisioned server may be reconfigured or modified manually by the user via jboss-cli or direct editing of configuration.
+Also files may be added or removed like deployments or modules for instance;
+We need a tool to be able to take those changes into account during an update via Galleon. We could even take advantage of this to export those changes as a feature pack allowing then several provisioning of the same configuration without a deep knowledge of Galleon.
+This could also be usefull in a cloud environment where we want to replicate a configuration from  a master to several slaves.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-3932
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY[WFLY-XXXX]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Affected Projects or Components
+WildFly Core kernel
+
+=== Other Interested Projects
+Galleon
+
+== Requirements
+
+=== Hard Requirements
+* Use same mechanism as Domain Mode
+* Runtime only resource to connect to the reference instance and compute the configuration differences. That means that the required jboss modules should be already present in the caller classpath.
+* Targets complete model (aka with deployments, etc.)
+* Targets standalone instances only
+* Works from within embedded
+
+=== Nice-to-Have Requirements
+* Refactor and simplify the domain synchronization mechanism
+* Export changes as a jboss-cli script
+
+=== Non-Requirements
+* Don't support domain
+* Just targets the model, not the files (deployments or modules).
+
+== Implementation Plan
+* Refactor the domain synchronization mechanism so that it can be use from standalone.
+* Create a runtime only resource `synchronization=simple` with several oprations:
+** `synchronize`: to synchronize the two instances (this could be 'simulated' using a dry-run parameter).
+** `export-diff`: to export the configuration differences as a jboss-cli script.
+** `feature-diff`: export the configuration differences as a DMR format that can be used from without WildFly Galleon plugins to create a feature pack of all (files and model) the changes.
+* Create several wrappers to convert the computed difference to the wanted formats.
+
+For example the following script adds a synchronization service targeting a reference standalone server (this is a runtime only resource), then display the resulting synchronization operations (without applying them) and then exports them as attachements in different formats.
+
+----
+    embed-server --admin-only
+    /synchronization=simple:add(username=admin,
+                                password="passw0rd!",
+                                protocol=http-remoting,
+                                port=9990,
+                                host=127.0.0.1)
+    /synchronization=simple:synchronize(dry-run=true)
+    attachment display --operation=/synchronization=simple:export-diff()
+    attachment display --operation=/synchronization=simple:feature-diff()
+----
+We should be able in this way to create a standalone.xml of a full distribution on a server using the standalone.xml from the wildfly-core distribution. Please note that the modules directories should be the same on both side (as we need the extensions to be loadable from the server initiating the synchronization).
+
+== Test Plan
+
+== Community Documentation
+
+The feature will be documented in WildFly Admin Guide (in the Management taskssection).
