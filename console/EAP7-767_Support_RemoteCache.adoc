@@ -53,3 +53,7 @@ Provide a user interface to configure the `/subsystem=infinispan/remote-cache-co
 == Test Plan
 
 TBD
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
