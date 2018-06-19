@@ -41,3 +41,9 @@ The console shows an option in the JSF subsystem configuration to modify the new
 The console shows an option in the JSF subsystem configuration to modify the new JSF attribute `disallow-doctype-decl`.
 
 == Test Plan
+
+TBD
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
