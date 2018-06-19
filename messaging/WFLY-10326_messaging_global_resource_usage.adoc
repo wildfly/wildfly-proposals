@@ -65,3 +65,7 @@ N/A
 addresses in memory for the amount specified by the `global-max-memory-size` attribute, the `address-full-policy` will take effect.
 * Likewise, the disk feature will be tested in the QE test suite to ensure that once Artemis has filled the disk
 up to the percentage set by `global-max-disk-size`, it will block any message processing.
+
+== Community Documentation
+
+The feature will be documented in WildFly Admin Guide (in the Messaging Configuration section).
