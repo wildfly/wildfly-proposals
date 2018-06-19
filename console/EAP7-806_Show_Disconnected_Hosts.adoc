@@ -41,3 +41,9 @@ In domain mode the console shows also hosts which are no longer connected to the
 * There are actions to prune disconnected and expired hosts. These actions call the management operations `/core-service=management/host-connection=<host>:prune-disconnected` resp. `/core-service=management/host-connection=<host>:prune-expired`
 
 == Test Plan
+
+TBD
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
