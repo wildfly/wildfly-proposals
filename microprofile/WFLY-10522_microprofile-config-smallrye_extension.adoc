@@ -62,3 +62,7 @@ The implementation of Eclipse MicroProfile Config is provided by https://github.
 * smallrye-config component is passing the MicroProfile Config TCK during its release process.
 * WildFly integration test suite will be enhanced with tests that deploys Java archives which
 uses the MicroProfile Config API.
+
+== Community Documentation
+
+The feature will be documented in WildFly Admin Guide (in a new MicroProfile Config section).
