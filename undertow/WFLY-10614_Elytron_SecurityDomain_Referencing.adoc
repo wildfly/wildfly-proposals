@@ -1,0 +1,98 @@
+= Reference WildFly Elytron SecurityDomain from Undertow's application-security-domain resource.
+:author:            Darran Lofthouse
+:email:             darran.lofthouse@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+At the time WildFly Elytron was added to WildFly a new resource `application-security-domain` was added to the Undertow subsystem, the purpose of this resource was to map from the security domain name associated with the deployment to a WildFly Elytron backed `http-authentication-factory` which is a pre-configured factory providing instances of authentication mechanisms.  Additionally the mapping can be configured so that the mechanisms returned by the factory can override the mechanisms defined within the deployment.
+
+Many deployments only make use the standard authentication mechanisms as defined by the Servlet specification and don't require overrides, these deployments don't benefit from the additional configuration of referencing an authentication factory and really only need a reference to a security domain for authentication and authorization decisions.
+
+Other types of deployment will make use of the authentication APIs provided by the Servlet specification as an alternative to using authentication mechanisms so for these the factory is redundant.  Deployments could also make use of the WildFly Elytron SecurityDomain associated with the deployment directly again bypassing the need for authentication mechanisms and the related factories.
+
+Finally there is another type of deployment where some other library is handling the authentication of the deployment and the only step needed is to associate the results with a SecurityIdentity from the current SecurityDomain, a couple of examples here are the Apache CXF WSS4J integration and the upcoming WildFly Elytron JASPIC implementation, in both of these cases the verification can be performed completely independently of the WildFly Elytron security solution but we still need to be able to create an identity from the current SecurityDomain and use it for the current request.
+
+Overall whilst referencing a `http-authentication-factory` provides a lot of flexibility for advanced configuration there are situations where this leads to configuration that is more complex than is really required and other situations where an authentication factory is referenced as that is the only way to associate a WildFly Elytron SecurityDomain with a web application deploynment.  This proposal is to update the application-security-domain resource in the Undertow subsystem so that instead of referencing a http-authentication-factory a security domain can be referenced instead.
+ 
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-10614[WFLY-10614]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1024[EAP7-1024]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Affected Projects or Components
+
+* WildFly Core
+** Default WildFly Elytron Configuration
+
+* WildFly
+** Undertow Subsystem
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+The `application-security-domain` resource in the Undertow subsystem will support a new `security-domain` attribute as an alternative to the existing `http-authentication-factory` attribute - these two attributes will be defined as 'alternatives' to ensure mutual-exclusivity.
+
+Where a deployment matches against an `application-security-domain` mapping, if that mapping references a `security-domain` then provided the web.xml is configured to use the mechanisms referenced in the servlet specification (BASIC, CLIENT_CERT, DIGEST, or FORM) then these will still be enabled for the application without requiring a `http-authentication-factory` reference.
+
+Where a deployment does not specify any authentication methods then the SecurityDomain from the `application-security-domain` resource will still be associated with the deployment however no authentication mechanisms will be enabled.  The associated SecurityDomain could come either from a `security-domain` reference or it could be the SecurityDomain from a referenced `http-authentication-factory`.  Within the deployment it will then be possible to use the login and logout methods on the HttpServletRequest to establish the identity for the current request and log out the identity.
+
+The existing `http-authentication-factory` will remain in the model without deprecation as a fully supported form of configuration, after this enhancement has been implemented it will still be appropriate to reference a `http-authentication-factory` for a number of reasons, examples include: -
+
+* Using custom HTTP authentication mechanisms.
+* Using mechanisms other than the four described in the Servlet specification.
+* Where the configuration in the deployment is to be overridden.
+* Where additional configuration needs to be defined for the mechanisms such as principal transformers, credential factories, mechanism realms etc...
+
+=== Nice-to-Have Requirements
+
+The default configuration will be cleaned up to remove the `/subsystem=elytron/http-authentication-factory=application-http-authentication` resource as by default this is only used for BASIC and FORM authentication anyway.
+
+The `enable-elytron.cli` scripts will need updating after the removal of this resource.
+
+The testsuite will also require updates to compensate for the removal of this resource.
+
+=== Non-Requirements
+
+This enhancement is focused exclusively on the application-security-domain resource handling within the Undertow subsystem, whilst the management interfaces also make use of http-authentication-factory references there is no underlying deployment to obtain configuration from so modifications to the management interfaces will not be made under this enhancement.
+
+Where an application-security-domain mapping references a security-domain instead of a http-authentication-factory no authentication mechanisms other than FORM, BASIC, DIGEST, and CLIENT_CERT will be supported, any deployment referencing alternative authentication mechanisms will fail during deployment.
+
+Where a deployment does not reference any HTTP authentication mechanisms the authenticate method on the HttpServletRequest will have no meaning as typically this would trigger an authentication using the configured authentication mechanisms.
+
+Although one of the motivations for this change the Apache CXF WSS4J integration and WildFly Elytron JASPIC implementation are being handled independently of this enhancement.
+
+== Implementation Plan
+
+This enhancement will require changes to WildFly Core and WildFly, changes to WildFly Core have the potential to break WildFly however the changes to WildFly will not depend on WildFly Core change.
+
+It should be possible to handle this as two pull requests, one to Wildfly and one to WildFly Core - the WildFly pull request will need to be merged first after that the WildFly Core pull request can be merged but this will not trigger the need for a WildFly Core tag. 
+
+== Test Plan
+
+== Community Documentation
+
+The following section in the community documentation is supposed to document the configuration within the Undertow subsystem describing how to enable WildFly Elytron security for a web application, however this section is currently empty.  As part of this RFE documentation will be added describing the purpose of the application-security-domain resource, how it relates to the default-security-domain attribute on the subsystem and the options that can be specified to configure security for a web application.
+
+http://docs.wildfly.org/13/WildFly_Elytron_Security.html#undertow-subsystem
+
+Existing documentation and quickstarts will also need to be double checked to see if any make use of the existing `/subsystem=elytron/http-authentication-factory=application-http-authentication` resource in that configuration as once this is removed these examples will need to add it back in.
+
+
