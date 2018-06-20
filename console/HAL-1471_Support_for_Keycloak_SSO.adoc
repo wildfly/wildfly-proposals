@@ -58,3 +58,7 @@ The keycloak wildfly adapter provides a public http endpoint that publish the ke
 * Do not show the user management features on access control, as the user management is performed on keycloak server.
 * Show the access control page, with basic information about the keycloak configuration.
 * Provide a link to view user profile on keycloak.
+
+== Community Documentation
+
+http://hal.github.io/documentation/keycloak-sso/
