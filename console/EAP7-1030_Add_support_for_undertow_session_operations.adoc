@@ -34,7 +34,13 @@ Add support for undertow session operations.
 
 The console adds support for the following operations:
 
-*
+* invalidate-session(sessionId)
+* list-sessions()
+* list-session-attribute-names(sessionId)
+* list-session-attributes(sessionId)
+* get-session-attribute(sessionId, attributeName)
+* get-session-last-accessed-time
+* get-session-creation-time
 
 == Test Plan
 
