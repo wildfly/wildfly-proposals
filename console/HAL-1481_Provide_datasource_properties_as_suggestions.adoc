@@ -1,0 +1,55 @@
+= Provide datasource properties as suggestions
+:author:            Claudio Miranda
+:email:             claudio@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The /subsystem=datasources/jdbc-driver resource provides runtime information about the allowed datasource properties for Datasource and XADatasource implementations, it was implemented by EAP7-940.
+Once the jdbc-driver is added with `driver-datasource-class-name` or `driver-xa-datasource-class-name`, HAL may provide those properties as suggestions when user edits the connection properties.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/HAL-1481
+* https://issues.jboss.org/browse/EAP7-966
+
+=== Dev Contacts
+
+* mailto:claudio@redhat.com[Claudio Miranda]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+=== Affected Projects or Components
+
+* HAL
+
+== Requirements
+
+For this feature to work in HAL, these are the requirements:
+
+* The jdbc-driver must be created with driver-datasource-class-name or driver-xa-datasource-class-name attributes set, because they are required for the subsystem to list the datasource class properties.
+* In domain mode, there should be a running server associated to the profile the user wants to edit, because the datasource properties is loaded from a running server.
+
+=== Non-Requirements
+
+* TBD (Waiting Lin Gao feedback): Driver deployment is not supported on the subsystem level.
+* No required to work when editing in model browser, as it is a generic interface to interact with the domain model.
+
+=== Hard Requirements
+
+When user wants to edit the connection properties (datasource) or the datasource properties (xa datasource), the properties will be displayed as suggestions on the following screens:
+
+* Wizard to create a new XA Datasource, on the "Properties" step.
+* Editing a Datasource, on the connection tab, there is the connection properties
+* Editing a XA Datasource, on the connection tab, there is the xa datasource properties
+
+== Community Documentation
+
+No need.
