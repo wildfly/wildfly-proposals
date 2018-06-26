@@ -60,3 +60,7 @@ The new processors are meant to be stored using the usual ResteasyProviderFactor
 === Test Plan
 
 Run RESTEasy testsuite with includes additional tests for this new feature.
+
+=== Community Documentation
+
+The documentation is coming with the release of the RESTEasy component that's bringing the feature in WildFly. The merged PR that added the documentation is https://github.com/resteasy/Resteasy/pull/1542/files .
