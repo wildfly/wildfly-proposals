@@ -1,0 +1,71 @@
+= WFLY-10636 / EAP7-1010 RESTEasy extended async / reactive support
+:author:            Alessio Soldano
+:email:             asoldano@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+This is about extending the support for async / reactive in RESTEasy beyond what's in JAX-RS 2.1.
+In particular this includes:
+* supporting RxJava(2) return types in resource methods, as well as any other custom reactive type through the implementation of the new interface AsyncResponseProvider (https://docs.jboss.org/resteasy/docs/3.5.1.Final/javadocs/org/jboss/resteasy/spi/AsyncResponseProvider.html)
+* providing an implementation of the JAX-RS 2.1 client RxInvoker (https://javaee.github.io/javaee-spec/javadocs/javax/ws/rs/client/RxInvoker.html) interface based in RxJava(2), effectively allowing usage of RxJava(2) library to compose JAX-RS client invocations
+* supporting suspend/resume of JAX-RS filter processing through the new SuspendableContainerRequestContext (http://docs.jboss.org/resteasy/docs/3.5.1.Final/javadocs/org/jboss/resteasy/core/interception/jaxrs/SuspendableContainerRequestContext.html) and SuspendableContainerResponseContext (http://docs.jboss.org/resteasy/docs/3.5.1.Final/javadocs/org/jboss/resteasy/core/interception/jaxrs/SuspendableContainerResponseContext.html) interfaces.
+
+When using reactive types with more than a single potential value (so basically streams), RESTEasy will support three different representation on the wire, dependending on the use of the new org.jboss.resteasy.annotations.Stream annotation on resources:
+* no @Stream annotation on the resource method: Resteasy will collect every value until the stream is complete, then wrap them into a java.util.List entity and send to the client
+* @Stream(Stream.MODE.GENERAL): This case uses a variant of the SSE format, modified to eliminate some restrictions inherent in SSE; in particular, certain delimiting characters in the data ('\r', '\n', and '\') are escaped so that arbitrary binary data can be transmitted; moreover the client will close, rather than automatically reconnect, at the end of the stream
+* @Stream(Stream.MODE.RAW): In this case each value is written directly to the wire, without any formatting or delimiters, as it becomes available; this is most useful for values that can be cut in pieces, such as strings, bytes, buffers, etc., and then re-concatenated on the client side.
+Since general streaming mode and SSE share minor variants of the same wire protocol, they are, modulo the SSE restriction to character data, interchangeable. As a consequence RESTEasy will make it possible for an SSE client to connect to a resource method that returns a Flowable or an Observable, and a FlowableRxInvoker (implementation of RxInvoker using RxJava(2) Flowable), for example, to connect to an SSE resource method.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/EAP7-1010[EAP7-1010]
+* {issue-base-url}/WFLY-10636[WFLY-10636]
+
+=== Related Issues:
+
+* {issue-base-url}/RESTEASY-1701[RESTEASY-1701]
+* {issue-base-url}/RESTEASY-1798[RESTEASY-1798]
+
+=== Dev Contacts:
+
+* mailto:asoldano@redhat.com[Alessio Soldano]
+* mailto:rsigal@redhat.com[Ron Sigal]
+* mailto:separdau@redhat.com[Stephane Epardaud]
+* mailto:ema@redhat.com[Jim Ma]
+* mailto:rsearls@redhat.com[Rebecca Searls]
+* mailto:weli@redhat.com[Wei Nan Li]
+
+=== QE Contacts:
+
+* mailto:rsvoboda@redhat.com[Rostislav Svoboda]
+* mailto:kanovotn@redhat.com[Katerina Odabasi]
+* mailto:mkopecky@redhat.com[Marek Kopecky]
+
+=== Affected Projects or Components:
+
+* WildFly
+* RESTEasy
+
+== Requirements
+
+* The support for Reactive Streams types, for both client (RxInvoker) and server (AsyncResponseProvider) sides, will be available and enabled by default.
+* The RxJava(2) implementation will live in a separate resteasy-rxjava2 module that will be available by default but disabled (optional) by default; the user will need to set a dependency to the org.jboss.resteasy.resteasy-rxjava2 module to make use of the RxJava(2) integration.
+* The resteasy-rxjava2 integration / module will be initially supported as tech preview.
+
+
+=== Test Plan
+
+The features are heavily tested in RESTEasy codebase. Successfully running the latest RESTEasy release' testsuite against target WildFly container will be required.
+
+
+== Community Documentation
+
+The documentation is coming with the release of the RESTEasy component that's bringing the feature in WildFly. In particular, most of the documentation is coming from this merged PR: https://github.com/resteasy/Resteasy/pull/1503/files#diff-ee23077b10c9a3678d072f7f0bb0ccf4
