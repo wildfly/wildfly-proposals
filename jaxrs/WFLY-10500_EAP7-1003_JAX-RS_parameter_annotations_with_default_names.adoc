@@ -77,3 +77,8 @@ Further documentation: https://github.com/resteasy/Resteasy/commit/7c3bec70d601e
 === Test Plan
 
 RESTEasy tests upstream already included (by Stephane Epardaud and Marek Kopecky)
+
+=== Community Documentation
+
+The documentation is coming with the release of the RESTEasy component that's bringing the feature in WildFly. The merged PR that added the documentation is https://github.com/resteasy/Resteasy/pull/1519/files
+
