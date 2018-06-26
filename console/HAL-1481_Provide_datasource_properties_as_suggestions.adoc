@@ -39,7 +39,7 @@ For this feature to work in HAL, these are the requirements:
 
 === Non-Requirements
 
-* TBD (Waiting Lin Gao feedback): Driver deployment is not supported on the subsystem level.
+* Driver deployment is not supported on the subsystem level.
 * No required to work when editing in model browser, as it is a generic interface to interact with the domain model.
 
 === Hard Requirements
