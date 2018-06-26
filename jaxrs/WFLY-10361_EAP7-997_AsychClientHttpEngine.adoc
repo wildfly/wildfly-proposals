@@ -56,4 +56,5 @@ Further details and usage examples in the RESTEasy documentation:
 Besides for basic checks in the RESTEasy testsuite, like common JAX-RS client usage scenario, we might want to run some meaningful performance test to actually get numbers on the advantages
 when running in scenarios usually well served by a NIO model.
 
-
+== Community Documentation
+See links in the overview section.
