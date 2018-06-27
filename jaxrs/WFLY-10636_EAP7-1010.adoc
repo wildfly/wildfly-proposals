@@ -12,14 +12,17 @@
 
 This is about extending the support for async / reactive in RESTEasy beyond what's in JAX-RS 2.1.
 In particular this includes:
+
 * supporting RxJava(2) return types in resource methods, as well as any other custom reactive type through the implementation of the new interface AsyncResponseProvider (https://docs.jboss.org/resteasy/docs/3.5.1.Final/javadocs/org/jboss/resteasy/spi/AsyncResponseProvider.html)
 * providing an implementation of the JAX-RS 2.1 client RxInvoker (https://javaee.github.io/javaee-spec/javadocs/javax/ws/rs/client/RxInvoker.html) interface based in RxJava(2), effectively allowing usage of RxJava(2) library to compose JAX-RS client invocations
 * supporting suspend/resume of JAX-RS filter processing through the new SuspendableContainerRequestContext (http://docs.jboss.org/resteasy/docs/3.5.1.Final/javadocs/org/jboss/resteasy/core/interception/jaxrs/SuspendableContainerRequestContext.html) and SuspendableContainerResponseContext (http://docs.jboss.org/resteasy/docs/3.5.1.Final/javadocs/org/jboss/resteasy/core/interception/jaxrs/SuspendableContainerResponseContext.html) interfaces.
 
 When using reactive types with more than a single potential value (so basically streams), RESTEasy will support three different representation on the wire, dependending on the use of the new org.jboss.resteasy.annotations.Stream annotation on resources:
+
 * no @Stream annotation on the resource method: Resteasy will collect every value until the stream is complete, then wrap them into a java.util.List entity and send to the client
 * @Stream(Stream.MODE.GENERAL): This case uses a variant of the SSE format, modified to eliminate some restrictions inherent in SSE; in particular, certain delimiting characters in the data ('\r', '\n', and '\') are escaped so that arbitrary binary data can be transmitted; moreover the client will close, rather than automatically reconnect, at the end of the stream
 * @Stream(Stream.MODE.RAW): In this case each value is written directly to the wire, without any formatting or delimiters, as it becomes available; this is most useful for values that can be cut in pieces, such as strings, bytes, buffers, etc., and then re-concatenated on the client side.
+
 Since general streaming mode and SSE share minor variants of the same wire protocol, they are, modulo the SSE restriction to character data, interchangeable. As a consequence RESTEasy will make it possible for an SSE client to connect to a resource method that returns a Flowable or an Observable, and a FlowableRxInvoker (implementation of RxInvoker using RxJava(2) Flowable), for example, to connect to an SSE resource method.
 
 == Issue Metadata
