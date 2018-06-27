@@ -1,0 +1,119 @@
+= WS-AT Integration with .NET
+:author:            Ondrej Chaloupka
+:email:             ochaloup@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This feature brings support of interoperability of Windows MSDTC  WS transaction implementation with WildFly Narayana.
+By our knowledge the Narayana implementation follows the WS-AT/WS-Addressing specification
+while the MSDTC interpretation of the spec is extra strict which cause issue in the inter-operable communication.
+The feature provides an extension for Narayana WS-AT opening extra endpoints which can be contacted from .NET
+in the way the MSDTC interpret the specification and thus fixing the interoperability issue.
+
+=== Background
+
+When the WS-AT (XTS subsystem) is initiated in the Windows side, the Windows client creates a context with the Windows coordinator service and later it calls to the WildFly WS,
+the process fails at Registration operation.
+
+The WildFly side tries to execute the Registration operation as a client synchronously and windows just responds `202` (no content, no XML is returned)
+which throws a NullPointerException (NPE). The XML sent in the request is the following:
+
+[source,xml]
+----
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Header>
+    <Action xmlns="http://www.w3.org/2005/08/addressing">http://docs.oasis-open.org/ws-tx/wscoor/2006/06/Register</Action>
+    <MessageID xmlns="http://www.w3.org/2005/08/addressing">urn:a632e947aaf3aca5:d586ffa:15edccdf0ca:-8000</MessageID>
+    <To xmlns="http://www.w3.org/2005/08/addressing">https://windows.sample.com/WsatService/Registration/Coordinator11/</To>
+    <ReplyTo xmlns="http://www.w3.org/2005/08/addressing">
+      <Address>http://www.w3.org/2005/08/addressing/anonymous</Address>
+    </ReplyTo>
+    <mstx:RegisterInfo xmlns="http://www.w3.org/2005/08/addressing" xmlns:mstx="http://schemas.microsoft.com/ws/2006/02/transactions"
+          xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:wsa="http://www.w3.org/2005/08/addressing" wsa:IsReferenceParameter="1">
+      <mstx:LocalTransactionId>edd12908-c2f4-427a-86d6-4fab6dde3d32</mstx:LocalTransactionId>
+    </mstx:RegisterInfo>
+  </soap:Header>
+  <soap:Body>
+    <Register xmlns="http://docs.oasis-open.org/ws-tx/wscoor/2006/06" xmlns:ns2="http://www.w3.org/2005/08/addressing">
+      <ProtocolIdentifier>http://docs.oasis-open.org/ws-tx/wsat/2006/06/Durable2PC</ProtocolIdentifier>
+      <ParticipantProtocolService>
+        <ns2:Address>https://jboss.sample.com:8443/ws-t11-participant/ParticipantService</ns2:Address>
+        <ns2:ReferenceParameters>
+          <wsarj:InstanceIdentifier xmlns:wsarj="http://schemas.arjuna.com/ws/2005/10/wsarj" xmlns:wsa="http://www.w3.org/2005/08/addressing">restaurantServiceAT:f40f5b70-51c3-46f3-99c6-6052df7efa3f</wsarj:InstanceIdentifier>
+        </ns2:ReferenceParameters>
+        <ns2:Metadata>
+          <wsam:ServiceName xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" xmlns:wsa="http://www.w3.org/2005/08/addressing" xmlns:wsat="http://docs.oasis-open.org/ws-tx/wsat/2006/06" xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" EndpointName="ParticipantPortType">wsat:ParticipantService</wsam:ServiceName>
+        </ns2:Metadata>
+      </ParticipantProtocolService>
+    </Register>
+  </soap:Body>
+</soap:Envelope>
+----
+
+Windows implementation does not understand the `http://www.w3.org/2005/08/addressing/anonymous` as `ReplyTo`. MSDTC enforces the request to send a `ReplyTo`
+with a valid `URL` and the Microsoft implementation calls back to that URL with the `RegisterResponse` type.
+
+The anonymous behavior is covered by the standard. The RFC says that some endpoints cannot be located with a meaningful URI; this URI (anonymous) is used
+to allow such endpoints to send and receive messages, the precise meaning of this URI is defined by the binding of Addressing to a specific protocol
+and/or the context in which the EPR (endpoint reference) is used. Under HTTP/SOAP it is commonly understood that it means synchronous execution
+and currently in Narayana the operations of the `WS-Coordination`, `CreateCoordinationContext` and `Register`, are executed synchronously when acting as a client.
+Windows implementation is an extreme interpretation of the specification that forces any call to be asynchronous (with that idea any partner,
+even an standalone application needs to have endpoints and be a web server too to interact using the WS-Coordination specification).
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-9818
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/JBTM-2928
+
+=== Dev Contacts
+
+* mailto:{rmartinc@redhat.com}[{Ricardo Martin Camarero}]
+* mailto:{ochaloup@redhat.com}[{Ondrej Chaloupka}]
+
+=== QE Contacts
+
+* mailto:{okotek@redhat.com}[{Ondrej Kotek}]
+
+=== Affected Projects or Components
+
+* Narayana
+* WildFly
+
+== Requirements
+
+* The WS-AT handling is feature fix for the Narayana codebase.
+* This behaviour should not be enabled by default as it brings a bit different behaviour. A new switch under XTS subsystem is expected.
+
+The goal is providing the XTS WS endpoints being able to communicate back to the MSDTC during registration.
+This way it provides fix for interoperability which currently exists while .NET application wants to communicate with application in the WildFly
+and use the transaction propagation over WS calls (using WS-AT transactions).
+
+The WildFly XTS subsystem needs to define a new configuration option that manages the registration of the new .NET compatible WS endpoints and making them visible.
+
+* The configuration option is new xml element `<async-registration/>` as part of the XTS subsystem.
+* The CLI command defines it with `/subsystem=xts:write-attribute(name=async-registration, value=true); reload`
+
+== Developer resources
+
+* PR to Narayana codebase: https://github.com/jbosstm/narayana/pull/1272
+* WS Addressing specification current: https://www.w3.org/TR/2006/REC-ws-addr-core-20060509/#eprinfomodel[Web Services Addressing 1.0 - Core]
+* WS Addressing specification previous: https://www.w3.org/Submission/ws-addressing/#_Toc77464322[Web Services Addressing (WS-Addressing)]
+
+
+== Test Plan
+
+Tests are implemented under the Narayana as integration tests using arquillian running under Narayana CI infrastructure
+with the WildFly built from the master branch.
+
+The purpose of the added endpoins is to ensure the async registration running from .NET MSDTC is handled.
+The test simulate the MSDTC behaviour and verifies if the Narayana works appropriately.
