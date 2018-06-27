@@ -48,9 +48,9 @@ Overall whilst referencing a `http-authentication-factory` provides a lot of fle
 
 === Hard Requirements
 
-The `application-security-domain` resource in the Undertow subsystem will support a new `security-domain` attribute as an alternative to the existing `http-authentication-factory` attribute - these two attributes will be defined as 'alternatives' to ensure mutual-exclusivity.
+The `application-security-domain` resource in the Undertow subsystem will support a new `security-domain` attribute as an alternative to the existing `http-authentication-factory` attribute - these two attributes will be defined as 'alternatives' to ensure mutual-exclusivity.  The new `security-domain` attribute will be a capability reference to a WildFly Elytron SecurityDomain.
 
-Where a deployment matches against an `application-security-domain` mapping, if that mapping references a `security-domain` then provided the web.xml is configured to use the mechanisms referenced in the servlet specification (BASIC, CLIENT_CERT, DIGEST, or FORM) then these will still be enabled for the application without requiring a `http-authentication-factory` reference.
+Where a deployment matches against an `application-security-domain` mapping, if that mapping references a `security-domain` then provided the web.xml is configured to use the mechanisms referenced in the servlet specification (BASIC, CLIENT_CERT, DIGEST, or FORM) then these will still be enabled for the application without requiring a `http-authentication-factory` reference using the implementations in WildFly Elytron directly.
 
 Where a deployment does not specify any authentication methods then the SecurityDomain from the `application-security-domain` resource will still be associated with the deployment however no authentication mechanisms will be enabled.  The associated SecurityDomain could come either from a `security-domain` reference or it could be the SecurityDomain from a referenced `http-authentication-factory`.  Within the deployment it will then be possible to use the login and logout methods on the HttpServletRequest to establish the identity for the current request and log out the identity.
 
@@ -78,6 +78,8 @@ Where an application-security-domain mapping references a security-domain instea
 Where a deployment does not reference any HTTP authentication mechanisms the authenticate method on the HttpServletRequest will have no meaning as typically this would trigger an authentication using the configured authentication mechanisms.
 
 Although one of the motivations for this change the Apache CXF WSS4J integration and WildFly Elytron JASPIC implementation are being handled independently of this enhancement.
+
+Although this changes makes changes to the default configuration it is not required that we maintain the configuration to a level where scripts that ran against a prior server version are guaranteed to run against the later version, instead the configuration from the prior version should be used.
 
 === Impact on CLI
 
