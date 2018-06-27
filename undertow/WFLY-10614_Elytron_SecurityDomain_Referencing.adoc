@@ -79,6 +79,20 @@ Where a deployment does not reference any HTTP authentication mechanisms the aut
 
 Although one of the motivations for this change the Apache CXF WSS4J integration and WildFly Elytron JASPIC implementation are being handled independently of this enhancement.
 
+=== Impact on CLI
+
+The CLI command security enable-http-auth-http-server should be modified to:
+
+Replace OOTB authentication factory usage by OOTB security domain for simplest authentication setup.
+Expose a new option --referenced-security-domain that is exclusive with any other options that target http authentication factory (eg: --mechanism option).
+The referenced security-domain must exist, CLI doesn't create the resource resource.
+--referenced-security-domain completer exposes all existing elytron security-domains names.
+Existing options and command behavior are untouched.
+Examples:
+
+security enable-http-auth-http-server --security-domain=foo ==> create foo undertow security domain and set "ApplicationDomain" as the security domain. +
+security enable-http-auth-http-server --security-domain=foo --referenced-security-domain=bar ==> create foo undertow security domain and set bar as the security domain. +
+
 == Implementation Plan
 
 This enhancement will require changes to WildFly Core and WildFly, changes to WildFly Core have the potential to break WildFly however the changes to WildFly will not depend on WildFly Core change.
