@@ -13,7 +13,7 @@
 This is about extending the support for async / reactive in RESTEasy beyond what's in JAX-RS 2.1.
 In particular this includes:
 
-* supporting RxJava(2) return types in resource methods, as well as any other custom reactive type through the implementation of the new interface AsyncResponseProvider (https://docs.jboss.org/resteasy/docs/3.5.1.Final/javadocs/org/jboss/resteasy/spi/AsyncResponseProvider.html)
+* supporting RxJava(2) return types in resource methods, as well as any other custom reactive type through the implementation of the new interface AsyncResponseProvider (https://docs.jboss.org/resteasy/docs/3.5.1.Final/javadocs/org/jboss/resteasy/spi/AsyncResponseProvider.html); the interfaces for such new resources are also going to work properly for building RESTEasy proxies
 * providing an implementation of the JAX-RS 2.1 client RxInvoker (https://javaee.github.io/javaee-spec/javadocs/javax/ws/rs/client/RxInvoker.html) interface based in RxJava(2), effectively allowing usage of RxJava(2) library to compose JAX-RS client invocations
 * supporting suspend/resume of JAX-RS filter processing through the new SuspendableContainerRequestContext (http://docs.jboss.org/resteasy/docs/3.5.1.Final/javadocs/org/jboss/resteasy/core/interception/jaxrs/SuspendableContainerRequestContext.html) and SuspendableContainerResponseContext (http://docs.jboss.org/resteasy/docs/3.5.1.Final/javadocs/org/jboss/resteasy/core/interception/jaxrs/SuspendableContainerResponseContext.html) interfaces.
 
@@ -59,9 +59,10 @@ Since general streaming mode and SSE share minor variants of the same wire proto
 
 == Requirements
 
+* The features included in this RFE will be supported as *Tech Preview* till futher notice
 * The support for Reactive Streams types, for both client (RxInvoker) and server (AsyncResponseProvider) sides, will be available and enabled by default.
 * The RxJava(2) implementation will live in a separate resteasy-rxjava2 module that will be available by default but disabled (optional) by default; the user will need to set a dependency to the org.jboss.resteasy.resteasy-rxjava2 module to make use of the RxJava(2) integration.
-* The resteasy-rxjava2 integration / module will be initially supported as tech preview.
+* The resteasy-rxjava2 module will hence be treated as tech preview
 
 
 === Test Plan
