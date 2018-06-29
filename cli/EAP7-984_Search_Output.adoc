@@ -1,0 +1,86 @@
+= EAP7-984 Search output for CLI
+:author:            JF Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+The intent of this feature is to provide a search capability to the CLI. When output is longer 
+than terminal height, CLI pages the display and offers a workflow similar to "more" to navigate the content. 
+The proposed feature extends this workflow with the ability to search for text inside the displayed content.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}EAP7-984[EAP7-984]
+
+=== Related Issues:
+
+* {issue-base-url}WFCORE-3743
+* {issue-base-url}WFCORE-3568 (dependency on this one).
+
+=== Dev Contacts:
+
+* mailto:jdenise@redhat.com[Jean-François Denise]
+
+=== QE Contacts:
+
+* mailto:eduda@redhat.com[Erich Duda]
+
+=== Affected Projects or Components:
+
+* WildFly Core CLI
+
+
+== Requirements
+
+=== Hard requirements
+
+* Feature enabled by default, no configuration needed.
+* Smoothly integrate the paged display workflow.
+* Ability to provide some text to search against. The user provided text is a simple string.
+* Ability to highlight the matching content.
+* Ability to jump to the next or previous line that contains one or more match.
+* Ability to re-use text from search history. The search history is not persisted beyond a CLI process execution.
+* Advertise when no match is found.
+
+=== Soft requirements
+
+* The user should be able to change the terminal width and height in order to display more content. Search and
+display must follow the new size. This is s a soft req because today CLI paging support doesn't support it.
+But with this new "search match navigation" this seems required.
+
+== Limitations
+
+* On Windows, this feature is only available starting with Windows 10. There are some terminal limitations that make
+ANSI alternate buffer not usable. 
+
+== Test Plan
+
+== Community Documentation
+
+This feature requires community documentation. +
+https://github.com/wildfly/wildfly/pull/11321[Doc PR]
+
+== Design Notes
+
+* '/' character typed to display prompt in order to type text. up and down arrow keys 
+to navigate history. Enter to start the search.
+When the search is started, the output first line is set to the first matching content. 
+If no match is found outside of the boundaries of the current paged content, "Pattern not found" is displayed. 
+* 'n' to jump to next line that contains a match. If no match is found outside of 
+the boundaries of the current paged content, "Pattern not found" is displayed. If a pattern is present in the
+search history and no pattern has been typed, then typing 'n' will do a forward search for this pattern.
+* 'N' to jump to the previous line that contains a match. If no match is found outside of 
+the boundaries of the current paged content, "Pattern not found" is displayed. If a pattern is present in the
+search history and no pattern has been typed, then 'N' will do a backward search for this pattern.
+* When "Pattern not found" is displayed, typing any key except n, N, q, Q or esc will 
+bring the user back to the workflow. Typing q, Q or esc exists the workflow. Typing n, N 
+will continue searching next or previous match.
+
