@@ -9,13 +9,13 @@
 
 == Overview
 
-Expose runtime data of deployed EJBs
+Support kill and destroy operations for server-groups
 
 == Issue Metadata
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-749[EAP7-749]
+* https://issues.jboss.org/browse/EAP7-752[EAP7-752]
 
 === Dev Contacts
 
@@ -32,7 +32,11 @@ Expose runtime data of deployed EJBs
 
 == Requirements
 
-Deployed EJBs expose their runtime data and statistics under the runtime top level category.
+Server groups provide two additional actions:
+* Kill
+* Destroy
+
+The actions are always available for selected server groups (regardless of state). They're not visible in case of RBAC and insufficient authorization.
 
 == Test Plan
 
