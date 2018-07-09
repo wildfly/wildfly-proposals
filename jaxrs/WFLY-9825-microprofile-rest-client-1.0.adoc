@@ -1,4 +1,4 @@
-= WFLY-9825 Microprofile REST Client 1.0 support
+= EAP7-1035 / WFLY-9825 Microprofile REST Client 1.0 support
 :author:            Alessio Soldano
 :email:             asoldano@redhat.com
 :toc:               left
@@ -17,6 +17,7 @@ This is about providing an implementation of the Microprofile REST Client 1.0 sp
 === Issue:
 
 * {issue-base-url}/WFLY-9825[WFLY-9825]
+* {issue-base-url}/EAP7-1035[EAP7-1035]
 
 === Related Issues:
 
@@ -44,10 +45,15 @@ This is about providing an implementation of the Microprofile REST Client 1.0 sp
 
 == Requirements
 
+* The feature in this RFE is to be treated as *Tech Preview* till further notice
 * RESTEasy provides an implementation of Microprofile REST Client 1.0.
 * Existing RESTEasy functionalities are not affected by the addition.
-* I propose the new feature to be considered as Tech Preview in WildFly 12, aiming at full support for WildFly 13.
 
 === Test Plan
 
 Build and run RESTEasy testsuite, which pulls the TCK for MP REST Client 1.0 in a dedicated testsuite submodule.
+
+== Community Documentation
+
+Documentations should be coming as part of the RESTEasy component documentation.
+
