@@ -1,0 +1,151 @@
+= [WFLY-10711] Support Eclipse MicroProfile Health
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:keywords:          observability,microprofile,health,openshift
+
+== Overview
+
+In order to improve Observability of WildFly on OpenShift, WildFly needs to expose health check probes
+so that the container can query whether WildFly and its deployed applications are healthy or not.
+
+This will be implemented by supporting Eclipse MicroProfile Health 1.0 for applications deployed in WildFly.
+The integration uses the smallrye-health component to provide the MicroProfile Health implementation.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-10711[WFLY-10711]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1029[EAP7-1029]
+* https://issues.jboss.org/browse/CLOUD-2730[CLOUD-2730] - Implement EAP Health Check so that it can be consumed by OpenShift Console
+* https://issues.jboss.org/browse/WFLY-10522[WFLY-10522] - MicroProfile Config extension for WildFly.
+** There is no direct relation between MicroProfile Health and MicroProfile Config API but there should be consistency in their extensions (subsystem names, etc.)
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:rsvoboda@redhat.com[Rostislav Svoboda] - WildFly
+* mailto:tremes@redhat.com[Tomas Remes] - OpenShift
+
+=== Affected Projects or Components
+
+The implementation of Eclipse MicroProfile Health is provided by https://github.com/smallrye/smallrye-health[smallrye-health].
+
+smallrye-health uses CDI to discover all health check probes and provides a `SmallryeHeathReporter`.
+WildFly extensions are not using CDI and smallrye-health will have to be enhanced so that its `SmallryeHeathReporter` can
+also be used by adding/removing health check probes manually.
+
+=== Other Interested Projects
+
+* A https://github.com/jmesnil/wildfly-microprofile-health[prototype of a WildFly extension] for MicroProfile Health was developed during the development of MicroProfile Health 1.0.
+
+== Requirements
+
+* Support Eclipse MicroProfile Health 1.0 for applications deployed in WildFly.
+* Provide a management runtime operation to check the health of the application server and its deployed applications. The result of the runtime operation
+  will be the DMR representation of the https://github.com/eclipse/microprofile-health/blob/master/spec/src/main/asciidoc/protocol-wireformat.adoc#appendix-b-json-payload-specification[MicroProfile Health JSON payload]
+* Provide an HTTP endpoint for the https://github.com/eclipse/microprofile-health/blob/master/spec/src/main/asciidoc/protocol-wireformat.adoc[health wireformat].
+  It requires the presence of the WildFly https://github.com/wildfly/wildfly-capabilities/blob/master/org/wildfly/management/http-interface/capability.adoc[HTTP management interface capability]
+* The HTTP endpoint is global to the server: it aggregates health check probes from *all deployments*.
+* Secure access to the HTTP endpoint must be configurable.
+
+== Nice-to-Have Requirements
+
+* Support drilldown of the HTTP endpoint (e.g. to be able to query the health of individual deployment, e.g. `/health/deploymentA`)
+* Provide a WildFly management API so that other extensions can define health check probes that taken into account
+  by the HTTP endpoint (this is out of scope of this proposal but the design of the new extension must not preclude to
+  provide such an API at a later point).
+
+== Non-Requirements
+
+* MicroProfile Health 1.0 only provides a "liveness" probe (as defined by https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/#define-a-liveness-command[Kubernetes]).
+__A Readiness probe is not covered by this proposal__.
+
+== Implementation Plan
+
+* Add dependencies to `io.smallrye:smallrye-health` and `org.eclipse.microprofile.health:microprofile-health-api:1.0` artifacts
+* Add a new `microprofile-health-smallrye` extension to provide Health support for deployments.
+* Provide a Undertow handler that exposes the optional health HTTP endpoint `/health` on WildFly `management-http` interface.
+
+=== Subsystem description
+
+The subsystem will be named `microprofile-health-smallrye`.
+
+The subsystem contains child resources.
+
+The subsystem has 1 attribute:
+
+* `security-enabled` (`true` by default) - if security is enabled, the HTTP client must be authenticated to query the HTTP health endpoint.
+
+The subsystem defines 1 runtime operation:
+
+* `check` whose result is the DMR representation of the Health Check JSON payload.
+  The management operation outcome will always be `success`. The _outcome of the health check_ is provided
+  by the `outcome` property on the operation's `result`:
+
+----
+  /subsystem=microprofile-health-smallrye:check
+  {
+      "outcome" => "success",
+      "result" => {
+          "outcome" => "UP",
+          "checks" => [{
+              "name" => "random",
+              "state" => "UP",
+              "data" => {"foo" => "bar"}
+          }]
+      }
+  }
+----
+
+If the global outcome is `UP`, the result's `outcome` will be `UP`, otherwise it will be `DOWN`.
+
+The subsystem will install at runtime a HTTP endpoint `/health` on the `management-http` interface to provide
+the MicroProfile Health Check endpoint.
+
+If security is enabled, the HTTP client must be authenticated (otherwise, the server will reply with a
+  `401 NOT AUTHORIZED` response).
+
+----
+curl -v --digest  -u admin:adminpwd http://localhost:9990/health
+< HTTP/1.1 200 OK
+< Content-Length: 79
+< Content-Type: application/json
+...
+{"outcome":"UP","checks":[{"name":"random","state":"UP","data":{"foo":"bar"}}]}
+----
+
+If security is disabled, the HTTP client does not need to be authenticated:
+
+----
+curl -v http://localhost:9990/health
+< HTTP/1.1 200 OK
+< Content-Length: 79
+< Content-Type: application/json
+...
+{"outcome":"UP","checks":[{"name":"random","state":"UP","data":{"foo":"bar"}}]}
+----
+
+== Test Plan
+
+* smallrye-health component is passing the MicroProfile Health TCK during its release process.
+* WildFly integration test suite will be enhanced with tests that deploys Java archives with configurable
+  health checks probes and asserts that the individual outcome of the probes affects the global
+  outcome returned by the HTTP endpoint.
+
+== Community Documentation
+
+The feature will be documented in WildFly Admin Guide (in a new MicroProfile Health section).
+
+There will no developer guide for this feature as there is nothing specific to WildFly for users
+wanting to provide Health Check probes with their applications.
