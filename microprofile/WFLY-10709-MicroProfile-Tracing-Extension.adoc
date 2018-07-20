@@ -1,0 +1,93 @@
+= [WFLY-10709] Support Eclipse MicroProfile OpenTracing
+:author:            Juraci Paixão Kröhling
+:email:             jpkroehling@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:keywords:          observability,microprofile,tracing,openshift
+
+== Overview
+
+In order to improve Observability of applications deployed in WildFly it would be beneficial to provide
+transparent tracing of Java EE components via automatic initialization of a tracer (Jaeger) plus a set
+of instrumentation libraries for components commonly used in Java EE applications, such as JAX-RS and CDI.
+
+This will be implemented by supporting Eclipse MicroProfile OpenTracing 1.1 for applications deployed in WildFly.
+The integration uses the `smallrye-opentracing` component to provide the MicroProfile OpenTracing implementation.
+
+For WildFly 14, this shall be marked as "Tech Preview", to get community feedback before committing to a stable API.
+Notably, this first version lacks any configuration option following WildFly's standard management model, as this is
+something that will likely change before a stable version. 
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-10709[WFLY-10709]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1027[EAP7-1027]
+* https://issues.jboss.org/browse/CLOUD-2728[CLOUD-2728] - Expose EAP "Tracing" information so that it can be consumed by OpenShift Console
+* https://issues.jboss.org/browse/TRACING-85[TRACING-85] - Create jboss-modules for OpenTracing and Jaeger
+* https://issues.jboss.org/browse/TRACING-87[TRACING-87] - OpenTracing integration for JAX-RS in Wildfly
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:tremes@redhat.com[Tomas Remes]
+* mailto:jstourac@redhat.com[Jan Stourac]
+
+=== Affected Projects or Components
+
+The implementation of Eclipse MicroProfile OpenTracing is provided by https://github.com/smallrye/smallrye-opentracing[smallrye-opentracing].
+
+=== Other Interested Projects
+
+* None
+
+== Requirements
+
+* Support https://github.com/eclipse/microprofile-opentracing/blob/1.1/spec/src/main/asciidoc/microprofile-opentracing.asciidoc[Eclipse MicroProfile OpenTracing 1.1] for applications deployed in WildFly, including JAX-RS and CDI integration. Passing the TCK is required.
+* Support a concrete tracer, such as Jaeger's
+* Allow applications to supply their own tracers via `TracerResolver`
+* Each individual application deployed (WAR) should have its own `Tracer` instance
+* Each WAR within an EAR should be treated as an individual WAR, having their own `Tracer` instance
+
+== Nice-to-Have Requirements
+
+Items that are currently being considered for the next version of this feature:
+
+* Enable/disable tracing on the entire server
+* Enable/disable tracing on a per-deployment basis
+* Configuration following WildFly's standard management model
+
+== Non-Requirements
+
+* None at this point
+
+== Implementation Plan
+
+* Add dependencies to `io.smallrye:smallrye-opentracing` artifacts, including its transitive dependencies (notably OpenTracing)
+* Add dependencies to `io.jaegertracing:jaeger-client` artifacts, including its transitive dependencies
+* Add a new `microprofile-opentracing-smallrye` extension to provide OpenTracing support for deployments.
+* Provide a servlet context initializer to initialize Jaeger Tracer
+* Provide the required filters to get SmallRye's JAX-RS integration working
+* Provide the required CDI extensions and producers to get SmallRye's CDI integration working
+
+== Test Plan
+
+* `smallrye-opentracing` component is passing the MicroProfile OpenTracing TCK during its release process.
+* WildFly integration test suite will be enhanced with tests that ensure applications getting deployed are able 
+to be traced. Among possibly others, tests should cover that:
+** A `Tracer` can be injected into managed beans
+** Tracing can be disabled for specific endpoints/CDI beans by using the `@Traced` annotation
+** Operation names can be customized by using the `@Traced` annotation
+
+== Community Documentation
+
+The feature will be documented in WildFly Admin Guide (in a new MicroProfile OpenTracing section).
