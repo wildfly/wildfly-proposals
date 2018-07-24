@@ -1,0 +1,121 @@
+= EAP7-1063 Support patching EAP with Galleon
+:author:            Alexey Loubyansky
+:email:             alexey.loubyansky@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+Current and our first ever patching mechanism has a few serious usability issues (such as reliance on overlays and not obvious actual JAR file locations, increased distribution size with more and more patches applied and limited history cleaning, not flexible in terms of skipping content that was removed or not originally installed but included in the patch, patching mechanism being a part of the server creates a problem of self-patching, configuration patching is not supported, poor support for patch streams, etc). The issues are fundamental to a degree that fixing them would effectively mean a complete re-write of the mechanism.
+
+The intention of this proposal is to replace the current patching mechanism with the one based on the provisioning mechanism (Galleon) which is currently used to build WildFly and EAP distributions.
+
+Galleon is a separate project and an external tool, in itself not a part of WildFly or EAP. It is a generic provisioning and patching tool that allows project/product speicific patching/provisioning plugins. So the first immediate difference with the current patching mechanism is the user would have to obtain the tool before applying a patch.
+(BTW, Galleon also serves as an installer, meaning it could be used to install WildFly/EAP in the first place and then to apply patches and version updates.)
+
+Galleon is a repository-based mechanism. That means the final distribution (of WildFly, EAP, LP, etc) is described in a configuration file as a set of artifacts (feature-packs) that contain the info and the content from which the final distribution is going to be built. Those feature-pack artifacts must be available at provisioning time in the artifact repository (or repositories) (Maven in this case, although other repositories could work as well). The repository could be local and/or remote. This is another difference compared to the current patching mechanism where a patch has to be downloaded and provided to the tool by the user directly.
+
+Advatages of the repository-based approach are:
+
+* user doesn't have to download patches and version updates manually, typing "update"/"check-updates" commands instead to review and apply the available in the repository patches and updates;
+
+* not necessary to store content that has been patched or replaced with the version update in a hidden directory in the distribution itself (as the current patching mechanism does), leaving the distribution directory looking like a freshly installed one. (there is still .galleon directory containing the installation provisioning configuration for future reference and a few other text files but not actual heavy JAR content or something of that kind).
+
+While a user still has the possibility to download the feature-pack as a ZIP file and install it locally using Galleon (a la current patching) the repository still remains a general requirement. The reason for that is Galleon does not keep installed feature-packs in the distribution itself but when it's time to re-provision the distribution (and that is happening on every provisioning operation including install feature-pack/patch, uninstall feature-pack/patch, provision specific state, apply update) it assumes the neccessary feature-packs are available in the repository.
+
+Here is a use-case which demonstrates the limitation. User installs EAP (that, btw, currently means Galleon will install three feature-packs: core, servlet and full). Then the user downloads a patch (which is also a kind of feature-pack) and installs it directly, not going through the repository. First of all, what has been installed before the patch (core, servlet and full feature-packs) has to be available in the repository at patch application time. If those feature-packs are not available, patch application will fail. (It is still possible to directly provide core, servlet, full and the patch feature-packs to Galleon for provisioning, although that seems like an impractical way to promote the use of the tool).
+When Galleon installs a feature-pack that is provided directly by the user, by default, besides provisioning that feature-pack, it also installs the directly provided feature-pack into the repository, so it is available for future use (in our case it's a local Maven repository). The user may instruct not to install the feature-pack into the repository but it is strongly discouraged to do that.
+
+==== Patch feature-pack
+
+Patch file itself is basically a feature-pack. The only difference comparing to regular feature-packs is it contains an element in its XML description indicating that it is a patch that applies to a specific version of another feature-pack.
+
+Patch feature-pack basically overwrites or potentially re-defines certain content of the feature-pack it applies to. That includes:
+
+* feature-pack packages (units of FS content such as jboss modules and other content);
+
+* feature specs and feature groups (units of configuration);
+
+* resources (various resources included into feature-pack, including module artifact versions);
+
+* provisioning plugin (it is possible to patch a provisioning plugin included in the original feature-pack).
+
+Patch in this proposal is always assumed to be a one-off patch. There is no notion of a cumulative patch. A CP is assumed to be a version update in Galleon mechanism.
+
+==== Atomic provisioning state transition
+
+Whenever a patch or a version update is applied (which can happen simultaneously for multiple projects/products in the installation as an atomic state transition) the actual distribution is going to be modified only in case the new configuration could be successfully provisioned. For that reason the updated version is always provisioned at a temporary staged location. Only after the updated version has been successfully built, the installation moves from the staged location to the original home location.
+
+==== Provisioning state history
+
+Galleon saves a description (in terms of feature-pack configurations) of the current provisioning state before every provisioning operation (such as install, uninstall, provision state, update) into the state history which allows the user to undo the last operation go back to the previous state (undo requires access to the artifact repository as well). A user can limit or disable the state history.
+
+==== User changes and provisioning state transition
+
+Before installing a new feature-pack (patch, version update, new software) into existing installation, Galleon will identify user changes since the last provisioned state. That includes changes to the configuration and other files. The changes are calculated as a diff between the last provisioned state and the current state.
+
+Next, Galleon provisions an updated installation at a staged location and if that went ok, it applies the user changes identified previously to the newly provisioned state.
+
+User changes to the files that haven't changed in the updated installation are re-applied to the updated installation.
+
+If a user changed a file in the installation that has changed in the updated installation then if the changes can be merged (text files, property files) they are merged. If the changes can't be merged, the file with the user changes will appear next to the updated file with a suffix ".prev".
+
+Standalone configuration changes are identified as diffs in terms of feature configurations and then re-applied to the corresponding updated configurations.
+
+Host and domain configuration changes are not currently merged as the standalone ones and *not* merged as text files. If user modified host or domain configurations and the corresponding configurations have changed in the updated installation, the user-modified configuration files will appear in the installation with suffix ".prev".
+
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}EAP7-1063[EAP7-1063]
+
+=== Related Issues:
+
+* {issue-base-url}WFCORE-3932[WFCORE-3932]
+
+=== Dev Contacts:
+
+* mailto:alexey.loubyansky@redhat.com[Alexey Loubyansky]
+
+=== QE Contacts:
+
+* mailto:rjanik@redhat.com[Richard Janík]
+
+=== Affected Projects or Components:
+
+Any project using the tool or its API for patching and/or provisioning is going to be affected.
+
+== Requirements
+
+=== Hard requirements
+
+* Install feature-packs, including patches (directly as a file and/or from a repository providing coordinates or using the discovery mechanism);
+* Uninstall installed feature-packs, including patches;
+* Maintain provisioning state history with the ability to undo going back to previously provisioned state;
+* Preserve user changes during patching and version updates.
+
+=== Soft requirements
+
+== Limitations
+
+Requirement to have access to the repository (local or remote).
+
+== Test Plan
+
+== Community Documentation
+
+The documentation is not yet covering all the latest features and additions in details.
+
+http://docs.wildfly.org/galleon/[Galleon Documentation]
+
+http://docs.wildfly.org/galleon-plugins/[WildFly Galleon Plug-ins Documentation]
+
+== Design Notes
+
+
