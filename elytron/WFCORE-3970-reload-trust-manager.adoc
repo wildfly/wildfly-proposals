@@ -1,0 +1,57 @@
+= WFCORE-3970 Add support for Elytron's trust-manager to be dynamically reloaded
+:author:            Justin Michael Cook
+:email:             jucook@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+It is not currently possible to reload Elytron's trust-manager dynamically, requiring WildFly to be restarted to see changes to any keystore take effect. This feature is currently available for key-manager with the init operation. This task is to add a similar operation to trust-manager.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-3970[WFCORE-3970]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1052[EAP7-1052]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:msvehla@redhat.com[Martin Švehla]
+
+=== Affected Projects or Components
+
+* WildFly, Security
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* When changes are made to key stores used in the trust-manager, it should be possible to reload these key stores in the trust-manager without having to restart the server. This should be done by adding a init operation to the Elytron subsystem's trust-manager resource. This new management operation will not take any parameters and will be a runtime only operation akin to the key-manager init operation.
+
+[source,bash]
+/subsystem=elytron/trust-manager=TRUST_MANAGER_NAME:init()
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+Tests to run the new CLI operation will be added.
+
+== Community Documentation
+
+This new management operation will be documented in the WildFly documentation under Using the Elytron subsystem.
