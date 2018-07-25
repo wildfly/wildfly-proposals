@@ -1,4 +1,4 @@
-= Title
+= WFCORE-3656 Replace commons-logging implementation with one that can delegate to jboss-logging
 :author:            James Perkins
 :email:             jperkins@redhat.com
 :toc:               left
