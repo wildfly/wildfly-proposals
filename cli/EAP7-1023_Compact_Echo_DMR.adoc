@@ -1,0 +1,63 @@
+= EAP7-1023 Compact output for echo-dmr command
+:author:            Jean-Francois Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+The intent of this feature is to introduce a new option to the echo-dmr command
+ in order to display compact (a single line) output. The main use case is the ability, 
+in conjunction with json output, to generate content directly consumable by the 
+HTTP management REST API. 
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}EAP7-1023[EAP7-1023]
+
+=== Related Issues:
+
+* {issue-base-url}WFCORE-3933
+
+=== Dev Contacts:
+
+* mailto:jdenise@redhat.com[Jean-François Denise]
+
+=== QE Contacts:
+
+* mailto:eduda@redhat.com[Erich Duda]
+
+=== Affected Projects or Components:
+
+* WildFly Core CLI
+
+
+== Requirements
+
+=== Hard requirements
+
+* echo-dmr should be able to display its output in a single line.
+* Applies to both JSON and DMR custom syntax.
+
+
+== Test Plan
+
+* New test cases to cover completion and execution will be added to WFCORE repository.
+* Test cases:
+** Completon of --compact option.
+** Execution of echo-dmr with --compact option. Check that output is on a single line, 
+   check that output is semantically identical to echo-dmr called without --compact option.
+
+== Community Documentation
+
+No Community documentation, the command help is enough.
+
+== Design Notes
+
+* New --compact option added to echo-dmr.
