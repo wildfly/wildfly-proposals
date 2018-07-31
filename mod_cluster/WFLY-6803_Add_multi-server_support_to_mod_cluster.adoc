@@ -1,0 +1,94 @@
+= WFLY-6803 Add multi-server support to mod_cluster
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          clustering,undertow,mod_cluster
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Undertow and Undertow subsystem supports configuring and running multiple server instances (each consisting of set of listeners,
+set of hosts, servlet container, etc).
+Before implementing this proposed change, mod_cluster subsystem works only the default Undertow server returned by
+`org.wildfly.extension.undertow.UndertowService#getDefaultServer` to register with the proxy servers.
+Moreover, this means that the configured listener (currently called 'connector' in the model which is scheduled to be address
+as well with or after this change, see https://issues.jboss.org/browse/WFLY-10489[WFLY-10489]) must be one from the default
+servers configured listeners.
+The goal of this issue is so that Undertow other server can be registered with reverse proxy servers as well.
+To support this, multiple mod_cluster configurations (i.e. "profiles) will be supported,
+each associated with a specific Undertow server.
+Since the listener always identifies exactly one Undertow server, the listener configuration will drive which Undertow server
+this configuration pertains to, moreover, one profile can thus register only one server.
+However, multiple proxy configurations can reference a single server (e.g. registering an Undertow server with different group
+or reverse proxy servers with different configurations).
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-6803[WFLY-6803] WFLY-6803 Add multi-server support to mod_cluster
+* https://issues.jboss.org/browse/EAP7-977[EAP7-977] Add multi-server support to mod_cluster
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-10439[WFLY-10439] Modernize mod_cluster subsystem
+
+There is a lot of issues that must have been address with the move to multiple profiles, they are all linked to the main Jira
+with proper descriptions explaining the problem, for instance these are:
+
+* WFLY-10441 mod_cluster proxy operations are incorrectly registered at the subsystem level
+* WFLY-10442 mod_cluster proxy operations' rollback handlers make potentially dangerous assumptions
+* WFLY-10443 Deprecate and schedule for removal redundant mod_cluster add/remove-[custom-]metric operations
+* WFLY-10444 mod_cluster add-proxy operation should not try to resolve the hostname
+* WFLY-10445 mod_cluster enable/disable/enable-context/disable-context proxy operations do not return the result
+* WFLY-10467 Drop support for mod_cluster subsystem model versions prior 1.5.0
+* WFLY-10472 HttpInvokerDefinition should not be adding optional dependency on mod_cluster event handler adapter
+* WFLY-10473 mod_cluster subsystem add operation attempts to start services prematurely
+* WFLY-10479 mod_cluster "proxies" attribute is missing capability reference
+* WFLY-10490 Expose ModClusterServiceMBean as a mod_cluster capability 
+
+=== Dev Contacts
+
+* mailto:rhusar@redhat.com[Radoslav Husar]
+
+=== QE Contacts
+
+* mailto:jkasik@redhat.com[Jan Kašík]
+
+=== Affected Projects or Components
+
+* WildFly/EAP
+* mod_cluster
+* Undertow
+
+=== Other Interested Projects
+
+* JWS
+
+== Requirements
+
+=== Hard Requirements
+
+* multiple mod_cluster configurations can be defined
+* as long as only one configuration is defined, ensure full backwards compatibility including operations
+
+=== Nice-to-Have Requirements
+
+* general improvements around the subsystem codebase
+
+=== Non-Requirements
+
+* integration testing in upstream WildFly test suite
+
+== Test Plan
+
+The key areas for QE is the general testing of the hard requirements, i.e. being able to configure mod_cluster instances and
+verify the registration with the given proxies, followed by ensuring a reasonable backwards/domain compatibility
+(from previous profiles and model operations compatibility).
+
+== Community Documentation
+
+The upstream documentation for this is submitted with the implementation PR.
+Ideally, general documentation for the mod_cluster subsystem will be updated in the near future.
