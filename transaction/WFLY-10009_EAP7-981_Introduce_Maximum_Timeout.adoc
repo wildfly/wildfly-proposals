@@ -1,0 +1,67 @@
+= EAP7-981 Introduce a maximum-timeout management model attribute
+:author:            Zheng Feng
+:email:             zfeng@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          transaction
+:idprefix:
+:idseparator:       -
+
+== Overview
+Previously we allowed a transaction timeout value of "0" to be set in the transaction subsystem, meaning "no transaction timeout".
+
+After the WF 11 changes, we've stopped allowing that value to be set. This behavior should be restored, with "0" translating into some "very large" value.
+
+The transaction team has indicated that using Integer.MAX_VALUE has historically exhibited problems, so a different, smaller-but-still-large value should be used in this case.
+
+The purpose of the suggestion of the maximum timeout attribute would be to make this value configurable (also in the event where someone programmatically sets a timeout which might be problematic).
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-10009
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-981
+
+* https://issues.jboss.org/browse/WFLY-9955
+
+* https://issues.jboss.org/browse/JBEAP-14240
+
+* https://issues.jboss.org/browse/JBEAP-14241
+
+=== Dev Contacts
+
+* mailto:zfeng@redhat.com[Zheng Feng]
+
+=== QE Contacts
+
+* mailto:istraka@redhat.com[Ivan Straka]
+
+=== Affected Projects or Components
+
+* Wildfly/EAP
+
+=== Other Interested Projects
+
+* Narayana
+* WFTC (Wildfly Transaction Client)
+
+== Requirements
+
+=== Hard Requirements
+
+* This attribute will be provided in the transaction with name of `maximum-timeout`, and it will default to `31536000`.
+* The transaction timeout value will be used with this attribute if 0 is set. Also we should log an warn message if we
+* set it to anything other than the value that the user requests and ensure it is in the documentation.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+* QE could run the cli command to set the transaction timeout to 0 and make sure it works. Also it will show the warn
+* message that `The transaction timeout has been set to %s while the value is 0`.
