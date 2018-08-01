@@ -19,7 +19,7 @@ Galleon is a separate project and an external tool, in itself not a part of Wild
 
 Galleon is a repository-based mechanism. That means the final distribution (of WildFly, EAP, LP, etc) is described in a configuration file as a set of artifacts (feature-packs) that contain the info and the content from which the final distribution is going to be built. Those feature-pack artifacts must be available at provisioning time in the artifact repository (or repositories) (Maven in this case, although other repositories could work as well). The repository could be local and/or remote. This is another difference compared to the current patching mechanism where a patch has to be downloaded and provided to the tool by the user directly.
 
-Advatages of the repository-based approach are:
+Advantages of the repository-based approach are:
 
 * user doesn't have to download patches and version updates manually, typing "update"/"check-updates" commands instead to review and apply the available in the repository patches and updates;
 
@@ -32,7 +32,7 @@ When Galleon installs a feature-pack that is provided directly by the user, by d
 
 ==== Patch feature-pack
 
-Patch file itself is basically a feature-pack. The only difference comparing to regular feature-packs is it contains an element in its XML description indicating that it is a patch that applies to a specific version of another feature-pack. A patch will be accepted only if the installation includes the feature-pack the patch applies to. It is possible to install multiple different patches for the same feature-pack in the installation. When the feature-pack that was patched is installed or a different (lower or higher) version of it is installed, all the installed patches for that feature-pack will automatically be removed from the installation.
+Patch file itself is basically a feature-pack. The only difference comparing to regular feature-packs is it contains an element in its XML description indicating that it is a patch that applies to a specific version of another feature-pack. A patch will be accepted only if the installation includes the feature-pack the patch applies to. It is possible to install multiple different patches for the same feature-pack in the installation. When the feature-pack that was patched is uninstalled or a different (lower or higher) version of it is installed, all the installed patches for that feature-pack will automatically be removed from the installation.
 
 A patch declare dependency on another patch(es) that applies to the same feature-pack version as the patch declaring the dependency. When a user installs a patch that depends on other patches, the dependencies of the patch will be installed automatically and applied before the patch declaring the dependencies.
 
