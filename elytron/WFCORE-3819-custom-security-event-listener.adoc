@@ -1,0 +1,80 @@
+= WFCORE-3819 Add Elytron subsystem component to use a custom security event listener
+:author:            Jan Kalina
+:email:             jkalina@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          elytron
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Elytron has ability to create custom security event listeners to develop custom audit mechanisms. However, there is no subsystem configuration, which would allow to use listener from custom WildFly module. Something like `custom-security-event-listener` resource needs to be added into Elytron subsystem.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-1007[EAP7-1007]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFCORE-3819[WFCORE-3819]
+
+=== Dev Contacts
+
+* mailto:jkalina@redhat.com[Jan Kalina]
+
+=== QE Contacts
+
+* mailto:okotek@redhat.com[Ondrej Kotek]
+
+=== Affected Projects or Components
+
+* WildFly Core
+
+//=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* It will be possible to use class in custom WildFly module as Elytron security event listener.
+
+=== Nice-to-Have Requirements
+
+* Should be sufficient to implement general `java.util.function.Consumer<org.wildfly.security.auth.server.event.SecurityEvent>` interface, without any subsystem dependency. (Security event listener capability currently use subsystem-private `SecurityEventListener` interface.)
+
+For example, user WildFly module would contain class like:
+
+[source,java]
+----
+public class MySecurityEventListener implements Consumer<SecurityEvent> {
+    public void accept(SecurityEvent securityEvent) {
+        if (securityEvent instanceof SecurityAuthenticationSuccessfulEvent) {
+            System.err.printf("Authenticated user \"%s\"\n", securityEvent.getSecurityIdentity().getPrincipal());
+        } else if (securityEvent instanceof SecurityAuthenticationFailedEvent) {
+            System.err.printf("Failed authentication as user \"%s\"\n", ((SecurityAuthenticationFailedEvent)securityEvent).getPrincipal());
+        }
+    }
+}
+----
+
+The class would be referenced from Elytron subsystem like this:
+----
+/subsystem=elytron/custom-security-event-listener=myAuditLogger:add(module=org.wildfly.security.examples.custom-security-event-listener, class-name=org.wildfly.security.examples.MySecurityEventListener)
+----
+
+//=== Non-Requirements
+
+== Test Plan
+
+* Should be added test trying to add custom module with security event listener, set it to be listener of security domain and check it is called when secured servlet is invoked.
+* Should be tested `SecurityAuthenticationSuccessfulEvent` on sucessful authentication and `SecurityAuthenticationFailedEvent` on failed (bad password/username) authentication.
+
+== Community Documentation
+
+Example of custom listener will be included in elytron-examples: https://github.com/wildfly-security-incubator/elytron-examples/pull/2
+
+Usage of custom components at all should be probably in one document in https://github.com/wildfly/wildfly/tree/master/docs/src/main/asciidoc/_elytron
+
