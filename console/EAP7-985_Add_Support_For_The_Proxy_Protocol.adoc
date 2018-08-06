@@ -1,0 +1,43 @@
+= Title
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          console,hal
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+This feature adds support for the new attribute `proxy-protocol` on Undertow listeners.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/EAP7-985[EAP7-985]
+
+=== Related Issues
+
+* {issue-base-url}/WFLY-10084[WFLY-10084]
+* {issue-base-url}/EAP7-974[EAP7-974]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+The console adds support for the new attribute `proxy-protocol` in the configuration section of Undertow listeners.
+
+== Test Plan

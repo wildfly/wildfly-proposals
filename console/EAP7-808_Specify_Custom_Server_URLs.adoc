@@ -1,0 +1,42 @@
+= Specify Custom Server URLs
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          console,hal
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+Many runtime resources provide information which can be turned into hyperlinks (servlets, REST resources, ...). To show the hyperlinks the console needs to know the http(s) URL of the underlying server. The user should be able to specify a custom URL (he should know the public URL). This URL will then be used to render all links for that server.
+
+To specify a custom URL the user selects the server in the finder and chooses the related action. The server preview will show the URL. The user should also be able to see whether the URL comes from the management model or whether it was specified by him.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/EAP7-808[EAP7-808]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+* There's an option in the dropdown menu of a server to edit the server URL.
+* The dialog to modify the server URL clearly states whether a custom URL is used or not.
+* The server preview clearly states whether a custom URL is used or not.
+
+== Test Plan

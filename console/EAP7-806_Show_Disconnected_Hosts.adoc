@@ -1,0 +1,43 @@
+= Show Disconnected Hosts
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          console,hal,domain
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+In domain mode the console shows also hosts which are no longer connected to the domain controller. The dropdown menu of the host column provides actions to prune expired and disconnected hosts.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/EAP7-808[EAP7-806]
+
+=== Related Issues
+
+* {issue-base-url}/PRODMGT-1475
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+* In runtime, the console shows also dicsonnected hosts which are no longer connected to the domain controller.
+* There are actions to prune disconnected and expired hosts. These actions call the management operations `/core-service=management/host-connection=<host>:prune-disconnected` resp. `/core-service=management/host-connection=<host>:prune-expired`
+
+== Test Plan

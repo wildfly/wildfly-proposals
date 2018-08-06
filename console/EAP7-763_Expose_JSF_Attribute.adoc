@@ -1,0 +1,43 @@
+= Expose attribute of the JSF subsystem to specify whether or not DOCTYPE declarations in JSF deployments should be disallowed
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          console,hal,jsf
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+The console shows an option in the JSF subsystem configuration to modify the new JSF attribute `disallow-doctype-decl`.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/EAP7-763[EAP7-763]
+
+=== Related Issues
+
+* {issue-base-url}/WFLY-6545[WFLY-6545]
+* {issue-base-url}/EAP7-621[EAP7-621]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+The console shows an option in the JSF subsystem configuration to modify the new JSF attribute `disallow-doctype-decl`.
+
+== Test Plan
