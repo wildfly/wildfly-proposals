@@ -1,0 +1,69 @@
+= WFLY-10480 / EAP7-1017 WildFly Elytron / CXF / SAML Integration
+:author:            Jim Ma
+:email:             ema@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+Where an application is deployed using WildFly Elytron security components the Apache CXF integration for the verification of SAML messages is handling this independently of the underlying security infrastructure in use by the application server. This obviously has the issue that WildFly Elytron is not involved in the actual processing but this also leads to the following issues:
+
+* No WildFly Elytron SecurityIdentity is established for the current request based on the authentication.
+* Without a SecurityIdentity there is no identity to associate any SAML token as a delegated credential.
+* Without the SecurityIdentity as the request propagates to other containers within the application server there is no identity propagated to nothing to hold the SAML token.
+
+Where we have a use of the delegated token we then are also missing integration with the WildFly Elytron authentication client for obtaining delegated credentials / tokens.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/EAP7-1017[EAP7-1017]
+* {issue-base-url}/WFLY-10480[WFLY-10480]
+
+=== Related Issues:
+
+* {issue-base-url}/JBWS-4123[JBWS-4123]
+
+=== Dev Contacts:
+
+* mailto:ema@redhat.com[Jim Ma]
+* mailto:asoldano@redhat.com[Alessio Soldano]
+
+=== QE Contacts:
+
+* mailto:jbliznak@redhat.com[Jan Bliznak]
+* mailto:rsvoboda@redhat.com[Rostislav Svoboda]
+
+=== Affected Projects or Components:
+
+* WildFly
+
+== Requirements
+
+* Convert CXF’s SAMLTokenPrincial to WildFly Elytron SecurityIdentity
+* Propagate authenticated object to EJB subsystem
+
+== Non Requirements
+* New Realm or SAML token support in Elytron could be a long term plan
+* At the moment only SAML token type/integration is required.
+
+== Community documentation
+
+https://github.com/jimma/wildfly/commit/5307f998192caec194d777a704e5249c108e2a1c
+
+== Design Details
+Wildfly Elytron SecurityDomain provides createAdHocIdentity(pincipal) to create a SecurityIdentity from principal. Public/private principals can be converted to Elytron’s identityCredentials and attach to SecurityIdentity. The group or roles from Subject will 
+be mapped to securityIdentity with SecurityIdentity.withRoleMapper().
+To propagate this SecurityIdentity to EJB subystem, the jaxws ejb invocation handler and ejb interceptor chains should be executed under SecurityIdentity.runAs() block.
+
+To make all these works, convert JAAS subject to Elytron SecurityIdentity in ElytronSecurityDomainContextImpl and set this new created securityIdentity to ThreadLocal currentIdentity to allow the runAs be called in EJB webservice invocation handler.
+
+
+=== Test Plan
+
+Add test to WildFly testsuite with the scenario that brought to discovering the issue.
