@@ -140,7 +140,7 @@ WildFly (WFLY Migration Component), JBoss Server Migration Tool (CMTOOL)
 
 == Test Plan
 
-* TODO
+https://polarion.engineering.redhat.com/polarion/#/project/EAP7/wiki/RFEs_7_2/EAP7-990
 
 == Community Documentation
 
