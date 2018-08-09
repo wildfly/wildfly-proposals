@@ -1,4 +1,4 @@
-= WFLY-10480 / EAP7-1017 WildFly Elytron / CXF / SAML Integration
+= WFLY-10480 / EAP7-1017 Propagate authenticated subject in ElytronSecurityDomainContextImpl
 :author:            Jim Ma
 :email:             ema@redhat.com
 :toc:               left
@@ -10,13 +10,13 @@
 
 == Overview
 
-Where an application is deployed using WildFly Elytron security components the Apache CXF integration for the verification of SAML messages is handling this independently of the underlying security infrastructure in use by the application server. This obviously has the issue that WildFly Elytron is not involved in the actual processing but this also leads to the following issues:
+Where an application is deployed using WildFly Elytron security components the Apache CXF integration for the verification of SAML messages is handling this independently of the underlying security infrastructure in use by the application server.  This obviously has the issue that WildFly Elytron is not involved in the actual processing but this also leads to the following issues:
 
 * No WildFly Elytron SecurityIdentity is established for the current request based on the authentication.
 * Without a SecurityIdentity there is no identity to associate any SAML token as a delegated credential.
 * Without the SecurityIdentity as the request propagates to other containers within the application server there is no identity propagated to nothing to hold the SAML token.
 
-Where we have a use of the delegated token we then are also missing integration with the WildFly Elytron authentication client for obtaining delegated credentials / tokens.
+With the RFE here we should fill in the gap with the existing Apache CXF / WebServices subsystem and the legacy security system; that means allowing propagating the subject authenticated in the WS/application layer to the Elytron security system in the ElytronSecurityDomainContextImpl. That way an EJB belonging to the same application that processed the SAML message can e.g. access to the proper principal through the SessionContext.
 
 == Issue Metadata
 
