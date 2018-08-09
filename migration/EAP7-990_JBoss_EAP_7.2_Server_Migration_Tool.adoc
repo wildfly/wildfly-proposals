@@ -1,0 +1,147 @@
+= JBoss EAP 7.2 Server Migration Tool
+:author:            Eduardo Martins
+:email:             emartins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This document specifies the development of the JBoss EAP 7.2 server migration tool feature.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-990[EAP7-990]
+
+=== Related Issues
+
+* https://issues.jboss.org/projects/CMTOOL/issues/CMTOOL-194[CMTOOL-194]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:pkremens@redhat.com[Petr Kremensky]
+
+=== Affected Projects or Components
+
+WildFly (WFLY Migration Component), JBoss Server Migration Tool (CMTOOL)
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* The following server migrations should be supported:
+** JBoss EAP 6.4 to JBoss EAP 7.2
+** JBoss EAP 7.1 to JBoss EAP 7.2
+
+* Migration from patched servers, i.e. EAP 6.4/7.1 CPs, should be supported.
+* Migration to patched servers, i.e. EAP 7.2 CPs,  should be supported.
+* The server migration should include:
+** server configurations
+** modules
+** deployments
+
+==== Migration of Server Configurations
+
+* The migration of the following JBoss EAP 6.4 and 7.1 server configurations should be supported::
+** standalone server configurations
+** domain and host controller configurations
+
+* The migration of JBoss EAP 6.4 server configurations includes:
+** removal of configurations from subsystems not supported by JBoss EAP 7.2, and related extensions
+*** cmp
+*** configadmin
+*** jaxr
+*** osgi
+*** threads
+** migration of configurations from legacy subsystems deprecated by JBoss EAP 7.2, converting these to configurations of the JBoss EAP 7.2 subsystems providing similar functionality
+*** jacorb → iiop-openjdk
+*** messaging → messaging-activemq
+*** web → undertow
+** add default configurations for JBoss EAP 7.2 subsystems, which didn't exist in JBoss EAP 6.4, and are required for the server to work correctly
+*** core-management
+*** discovery
+*** ee-security
+*** elytron
+*** request-controller
+*** security-manager
+*** singleton
+** subsystem configuration updates necessary for the server configurations to work as expected with JBoss EAP 7.2
+*** ejb3
+*** infinispan
+*** jgroups
+** migration of resources, which paths are referenced by migrated server configurations, such as property files, keystores and certificates
+
+* The migration of JBoss EAP 7.1 server configurations includes:
+** add default configurations for JBoss EAP 7.2 subsystems, which didn't exist in JBoss EAP 7.1, and are required for the server to work correctly
+*** discovery
+*** ee-security
+** subsystem configuration updates necessary for the server configurations to work as expected with JBoss EAP 7.2
+*** infinispan
+*** jGroups
+*** undertow
+** migration of resources, which paths are referenced by migrated server configurations, such as property files, keystores and certificates
+** migration of modules referenced by the server configurations
+
+==== Migration of Modules
+
+* The migration of modules, installed in the source server, and referenced by server configurations should be included.
+* The user should be able to specify modules to be included and excluded in the migration.
+* The migration of modules should be aware that the source server may have a modules overlay installed, which may include additional and/or updated modules
+
+==== Migration of Deployments
+
+* Includes migration of managed content, regarding both deployment and deployment overlays.
+
+=== Nice-to-Have Requirements
+
+* The following server migrations may be supported:
+** JBoss EAP 7.0 to JBoss EAP 7.2
+
+* The migration of JBoss EAP 7.0 server configurations includes:
+** add default configurations for JBoss EAP 7.2 subsystems, which didn't exist in JBoss EAP 7.0, and are required for the server to work correctly
+*** core-management
+*** discovery
+*** ee-security
+*** elytron
+** subsystem configuration updates necessary for the server configurations to work as expected with JBoss EAP 7.2
+*** infinispan
+*** jGroups
+*** undertow
+** migration of resources, which paths are referenced by migrated server configurations, such as property files, keystores and certificates
+** migration of modules referenced by the server configurations
+
+=== Non-Requirements
+
+* Migration of deployments found on source server does not includes any required or optional modifications to its content.
+* Migration should not include the runtime related data present in the source server.
+
+== Implementation Plan
+
+* The migration tool for JBoss EAP 7.2 is the JBoss Server Migration Tool, which is developed as a standalone project:
+** Source repo and community binaries at https://github.com/wildfly/wildfly-server-migration[GitHub]
+** Project management at https://issues.jboss.org/projects/CMTOOL[JIRA]
+
+* The tool is not a standalone product, it’s simply a component in the JBoss EAP product, and should follow same procedures established for other JBoss EAP components with respect to Productization, QE and Support. The MIGRATION component in WFLY JIRA should be used for issues related with the integration of the tool in the JBoss EAP 7.2 distributions.
+
+* The “productized” tool should be delivered in the JBoss EAP 7.2 server distribution, by provisioning a Galleon Feature Pack specific for it, adding the following content:
+** a readme with basic info and instructions at `/migration`
+** the tool configuration files at `/migration/configuration`
+** the sh and bat scripts (jboss-server-migration.*) to start the tool at `/bin`
+** a system module with the tool’s artifacts/resources at `/modules/system/base/org/jboss/migration/cli`
+
+== Test Plan
+
+https://polarion.engineering.redhat.com/polarion/#/project/EAP7/wiki/RFEs_7_2/EAP7-990
+
+== Community Documentation
+
+User guides for the server migrations to JBoss EAP 7.2 will be written in asciidoc format, following same structure as JBoss EAP 7.1 and other existent server migrations user guides, and added to the tool's source repository, in a docs/user-guides/migrations/eap7.2 folder.
