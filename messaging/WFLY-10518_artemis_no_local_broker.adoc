@@ -17,11 +17,9 @@ resource that is in the `messaging-activemq`.
 This `pooled-connection-factory` resource can be used to connect to the local Artemis server that "owns" it or to a remote Artemis broker.
 
 However, this `pooled-connection-factory` resource always require the presence of a local Artemis server even when it connects only to a remote Artemis broker.
-This use case will become more prevalent as WildFly is deployed on OpenShift to
-connect to a remote A-MQ 7 broker.
+This use case will become more prevalent as WildFly is deployed on OpenShift to connect to a remote A-MQ 7 broker.
 
-The presence of a local Artemis server has impact on the memory and CPU
- footprint of WildFly image on OpenShift.
+The presence of a local Artemis server has impact on the memory and CPU  footprint of WildFly image on OpenShift but also on a bare metal installation.
 This RFE will improve WildFly so that a connection to a remote Artemis-based
  broker will no longer require the presence of a local instance of Artemis.
 
@@ -74,7 +72,7 @@ Create new resources into `/subsystem=messaging/`:
   * `pooled-connection-factory`
   * `connection-factory`
 
-Note that they may differ from those for a `server`
+Note that they may differ from those for a `server`. The new resources are only **visible** in their context. Thus a subsystem connector can't be referenced from a server pooled connection factory. In a similar way, resources in a server can't be referenced from a subsystem resource.
 
 Other resources that remains in `/subsystem=messaging/server`:
 
