@@ -1,0 +1,39 @@
+= IIOP security configuration and tests refactor
+:author:            Tomasz Adamski
+:email:             tadamski@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This feature will prevent the server from opening the CLEARTEXT connection when the secured connections are required according to the configuration.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-9107[WFLY-9107]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1002[EAP7-1002]
+
+=== Dev Contacts
+
+* mailto:tadamski@redhat.com[Tomasz Adamski]
+
+=== QE Contacts
+
+=== Affected Projects or Components
+
+ * Wildfly
+
+=== Other Interested Projects
+
+== Requirements
+
+Server should reject attempts to connect at IIOP CLEARTEXT connection (configured by socket-binding element) when server-requires-ssl parameter is set to true.
+
