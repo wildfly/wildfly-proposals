@@ -1,0 +1,68 @@
+= [WFLY-10522] Support Eclipse MicroProfile Config
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:keywords:          microprofile,config,openshift
+
+== Overview
+
+Support Eclipse MicroProfile Config for applications deployed in WildFly.
+The integration uses the smallrye-config component to provide the MicroProfile Config implementation.
+
+The code in smallrye-config and in the proposed WildFly extension has already been developed in the
+https://github.com/wildfly-extras/wildfly-microprofile-config[wildfly-microprofile-config] and
+was used in http://wildfly-swarm.io[WildFly Swarm].
+
+This RFE moves the extension code to WildFly so that applications deployed on WildFly can also
+benefit from the MicroProfile Config API.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-10522[WFLY-10522]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1016[EAP7-1016]
+* https://issues.jboss.org/browse/WFLY-10558[WFLY-10558] - Support Eclipse MicroProfile Config in Web Console
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:mkopecky@redhat.com[Marek Kopecky]
+* mailto:mnovak@redhat.com[Miroslav Novak]
+
+=== Affected Projects or Components
+
+The implementation of Eclipse MicroProfile Config is provided by https://github.com/smallrye/smallrye-config[smallrye-config].
+
+=== Other Interested Projects
+
+== Requirements
+
+* Support Eclipse MicroProfile Config for any applications deployed in WildFly.
+* The extension is added to *all* configuration provided by WildFly (standalone and domain mode).
+
+== Implementation Plan
+
+* Add dependencies to `smallrye-config` and `microprofile-config-api` artifacts
+* Add a new `microprofile-config-smallrye` extension to provide Config support for deployments.
+* Add subsystem resources to enhance MicroProfile Config (e.g to support OpenShift ConfigMaps,
+  store properties in WildFly configuration XML files, etc.)
+
+== Test Plan
+
+* smallrye-config component is passing the MicroProfile Config TCK during its release process.
+* WildFly integration test suite will be enhanced with tests that deploys Java archives which
+uses the MicroProfile Config API.
+
+== Community Documentation
+
+The feature will be documented in WildFly Admin Guide (in a new MicroProfile Config section).
