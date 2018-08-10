@@ -53,8 +53,8 @@ also be used by adding/removing health check probes manually.
 
 * Support Eclipse MicroProfile Health 1.0 for applications deployed in WildFly.
 * Provide a management runtime operation to check the health of the application server and its deployed applications. The result of the runtime operation
-  will be the DMR representation of the https://github.com/eclipse/microprofile-health/blob/master/spec/src/main/asciidoc/protocol-wireformat.adoc#appendix-b-json-payload-specification[MicroProfile Health JSON payload]
-* Provide an HTTP endpoint for the https://github.com/eclipse/microprofile-health/blob/master/spec/src/main/asciidoc/protocol-wireformat.adoc[health wireformat].
+  will be the DMR representation of the https://github.com/eclipse/microprofile-health/blob/1.0/spec/src/main/asciidoc/protocol-wireformat.adoc#appendix-b-json-payload-specification[MicroProfile Health JSON payload]
+* Provide an HTTP endpoint for the https://github.com/eclipse/microprofile-health/blob/1.0/spec/src/main/asciidoc/protocol-wireformat.adoc[health wireformat].
   It requires the presence of the WildFly https://github.com/wildfly/wildfly-capabilities/blob/master/org/wildfly/management/http-interface/capability.adoc[HTTP management interface capability]
 * The HTTP endpoint is global to the server: it aggregates health check probes from *all deployments*.
 * Secure access to the HTTP endpoint must be configurable.
