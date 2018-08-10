@@ -1,0 +1,82 @@
+= WFCORE-3991 read-config-as-features management operation
+:author:            Alexey Loubyansky
+:email:             alexey.loubyansky@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+To be able to preserve user configuration changes when applying patches, version updates, installing and uninstalling products and components (basically pretty much any provisioning operation that may affect the configuration of the installation) we need to identify what the user has changed (manually or using any of the management interfaces) since the last provisioned state. That can be done by comparing the last provisioned state to the currrent state of the installation. The last provisioned state is recorded by Galleon in terms of configured features. What is currently missing is a way to represent the current state of the management model in terms of configured provisioning features.
+
+We already have operation `read-feature-description` that generates provisioning feature specifications. The intent of this proposal is to add operation `read-config-as-features` to the standalone server and domain that will describe the current state of the management model in terms of configured provisioning features.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}WFCORE-3991[WFCORE-3991]
+
+=== Related Issues
+
+* {issue-base-url}EAP7-1063[EAP7-1063]
+* {issue-base-url}EAP7-1075[EAP7-1075]
+
+=== Dev Contacts
+
+* mailto:alexey.loubyansky@redhat.com[Alexey Loubyansky]
+
+=== QE Contacts
+
+* mailto:rjanik@redhat.com[Richard Janík]
+
+=== Affected Projects or Components
+
+* the operation handlers will be added to wildfly-core and used by Galleon provisioning plugins for any project distribution including wildfly-core.
+
+== Requirements
+
+=== Hard Requirements
+
+* the result of the operation has to describe the management model in terms of configured provisioning features in DMR format. E.g.
+
+[source,java]
+----
+        {
+            "spec" => "core-service.management.management-interface.http-interface",
+            "id" => {
+                "core-service" => "management",
+                "management-interface" => "http-interface"
+            },
+            "params" => {
+                "socket-binding" => "management-http",
+                "security-realm" => "ManagementRealm"
+            }
+        },
+        {
+            "spec" => "core-service.management.management-interface.http-interface.http-upgrade",
+            "id" => {
+                "core-service" => "management",
+                "management-interface" => "http-interface"
+            },
+            "params" => {"enabled" => true}
+        },
+----
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+* Any representation of feature groups is not required.
+
+== Implementation Plan
+
+Operation handlers will be added to server and host-controller modules in wildfly-core.
+
+== Test Plan
+
+== Community Documentation
+
+This has to be implemented in wildfly-core. So the documentation will have to be added as a follow up to wildfly.
+
