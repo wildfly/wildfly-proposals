@@ -1,0 +1,110 @@
+= Remove EE7 (JPA) mode: default to (EE8) JPA 2.2 spec jar, Hibernate ORM 5.3.x
+:author:            Scott Marlow
+:email:             smarlow@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Enable the JPA 2.2 spec jar by default.
+
+Default to Hibernate ORM 5.3.x and matching dependencies.
+
+Remove the ee8.preview.mode flag checks in JPA related code.
+
+Default to Hibernate Search upgrade (5.10.8), which in turn implies newer Apache Lucene (5.5.*) .
+
+Compatibility analysis of Hibernate ORM (from 5.1 to 5.3) (from WFLY-6464_JPA_22_HibernateUpgrade.adoc):
+
+ - https://docs.google.com/document/d/1ZjdVuNzYPjjmvVd7mDLw9zwy9c0By_FP0oj8DkHgiBE/edit?usp=sharing
+
+Compatibility analysis of Hibernate Search (from WFLY-6464_JPA_22_HibernateUpgrade.adoc):
+
+ - https://docs.google.com/document/d/1X0MR6jSGZHM3vKy-uoku0WxKXnP6mAglQ7PUxtUcFC8/edit?usp=sharing
+
+Compatibility analysis of the new Lucene version (from WFLY-6464_JPA_22_HibernateUpgrade.adoc):
+
+ - https://docs.google.com/document/d/11WjkAqnLH7bUnq1P_Ed3PDd8sz2DVrOl4ZRYLa1jnXw/edit?usp=sharing
+ - https://developer.jboss.org/wiki/LuceneBinaryAndSourceCompatibilityForHibernateSearchUsersBetween531redhat-2And555
+
+Compatibility Transformer requirements:
+
+ A compatibility transformer needs to be added to address Hibernate ORM 5.3 API methods that are no longer (api) compatible with 5.1.
+ 
+ - Change calls to org.hibernate.BasicQueryContract.getFlushMode() to instead call BasicQueryContract.getHibernateFlushMode().
+ - Change calls to org.hibernate.Session.getFlushMode, to instead call Session.getHibernateFlushMode()
+ - App References to Enum org.hibernate.FlushMode.NEVER (0) should be transformed to reference FlushMode.MANUAL (0) instead.
+ - For calls to org.hibernate.Query.getMaxResults() returning Integer, instead call org.hibernate.Query.getHibernateMaxResults() (returning Integer).
+ - For calls to org.hibernate.Query.setMaxResults(int), instead call org.hibernate.Query.setHibernateMaxResults(int).
+ - For calls to org.hibernate.Query.getFirstResult(int) returning Integer, instead call org.hibernate.Query.getHibernateFirstResult() (returning Integer).
+ - For calls to org.hibernate.Query.setFirstResult(int), instead call org.hibernate.Query.setHibernateFirstResult(int).
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-999 Switch to JPA 2.2 as default persistence
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/JBEAP-14854 Migration documentation for upgrading from Hibernate ORM 5.1 to 5.3
+* https://issues.jboss.org/browse/EAP7-905 JPA 2.2 Support
+* https://issues.jboss.org/browse/WFLY-10520 Transformer 
+* https://issues.jboss.org/browse/WFLY-10455 Update JPA documentation, remove references to older Hibernate ORM versions and only reference 5.3.x
+* https://hibernate.atlassian.net/browse/HHH-12781 Update Javassist dependency to 3.23.1-GA
+* https://issues.jboss.org/browse/WFLY-10683 Update Javassist dependency to 3.23.1-GA
+* https://hibernate.atlassian.net/browse/HHH-12784 Javassist support broken by HHH-12760
+
+=== Dev Contacts
+
+* mailto:{Scott Marlow}[{smarlow@redhat.com}] JPA / WildFly integration lead
+* mailto:{Paul Ferraro}[{pferraro@redhat.com}] WildFly clustering lead
+* mailto:{Steve Ebersole}[{steve@hibernate.org}] Hibernate ORM, project lead
+* mailto:{Sanne Grinovero}[{sanne@hibernate.org}] Hibernate, integration coordinator
+* mailto:{Gail Badner}[{gail@hibernate.org}] Hibernate, primary author of all backwards compatibility analysis
+
+=== QE Contacts
+
+mailto:{Martin Simka}[{msimka@redhat.com}]
+
+=== Affected Projects or Components
+
+Hibernate ORM team needs to complete preparing ORM 5.3.x, which includes completing documentation.
+
+WildFly transformer for ORM 5.1 compatibility, needs to be completed and documented.
+
+WildFly JPA documentation needs to be updated.
+
+QE needs to complete testing of ORM 5.3.
+
+=== Other Interested Projects
+
+Infinispan project provides the 2nd Level Cache components.
+
+== Requirements
+
+ * Include JPA 2.2, Hibernate ORM 5.3+, Hibernate Search 5.10+ and have them automatically enabled by default.
+ * Binary API backward compatibility with Hibernate 5.1
+ * Include access to a Hibernate ORM 5.1 bytecode transformer
+ ** Transformer provides ORM 5.1 API compatibility, where possible, by transforming the Hibernate native 5.1 API calls, into the correct ORM 5.3 calls.
+ ** Does not guarantee to solve behaviour changes between ORM 5.1 and 5.3.
+ ** The transformer can be enabled via system property `Hibernate51CompatibilityTransformer` (set to true).
+ *** Only should be enabled for application servers that have no Hibernate ORM 5.3 native applications deployed, as all calls to org.hibernate.Query.setFirstResult (or #setMaxResults), will be transformed, as if the application is ORM 5.1 based.
+ **** This particular transformation can be disabled by setting `Hibernate51CompatibilityTransformer.disableAmbiguousChanges` (to true).
+ **** JPA applications are not transformed.
+
+=== Known Incompatibilities
+
+* https://github.com/hibernate/hibernate-orm/wiki/Migration-Guide---5.2
+* https://github.com/hibernate/hibernate-orm/wiki/Migration-Guide---5.3
+
+=== Hard Requirements
+
+Remove EE 7 JPA related artifacts (JPA 2.1 spec jar, Hibernate ORM 5.1.x, Hibernate Search 5.5.*.
+
+== Test Plan
+
+WildFly testsuite will run with Hibernate ORM 5.3.
