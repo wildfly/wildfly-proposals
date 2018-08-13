@@ -1,0 +1,72 @@
+= Add option to always sent certificate for LDAPS connections when using Legacy Security Realm (WFCORE-2647)
+:author:            Darran Lofthouse
+:email:             darran.lofthouse@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Where the legacy security realms are used for authentication via an LDAP server this is implemented to initially establish a connection to the LDAP server, perform a search using the supplied username to identify the distinguished name of the identity, a second connection is then established using the resolved distinguished name and the password supplied in from the remote client to verify that the supplied password is correct.
+
+For the first connection which is used for the searches the server is either configured with it's own username and password for use when connecting to the LDAP server, or it can be configured to connect using SSL with it's own certificate.  For the connection then established to verify the remote users password we deliberately avoid using the servers credentials so we do not inadvertently authenticate as the server, in the case of an SSL connection this means we disable sending the servers certificate.
+
+For some LDAP servers it is desirable that the servers certificate is used for both of these connections, the LDAP server will then only allow connections to be established with a valid certificate AND password based authentication.
+
+The purpose of this RFE is to add a configuration option to ensure the server will always use it's certificate for all of the connections and not just for the connections performing the LDAP queries.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-2647[WFCORE-2647]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-8631[WFLY-8631]
+
+=== Dev Contacts
+
+This issue was originally developed by Peter Palaga.
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Affected Projects or Components
+
+WildFly Core - Management model and implementation.
+WildFly - Test case and documentation.
+
+=== Other Interested Projects
+
+None
+
+== Requirements
+
+=== Hard Requirements
+
+A new boolean configuration option `always-send-client-cert` should be added to the resource `core-service=management/ldap-connection=*`.
+When the new attribute is set to `true` the configured client certificate should be used for both connections to the LDAP server, i.e. the connection to search for the authenticating identity and the follow up connection to verify the password supplied for that identity.
+When the new attribute is set to `false` the configured client certificate should only be used on connections searching LDAP, the certificate should not be used on connections verifying the identities supplied password.
+The new attribute should default to `false` to ensure consistent behaviour from any configuration being ported from a prior version of the server. 
+
+Prior to this RFE this behaviour had already been added to a maintenance or release of JBoss EAP but configurable using the system property `jboss.as.management.outbound.ldap.alwaysSendClientCert`, where the new attribute is not specified on the  `ldap-connection` resource the system property should continue to be usable to allow migrations of existing configuration.
+
+=== Nice-to-Have Requirements
+
+None
+
+=== Non-Requirements
+
+None
+
+== Test Plan
+
+A test case will be submitted to WildFly to test this new configuration.
+
+== Community Documentation
+
+Documentation should be added to the community documentation describing the new `always-send-client-cert` attribute added to the `ldap-connection` resource, the support for the system property is only for compatibility purposes so should not be added to the documentation.
+
