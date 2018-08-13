@@ -1,0 +1,85 @@
+= Logging Socket Handler
+:author:            James R. Perkins
+:email:             jperkins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Centralized logging is becoming a more common infrastructure decision and is often on a remote server. Adding a
+`socket-handler` resource to the logging subsystem will allow log messages to be sent to a remote server.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-2953[WFCORE-2953]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-860[EAP7-860]
+* https://issues.jboss.org/browse/LOGMGR-156[LOGMGR-156]
+* https://issues.jboss.org/browse/LOGMGR-195[LOGMGR-195]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:nziakova@redhat.com[Nikoleta Ziakova]
+
+=== Affected Projects or Components
+
+* WildFly Core
+* WildFly
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* Messages should be able to be sent over the following protocols:
+    ** TCP
+    ** SSL/TLS TCP
+    ** UDP
+* The logging subsystem will not manage the connected sockets. It will be required to use an `outbound-socket-binding`
+  for the creation of sockets.
+* The `org.jboss.logmanager.handlers.SocketHandler` will be wrapped in a `org.jboss.logmanager.handlers.DelayedHandler`.
+  This is done as the socket binding will not be available at boot when the `logging.properties` is used.
+  ** It will need to be noted/documented that using a `DelayedHandler` queues messages, then once activated replays the
+     messages. If `TRACE` or `DEBUG` messages are enabled this could make the queue rather large and eventually hit a
+     OOME. Once the logging subsystem is initialized, this behavior goes away. However for `--admin-only` containers
+     testing will need to be done to ensure the queue does not endlessly grow.
+* Not all attributes common to other handlers will be required. For example the `formatter` attribute will not be
+  available on the resource making the `named-formatter` a required attribute for this resource.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+* Messages will not be guaranteed to be sent. There could be cases where a network connection is closed or an error
+  occurs transporting the error.
+* Servers launched in `admin-only` will not log messages over a socket. Runtime services are required for this handler
+  to work. It's not currently possible for it to work in admin-only. Messages will just be discarded.
+
+== Implementation Plan
+
+The logging subsystem will need to introduce a service to allow the `org.wildfly.network.outbound-socket-binding` and
+`org.wildfly.management.socket-binding-manager` capabilities to be used. The `org.wildfly.network.outbound-socket-binding`
+capability is on-demand which makes a service required.
+
+This also means the `org.wildfly.logging.handler` capability will require a service type of `java.util.logging.Handler`.
+However it will not be a requirement for all capability points have a service. As a result the service type will not be
+documented in the capability reference.
+
+== Test Plan
+
+Currently the log manager has test for the socket handler. Similar tests will be added to WildFly Core tests. A simple
+echo style server will need to be used.
+
+== Community Documentation
+PR https://github.com/wildfly/wildfly/pull/11406
