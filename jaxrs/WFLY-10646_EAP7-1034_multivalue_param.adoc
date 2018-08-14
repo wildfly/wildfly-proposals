@@ -18,8 +18,10 @@ For parameters and properties annotated with @CookieParam, @HeaderParam, @Matrix
 . Primitive types
 . Types that have a constructor that accepts a single String argument
 . Types that have a static method named valueOf or fromString with a single String argument that return an instance of the type
+. List<T>, Set<T>, or SortedSet<T>, where T satisfies 3 or 4 above
 
-With this new feature, RESTEasy is going to also support List<T>, Set<T>, or SortedSet<T>, where T satisfies 3 or 4 above. The way the collections of parameters are expected to be expressed in HTTP messages depends on the particular kind of parameter. In most cases, the notation for collections is based on convention rather than a specification.
+The way the collections of parameters are expected to be expressed in HTTP messages depends on the particular kind of parameter. In most cases, the notation for collections is based on convention rather than a specification.
+With this new feature, RESTEasy is going to allow using custom notation for collections.
 
 === @QueryParam
 
@@ -198,14 +200,14 @@ results in
 `response: 20161217,20161218,20161219,`
    
 
-Suppose, instead, that we want to use a comma separated notation. We can add
+Suppose, instead, that we want to use a comma separated notation. We can add these custom classes to the deployment
 
 ....
 public static class MultiValuedParamConverterProvider implements ParamConverterProvider
 
    @SuppressWarnings("unchecked")
    @Override
-   public <T> ParamConverter<T> getConverter(Class<T> rawType, genericType, Annotation[] annotations) {
+   public <T> ParamConverter<T> getConverter(Class<T> rawType, Type genericType, Annotation[] annotations) {
       if (List.class.isAssignableFrom(rawType)) {
          return (ParamConverter<T>) new MultiValuedParamConverter();
       }
@@ -368,6 +370,7 @@ Finally, note that this extension works for arrays as well. For example,
 == Requirements
 
 The behavior decribed in the first section is expected.
+Note, Client proxies are not mentioned explicitly above and as such this feature is not supported on client side.
 
 === Test Plan
 
