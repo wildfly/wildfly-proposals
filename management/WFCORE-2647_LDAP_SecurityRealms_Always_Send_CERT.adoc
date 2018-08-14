@@ -52,7 +52,7 @@ When the new attribute is set to `true` the configured client certificate should
 When the new attribute is set to `false` the configured client certificate should only be used on connections searching LDAP, the certificate should not be used on connections verifying the identities supplied password.
 The new attribute should default to `false` to ensure consistent behaviour from any configuration being ported from a prior version of the server. 
 
-Prior to this RFE this behaviour had already been added to a maintenance or release of JBoss EAP but configurable using the system property `jboss.as.management.outbound.ldap.alwaysSendClientCert`, where the new attribute is not specified on the  `ldap-connection` resource the system property should continue to be usable to allow migrations of existing configuration.
+Prior to this RFE this behaviour had already been added to a maintenance or release of JBoss EAP but configurable using the system property `jboss.as.management.outbound.ldap.alwaysSendClientCert`, where the new attribute is not specified on the  `ldap-connection` resource the system property should continue to be usable to allow migrations of existing configuration.  Support for this system property can be removed from WildFly 16 or later which should be equivalent to WildFly Core 8 or later.
 
 === Nice-to-Have Requirements
 
