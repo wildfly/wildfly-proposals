@@ -1,0 +1,381 @@
+= WFLY-10646 / EAP7-1034 RESTEasy extended support for multivalue @*Param
+:author:            Alessio Soldano
+:email:             asoldano@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+This is about supporting multivalue @CookieParam, @HeaderParam, @MatrixParam, @PathParam, @QueryParam, allowing custom conversion from arrays or collections used as parameters to JAX-RS resources' methods.
+
+For parameters and properties annotated with @CookieParam, @HeaderParam, @MatrixParam, @PathParam, or @QueryParam, the JAX-RS specification [https://jcp.org/aboutJava/communityprocess/final/jsr339/index.html] allows conversion as defined in the Javadoc of the corresponding annotation. In general, the following types are supported:
+
+. Types for which a ParamConverter is available via a registered ParamConverterProvider
+. Primitive types
+. Types that have a constructor that accepts a single String argument
+. Types that have a static method named valueOf or fromString with a single String argument that return an instance of the type
+
+With this new feature, RESTEasy is going to also support List<T>, Set<T>, or SortedSet<T>, where T satisfies 3 or 4 above. The way the collections of parameters are expected to be expressed in HTTP messages depends on the particular kind of parameter. In most cases, the notation for collections is based on convention rather than a specification.
+
+=== @QueryParam
+
+For example, a multivalued query parameter is conventionally expressed like this:
+
+`http://bluemonkeydiamond.com?q=1&q=2&q=3`
+
+In this case, there is a query with name "q" and value {1, 2, 3}. This notation is further supported in JAX-RS by the method
+
+`public MultivaluedMap<String, String> getQueryParameters();`
+
+in javax.ws.rs.core.UriInfo.
+
+=== @MatrixParam
+
+There is no specified syntax for collections derived from matrix parameters, but matrix parameters in a URL segment are conventionally separated by ";", and the method
+
+`MultivaluedMap<String, String> getMatrixParameters();`
+       
+in javax.ws.rs.core.PathSegment supports extraction of collections from matrix parameters. RESTEasy adopts the convention that multiple instances of a matrix parameter with the same name are treated as a collection. For example,
+
+`http://bluemonkeydiamond.com/sippycup;m=1;m=2;m=3`
+
+is interpreted as a matrix parameter on path segment "sippycup" with name "m" and value {1, 2, 3}.
+
+=== @HeaderParam
+
+The HTTP 1.1 specification doesn't exactly specify that multiple components of a header value should be separated by commas, but commas are used in those headers that naturally use lists, e.g. Accept and Allow. Also, note that the method
+
+`public MultivaluedMap<String, String> getRequestHeaders();`
+
+in javax.ws.rs.core.HttpHeaders returns a MultivaluedMap. It is natural, then, for RESTEasy to treat
+
+`x-header: a, b, c`
+
+as mapping name "x-header" to set {a, b, c}.
+
+=== @CookieParam
+
+The syntax for cookies is specified, but, unfortunately, it is specified in multiple competing specifications. Typically, multiple name=value cookie pairs are separated by ";". However, unlike the case with query and matrix parameters, there is no specified JAX-RS method that returns a collection of cookie values. Consequently, if two cookies with the same name are received on the server and directed to a collection typed parameter, RESTEasy will inject only the second one. Note, in fact, that the method
+
+`public Map<String, Cookie> getCookies();`
+   
+in javax.ws.rs.core.HttpHeaders returns a Map rather than a MultivaluedMap.
+
+=== @PathParam
+
+Deriving a collection from path segments is somewhat less natural than it is for other parameters, but JAX-RS supports the injection of multiple javax.ws.rs.core.PathSegments. There are a couple of ways of obtaining multiple PathSegments. One is through the use of multiple path variables with the same name. For example, the result of calling testTwoSegmentsArray() and testTwoSegmentsList() in
+
+....
+@Path("")
+public static class TestResource {
+
+   @GET
+   @Path("{segment}/{other}/{segment}/array")
+   public Response getTwoSegmentsArray(@PathParam("segment") PathSegment[] segments) {
+      System.out.println("array segments: " + segments.length);
+      return Response.ok().build();
+   }
+   
+   @GET
+   @Path("{segment}/{other}/{segment}/list")
+   public Response getTwoSegmentsList(@PathParam("segment") List<PathSegment> segments) {
+      System.out.println("list segments: " + segments.size());
+      return Response.ok().build();
+   }
+}
+
+  ...
+
+   @Test
+   public void testTwoSegmentsArray() throws Exception {
+      Invocation.Builder request = client.target("http://localhost:8081/a/b/c/array").request();
+      Response response = request.get();
+      Assert.assertEquals(200, response.getStatus());
+      response.close();
+   }
+   
+   @Test
+   public void testTwoSegmentsList() throws Exception {
+      Invocation.Builder request = client.target("http://localhost:8081/a/b/c/list").request();
+      Response response = request.get();
+      Assert.assertEquals(200, response.getStatus());
+      response.close();
+   }
+....   
+
+is
+
+....
+array segments: 2
+list segments: 2
+....
+
+An alternative is to use a wildcard template parameter. For example, the output of calling testWildcardArray() and testWildcardList() in
+
+....
+@Path("")
+public static class TestResource {
+
+   @GET
+   @Path("{segments:.*}/array")
+   public Response getWildcardArray(@PathParam("segments") PathSegment[] segments) {
+      System.out.println("array segments: " + segments.length);
+      return Response.ok().build();
+   }
+   
+   @GET
+   @Path("{segments:.*}/list")
+   public Response getWildcardList(@PathParam("segments") List<PathSegment> segments) {
+      System.out.println("list segments: " + segments.size());
+      return Response.ok().build();
+   }
+   
+...
+
+   @Test
+   public void testWildcardArray() throws Exception {
+      Invocation.Builder request = client.target("http://localhost:8081/a/b/c/array").request();
+      Response response = request.get();
+      response.close();
+   }
+   
+   @Test
+   public void testWildcardList() throws Exception {
+      Invocation.Builder request = client.target("http://localhost:8081/a/b/c/list").request();
+      Response response = request.get();
+      response.close();
+   }
+....
+
+is
+....
+array segments: 3
+list segments: 3
+....
+
+=== Extension to ParamConverter semantics
+
+In the JAX-RS semantics, a ParamConverter is supposed to convert a single String that represents an individual object. RESTEasy extends the semantics to allow a ParamConverter to parse the String representation of multiple objects and generate a List<T>, Set<T>, SortedSet<T>, array, or, indeed, any multivalued data structure whatever. First, consider the resource
+
+....
+@Path("queryParam")
+public static class TestResource {
+
+   @GET
+   @Path("")
+   public Response conversion(@QueryParam("q") List<String> list) {
+      return Response.ok(stringify(list)).build();
+   }
+}
+
+private static <T> String stringify(List<T> list) {
+   StringBuffer sb = new StringBuffer();
+   for (T s : list) {
+      sb.append(s).append(',');
+   }
+   return sb.toString();
+}
+....
+
+Calling TestResource as follows, using the standard notation,
+
+....
+@Test
+public void testQueryParamStandard() throws Exception {
+   ResteasyClient client = new ResteasyClientBuilder().build();
+   Invocation.Builder request = client.target("http://localhost:8081/queryParam?q=20161217&q=20161218&q=20161219").request();
+   Response response = request.get();
+   System.out.println("response: " + response.readEntity(String.class));
+}
+....
+
+results in
+
+`response: 20161217,20161218,20161219,`
+   
+
+Suppose, instead, that we want to use a comma separated notation. We can add
+
+....
+public static class MultiValuedParamConverterProvider implements ParamConverterProvider
+
+   @SuppressWarnings("unchecked")
+   @Override
+   public <T> ParamConverter<T> getConverter(Class<T> rawType, genericType, Annotation[] annotations) {
+      if (List.class.isAssignableFrom(rawType)) {
+         return (ParamConverter<T>) new MultiValuedParamConverter();
+      }
+      return null;
+   }   
+}
+
+public static class MultiValuedParamConverter implements ParamConverter<List<?>> {
+
+   @Override
+   public List<?> fromString(String param) {
+      if (param == null || param.trim().isEmpty()) {
+         return null;
+      }
+      return parse(param.split(","));
+   }
+
+   @Override
+   public String toString(List<?> list) {
+      if (list == null || list.isEmpty()) {
+         return null;
+      }
+      return stringify(list);
+   }
+   
+   private static List<String> parse(String[] params) {
+      List<String> list = new ArrayList<String>();
+      for (String param : params) {
+         list.add(param);
+      }
+      return list;
+   }
+}
+....
+
+Now we can call
+
+....
+@Test
+public void testQueryParamCustom() throws Exception {
+   ResteasyClient client = new ResteasyClientBuilder().build();
+   Invocation.Builder request = client.target("http://localhost:8081/queryParam?q=20161217,20161218,20161219").request();
+   Response response = request.get();
+   System.out.println("response: " + response.readEntity(String.class));
+}
+....
+
+and get
+
+`response: 20161217,20161218,20161219,`
+   
+
+Note that in this case, MultiValuedParamConverter.fromString() creates and returns an ArrayList, so TestResource.conversion() could be rewritten
+
+....
+@Path("queryParam")
+public static class TestResource {
+
+   @GET
+   @Path("")
+   public Response conversion(@QueryParam("q") ArrayList<String> list) {
+      return Response.ok(stringify(list)).build();
+   }
+}
+....
+
+On the other hand, MultiValuedParamConverter could be rewritten to return a LinkList and the parameter list in TestResource.conversion() could be either a List or a LinkedList.
+
+Finally, note that this extension works for arrays as well. For example,
+
+....
+  public static class Foo {
+      private String foo;
+      public Foo(String foo) {this.foo = foo;}
+      public String getFoo() {return foo;}
+   }
+   
+   public static class FooArrayParamConverter implements ParamConverter<Foo[]> {
+
+      @Override
+      public Foo[] fromString(String value)
+      {
+         String[] ss = value.split(",");
+         Foo[] fs = new Foo[ss.length];
+         int i = 0;
+         for (String s : ss) {
+            fs[i++] = new Foo(s);
+         }
+         return fs;
+      }
+
+      @Override
+      public String toString(Foo[] values)
+      {
+         StringBuffer sb = new StringBuffer();
+         for (int i = 0; i < values.length; i++) {
+            sb.append(values[i].getFoo()).append(",");
+         }
+         if (sb.length() > 0) {
+            sb.deleteCharAt(sb.length() - 1);
+         }
+         return sb.toString();
+      }
+   }
+   
+   @Provider
+   public static class FooArrayParamConverterProvider implements ParamConverterProvider {
+
+      @SuppressWarnings("unchecked")
+      @Override
+      public <T> ParamConverter<T> getConverter(Class<T> rawType, Type genericType, Annotation[] annotations) {
+         if (rawType.equals(Foo[].class));
+         return (ParamConverter<T>) new FooArrayParamConverter();
+      }
+   }
+   
+   @Path("")
+   public static class ParamConverterResource {
+
+      @GET
+      @Path("test")
+      public Response test(@QueryParam("foos") Foo[] foos) {
+         return Response.ok(new FooArrayParamConverter().toString(foos)).build();
+      }
+   }
+....
+
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/EAP7-1034[EAP7-1034]
+* {issue-base-url}/WFLY-10646[WFLY-10646]
+
+=== Related Issues:
+
+* {issue-base-url}/RESTEASY-1566[RESTEASY-1566]
+* {issue-base-url}/RESTEASY-1746[RESTEASY-1746]
+
+=== Dev Contacts:
+
+* mailto:asoldano@redhat.com[Alessio Soldano]
+* mailto:rsigal@redhat.com[Ron Sigal]
+* mailto:ema@redhat.com[Jim Ma]
+* mailto:rsearls@redhat.com[Rebecca Searls]
+* mailto:weli@redhat.com[Wei Nan Li]
+
+=== QE Contacts:
+
+* mailto:rsvoboda@redhat.com[Rostislav Svoboda]
+* mailto:kanovotn@redhat.com[Katerina Novotna]
+* mailto:mkopecky@redhat.com[Marek Kopecky]
+
+=== Affected Projects or Components:
+
+* WildFly
+* RESTEasy
+
+== Requirements
+
+The behavior decribed in the first section is expected.
+
+=== Test Plan
+
+The feature is already extensively tested in RESTEasy testsuite, so that should be run against relevant WildFly version.
+
+
+=== Community Documentation
+
+Documented at http://docs.jboss.org/resteasy/docs/3.5.1.Final/userguide/html/StringConverter.html#d4e1492
+
+

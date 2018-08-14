@@ -1,0 +1,59 @@
+= Initial state transfer configuration
+:author:            Paul Ferraro
+:email:             paul.ferraro@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          clustering,infinispan,state-transfer
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+By default, a clustered Infinispan cache waits for the transfer of its initial state before it is available.
+However, several customers have complained that that their initial state transfer would timeout, and want the ability to disable this blocking behavior.
+When the cache is sufficiently large, a synchronous state transfer isn't always feasible within the configured timeout, especially for a replicated-cache.
+
+This RFE proposes to enable non-blocking state transfer when the configured timeout is zero (or negative).
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/EAP7-888
+
+=== Related Issues:
+
+* {issue-base-url}/WFLY-9648
+
+=== Dev Contacts:
+
+* mailto:{email}[{author}]
+
+=== QE Contacts:
+
+* mailto:mvinkler@redhat.com[Michal Vinkler]
+
+=== Affected Projects or Components:
+
+WildFly, Clustering
+
+=== Other Interested Projects:
+
+== Requirements
+
+=== Hard Requirements
+
+Disable awaitInitialTransfer if state-transfer is enabled and timeout <= 0.
+
+When transforming the model for legacy slaves, reject the resource if the timeout is <= 0, as these value, although not validated by the model, will result in unusable behavior.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+Run standard set of failover smartfrog tests with state-transfer configured with a 0 timeout.
+Validate that async, non-blocking state transfer results does not introduce sampling errors.
+Generate visual feedback of performance impact of the additional remote gets following failover.

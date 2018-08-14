@@ -1,0 +1,185 @@
+= New Features in HAL 3.x
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          console,hal
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+This issue summaries the enhancements and new features in HAL 3.x.
+
+=== General
+
+* Place management for finder and applications. Each finder selection and each application has its own distinct URL
+** Cross-links between different parts of HAL (configuration ⟷ runtime ⟷ deployment)
+* Applications / finder selections can be bookmarked
+* Enhanced model browser (visualize deprecated attributes)
+* Macro recording
+* PatternFly compliance
+* Enhanced form items
+* Second level cache for metadata (based on IndexDB and web workers)
+
+=== Finder
+
+* Navigation using cursor keys. Open an application by pressing ↵ (enter) and go back with ⌫ (backspace)
+* Items are ordered alphabetically by default
+* Pin frequently used items to stay at the top
+* Filter items by name and by properties like 'enabled' (for data sources) or 'stopped' (for servers)
+* Rich preview panes with action links for the most common tasks
+
+=== Applications
+
+* Breadcrumb navigation
+* Open in external window
+* Expert mode for most of the applications
+* New vertical navigation
+
+=== Deployments
+
+* Drag and drop deployments
+* Content browser with preview for text files, images and application link
+* Create exploded deployments
+* CRUD support for exploded deployments:
+** Add empty files
+** Upload content
+** Modify content
+** Remove content
+* Download deployments / deployment content
+
+=== Configuration
+
+* Client mappings for socket binding (inbound)
+
+==== New Subsystems
+
+* Elytron
+* Logging Profiles
+* Request Controller
+
+==== Enhanced Subsystems
+
+* EJB
+** MDB Delivery
+* Infinispan
+** Cache container
+*** Thread pool singletons
+** Cache
+*** All component singletons
+**** Backup
+*** All store singletons
+**** Write through and write behind
+**** Tables for JDBC stores
+* JCA
+** Tracer
+** Distributed workmanager
+* JGroups
+** Subsystem attributes
+** Channel configuration
+* JMX
+** Audit log
+* Messaging
+** Subsystem attributes
+** HTTP acceptors & connectors
+** HA policy
+* Resource Adapters
+** Work manager security: group & user mappings
+* Security
+** Configure security subsystem
+*** Core attributes
+*** Elytron key manager / store
+*** Elytron realm
+*** Elytron trust manager / store
+*** Vault
+** Security domain
+*** Core attributes
+* Undertow
+** Application Security Domains
+** Buffer caches
+** Servlet container / crawler
+** Hosts
+*** Access log
+*** Single sign on
+*** Locations & location filter refs
+*** Enable SSL with Elytron for a HTTPS listener
+
+=== Runtime
+
+* Topology
+* Reload / restart hosts
+* Show disconnected hosts
+* Better visualization for lifecycle operation on hosts, server groups and servers
+* Specify custom server URLs
+* Configuration changes
+* Show and cancel management operations in execution
+* Enable SSL with Elytron for the HTTP management interface
+
+==== New Subsystems
+
+* EJB
+** Thread pool from ejb3 subsystem
+** Preview with counters, timers and pool data of all deployed EJBs
+** Presenter / view tuple with all details
+* IO: Worker statistics and server connections
+* JAX-RS: Overview of JAX-RS endpoints with clickable URLs
+
+==== Enhanced Subsystems
+
+* Batch
+** Utilization chart for the default thread pool
+** Donut chart for the number of started, completed, stopped, failed and abandoned job executions
+** Start jobs
+* Data Sources: Includes data sources from (sub)deployments
+* JNDI: Search JNDI tree for keys, values
+* Messaging
+** Include queues and topics from deployments
+** Rich preview
+** List messages
+** Actions to change priority, expire messages, move messages, remove messages, send to dead letter queue
+* Transaction: Charts for runtime metrics
+* Web
+** Charts for runtime metrics
+** Application security domain
+** Shows statistics sessions per application
+** Modcluster runtime metrics
+** Requests and processing time metrics for undertow listeners
+* Web Services: Charts for runtime metrics
+
+=== Patching
+
+* Clear patch history
+
+=== Access Control
+
+* Switch security providers using the console
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/EAP7-885[EAP7-885]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+* WildFly will use HAL 3.x.
+* All features described in the <<overview,overview>> section are available.
+
+== Test Plan
+
+The https://github.com/hal/testsuite.next[new test suite] for HAL includes tests for the features described in the <<overview,overview>> section.

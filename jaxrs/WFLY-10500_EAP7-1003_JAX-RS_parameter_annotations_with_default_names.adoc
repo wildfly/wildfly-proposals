@@ -1,0 +1,84 @@
+= WFLY-10500 / EAP7-1003 JAX-RS parameters annotations with default names
+:author:            Alessio Soldano
+:email:             asoldano@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+This is about adding custom RESTEasy annotations working the same as vanilla JAX-RS QueryParam, HeaderParam, FormParam, CookieParam, PathParam, MatrixParam, but taking their names from (depending on where they're placed):
+
+* parameter name, via reflection (requires use of -parameters javac flag, otherwise params are named arg0..X)
+* setter property name
+* field name
+
+This allows avoiding explicit declaration of parameter names in the annotations:
+
+[source,java]
+----
+import org.jboss.resteasy.annotations.jaxrs.*; 
+      
+@Path("param/{userId}")  
+public class ParamResource {  
+      
+    @PathParam  
+    private String userId;  
+      
+    @GET  
+    @Path("{orderId}")  
+    public String getOrder(@PathParam String orderId) {  
+        return "User "+userId+" / Order "+orderId;  
+    }  
+}
+----
+
+Further documentation: https://github.com/resteasy/Resteasy/commit/7c3bec70d601ea097a39360ba2f9f85e0cb0ccdb
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/EAP7-1003[EAP7-1003]
+* {issue-base-url}/WFLY-10500[WFLY-10500]
+
+=== Related Issues:
+
+* {issue-base-url}/RESTEASY-1880[RESTEASY-1880]
+
+=== Dev Contacts:
+
+* mailto:separdau@redhat.com[Stephane Epardaud]
+* mailto:asoldano@redhat.com[Alessio Soldano]
+* mailto:ema@redhat.com[Jim Ma]
+* mailto:rsigal@redhat.com[Ron Sigal]
+* mailto:rsearls@redhat.com[Rebecca Searls]
+* mailto:weli@redhat.com[Wei Nan Li]
+
+=== QE Contacts:
+
+* mailto:rsvoboda@redhat.com[Rostislav Svoboda]
+* mailto:kanovotn@redhat.com[Katerina Novotna]
+* mailto:mkopecky@redhat.com[Marek Kopecky]
+
+=== Affected Projects or Components:
+
+* RESTEasy
+
+== Requirements
+
+* The new annotations will live in package org.jboss.resteasy.annotations.jaxrs
+* The new annotations require JDK 8 or greater to enable parameter names recording in the bytecode
+* Besides for the default and automatically derived parameter name, each annotation will behave the same as the corresponding vanilla JAX-RS one
+
+=== Test Plan
+
+RESTEasy tests upstream already included (by Stephane Epardaud and Marek Kopecky)
+
+=== Community Documentation
+
+The documentation is coming with the release of the RESTEasy component that's bringing the feature in WildFly. The merged PR that added the documentation is https://github.com/resteasy/Resteasy/pull/1519/files
+

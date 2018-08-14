@@ -1,0 +1,100 @@
+= [WFCORE-3999] Allow registering a custom HTTP handler for management interface
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-3999[WFCORE-3999]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1079[EAP7-1079]
+* https://issues.jboss.org/browse/WFLY-10711[WFLY-10711] - Implement Health Check so that it can be consumed by OpenShift Console
+** The HTTP endpoint provided by the MicroProfile Health Check will be exposed by a HTTP handler on
+    WildFly HTTP management interface
+* https://issues.jboss.org/browse/WFCORE-1742[WFCORE-1742] - Allow registering a custom handler for management interface
+** This feature allows to add ResourceManager to the WildFly HTTP management interface. It is targeting static resources such
+    as files and have limitations that make it not a good fit to provide a HTTP API endpoint.
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:rsvoboda@redhat.com[Rostislav Svoboda] - WildFly
+
+=== Affected Projects or Components
+
+* WildFly Core (to expose the new API)
+* WildFly and the `microprofile-smallrye-health` extension that will be added in https://issues.jboss.org/browse/WFLY-10711[WFLY-10711]
+
+=== Other Interested Projects
+
+== Requirements
+
+With https://issues.jboss.org/browse/WFCORE-1742[WFCORE-1742], it is possible to add "resources" to the HTTP management interface through the https://github.com/wildfly/wildfly-core/blob/master/server/src/main/java/org/jboss/as/server/mgmt/domain/ExtensibleHttpManagement.java[`ExtensibleHttpManagement`] interface.
+
+However this requires to provide a https://github.com/undertow-io/undertow/blob/master/core/src/main/java/io/undertow/server/handlers/resource/ResourceManager.java[ResourceManager] (from Undertow API) object that represents the resource.
+This interface is meant to represent static resources (such as file) and does not map well to exposing a "REST" kind of API.
+It requires to provide cache metadata (etag, cache) that may not be relevant for a HTTP API.
+
+It also automatically enables redirection (e.g. `/` to `/index.html`) without possibility to disable it.
+
+For some HTTP API such as the one required by MicroProfile Health Check (a GET on `/management/health`), it would be better to be able to pass a https://github.com/undertow-io/undertow/blob/master/core/src/main/java/io/undertow/server/HttpHandler.java[HttpHandler] instead of a `ResourceManager` to have more flexibility/simplicity to provide management HTTP API.
+
+One of the concern when WFCORE-1742 was created was that that feature exposed Undertow API.
+This is already the case with `ResourceManager` and this enhancement would only add exposition to the `HttpHandler` interface (in particular, the `HttpServerExchange` interface which is at the root of Undertow is already exposed by the `ResourceManager`).
+
+In `ExtensibleHttpManagement`, we add a single method:
+
+[code,java]
+====
+    /**
+     * Add a context for a HTTP management handler.
+     * @param contextName the name of the context. Cannot be {@code null} or empty
+     * @param requiresSecurity {@code true} if the management handler requires security.
+     * @param managementHandler HTTP management handler. Cannot be {@code null}
+     *
+     * @throws IllegalArgumentException if either parameter is invalid
+     * @throws IllegalStateException if there is already a context present named the same as {@code contextName}, either
+     *                               added via this interface or otherwise
+     */
+    void addManagementHandler(String contextName, boolean requiresSecurity, HttpHandler managementHandler);
+
+====
+
+This method complements the existing `addStaticContext(String contextName, boolean requiresSecurity, ResourceManager resourceManager))`.
+
+There is no need to add a corresponding remove method as the existing one `removeContext(String contextName)` can be used.
+
+The value of `requiresSecurity` specified the security behaviour of the management HttpHandler:
+
+* if it is `false`, unauthenticated access is _allowed_ and there is no security authentication or authorization.
+* if it is `true`, unauthenticated access is _disallowed_ and security authentication and authorization are performed. This implies that the application
+  must have configured an user in its management realm in order to allow authenticated access to the HTTP handler.
+
+=== Non-Requirements
+
+These are items that are explicitly not required.
+
+* This feature is experimental and unsupported. It is not considered a tech preview. Extensions that uses this feature may be subject to changes
+  during the lifetime of the EAP minor release that includes this feature.
+
+== Test Plan
+
+* Extend https://github.com/wildfly/wildfly-core/blob/master/testsuite/standalone/src/test/java/org/jboss/as/test/integration/management/http/CustomManagementContextTestCase.java[CustomManagementContextTestCase] to test a dynamic `HttpHandler`
+in addition to the static ResourceManager that was tested in the context of WFCORE-1742.
+
+== Community Documentation
+
+* As this feature is experimental, it will not be documented in https://github.com/wildfly/wildfly/blob/master/docs/src/main/asciidoc/_admin-guide/management-api/The_HTTP_management_API.adoc[The HTTP management API].
+Documentation will be updated if and when this feature status changes to Tech Preview or supported.

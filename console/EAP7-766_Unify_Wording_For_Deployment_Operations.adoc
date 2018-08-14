@@ -1,0 +1,48 @@
+= Unify wording for deployment operations
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          console,hal,deployment
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+Provide a clear set of deployment operations which is consistent across the different managent clients (CLI & web console).
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/EAP7-763[EAP7-766]
+
+=== Related Issues
+
+* {issue-base-url}/EAP7-621[EAP7-740]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+The console uses the same wording for the deployment related operations as the CLI.
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io

@@ -1,0 +1,47 @@
+= Support kill and destroy operations for server-groups
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+Support kill and destroy operations for server-groups
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-752[EAP7-752]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+Server groups provide two additional actions:
+* Kill
+* Destroy
+
+The actions are always available for selected server groups (regardless of state). They're not visible in case of RBAC and insufficient authorization.
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io

@@ -1,0 +1,70 @@
+= WFCORE-3877 Make implementing Configurable interface optional for configurable components
+:author:            Jan Kalina, Martin Mazanek
+:email:             jkalina@redhat.com mmazanek@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          elytron
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Presently custom components within the Elytron subsystem are required to implement the Configurable interface (in wildfy-core) if they wish to support receiving a Map of configuration Strings.
+
+This means that the custom component needs to depend on both the WildFly Elytron project and the subsystem.
+
+It should be possible for components to add the following method without implementing the interface and be configurable.
+
+[source,java]
+----
+void initialize(final Map<String, String> configuration);
+----
+
+We also have a long standing issue in that if we add a new component to WildFly Elytron it can not be used until we can add a resource to configure it. By supporting configurable custom components without needing a dependency on the subsystem new components added to WildFly Elytron could be usable whilst the subsystem definitions catch up.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-1005[EAP7-1005]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFCORE-3877[WFCORE-3877]
+
+=== Dev Contacts
+
+* mailto:jkalina@redhat.com[Jan Kalina]
+* mailto:mmazanek@redhat.com[Martin Mazanek]
+
+=== QE Contacts
+
+* TBD
+
+=== Affected Projects or Components
+
+* WildFly Core
+
+//=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* It will be possible to use class implementing required method (without any configuring-related interface) as configurable custom Elytron component.
+
+//=== Nice-to-Have Requirements
+
+//=== Non-Requirements
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+== Test Plan
+
+* Should be added test trying to add custom elytron security realm with configuration. Configuration params can be used to pass testing identity username/password and secured servlet can be used to test it is used and configured ok.
+

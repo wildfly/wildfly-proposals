@@ -1,0 +1,72 @@
+= WFCORE-3666 Provide Elytron alternative to RoleMappingLoginModule
+:author:            Martin Mazanek
+:email:             mmazanek@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently, Elytron role mapping consist mostly of logical and basic add suffix/prefix RoleMappers, which makes it hard to map roles based on an actual map. This task is to introduce more ways of mapping roles, such as using a map or regex, without the customers needing to implement their own custom components.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-3666[WFCORE-3666]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/ELY-1591[ELY-1591]
+* https://issues.jboss.org/browse/EAP7-1008[EAP7-1008]
+
+=== Dev Contacts
+
+* mailto:mmazanek@redhat.com[Martin Mazanek]
+
+=== QE Contacts
+
+* mailto:mchoma@redhat.com[Martin Choma]
+
+=== Affected Projects or Components
+
+* WildFly, Security
+
+== Requirements
+
+=== Hard Requirements
+
+* Implement a Map backed RoleMapper for a -> b mapping. There should be options to keep/remove the original mapped role, and to keep/remove roles that weren't mapped. The map would map a role to one or more new roles.
+* The format of role to be mapped is simple string, roles to which the role should be mapped are comma delimited in a string. In model this makes up a MAP of LIST, where the keys represent roles to be mapped and the representing values are LISTs of STRINGs, which represent the resulting roles.
+[source,xml]
+----
+<mappers>
+...
+	<mapped-role-mapper name="my-mapped-role-mapper" keep-mapped="true" keep-non-mapped="false" />
+		<role-mapping from="roleToMap" to="mappedRole1,mappedRole2" />
+		<role-mapping from="foo" to="joe,bar" />
+	</mapped-role-mapper>
+...
+</mappers>
+
+----
+
+=== Nice-to-Have Requirements
+
+* Implement a regex based RoleMapper. This could make current prefix/suffix RoleMappers obsolete and create a single universal solution for easy role transformation. 
+[source,xml]
+----
+<mappers>
+...
+	<regex-role-mapper name="my-regex-role-mapper" pattern=".*@(.*)" replacement="prefix$1suffix" />
+...
+</mappers>
+
+----
+
+* By combining this regex based mapper and mapped role mapper we could achieve similar functionality as mapped-regex-realm-mapper, but for roles.
+
+== Test Plan
+
+* Mapping functionality tests will be added to Elytron.
