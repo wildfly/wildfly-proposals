@@ -1,0 +1,80 @@
+= WFLY-10328 - Agroal subsystem
+:author:            Luis Barreiro
+:email:             lbarreiro@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+This issue is about providing an alternative to the current datasources subsystem based on IronJacamar. The new one is based on the Agroal connection pool library.
+Agroal is a lightweight and very fast connection pool implementation that performs exceptionally well in situations with high contention on the pool. For most of Wildfly's use cases Agroal can be a replacement for IronJacamar.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/WFLY-10328[WFLY-10328]
+
+=== Related Issues
+
+* {issue-base-url}/EAP7-983[EAP7-983]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:msimka@redhat.com[Martin Simka]
+
+=== Affected Projects or Components
+
+* WildFly
+
+=== Other Interested Projects
+
+* Agroal
+
+== Requirements
+
+* The performance team has identified the connection pool as a critical component for the scalability of the server. It's also understood that a majority of users don't need all of the features currently provided and that the implementation of some of those features prevent WildFly from accomplishing the required performance goals.
+* The inclusion of this subsystem will allow removing the JCA container and subsystem from a customized WildFly instance, allowing such an instance to have a smaller memory footprint, which is important in the scope of cloud deployments.
+
+=== Hard Requirements
+
+The following core features must be implemented by the subsystem:
+
+* Both XA and non-XA data sources
+* JNDI Binding
+* Runtime metrics for pool utilization
+* Pre-fill
+* Hot changes of pool sizes
+* Reap unused connections
+* Operations to flush pooled connections on-demand
+* Background validation
+* JTA transaction manager integration
+* Security (elytron) integration
+
+=== Nice-to-Have Requirements
+
+* Performance comparable with other state-of-the art connection pool libraries.
+* Minimal memory overhead (both in terms of runtime allocation and number of loaded classes)
+
+=== Non-Requirements
+
+* The new subsystem may not implement all the features available in the existing datasources subsystem. At any point we may specify to users to use the current datasources subsystem implementation, provided by IronJacamar.
+* The runtime model of the new subsystem does not have to be compatible the existing datasources subsystem model.
+* Support for deployment of JDBC driver jars or datasources using *-ds.xml as those have been deprecated.
+
+== Test Plan
+
+* A WildFly instance running with the Agroal subsystem in place of the current datasources subsystem must still pass all of the EE TCK.
+* In addition, the existing testing for datasources can also be applied to the new subsystem.
+
+== Community Documentation
+
+* Like for other subsystems, a chapter will be added to the WildFly Admin Guide documenting how to configure the subsystem.
+* The runtime model for the subsystem will be documented in https://wildscribe.github.io[WildScribe]
