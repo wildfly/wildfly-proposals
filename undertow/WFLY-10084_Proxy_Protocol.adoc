@@ -1,0 +1,67 @@
+= WFLY-10084 Support for the PROXY protocol
+:author:            Stuart Douglas
+:email:             sdouglas@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org
+
+== Overview
+
+This feature is to add support for version 1 of the proxy protcol as defined at
+http://www.haproxy.org/download/1.8/doc/proxy-protocol.txt. This will be supported via a new attribute on Undertow
+listeners called `proxy-protocol`.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/WFLY-10084[WFLY-10084]
+
+=== Related Issues:
+
+* {issue-base-url}/UNDERTOW-573[UNDERTOW-573]
+* {issue-base-url}/EAP7-974[EAP7-974]
+
+=== Dev Contacts:
+
+* mailto:jstourac@redhat.com[Jan Stourac]
+
+=== QE Contacts:
+
+=== Affected Projects or Components:
+
+* Undertow
+
+== Requirements
+
+=== Hard Requirements
+
+
+This will be implemented as an attribute called `proxy-protocol` under each of the listeners. If this is set to true
+then the listener will be wrapped by the Undertow proxy protocol implementation. This wrapper reads the proxy protocol
+header from the stream, before handing off the connection to the normal listener implementation.
+
+This information will be used by any part of the request processing that requests the remote clients IP address,
+including access logging and calls to `javax.servlet.ServletRequest#getRemoteAddr()`.
+
+This will be supported for HTTP, HTTPS, but not AJP.
+
+
+=== Non-Requirements
+
+This does not involve adding support for acting as a load balanacer using the proxy protocol. The proxy protocol is
+connection based rather than request based, so there would be basically zero code reuse between the existing proxy
+and any java implementation of a proxy.
+
+=== Test Plan
+
+Tests will be created in the Wildfly test suite that adds both a HTTP and HTTPS listener with this attribute set to
+true. Using a raw socket a proxy protocol connection will be established, and a HTTP request sent. A servlet will be
+installed in Wildfly that sends back the reported remote address, and these will be compared to what was sent in the
+proxy protocol header.
+
+Core comprehensive tests for proxy protocol support are present in the Undertow test suite, the WildFly test suite
+will just contain smoke tests to make sure the configuration is working as expected.
