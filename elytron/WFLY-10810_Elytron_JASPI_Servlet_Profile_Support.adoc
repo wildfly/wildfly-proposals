@@ -80,8 +80,8 @@ Our `ServerAuthConfig` implementation will include the following features: -
 * Each will be associated with a flag to control the behaviour in the event of success / failure (The result of these flags will be specified in the documentation)
 ** Required
 ** Requisite
-** SUFFICIENT
-** OPTIONAL
+** Sufficient
+** Optional
 * Each `ServerAuthModule` can be associated with it's own properties that will be passed in for initialisation.
 
 The WildFly Elytron Subsystem will have a new resource `jaspi-configuration` defined, as JASPI configuration providers are associated with the `AuthConfigFactory` using both a `layer` and an `appContext` those two values will be defined as attributes on the resource - this means the name of the resource will only be used to allow it to be referenced in the management model and will bear no relationship to the registration.  The new resource will support an ordered list of auth modules being specified, each with their own control flag and configuration properties.
