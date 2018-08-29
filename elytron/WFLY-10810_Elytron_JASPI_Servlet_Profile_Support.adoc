@@ -154,6 +154,24 @@ The overall implementation of this will affect four different projects, however 
 
 == Test Plan
 
+Within WildFly Elytron tests will be added for the following areas: -
+. AuthConfigFactory - Implementation of API
+. Use of the new API to assemble and register an `AuthConfigProvider`.
+. Generic testing of JASPI authentication verifying authentication module ordering and correct behaviour of the flags.
+. Direct testing of the `CallbackHandler` providing integration with the `SecurityDomain`.
+
+The testing within WildFly Elytron will be making generic use of the APIs as we don't have a servlet container available so will be using test MessageInfo instances compatible with test authentication modules.
+
+Within WildFly Core tests will cover two areas: -
+. General configuration within the subsystem.
+. Transformers correctly rejecting / dropping configuration.
+
+Within WildFly there will be more complete integration smoke tests within the Elytron testsuite covering scenraios such as: -
+. Managed configurations and programatically registered configurations.
+. Integrated and non-Integrated mode.
+. Session association.
+. Propagation into the EJB container.
+
 == Community Documentation
 
 As an implementation of an EE specification we will not look to duplicate already available documentation for JASPI itself, our documentation will focus on the configuration and APIs we make available to work with JASPI.
