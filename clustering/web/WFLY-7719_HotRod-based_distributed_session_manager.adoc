@@ -1,0 +1,63 @@
+= HotRod-based distributed session manager
+:author:            Paul Ferraro
+:email:             paul.ferraro@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WFLY-7719 seeks to add a new distributed session manager implementation to WildFly that uses a HotRod client to store session data into a remote Infinispan cluster.
+This future provides a system an additional dimension with which to scale, by allowing the caching layer (i.e. session storage) to scale independently from the application servers themselves.
+The session manager implementation will conform to the SPI provided by the org.wildfly.clustering.web.spi module, allowing the same session manager implementation to support multiple servlet containers, including WildFly/Undertow and Tomcat (via https://github.com/wildfly-clustering/wildfly-clustering-tomcat).
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-7719[WFLY-7719]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-5550[WFLY-5550]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:tborgato@redhat.com[Tommaso Borgato]
+
+=== Affected Projects or Components
+
+WildFly, Clustering
+
+=== Other Interested Projects
+
+Infinispan
+
+== Requirements
+
+=== Hard Requirements
+
+* Port hotrod-based session manager implementation from http://github.com/wildfly-clustering/wildfly-clustering-web-hotrod to WildFly
+* Add ability to configure new session manager to distributable-web subsystem
+* Add ability to configure individual web applications to use new session manager via deployment descriptor
+
+=== Nice-to-Have Requirements
+
+* Utilize HotRod administration interface to dynamically create remote caches per web application, instead of using single cache for all deployments
+* Extract logic common to both (i.e. embedded infinispan vs remote infinispan) session manager implementations into a common module
+
+=== Non-Requirements
+
+== Test Plan
+
+* Clustering testsuite will add new variants for validating SESSION and ATTRIBUTE granularity session persistence to Infinispan-server
+* QE's smartfrog testsuite should add new variations of their tests as well.
+
+== Community Documentation
+
+Community documentation of distributable-web subsystem to be updated to include configuration of hotrod-based session manager
