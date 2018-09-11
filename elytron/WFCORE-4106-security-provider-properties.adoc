@@ -1,0 +1,86 @@
+= WFCORE-4106 Add the ability to configure security providers using Elytron subsystem security properties
+:author:            Farah Juma
+:email:             fjuma@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+The Elytron subsystem currently provides the ability to set security properties using the
+`security-properties` attribute. It makes use of the `Security.setProperty()` method to do this.
+However, it is not currently possible to make use of Elytron security properties to successfully
+configure security providers. In particular, since the list of security providers is established on
+JVM startup using the `java.security` file, attempting to use the `Security.setProperty()` method
+later on to modify this list of security providers doesn't work. To properly update the list of
+security providers, the `Security.insertProviderAt()` method needs to be used. This task is to update
+the `org.wildfly.extension.elytron.SecurityPropertyService` to ensure that any security providers
+that are specified using Elytron `security-properties` of the form `security.provider.i` get properly
+registered using the `Security.insertProviderAt()` method. It will no longer to be necessary to manually
+update the `java.security` file to configure custom security providers.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-4106[WFCORE-4106]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-721[EAP7-721]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:mchoma@redhat.com[Martin Choma]
+
+=== Affected Projects or Components
+
+* WildFly, Security
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* It should be possible to configure security providers using the `security-properties` attribute in the
+  Elytron subsystem. The specified security providers should be successfully registered. For example,
+  it should be possible to use the following command to configure custom security providers:
+
+[source,xml]
+----
+/subsystem=elytron:write-attribute(name=security-properties,value={\
+    security.provider.1=PROVIDER_1,\
+    security.provider.2=PROVIDER_2,\
+    ...\
+}
+----
+
+* Any security providers configured using the `security-properties` attribute should be unregistered when
+  the `org.wildfly.extension.elytron.SecurityPropertyService` is stopped.
+
+* Any security providers configured using the `security-properties` attribute should be registered before
+  any security providers specified using the Elytron subsystem `initial-providers`, `final-providers`, and
+  `disallowed-providers` attributes are registered.
+
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+Tests will be added to ensure security providers configured using the `security-properties` attribute are
+successfully registered.
+
+== Community Documentation
+
+Documentation on how to configure security providers using Elytron security properties will be added to
+the "Using the Elytron Subsystem" section in the WildFly documentation.
