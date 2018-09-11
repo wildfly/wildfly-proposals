@@ -27,9 +27,11 @@ listeners called `proxy-protocol`.
 
 === Dev Contacts:
 
-* mailto:jstourac@redhat.com[Jan Stourac]
+* mailto:{email}[{author}]
 
 === QE Contacts:
+
+* mailto:jstourac@redhat.com[Jan Štourač]
 
 === Affected Projects or Components:
 
