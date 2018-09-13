@@ -1,0 +1,78 @@
+= WFLY-7186 Support the EE 8 Security API (JSR-375) with WildFly Elytron
+:author:            Darran Lofthouse
+:email:             darran.lofthouse@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This enhancement is adding support for the new Security API in Java EE 8 defined under https://jcp.org/aboutJava/communityprocess/final/jsr375/index.html[JSR-375] with WildFly Elytron.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-7186[WFLY-7186]
+
+=== Related Issues
+
+This enhancement depends on 
+
+* https://issues.jboss.org/browse/WFLY-10810[WFLY-10810]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Affected Projects or Components
+
+This enhancement makes use of the WildFly Elytron JASPI implementation and integration which is distributed across the following projects: -
+* https://github.com/wildfly-security/wildfly-elytron[WildFly Elytron]
+* https://github.com/wildfly-security/elytron-web[Elytron Web]
+* https://github.com/wildfly/wildfly-core[WildFly Core]
+* https://github.com/wildfly/wildfly[WildFly]
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+Applications making use of JSR-375 should be deployable against a WildFly Elytron security domain and any authentication should result in the establishment of a WildFly Elytron SecurityIdentity.
+
+Whilst it should be possible to load the identity from the SecurityDomain deployments can also make use of non-integrated mode for the underlying JASPI integration which will instead result in ad-hoc identities being created.
+
+As a WildFly Elytron SecurityIdentity is established calls such as the following should obtain this identity: -
+
+[source,java]
+----
+SecurityDomain.getCurrent().getCurrentSecurityIdentity();
+----
+
+Propagation of the established SecurityIdentity to other containers within the application server will be supported as normal.
+ 
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+As JSR-375 makes use of identity stores defined in the deployments it will predominantly be used in non-integrated mode for JASPI which will mean features such as reloading an identity used in the batch subsystem or used for identity propagation will not be available.
+
+As the establishment of the identity for JSR-375 happens late in the request handling automatic outflow from security domains can not be relied for identity propagation, instead inflow should be used on the target container.
+
+== Implementation Plan
+
+No implementation is required to support this feature, support for JSR-375 has already been added to the application server and currently operates on top of the PicketBox JASPI implementation, once the WildFly Elytron JASPI implementation is merged support for the Security API on top of WildFly Elytron will be automatically available,
+
+== Test Plan
+
+A small number of smoke tests will be added to the WildFly testsuite to verify the integration.
+
+Beyond that testsuites such as the Soteria testsuite are available for more thorough test coverage so we don't need to duplicate this.
+
+== Community Documentation
+
+As this enhancement is adding support for an already documented specification the community documentation to be added will focus on specifics related to the integration with WildFly Elytron, for example the steps to deployment starting with a clean server configuration.
