@@ -1,0 +1,69 @@
+= EAP7-1113 Disable CLI paging with an option
+:author:            Marek Marusic
+:email:             mmarusic@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          cli,disable,option,output,scrolling
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The output paging is not desired in some cases e.g. when copy/pasting the full output of a command.
+The paging could be disabled by a simple option.
+
+=== Workaround
+It is currently possible to override the paging of a single command by redirecting the output to /dev/stdout.
+
+==== Example of the workaround:
+----
+/subsystem=elytron:read-resource-description(recursive=true) > /dev/stdout
+----
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-1113[EAP7-1113]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFCORE-4127[WFCORE-4127]
+* https://issues.jboss.org/browse/WFCORE-4096[WFCORE-4096]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+* mailto:jdenise@redhat.com[Jean-François Denise]
+
+=== QE Contacts
+
+* mailto:mnovak@redhat.com[Miroslav Novák]
+
+=== Affected Projects or Components
+
+* CLI
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+* Ability to disable output paging via CLI argument e.g.:
+----
+./jboss-cli.sh --no-paging
+----
+* Ability to disable output paging using `jboss-cli.xml`
+* The options would disable the output paging for all commands / output
+* Mention the option in the CLI help
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+Tests should include:
+
+* Effectiveness of the CLI argument and `jboss-cli.xml` option to disable the paging
+* Make sure the paging works when any of the options to disable paging is not used
