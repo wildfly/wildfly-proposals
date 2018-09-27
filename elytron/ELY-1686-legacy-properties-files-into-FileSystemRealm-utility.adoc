@@ -1,0 +1,170 @@
+= ELY-1686 Add utility to port legacy properties files into a FileSystemRealm
+:author:            Justin Michael Cook
+:email:             jucook@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+Currently, converting legacy security properties files into an Elytron FileSystemRealm
+must be done manually, there should be a migration tool that automates this conversion.
+This task is to add such a tool to WildFly Elytron Tool.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/ELY-1686[ELY-1686]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1093[EAP7-1093]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:msvehla@redhat.com[Martin Švehla]
+
+=== Affected Projects or Components
+
+* WildFly Elytron Tool
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* It should be possible to have legacy properties file converted into an Elytron
+FileSystemRealm automatically. This should be done by adding a command named
+FileSystemRealmCommand to the Elytron-Tool. This command will create a users directory from
+a given path and then use that directory to create a FileSystemRealm. The command will provide
+a script file containing any additional WildFly CLI commands needed to fully register the
+FileSystemRealm in Elytron, such as those needed to configure the security-domain.
+The command will not provide any WildFly CLI commands in the output for any optional parameters
+that are not specified.
+
+* This command will require a users properties file, roles properties file, and output
+directory. The paths to these files and directory should be able to be
+relative to the administrator's current directory or should be able to be absolute.
+Optionally, the name of the filesystem-realm and security-domain can be provided.
+If the name of the filesystem-realm or security-domain are not provided, then the command
+will use default values for these options. The default value for filesystem-realm will be
+converted-properties-filesystem-realm and the default value for security-domain will be
+converted-properties-security-domain.
+
+** Command with only required options
+[source,bash]
+./bin/elytron-tool.sh filesystem-realm --users-file/-u <usersFile> --roles-file/-r <rolesFile>
+--output-location/-o <outDirectory>
+
+** Command with all possible options
+[source,bash]
+./bin/elytron-tool.sh filesystem-realm --users-file/-u <usersFile> --roles-file/-r <rolesFile>
+--output-location/-o <outDirectory> [--filesystem-realm-name/-f] <name>
+[--security-domain-name/-s] <name>
+
+* There should be a text descriptor file that allows multiple inputs to be specified. The
+descriptor file should only accept the long-form option names for readability. Using the
+text descriptor file will have its own option, --bulk-convert/-b
+
+** CLI Command
+[source,bash]
+./bin/elytron-tool.sh filesystem-realm --bulk-convert/-b <file>
+
+** Text descriptor file
+[source,text]
+----
+user-file:/relative/path/to/usersFile1
+roles-file:/relative/path/to/rolesFile1
+output-location:/relative/path/to/output/outDirectory1
+filesystem-realm-name:nameOfFileSystemRealm1
+security-domain-name:nameOfSecurityDomain1
+
+user-file:/absolute/path/to/usersFile2
+roles-file:/absolute/path/to/rolesFile2
+output-location:/absolute/path/to/output/outDirectory2
+filesystem-realm-name:nameOfFileSystemRealm2
+security-domain-name:nameOfSecurityDomain2
+----
+
+* Summary of options and their description
+|===
+|Long-form |Short-form |Description
+
+| --users-file
+| -u
+| The relative or absolute path to the users file
+
+| --roles-file
+| -r
+| The relative or absolute path to the roles file
+
+| --output-location
+| -o
+| The relative or absolute path to the output directory
+
+| --filesystem-realm-name
+| -f
+| Name of the filesystem-realm to be configured
+
+| --security-domain-name
+| -s
+| Name of the security-domain to be configured
+
+| --help
+| N/A
+| Shows the possible parameters and description of them
+
+| --debug
+| N/A
+| Enables printing the full stack trace for errors
+
+| --bulk-convert
+| -b
+| Tells the command to use a descriptor file, for multiple users-roles file combinations
+can be provided.
+|===
+
+=== Nice-to-Have Requirements
+
+* The command should have a silent option, similar to the -s option in the unix make
+command, where only errors and prompts are printed.
+[source,bash]
+./bin/elytron-tool.sh filesystem-realm [--silent] --bulk-convert/-b <file>
+
+* The command should have a summary option that prints out detailed information on
+every operation that was performed, once the command has finished converting all files.
+[source,bash]
+./bin/elytron-tool.sh filesystem-realm [--summary] --bulk-convert/-b <file>
+
+* Summary of nice-to-have options and their description
+|===
+|Long-form |Short-form |Description
+
+| --silent
+| N/A
+| Suppresses all output except errors and prompts
+
+| --summary
+| N/A
+| Provides a detailed summary of all operations performed, once the command finishes.
+|===
+
+=== Non-Requirements
+
+== Test Plan
+
+Tests to run the new CLI operation will be added, which will be added in the
+elytron-tool repository.
+
+== Community Documentation
+
+This new WildFly Elytron Tool operation will be documented in the WildFly documentation
+under Migrate Legacy Security to Elytron Subsystem.
