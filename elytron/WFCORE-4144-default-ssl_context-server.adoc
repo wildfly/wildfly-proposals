@@ -1,0 +1,59 @@
+= WFCORE-4144 Default SSLContext Registration (Within Application Server)
+:author:            Darran Lofthouse
+:email:             darran.lofthouse@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This is a relatively simple enhancement to ensure that as the server is started a JVM wide default SSLContext is registered for the use of any libraries within the application server that support the use of the default context.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-4144[WFCORE-4144]
+
+=== Related Issues
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Affected Projects or Components
+
+WildFly Core
+
+=== Other Interested Projects
+
+None
+
+== Requirements
+
+=== Hard Requirements
+
+At the root of the WildFly Elytron subsystem a new attribute `default-ssl-context` will be registered.  This will be a reference to resources providing the `org.wildfly.security.ssl-context` capability.
+
+As the services for the subsystem start a reference to the `SSLContext` instance will be obtained and will be set globally using the API https://download.java.net/java/early_access/jdk11/docs/api/java.base/javax/net/ssl/SSLContext.html#setDefault(javax.net.ssl.SSLContext)[SSLContext.setDefault(SSLContext)].
+
+=== Nice-to-Have Requirements
+
+None
+
+=== Non-Requirements
+
+Handling of the registration of a default SSLContext in stand alone clients will not be covered by this RFE.
+
+This RFE is concerned with the registration of a single SSLContext, this RFE will not cover selecting alternative configurations based on the peer being accessed.
+
+It will not be possible to cache a current default `SSLContext` as this would lead to redundant initialisation that could fail, additionally it is not possible to set the default to `null` to trigger initialisation on next access so the `SSLContext` will not be cleared if the subsystem is shut down.  Unsetting the `default-ssl-context` attribute would put the process in a `restart-required` state instead of `reload-required`.
+
+== Test Plan
+
+== Community Documentation
+
+A small amount of documentation will be required describing the new attribute in the WildFly Elytron subsystem.
