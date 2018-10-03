@@ -1,0 +1,62 @@
+= Singleton Service Election Listener
+:author:            Paul Ferraro
+:email:             paul.ferraro@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The MSC includes a listener facility to inform a listener when a given service starts and stops.
+For singleton services, we need similar facility - to inform a listener, not just when its service starts and stops, but also which cluster member was elected as the new primary provider.
+Users will register this listener when the service is installed.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-11098
+
+=== Related Issues
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:tborgato@redhat.com[Tommaso Borgato]
+
+=== Affected Projects or Components
+
+Clustering
+
+=== Other Interested Projects
+
+Quickstarts
+
+== Requirements
+
+=== Hard Requirements
+
+* Public SingletonElectionListener interface with the following method
+** void elected(List<Node> candidateMembers, Node electedMember);
+* Add listener registration method to public SingletonPolicy interface
+* Following an election, the listener callback should be invoked on every cluster member on which the given singleton service was installed
+* When run from a non-ha profile, the election listener will be invoked exactly once, as soon as the the service starts.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+* Since listener will be registered during installation, there is no need to support multiple listeners.
+  This can be easily simulated via a composite/aggregate listener.
+
+== Test Plan
+
+A new test will be added to the clustering integration testsuite to validate behavior (both ha and local).
+
+== Community Documentation
+
+Community docs will be enhanced to describe listener registration with examples.
