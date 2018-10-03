@@ -1,0 +1,82 @@
+= Singleton service metrics
+:author:            Paul Ferraro
+:email:             paul.ferraro@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Users of singleton deployments and singleton services have long requested for an easy way to determine the primary provider of a given deployment or service.
+Currently, this can only be determined by looking at the logs.
+This feature request would make this information available from the management model.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-10832
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-7234
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:tborgato@redhat.com[Tommaso Borgato]
+
+=== Affected Projects or Components
+
+Clustering
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+Expose a runtime resource within the singleton subsystem for each singleton deployment/service created from a given singleton policy exposing the following information:
+
+* The name of the cluster member currently acting as the singleton provider
+
+e.g.
+
+----
+/subsystem=singleton/singleton-policy=foo/deployment=bar.ear:read-attribute(name=primary-provider)
+/subsystem=singleton/singleton-policy=foo/service=org.my.singleton.service.name:read-attribute(name=primary-provider)
+----
+
+=== Nice-to-Have Requirements
+
+Additionally expose the following:
+
+* The names of the nodes on which the given singleton deployment/service is installed.
+
+e.g.
+
+----
+/subsystem=singleton/singleton-policy=foo/deployment=bar.ear:read-attribute(name=providers)
+/subsystem=singleton/singleton-policy=foo/service=org.my.singleton.service.name:read-attribute(name=providers)
+----
+
+=== Non-Requirements
+
+Users can additionally create singleton services from a SingletonServiceConfiguratorFactory (installed per cache).
+As these are not directly managed by the singleton subsystem, singleton services created via this mechanism will not be exposed by the management model.
+
+//== Implementation Plan
+
+== Test Plan
+
+This feature will be tested within the scope of the current clustering testsuite.
+We currently have tests that query a servlet to determine the primary provider of a given singleton service.
+These tests will be modified to obtain this information via a management client.
+
+== Community Documentation
+
+The community documentation will be updated to include CLI commands for obtaining metrics about a specific singleton deployment or service.
