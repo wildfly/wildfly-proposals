@@ -1,0 +1,164 @@
+= [WFLY-10518] Connections to remote Artemis broker must not require local Artemis instance
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          messaging,jms,openshift
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Connections to remote Artemis-based broker (including A-MQ 7) are handled in
+WildFly by the
+https://wildscribe.github.io/WildFly/13.0/subsystem/messaging-activemq/server/pooled-connection-factory/index.html[pooled-connection-factory]
+resource that is in the `messaging-activemq`.
+
+This `pooled-connection-factory` resource can be used to connect to the local Artemis server that "owns" it or to a remote Artemis broker.
+
+However, this `pooled-connection-factory` resource always require the presence of a local Artemis server even when it connects only to a remote Artemis broker.
+This use case will become more prevalent as WildFly is deployed on OpenShift to connect to a remote A-MQ 7 broker.
+
+The presence of a local Artemis server has impact on the memory and CPU  footprint of WildFly image on OpenShift but also on a bare metal installation.
+This RFE will improve WildFly so that a connection to a remote Artemis-based
+ broker will no longer require the presence of a local instance of Artemis.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-10518[WFLY-10518]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1014[EAP7-1014]
+* https://issues.jboss.org/browse/EAP7-1006[EAP7-1006] is a RFE related to Java EE7 JMS resource
+definitions that will benefit from this RFE.
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:mnovak@redhat.com[Miroslav Novak]
+
+=== Affected Projects or Components
+
+* This is a internal restructuring of the `messaging-activemq` subsystem that requires no changes
+from Artemis or other messaging components. Existing code will still be working if a local broker is present thus no migration operation is required.
+
+=== Other Interested Projects
+
+== Requirements
+
+* It must be possible to configure WildFly to connect to a remote Artemis-based broker (using the Artemis resource adapter)
+  without having to run a local Artemis broker in WildFly.
+* Previous and current subsystem schemas and models must remain compatible.
+* JavaEE 7 JMS definition annotations are out of the scope of this RFE.
+* Connecting standalone JMS clients to obtain a connection to a remote AMQ7 broker is *NOT SUPPORTED* at this stage.
+
+=== Nice-to-Have Requirements
+
+* Refactor the Artemis modules to have a proper split between Artemis client and server code.
+* The Artemis resource adapter should only need to depend on Artemis client module.
+
+== Proposed Design
+
+Create new resources into `/subsystem=messaging/`:
+
+  * `connector`, `http-connector`, `remote-connector`, `in-vm-connector`
+  * `discovery-group`
+  * `pooled-connection-factory`
+  * `connection-factory`
+
+Note that they may differ from those for a `server`. The new resources are only **visible** in their context. Thus a subsystem connector can't be referenced from a server pooled connection factory. In a similar way, resources in a server can't be referenced from a subsystem resource.
+
+Other resources that remains in `/subsystem=messaging/server`:
+
+  * `acceptor`, `http-acceptor`, `remote-acceptor`, `in-vm-acceptor` (they corresponds to Artemis broker configuration)
+  * `broadcast-group` (this kind of resource is only used by Artemis brokers to broadcast cluster information)
+
+=== JMS Destination resources
+
+With the proposed design, a `pooled-connection-factory` resource is able to connect to a
+remote Artemis broker.
+However, to provide a fully functional JMS application, the user also needs to inject (or
+  lookup in JNDI) JMS Destinations object that represents the queue or topic managed by the remote
+  broker.
+
+There are `jms-queue` and `jms-topic` resources under the `server` resources but they require
+broker code to create and configure the queue on the local Artemis broker.
+
+We need another type of resources that represents JMS Destination object to store in JNDI.
+
+These new resources will be under `/subsystem=messaging-activemq`:
+
+  * `external-jms-queue`
+  * `external-jms-topic`
+
+These resources have a single attribute:
+
+  * `jndi-name` - the JNDI binding to store the Destination object
+
+The name of these resources are meaningful: it *MUST* be identical to the name of the destinations configured
+    in the remote Artemis broker
+
+These resources have *no* runtime management operations (e.g. to flush messages, etc.). They are just local
+representation of remote Artemis resources and does not allow to manage the remote resources in any capacity.
+They are named `external-` as they are meant to be used by client application (either in a deployment or a
+  remote client) to an external broker. They are the _client_ representation of an external JMS destination.
+
+== Examples
+
+=== WildFly Configuration to connect to a remote Artemis broker
+
+[source,xml]
+----
+<subsystem name="messaging-activemq">
+  <remote-connector name="remote"
+                    socket-binding="remote-messaging"/>
+  <pooled-connection-factory name="remote-artemis"
+    entries="java:/jms/remote/myCF"
+    connectors="remote" />
+  <!-- the Artemis Broker has defined a JMS Queue named `myQueue` -->
+  <external-jms-queue="myQueue" jndi-name="java:/jms/remote/myQueue" />
+</subsystem>
+----
+
+=== Java Code to send and receive messages from the remote broker
+
+[source,java]
+----
+@Resource(lookup"=java:/jms/remote/myQueue")
+Queue myQueue;
+
+@Inject
+@JMSConnectionFactory("java:/jms/remote/myCF")
+private JMSContext context;
+----
+
+=== Message-Driven Bean activation
+
+[source,java]
+----
+@MessageDriven(
+        name = "MyMDB",
+        activationConfig = {
+                @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
+                @ActivationConfigProperty(propertyName = "destinationLookup", propertyValue = "java:/jms/remote/myQueue")
+        }
+)
+@ResourceAdapter("remote-artemis") // name of the pooled-connection-factory resource
+public class MyMDB implements MessageListener {
+  public void onMessage(final Message m) {
+    ...
+  }
+}
+----
+
+== Test Plan
+
+== Community Documentation
+
+The feature will be documented in WildFly Admin Guide (in the Messaging Configuration section).
