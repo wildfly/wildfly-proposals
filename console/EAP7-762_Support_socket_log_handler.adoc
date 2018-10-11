@@ -1,0 +1,50 @@
+= Support socket log handler
+:author:            Claudio Miranda
+:email:             claudio@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+Expose /subsystem=logging/socket-handler alongside existing logging handlers in the Logging and Logging Profile configuration .
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-762[EAP7-762]
+
+=== Dev Contacts
+
+* mailto:claudio@redhat.com[Claudio Miranda]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+== Requirements
+
+The socket handler is available at:
+
+* `/subsystem=logging/socket-handler=*`
+* `/subsystem=logging/logging-profile=*/socket-handler=*`
+
+They should be displayed in the vertical menu "Handlers" of the Logging and Logging Profile configuration in alfabetical order and all non deprecated attributes are to be configurable in the edit form.
+The "add" action should user enter only the required attributes.
+
+== Test Plan
+
+The plan tests the following actions:
+* Add a socket-handler with parameters: name, named formatter, outbound socket binding ref.
+* Edit and update the filter-spec attribute.
+* Reset the form.
+* Remove a socket handler resource.
+
+The tests are performed on Socket Handler configuration and Logging Profile.
+
+== Community Documentation
+
+None
