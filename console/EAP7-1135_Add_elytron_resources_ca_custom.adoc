@@ -1,0 +1,43 @@
+= EAP7-1135 Add new elytron resources: certificate-authority-account, custom-security-event-listener, mapped-role-mapper
+:author:            Claudio Miranda
+:email:             claudio@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+There are three elytron resources: certificate-authority-account, custom-security-event-listener, mapped-role-mapper.
+Tehy should be available in HAL.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-1135[EAP7-1135]
+
+=== Dev Contacts
+
+* mailto:claudio@redhat.com[Claudio Miranda]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+== Requirements
+
+* The certificate-authority-account will be available as a second level item in Other Settings / Other Settings view.
+* The custom-security-event-listener will be available as a second level item in Other Settings / Logs.
+* The mapped-role-mapper will be available as second as a second level item in Mappers Decoders / Role Mapper view.
+* They all will feature CRUD operations: list, create, edit, remove
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+None
