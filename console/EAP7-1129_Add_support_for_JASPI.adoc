@@ -1,0 +1,42 @@
+= EAP7-1129 Add support for JASPI as added to the WildFly Elytron Subsystem
+:author:            Claudio Miranda
+:email:             claudio@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+Add support to JASPI elytron resource /subsystem=elytron/jaspi-configuration=*
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-1129[EAP7-1129]
+
+=== Dev Contacts
+
+* mailto:claudio@redhat.com[Claudio Miranda]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+== Requirements
+
+The resource is at /subsystem=elytron/jaspi-configuration=*
+
+It will added in the Other Settings view of Elytron configuration, then add it as a second level item of Other Settings menu.
+The following operations are available: add, remove, edit, reset.
+
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+None
