@@ -1,0 +1,43 @@
+= EAP7-1131 Show logs from logging-profile in log viewer
+:author:            Claudio Miranda
+:email:             claudio@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+The log files from logging-profiles are not displayed in the log files of web console. They should be displayed in the runtime view of the logging subsystem.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-1131[EAP7-1131]
+
+=== Dev Contacts
+
+* mailto:claudio@redhat.com[Claudio Miranda]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+== Requirements
+
+* The visualization of a log file from a logging-profile should be the same of a regular log file.
+* The logging-profiles should be displayed in the column "Log File" of the logging runtime view alongside the regular log files.
+* The logging profile should show the logging profile name as subtitle of the column item.
+* The preview pane shoud display the logging profile name.
+* Use the read-log-file operation of the logging-profile=*/log-file=* resource.
+* When viewing the log-file, show the logging profile name alongside the file name in the header section of the view pane.
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+None
