@@ -1,0 +1,68 @@
+= EAP7-1130 Add support to several messaging-activemq resources
+:author:            Claudio Miranda
+:email:             claudio@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+Add the following resources to HAL:
+
+  /subsystem=messaging-activemq
+        "connection-factory",
+        "connector",
+        "discovery-group",
+        "external-jms-queue",
+        "external-jms-topic",
+        "http-connector",
+        "in-vm-connector",
+        "pooled-connection-factory",
+        "remote-connector",
+
+Currently there are the same set of resources under /subsystem=messaging-activemq/server=* but they use the embedded ActiveMQ Artemis broker to work. The above mentioned resources uses a remote ActiveMQ Artemis broker and there is no need for the embedded ActiveMQ Artemis server.
+        
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-1130[EAP7-1130]
+
+=== Dev Contacts
+
+* mailto:claudio@redhat.com[Claudio Miranda]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+== Requirements
+
+  /subsystem=messaging-activemq
+        "connection-factory",
+        "connector",
+        "discovery-group",
+        "external-jms-queue",
+        "external-jms-topic",
+        "http-connector",
+        "in-vm-connector",
+        "pooled-connection-factory",
+        "remote-connector",
+
+* Add a menu item in the Messaging Category column named "External ActiveMQ Broker", this is a View to show all resources.
+* Create a MBUI View to display the resources
+* The *connectors* will be added in a second level menu under menu item "Connector"
+* The other connection-factories and discovery-group will be added as primary level menu items.
+* The pooled-connection-factory will display the credential-reference as a tab in the form section.
+* The external-jms-topic and external-jms-topic resources will be added as primary level menu items.
+* The following operations will be supported to manage each of the resources: add, list, remove, edit, reset.
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+None
