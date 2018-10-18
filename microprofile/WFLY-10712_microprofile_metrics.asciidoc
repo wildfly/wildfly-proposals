@@ -1,0 +1,230 @@
+= [WFLY-10712] Support Eclipse MicroProfile Metrics
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:keywords:          observability,microprofile,metrics,openshift
+
+== Overview
+
+The goal of this feature is to increase observability of WildFly by exposing its metrics to monitoring tools such as https://prometheus.io[Promotheus]
+and the https://docs.openshift.com/container-platform/3.11/architecture/infrastructure_components/web_console.html[OpenShift Console].
+
+This feature adds support for the https://github.com/eclipse/microprofile-metrics/releases/download/1.1.1/metrics_spec-1.1.1.pdf[Eclipse MicroProfile Metrics 1.1.1 specification].
+
+The integration uses the https://github.com/smallrye/smallrye-metrics[smallrye-metrics] component to provide the MicroProfile Metrics implementation.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-10712[WFLY-10712]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1026[EAP7-1026]
+* https://issues.jboss.org/browse/WFLY-10522[WFLY-10522] - Support Eclipse MicroProfile Config
+** MicroProfile Metrics has a dependency on MicroProfile Config
+* https://issues.jboss.org/browse/CLOUD-2731[CLOUD-2731] - Expose EAP Metrics so that it can be consumed by Kiali
+* https://issues.jboss.org/browse/EAP7-1060[EAP7-1060] - Make "Expose EAP Metrics" configurable in HAL Web Console
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:rsvoboda@redhat.com[Rostislav Svoboda]
+
+=== Affected Projects or Components
+
+The implementation of Eclipse MicroProfile Metrics 1.1.1 is provided by https://github.com/smallrye/smallrye-metrics[smallrye-metrics].
+
+=== Other Interested Projects
+
+* OpenShift Web Console MUST be able to consume metrics exposed by this extension.
+* Prometheus MUST be able to consume metrics exposed by this extension.
+* HAL, WildFly Web Console, will expose the new extension to configure it and potentially display the metrics exposed by the extension.
+* https://www.kiali.io/[Kiali] SHOULD be able to consume metrics exposed by this extension.
+* https://github.com/thorntail/thorntail/tree/master/fractions/microprofile/microprofile-metrics/src/main/java/org/wildfly/swarm/microprofile/metrics/runtime[Thorntail metrics fraction] - Some WildFly-based code to activate and install metrics in WildFly have been developed for Thorntail 2.x and could be
+reused in the proposed extension.
+
+== Requirements
+
+=== External Requirements
+
+The external requirements corresponds to the way metrics are discovered and consumed *from* WildFly by monitoring tools such as Promotheus and the OpenShift Web Console.
+
+* Provide the MicroProfile Metrics HTTP endpoints (under `/metrics`) on WildFly management HTTP interface (on port `9990`).
+* Support both JSON and https://prometheus.io/docs/instrumenting/exposition_formats/#text-format-details[Prometheus format] from the Metrics HTTP endpoints
+* Access to the REST endpoint CAN be secured. By default, the user MUST be authenticated to access the Metrics HTTP endpoints. It is possible to disable
+authentication by setting the `security-enabled` attribute of the `/subsystem=microprofile-metrics-smallrye` to `false`.
+* If RBAC is enabled, the user must be a `Monitor` to be able to get metrics from the HTTP endpoints
+
+=== Internal requirements
+
+* Support MicroProfile Metrics for required base metrics as listed in the chapter 4 of the MicroProfile Metrics specification.
+* Support additional vendor metrics corresponding to metrics always available from WildFly servers, such as:
+** number of loaded JBoss Modules
+** Memory used by NIO Buffer Pool
+** Current and peak usages of the memory pools
+
+WildFly management model has a notion of metrics for resource attributes (as described in http://docs.wildfly.org/14/Admin_Guide.html#Description_of_the_Management_Model[WildFly Admin Guide]).
+This extension MUST be able to expose these metrics from WildFly management model, such as:
+
+* Transaction metrics (from the http://wildscribe.github.io/WildFly/14.0/subsystem/transactions/index.html[transactions subsystem])
+* HTTP usage (from the http://wildscribe.github.io/WildFly/14.0/subsystem/undertow/server/http-listener/index.html[undertow subsystem])
+* JDBC Pool usage (from the http://wildscribe.github.io/WildFly/14.0/subsystem/datasources/data-source/ExampleDS/statistics/pool/index.html[datasources subsystem])
+
+Application metrics from deployments are also supported.
+
+=== Non-Requirements
+
+* The MicroProfile 1.1.1 does not support multiple deployments. It is out of scope of this feature to support it
+in WildFly. Work will have to be done in a future version of the specification to support it. This adds constraints
+on the application deployments that must coordinate to avoid exposing the same metrics (especially absolute ones whose name
+can clash between deployments).
+
+== Implementation Plan
+
+* Add dependencies to `smallrye-metrics` and `microprofile-metrics-api` artifacts
+* Add a new `microprofile-metrics-smallrye` extension to provide Metrics support (including its HTTP endpoints)
+  * Expose Metrics HTTP endpoints on WildFly HTTP management interface under the `/metrics` context.
+* Add mechanism to register metrics from WildFly management model into the `MetricRegistry` for vendor metrics.
+
+=== Implementation Details
+
+The metrics will be exposed by HTTP endpoints on WildFly HTTP management interface under the `/metrics` context.
+
+==== HTTP Endpoint formats
+
+The MicroProfile Metrics HTTP endpoints support two types of format:
+
+* JSON format (as specified in chapter 3.1 of https://github.com/eclipse/microprofile-metrics/releases/download/1.1.1/metrics_spec-1.1.1.pdf[Eclipse MicroProfile Metrics 1.1])
+* https://prometheus.io/docs/instrumenting/exposition_formats/#text-format-details[Prometheus format]
+
+In the absence of a, `Accept` header (or if it is explicitly set to `text/plain`), the HTTP endpoint will return metrics
+with the https://prometheus.io/docs/instrumenting/exposition_formats/#text-format-details[Prometheus format]:
+
+----
+$ curl -v http://127.0.0.1:9990/metrics/
+...
+< HTTP/1.1 200 OK
+< Content-Type: text/plain
+...
+# HELP base:classloader_total_loaded_class_count Displays the total number of classes that have been loaded since the Java virtual machine has started execution.
+# TYPE base:classloader_total_loaded_class_count counter
+base:classloader_total_loaded_class_count 10836.0
+# HELP base:cpu_system_load_average Displays the system load average for the last minute. The system load average is the sum of the number of runnable entities queued to the available processors and the number of runnable entities running on the available processors averaged over a period of time. The way in which the load average is calculated is operating system specific but is typically a damped time-dependent average. If the load average is not available, a negative value is displayed. This attribute is designed to provide a hint about the system load and may be queried frequently. The load average may be unavailable on some platform where it is expensive to implement this method.
+# TYPE base:cpu_system_load_average gauge
+base:cpu_system_load_average 2.3134765625
+...
+# HELP vendor:foo <description>
+# TYPE vendor:foo <type>
+vendor:foo 12345.0
+----
+
+To fetch metrics in the JSON format, the `Accept` HTTP header MUST be set to `application/json`:
+
+----
+$ curl -v -H "Accept: application/json" http://127.0.0.1:9990/metrics/
+...
+< HTTP/1.1 200 OK
+< Content-Type: application/json
+...
+{"base" :
+{
+  "classloader.totalLoadedClass.count" : 10911,
+  "cpu.systemLoadAverage" : 2.1201171875,
+  ...
+}
+,"vendor" :
+{
+  ...
+  "foo": 12345.0
+}
+----
+
+==== Authentication
+
+By default, the __HTTP endpoints require authentication__. This can be alleviated by explicitly setting
+the `security-enabled` of the `/subsystem=microprofile-smallrye-metrics` to `false`.
+
+If security is enabled, the HTTP client must be authenticated (otherwise, the server will reply with a
+  `401 NOT AUTHORIZED` response):
+
+----
+$ curl -v http://127.0.0.1:9990/metrics/
+...
+< HTTP/1.1 401 Unauthorized
+----
+
+In that case, WildFly MUST have a management user and the HTTP client MUST pass its credential to the Metrics HTTP endpoint:
+
+----
+$ curl -v --digest -u admin:adminpwd http://127.0.0.1:9990/metrics
+< HTTP/1.1 200 OK
+...
+# HELP base:cpu_system_load_average Displays the system load average for the last minute. The system load average is the sum of the number of runnable entities queued to the available processors and the number of runnable entities running on the available processors averaged over a period of time. The way in which the load average is calculated is operating system specific but is typically a damped time-dependent average. If the load average is not available, a negative value is displayed. This attribute is designed to provide a hint about the system load and may be queried frequently. The load average may be unavailable on some platform where it is expensive to implement this method.
+# TYPE base:cpu_system_load_average gauge
+base:cpu_system_load_average 1.9658203125
+...
+----
+
+If security is disabled in the subsystem configuration, the HTTP client does not require authentication (and it does not require a WildFly management user either).
+
+Note that the _standalone profiles will explicitly disable authentication_ as the HTTP management interface is bound to `127.0.0.1`.
+
+==== Exposed Metrics
+
+===== Base Metrics
+
+By default, the subsystem will expose all required base metrics specified in the chapter 4 of the MicroProfile Metrics specification.
+All these base metrics are gathered from the JVM MBeans and uses smallrye-metrics JmxRegistrar to bridge from JMX to the MicroProfile Metrics API.
+The required base metrics are explicitly specified in a property file (named `base-metrics.properties`) using a set of properties for each metric:
+
+----
+<metric name>.displayName: <Human-readable name of the metric>
+<metric name>.type: <Type of metric enumerated in org.eclipse.microprofile.metrics.MetricType (e.g counter, gauge)>
+<metric name>.unit: <Unit of the metric, can be none, listed in org.eclipse.microprofile.metrics.MetricUnits or other units>
+<metric name.description: <Human-readable description of the metric>
+<metric name>.mbean: <ObjectName of the MBean and attribute>
+----
+
+For example, the properties to expose the _Total Loaded Class Count_ of the JVM are:
+
+----
+classloader.totalLoadedClass.count.displayName: Total Loaded Class Count
+classloader.totalLoadedClass.count.type: counter
+classloader.totalLoadedClass.count.unit: none
+classloader.totalLoadedClass.count.description: Displays the total number of classes that have been loaded since the Java virtual machine has started execution.
+classloader.totalLoadedClass.count.mbean: java.lang:type=ClassLoading/TotalLoadedClassCount
+----
+
+The name of the metric itself is `classloader.totalLoadedClass.count`.
+
+The list of required base metrics required to pass the MicroProfile Metrics TCK is listed at https://github.com/thorntail/thorntail/blob/master/fractions/microprofile/microprofile-metrics/src/main/resources/io/smallrye/metrics/base-metrics.properties
+
+==== Vendor Metrics
+
+TODO
+
+==== Application Metrics
+
+Application metrics are part of application deployments. They are created using the https://github.com/eclipse/microprofile-metrics/tree/1.1.1/api/src/main/java/org/eclipse/microprofile/metrics[MicroProfile Metrics 1.1.1 API].
+They are exposed by the HTTP endpoints in the `application` scope.
+
+== Test Plan
+
+* smallrye-metrics component is passing the MicroProfile Metrics TCK during its release process.
+* WildFly integration test suite will be enhanced with tests that checks exposed metrics from the REST endpoint (both
+with JSON and Prometheus formats).
+** Tests must include required base metrics, vendor metrics (esp. from WildFly managemement model) and application metrics.
+** Tests must verify authentication access to the HTTP endpoints
+
+== Community Documentation
+
+The feature will be documented in WildFly Admin Guide (in a new MicroProfile Metrics section).
