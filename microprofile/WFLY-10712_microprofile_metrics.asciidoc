@@ -286,11 +286,10 @@ They are exposed by the HTTP endpoints in the `application` scope.
 Support of multiple deployments is planned for MicroProfile Metrics 2.0.
 If two different deployment register the same non-reusable metric, smallrye-metrics will reject the second registration thus making the second deployment fail (TO BE CONFIRMED).
 
-====== Metrics are not unregistered during undeployment
+====== Metrics are all unregistered during undeployment
 
-smallry-metrics does not unregister the metrics associated to a deployment when it is undeployed from the server.
-This leads to issues during redeployment as the metrics will not have been properly unregistered during undeployment
-and smallrye-metrics will reject the registration during deployment.
+smallry-metrics unregisters *all* metrics when it is undeployed from the server (as explained in https://github.com/smallrye/smallrye-metrics/issues/12[smallrye-metrics #12]).
+This leads to a blocker issue as base and vendor metrics are removed when any deployment is undeployed (or redeployed).
 
 == Test Plan
 
