@@ -182,7 +182,24 @@ Note that the _standalone profiles will explicitly disable authentication_ in th
 
 ===== Base Metrics
 
-By default, the subsystem will expose all required base metrics specified in the chapter 4 of the MicroProfile Metrics specification.
+By default, the subsystem will expose all required base metrics specified in the chapter 4 of the MicroProfile Metrics specification which exposes JVM
+metrics:
+
+* `memory.usedHeap`
+* `memory.committedHeap`
+* `memory.maxHeap`
+* `gc.%s.count` - Count for the various Garbage Collectors
+* `gc.%s.time` - Approximate accumulated collection elapsed time for the various Garbage Collectors
+* `jvm.uptime`
+* `thread.count`
+* `thread.daemon.count`
+* `thread.max.count`
+* `classloader.currentLoadedClass.count`
+* `classloader.totalLoadedClass.count`
+* `classloader.totalUnloadedClass.count`
+* `cpu.availableProcessors`
+* `cpu.systemLoadAverage`
+* `cpu.processCpuLoad`
 
 ===== Implementation Details
 
@@ -229,9 +246,16 @@ Examples of such metrics are:
 
 Some of these metrics can be obtained by JMX and can rely on smallrye-metrics that loads these metrics from a property file named `/io/smallrye/metrics/vendor-metrics.properties` that is located in the
 extension jar. This file works similarly to the `base-metrics.properties` as explained in the section above and is not meant to be configurable by the user.
-The list of vendor metrics expose by this mechanism is determined during the build process of WildFly.
+The list of vendor metrics exposed by this mechanism is determined during the build process of WildFly.
 
-======= WildFly Vendor Metrics
+It will include at least:
+
+* `loadedModules` - Number of loaded JBoss Modules
+* `BufferPool_used_memory_%s` - the memory used by the various NIO BufferPool
+* `memoryPool.%s.usage` - Current usage of the various memory pool
+* `memoryPool.%s.usage.max` - Peak usage of the various memory pools
+
+====== WildFly Vendor Metrics
 
 However it is expected that most vendor metrics will come from WildFly Management Model (as described in http://wildscribe.github.io[WildScribe]).
 
