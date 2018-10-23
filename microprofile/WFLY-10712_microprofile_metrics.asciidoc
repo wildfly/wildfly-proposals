@@ -176,7 +176,7 @@ base:cpu_system_load_average 1.9658203125
 
 If security is disabled in the subsystem configuration, the HTTP client does not require authentication (and it does not require a WildFly management user either).
 
-Note that the _standalone profiles will explicitly disable authentication_ as the HTTP management interface is bound to `127.0.0.1`.
+Note that the _standalone profiles will explicitly disable authentication_ in their configuration.
 
 ==== Exposed Metrics
 
