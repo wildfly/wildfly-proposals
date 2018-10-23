@@ -183,8 +183,11 @@ Note that the _standalone profiles will explicitly disable authentication_ as th
 ===== Base Metrics
 
 By default, the subsystem will expose all required base metrics specified in the chapter 4 of the MicroProfile Metrics specification.
+
+===== Implementation Details
+
 All these base metrics are gathered from the JVM MBeans and uses smallrye-metrics JmxRegistrar to bridge from JMX to the MicroProfile Metrics API.
-The required base metrics are explicitly specified in a property file (named `base-metrics.properties`) using a set of properties for each metric:
+The required base metrics are explicitly specified in a property file (named `/io/smallrye/metrics/base-metrics.properties` located in the extension Jar) using a set of properties for each metric:
 
 ----
 <metric name>.displayName: <Human-readable name of the metric>
@@ -207,6 +210,7 @@ classloader.totalLoadedClass.count.mbean: java.lang:type=ClassLoading/TotalLoade
 The name of the metric itself is `classloader.totalLoadedClass.count`.
 
 The list of required base metrics required to pass the MicroProfile Metrics TCK is listed at https://github.com/thorntail/thorntail/blob/master/fractions/microprofile/microprofile-metrics/src/main/resources/io/smallrye/metrics/base-metrics.properties
+Note that this `/io/smallrye/metrics/base-metrics.properties` file is stored in the extension Jar file and is not meant to be configurable by the user.
 
 ==== Vendor Metrics
 
@@ -219,8 +223,15 @@ Examples of such metrics are:
 * Bytes throughput from Undertow
 * Etc.
 
-Some of these metrics can be obtained by JMX and can rely on smallrye-metrics that loads these metrics from a property file named `vendor-metrics.properties`
-that works similarly to the `base-metrics.properties` as explained in the section above.
+===== Implementation Details
+
+====== JMX-Based Vendor Metrics
+
+Some of these metrics can be obtained by JMX and can rely on smallrye-metrics that loads these metrics from a property file named `/io/smallrye/metrics/vendor-metrics.properties` that is located in the
+extension jar. This file works similarly to the `base-metrics.properties` as explained in the section above and is not meant to be configurable by the user.
+The list of vendor metrics expose by this mechanism is determined during the build process of WildFly.
+
+======= WildFly Vendor Metrics
 
 However it is expected that most vendor metrics will come from WildFly Management Model (as described in http://wildscribe.github.io[WildScribe]).
 
@@ -249,7 +260,7 @@ and will be resolved before this feature is integrated.
 
 Resources may return arbitrarily complex return types for metrics. Most complex example I found in the codebase is http://wildscribe.github.io/WildFly/14.0/core-service/platform-mbean/type/memory/index.html#attr-heap-memory-usage[ core-service=platform-mbean
 type=memory#heap-memory-usage].
-The registration code in `micrprofile-smallrye-metrics` will only register MicroProfile Metric for simple numerical `ModelType`.
+The registration code in `micrprofile-smallrye-metrics` will only register MicroProfile Metrics for simple numerical `ModelType`.
 
 ====== WildFly Metrics Are Registered As Gauge
 
