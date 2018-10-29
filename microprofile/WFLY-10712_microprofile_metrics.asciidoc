@@ -273,6 +273,26 @@ All those WildFly metrics will be translated to MicroProfile Metrics (with corre
 When A HTTP client will request MicroProfile Metrics, the `micrprofile-smallrye-metrics` will fetch the metric value by invoking the `:read-attribute` operation
 for the given resource and attribute.
 
+===== Implementation Details
+
+I looked at the metrics registered by the subsystems in the various standalone profiles that are shipped with WildFly:
+
+* Standalone Profile (51 metrics):
+** `batch-jberet` - 7 metrics (per thread pool)
+** `ejb3` - 7 metrics (per thread pool)
+** `io` - 5 metrics (per worker)
+** `jca` - 8 metrics (per workmanager)
+** `request-controller` - 1 metric (overall)
+** `transactions` - 11 metrics (overall)
+** `undertow` - 12 metrics (per http/https listener)
+* Standalone Full Profile (10 additional metrics):
+** `messaging-activemq` - 5 metrics (per destinations)
+* Standalone Full HA Profile (186 additional metrics):
+** `undertow` - 6 metrics (for 1 additional `ajp-listener`)
+** `jgroups` - 180 metrics (for 1 ee channel)
+
+This listing does not take into account metrics under `/core-service=plaform-mbean` that belongs to the base metrics.
+
 ===== Implementation Issues
 
 ====== Invalid WildFly Metrics Registration
@@ -302,6 +322,12 @@ It does not necessarily mean that there has been no network activity, it might b
 A monitoring tool would then report no network activity even though there actually is some.
 In addition, from a given metric (such as `/subsystem=undertow/server/http-listener#bytes-received`) there is no way to know if this metric is actually enabled by looking at the value of another unrelated attributes
 such as `/subsystem=undertow#statistics-enabled`).
+
+To solve this, the `:read-attribute` operation used to fetch the metric value will be enhanced with a "include-undefined-metric".
+By default, this flag is `false`. If it is true, the `:read-attribute` operation handler will not use the "undefined metric value" if the metric read handler returns an undefined value.
+The `micrprofile-smallrye-metrics` will set this flag to `false` and remove the metric from the list returned by its endpoints.
+
+This will requires additional fixes in the various metric handler that *must not* return a defined value (e.g. `0`) if the metric can not be computed.
 
 ====== Management Resources Added After Server Boot Will Not Expose Their Metrics
 
