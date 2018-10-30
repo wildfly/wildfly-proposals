@@ -1,0 +1,69 @@
+= Ranked routing
+:author:            Paul Ferraro
+:email:             paul.ferraro@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+When the primary owner of a given session is inactive (from the load balancer's perspective), the load balancer will route requests for that session to some other node, based on its own balancing logic.  However, when a non-owner processes the request it will auto-correct the route to direct the next request to the primary owner.
+This feature enables the ability to annotate the JSESSIONID with multiple routes, ranked in order of preference.
+Thus, if the primary owner of a given session is inactive (from the load balancer's perspective), the load balancer can attempt to route the request to the next route in the list.  This ensures that requests will be directed to the next best worker in the event that the primary owner is inactive, and prevents requests from "spraying" across the cluster.
+
+When configured to use RANKED routing, the route will contain:
+
+# The primary owner
+# The backup owners
+# The local node (if not already present)
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-6944
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-5550
+* https://issues.jboss.org/browse/UNDERTOW-1432
+* https://issues.jboss.org/browse/WFLY-12144
+* https://issues.jboss.org/browse/MODCLUSTER-673
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:tborgato@redhat.com[Tomasso Borgato]
+
+=== Affected Projects or Components
+
+Clustering
+
+=== Other Interested Projects
+
+mod_cluster, Undertow
+
+== Requirements
+
+=== Hard Requirements
+
+* Add new RANKED routing strategy option to the distributed session manager configuration.
+* Fallback to OWNER routing strategy logic if cache in non-distributed.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+* Add unit test to verify RouteLocator behavior when routing strategy is RANKED
+* Clustering testsuite will contain integration test that validates routing
+* Once support for ranked routing is available in Undertow (UNDERTOW-1432, WFLY-12144) and mod_cluster (MODCLUSTER-673), add a full-scope integration test (including load balancer and cluster of application servers) that validates failover behavior to backup owners.
+
+== Community Documentation
+
+Community documentation will be updated to include RANKED routing configuration.
