@@ -1,0 +1,79 @@
+= WFCORE-3966 JwtValidator jku and kid header parameters
+:author:            Martin Mazanek
+:email:             mmazanek@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+* Our current JwtValidator supports only single key for validation, which makes it unusable for things like key rotation.
+This can be solved by supporting 'kid' and 'jku' parameters. That would enable us to use multiple keys for token validation and to use
+remote key endpoints to retrieve the keys.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-3966[WFCORE-3966]
+
+=== Dev Contacts
+
+* mailto:mmazanek@redhat.com[Martin Mazanek]
+
+=== QE Contacts
+
+* TBD
+
+=== Affected Projects or Components
+
+* WildFly, Security
+
+== Requirements
+
+=== Hard Requirements
+
+* Support 'jku' parameter - the idea is to support fetching keys from remote location using https. The only keys needed are
+RSA public keys for token signature validation. This will follow https://tools.ietf.org/html/rfc7517[RFC7517]. Every key
+will be immediately converted to RSAPublicKey right when received and that key will be cached for configurable time. Keys
+will be downloaded only over verified TLS connection.
+
+* Support 'kid' parameter, which can be used to distinguish between keys. This could be also used as an alias for keystores.
+
+* Add configuration for multiple named keys, that would be used when the token uses 'kid' parameter without 'jku'. Current
+implementation would be used for tokens with no 'kid' as a default key.
+
+
+[source,xml]
+----
+<security-realms>
+...
+    <token-realm name="TokenRealm">
+        <jwt public-key="PEMpk" client-ssl-context="TokenRealmContext" host-name-verification-policy="ANY"/>
+    </token-realm>
+...
+</security-realms>
+----
+
+[source,xml]
+----
+<security-realms>
+...
+    <token-realm name="TokenRealm">
+        <jwt public-key="PEMpk" client-ssl-context="TokenRealmContext" host-name-verification-policy="ANY">
+            <key kid="1" public-key="PEMpk1" />
+            <key kid="2" public-key="PEMpk2" />
+        </jwt>
+    </token-realm>
+...
+</security-realms>
+----
+
+=== Nice-to-Have Requirements
+
+* Ability to use kid as an alias for configured keystore.
+
+== Test Plan
+
+Functionality tests will be included in Elytron.
