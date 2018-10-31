@@ -293,6 +293,33 @@ I looked at the metrics registered by the subsystems in the various standalone p
 
 This listing does not take into account metrics under `/core-service=plaform-mbean` that belongs to the base metrics.
 
+====== Name of WildFly vendor metrics
+
+The name of the MicroProfile metric is derived from WildFly's attribute name and the resource that defines it.
+
+The name of the metric is composed of the address of the resource using the "path style" (where `=` are replaced by `/`) and the attribute name separated by a `/`:
+
+----
+<resource address in "path" style>/attribute name>
+----
+
+Note that the metric name has no leading `/`.
+
+So for example, the metric `bytes-sent` on the resource `/subsystem=undertow/server=default-server/http-listener=default` will be named `subsystem/undertow/server/default-server/http-listener/default/bytes-sent`
+
+This will be the name of the metric registered in MicroProfile VENDOR metric registry and can be used from the HTTP endpoints.
+
+However, this name will then be converted when exported to the Prometheus format according to the translation rules (section 3.2.1 of the MicroProfile Metrics 1.1.1 specification):
+
+$ curl -v http://127.0.0.1:9990/metrics/vendor/subsystem/undertow/server/default-server/http-listener/default/bytes-sent
+< HTTP/1.1 200 OK
+...
+# HELP vendor:subsystem_undertow_server_default_server_http_listener_default_bytes_sent_bytes The number of bytes that have been sent out on this listener
+# TYPE vendor:subsystem_undertow_server_default_server_http_listener_default_bytes_sent_bytes gauge
+vendor:subsystem_undertow_server_default_server_http_listener_default_bytes_sent_bytes 0.0
+...
+----
+
 ===== Implementation Issues
 
 ====== Invalid WildFly Metrics Registration
