@@ -365,7 +365,7 @@ A monitoring tool would then report no network activity even though there actual
 In addition, from a given metric (such as `/subsystem=undertow/server/http-listener#bytes-received`) there is no way to know if this metric is actually enabled by looking at the value of another unrelated attributes
 such as `/subsystem=undertow#statistics-enabled`).
 
-To solve this, the `:read-attribute` operation used to fetch the metric value will be enhanced with a "include-undefined-metric".
+To solve this, the `:read-attribute` operation used to fetch the metric value will be enhanced with a "include-undefined-metric" as tracked by https://issues.jboss.org/browse/WFCORE-4190[WFCORE-4190].
 By default, this flag is `false`. If it is true, the `:read-attribute` operation handler will not use the "undefined metric value" if the metric read handler returns an undefined value.
 The `micrprofile-smallrye-metrics` will set this flag to `false` and remove the metric from the list returned by its endpoints.
 
