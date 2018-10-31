@@ -178,6 +178,20 @@ If security is disabled in the subsystem configuration, the HTTP client does not
 
 Note that the _standalone profiles will explicitly disable authentication_ in their configuration.
 
+=== Subsystem description
+
+The subsystem will be named `microprofile-metrics-smallrye`.
+
+The subsystem contains no child resources.
+
+The subsystem has 2 attribute:
+
+* `security-enabled` (`true` by default) - if security is enabled, the HTTP client must be authenticated to query the HTTP endpoints.
+* `exposed-subsystems` - a list of strings corresponding the name of subsystems that exposes their metrics in the HTTP endpoints.
+** This attributes affects only the WildFly metrics registered in the vendor scope (as defined below). By default, this attribute is not
+defined (so there is no metrics from subsystems that are exposed). The special character `*` can be used to specify that __all__ subsystems will
+expose their metrics.
+
 ==== Exposed Metrics
 
 ===== Base Metrics
@@ -267,8 +281,10 @@ For example the transaction metrics will be retrieved from the http://wildscribe
 * number-of-aborted-transactions
 * etc.
 
-When the `micrprofile-smallrye-metrics` is installed, it will browse WildFly Resource Model and find every metrics registered by resources from the model.
+When the `micrprofile-smallrye-metrics` is installed, it will browse WildFly Resource Model and find every metrics registered by subsystem resources from the model.
+If will only expose metrics from the subsystems specified by the `exposed-subsystems` attribute (or all if the wildcard `*` is used).
 All those WildFly metrics will be translated to MicroProfile Metrics (with corresponding metadata) and registered in the MicrProfile Metrics' Vendor registry.
+Note that metrics from other parts of WildFly resource model (e.g. below `/core-service` resources are __not__ registered).
 
 When A HTTP client will request MicroProfile Metrics, the `micrprofile-smallrye-metrics` will fetch the metric value by invoking the `:read-attribute` operation
 for the given resource and attribute.
@@ -291,8 +307,6 @@ I looked at the metrics registered by the subsystems in the various standalone p
 ** `undertow` - 6 metrics (for 1 additional `ajp-listener`)
 ** `jgroups` - 180 metrics (for 1 ee channel)
 
-This listing does not take into account metrics under `/core-service=plaform-mbean` that belongs to the base metrics.
-
 ====== Name of WildFly vendor metrics
 
 The name of the MicroProfile metric is derived from WildFly's attribute name and the resource that defines it.
@@ -300,7 +314,7 @@ The name of the MicroProfile metric is derived from WildFly's attribute name and
 The name of the metric is composed of the address of the resource using the "path style" (where `=` are replaced by `/`) and the attribute name separated by a `/`:
 
 ----
-<resource address in "path" style>/attribute name>
+<resource address in "path" style>/<attribute name>
 ----
 
 Note that the metric name has no leading `/`.
@@ -311,6 +325,7 @@ This will be the name of the metric registered in MicroProfile VENDOR metric reg
 
 However, this name will then be converted when exported to the Prometheus format according to the translation rules (section 3.2.1 of the MicroProfile Metrics 1.1.1 specification):
 
+----
 $ curl -v http://127.0.0.1:9990/metrics/vendor/subsystem/undertow/server/default-server/http-listener/default/bytes-sent
 < HTTP/1.1 200 OK
 ...
