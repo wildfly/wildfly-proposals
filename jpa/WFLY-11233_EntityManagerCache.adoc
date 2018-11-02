@@ -1,0 +1,86 @@
+= EntityManager Cache: Allow caching of EntityManager instances used for SynchronizationType.SYNCHRONIZED persistence contexts in JTA transactions.
+:author:            Scott Marlow
+:email:             smarlow@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+It could be interesting to see if caching EntityManager instances (per EntityManagerFactory) could improve performance for applications, that could benefit from that.
+
+The JPA 2.2 specification mentions the below, pay particular attention to the text "whether entity manager instances are sometimes reused" in section 7.8.2, also look at mention of [88]:
+
+    7.8 Requirements on the Container
+
+    7.8.1 Application-managed Persistence Contexts
+    When application-managed persistence contexts are used, the container must instantiate the entity manager factory and expose it to the application via JNDI. The container might use internal APIs to create the entity manager factory, or it might use the PersistenceProvider.createContainerEntityManagerFactory method. However, the container is required to support third-party persistence providers, and in this case the container must use the PersistenceProvider.createContainerEntityManagerFactory method to create the entity manager factory and the EntityManagerFactory.close method to destroy the entity manager factory prior to shutdown (if it has not been previously closed by the application).
+
+    7.8.2 Container Managed Persistence Contexts
+
+    The container is responsible for managing the lifecycle of container-managed persistence contexts, for injecting EntityManager references into web components and session bean and message-driven bean components, and for making EntityManager references available to direct lookups in JNDI. When operating with a third-party persistence provider, the container uses the contracts defined in section 7.9 to create and destroy container-managed persistence contexts. It is undefined whether a new entity manager instance is created for every persistence context, or whether entity manager instances are sometimes reused. Exactly how the container maintains the association between persistence context and JTA transaction is not defined. If a persistence context is already associated with a JTA transaction, the container uses that persistence context for subsequent invocations within the scope of that transaction, according to the semantics for persistence context propagation defined in section 7.6.4.
+
+    7.9 Runtime Contracts between the Container and Persistence Provider
+
+    This section describes contracts between the container and the persistence provider for the pluggability of third-party persistence providers. Containers are required to support these pluggability contracts. [87]
+
+    7.9.1 Container Responsibilities
+    For the management of a transaction-scoped persistence context, if there is no EntityManager already associated with the JTA transaction:
+
+        The container creates a new entity manager by calling EntityManagerFactory.createEntityManager when the first invocation of an entity manager with PersistenceContextType.TRANSACTION occurs within the scope of a business method executing in the JTA transaction.
+        After the JTA transaction has completed (either by transaction commit or rollback), the container closes the entity manager by calling EntityManager.close. [88] Note that the JTA transaction may rollback in a background thread (e.g., as a result of transaction timeout), in which case the container should arrange for the entity manager to be closed but the EntityManager.close method should not be concurrently invoked while the application is in an EntityManager invocation.
+
+    The container must throw the TransactionRequiredException if a transaction-scoped persistence context is used and the EntityManager persist, remove, merge, or refresh method is invoked when no transaction is active.
+
+    For stateful session beans with extended persistence contexts:
+
+        The container creates an entity manager by calling EntityManagerFactory.createEntityManager when a stateful session bean is created that declares a dependency on an entity manager with PersistenceContextType.EXTENDED. (See section 7.6.3).
+        The container closes the entity manager by calling EntityManager.close after the stateful session bean and all other stateful session beans that have inherited the same persistence context as the entity manager have been removed.
+        When a business method of the stateful session bean is invoked, if the stateful session bean uses container managed transaction demarcation, and the entity manager is not already associated with the current JTA transaction, the container associates the entity manager with the current JTA transaction and, if the persistence context is of type SynchronizationType.SYNCHRONIZED, the container calls EntityManager.joinTransaction. If there is a different persistence context already associated with the JTA transaction, the container throws the EJBException.
+        When a business method of the stateful session bean is invoked, if the stateful session bean uses bean managed transaction demarcation and a UserTransaction is begun within the method, the container associates the persistence context with the JTA transaction and, if the persistence context is of type SynchronizationType.SYNCHRONIZED, the container calls EntityManager.joinTransaction.
+
+    The container must throw the IllegalStateException if the application calls EntityManager.close on a container-managed entity manager.
+
+    [87] It is not required that these contracts be used when a third-party persistence provider is not used: the container might use these same APIs or its might use its own internal APIs.
+
+    [88] The container may choose to pool EntityManagers: it instead of creating and closing in each case, it may acquire one from its pool and call clear() on it.
+
+One challenge with introducing an entity manager (per EntityManagerFactory) cache, is knowing when to close EntityManagers after certain errors have occurred on the EntityManager. To deal with this robustness issue, we will discard entity managers that are marked close when retrieving them from the cache. To ensure that we always put the cached EM back in cache, EntityManagerCache use is only done within JTA transactions, since we have control of the release (closing) of the EntityManager and only with SynchronizationType.SYNCHRONIZED (never with SynchronizationType.UNSYNCHRONIZED) persistence contexts.
+
+For this jira, the EntityManagerCache keeps strong references to the (cleared) EntityManager's from the cache. If this causes users OOM errors, we could consider using SOFT references so that the EntityManager's could be GCd in low memory conditions. We also offer users a choice between an unbounded cache (size=0) and a bounded cache. Users that have problems with OOM errors, should switch to a bounded cache.
+
+Persistence unit hint "wildfly.jpa.emcache", may be:
+
+    true, per EntityManagerFactory/persistence unit) cache that is shared between multiple threads.
+    false (default), no caching is performed.
+
+Persistence unit hint "wildfly.jpa.emcache.size", may be:
+
+    0 (default), the cache (if enabled) is unbounded.
+    N, where N is the max number of EntityManager instances that can be placed in the EntityManagerCache, in between application use.
+
+== Issue 
+* https://issues.jboss.org/browse/EAP7-1144
+* https://issues.jboss.org/browse/WFLY-11233
+
+== Related Issue
+
+* https://issues.jboss.org/browse/WFLY-11243 is a general performance improvement for container-managed EntityManager used in JTA transactions.
+
+=== Dev Contacts
+
+* mailto:{Scott Marlow}[{smarlow@redhat.com}] JPA / WildFly integration lead
+
+=== QE Contacts
+
+TBD
+
+=== Affected Projects or Components
+
+This is an internal change to the WildFly JPA container, to allow some caching of EntityManager instances within JTA transactions.  The motivation is to improve performance of some applications that choose to enable it, it is off by default.
+
+== Test Plan
+
+Pass the (automated) WildFly testsuite, in particular, the org.jboss.as.test.integration.jpa.transaction.TransactionTestCase#testConcurrentAccess.  As with any introduction of caching, we should also check for memory leaks (see comments in testConcurrentAccess method for suggestion on how).
+
