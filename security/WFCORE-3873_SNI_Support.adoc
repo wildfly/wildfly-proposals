@@ -1,0 +1,76 @@
+= SNI Support
+:author:            Stuart Douglas
+:email:             sdouglas@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This aim of this issue is to provide SNI support for all SSL use cases that use SSLEngine.
+
+This will allow for users to specify match rules for incoming SNI names, and at runtime
+the appropriate SSL context will be selected for the name.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-3873[WFCORE-3873]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-726
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Affected Projects or Components
+
+* Wildfly Core
+* Undertow
+* Elytron
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+This will involve adding a new `server-sni-ssl-context` resource to the Elytron subsystem. This resource will have
+a non-optional attribute named `default-ssl-context` that references an existing server-ssl-context.
+
+In addition this resource can have any number of sni-match subresources. These subresources map names (which may be
+wildcard names) to `server-ssl-context` resources, and will be used by the SNI support to determine the correct context
+to choose. Wildcard names use `*` as a wildcard, and can only be used to match a single level of subdomain in much the
+same way as with wildcard certificates.
+
+This `server-sni-ssl-context` will provide the same capabilities as `server-ssl-context` and should be able to be
+used anywhere that accepts a `server-ssl-context` (the exception to this is anything that requires a `SSLSocket`, but
+I don't think we have any at present).
+
+When a `SSLEngine` is created a wrapper engine will be created, and will attempt to parse any incoming client
+hello message to determine the correct underlying `SSLContext` to use. If no SNI information is present then
+the default will be used. Non wildcard names are matched before wildcard names.
+
+Once the correct `SSLContext` has been selected it is used to create the correct SSLEngine, which then handles the
+connection as normal.
+
+This must also work with ALPN to allow HTTP/2 to work. As such it must be possible to register some kind of callback to
+be invoked when the underlying engine is selected, in order to allow Undertow to perform its HTTP/2 integration.
+
+
+=== Nice-to-Have Requirements
+
+* SSLSocket support, although only if it turns out something needs it. This can be implemeneted using an approach similar
+to that taken by Wildfly OpenSSL.
+
+=== Non-Requirements
+
+* Client side SNI support is not supported at this time.
+
+== Test Plan
