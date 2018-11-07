@@ -1,0 +1,71 @@
+= HAL-1545 Enhance the SSL Wizard to add support to LetsEncrypt CA
+:author:            Claudio Miranda
+:email:             claudio@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+HAL contains a wizard to enable and disable SSL for Undertow HTTPS (https-listener) and HTTP management interface, it uses the advanced elytron operations to export, import, generate and manage certificates. 
+
+Recently elytron subsystem added support to use LetsEncrypt API (https://issues.jboss.org/browse/WFCORE-3396[WFCORE-3396]) to manage certificates signed by its CA. The commands are to obtain, update, verify certificates from LetsEncrypt provider.
+
+In the Elytron subsystem in the Monitoring view, the `certificate-authority-account` and `key-store` view already contains all available operations to manage certificates.
+
+This proposal is to enhance the wizard to add an option to obtain a certificate from LetsEncrypt.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/HAL-1545
+* https://issues.jboss.org/browse/EAP7-1101
+
+=== Dev Contacts
+
+* mailto:claudio@redhat.com[Claudio Miranda - claudio@redhat.com]
+
+=== QE Contacts
+
+* mailto:spriadka@redhat.com[Šimon Priadka - spriadka@redhat.com]
+
+== Requirements
+
+* Add an option to the wizard to obtain the certificate from LetsEncrypt service.
+* The configuration section will feature all required attributes from `key-store` (`add` and `obtain-certificate` operations), `certificate-authority-account`, `key-manager`, `trust-manager` and `server-ssl-context` (`add` operation)
+* When user finishes entering all requires input fields, the wizard will add a `key-store`, `certificate-authority-account`, `key-manager`, `trust-manager` and `server-ssl-context` to reference the `key-store`
+* Alternatively write the attribute `ssl-context` of Undertow `https-listener` or `management-interface=http-interface`
+ 
+Under the hood this enhancement will perform the following operations:
+
+ # add a key-store
+ /subsystem=elytron/key-store=keystore1:add(credential-reference={clear-text=foo},type=JKS,path=keystore1.jks)
+ 
+ # add a certificate-authority-account and store the account information in the *letsenc_alias* alias of *keystore1* key store
+ /subsystem=elytron/certificate-authority-account=letsenc_acc:add(key-store=keystore1,alias=letsenc_alias)
+ 
+ # obtain the certificate from LetsEncrypt and store it in the *keystore1* under the *ks_letsenc* alias
+ /subsystem=elytron/key-store=keystore1:obtain-certificate(alias=ks_letsenc,certificate-authority-account=letsenc_acc,domain-names=[www.foo.com],agree-to-terms-of-service,algorithm=RSA,staging)
+ 
+ # add a key-manager
+ /subsystem=elytron/key-manager=ekm:add(key-store=ks1_certs,credential-reference={clear-text=senha},algorithm=SunX509)
+ 
+  # add a trust-manager (if the user selected to trust a client certificate)
+ /subsystem=elytron/trust-manager=trust1:add(key-store=ks1_certs,algorithm=SunX509)
+ 
+  # add a server-ssl-context
+ /subsystem=elytron/server-ssl-context=ssl_ctx1:add(key-manager=ekm,trust-manager=trust1,protocols=["TLSv1.2"])
+ 
+  # if the user wants to add a SSL certificate to undertow's https-listener
+  # write the ssl-context attribute of https-listener 
+ /subsystem=undertow/server=default-server/https-listener=https:write-attribute(name=ssl-context,value=ssl_ctx1)
+
+  # if the user wants to add a SSL certificate to Wildfly http management interface
+  # write the ssl-context attribute of /core-service=management/management-interface=http-interface:write-attribute(name=ssl-context,value=ssl_ctx1)
+
+
+== Community Documentation
+
+
