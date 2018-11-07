@@ -35,16 +35,17 @@
 
 == Requirements
 
-* Add a `global-max-memory-size` attribute to the https://wildscribe.github.io/WildFly/12.0//subsystem/messaging-activemq/server/[/subsystem=messaging-activemq/server resource] to control the maximum
+* Add a `global-max-memory-size` attribute to the https://wildscribe.github.io/WildFly/14.0/subsystem/messaging-activemq/server/[/subsystem=messaging-activemq/server resource] to control the maximum
 amount of memory that Artemis can use to store messages for its addresses before they are considered "full" and
-their `address-full-policy` starts to apply (e.g. to drop messages, block producers, etc.). Default is `undefined` (meaning that there is no limit).
+their `address-full-policy` starts to apply (e.g. to drop messages, block producers, etc.). Default is `-1` (meaning that there is no limit).
 +
 This attribute is in addition to the individual memory setting applied to each Artemis address through the
-use of the `max-size-bytes` attribute of the https://wildscribe.github.io/WildFly/12.0/subsystem/messaging-activemq/server/address-setting/[address-setting resource]
+use of the `max-size-bytes` attribute of the https://wildscribe.github.io/WildFly/14.0/subsystem/messaging-activemq/server/address-setting/[address-setting resource]
 
-* Add a `global-max-disk-size`  attribute to the https://wildscribe.github.io/WildFly/12.0//subsystem/messaging-activemq/server/[/subsystem=messaging-activemq/server resource] to control the maximum
-space Artemis can use to store data on the file system. Once that limit is reached,  any message will be blocked. This attribute is expressed in percentage of the available space on the disk (min 0, max 100).
-The default value is `undefined` (meaning that there is no limit).
+* Add a `global-max-disk-usage`  attribute to the https://wildscribe.github.io/WildFly/14.0/subsystem/messaging-activemq/server/[/subsystem=messaging-activemq/server resource] to control the maximum space Artemis can use to store data on the file system. Once that limit is reached,  any message will be blocked. This attribute is expressed in percentage of the available space on the disk (min 0, max 100).
+The default value is `100`.
+
+* Add a `disk-scan-period`  attribute to the https://wildscribe.github.io/WildFly/14.0/subsystem/messaging-activemq/server/[/subsystem=messaging-activemq/server resource] to control frequency at which Artemis check the space available on the file system. The default value is `5000` milliseconds.
 
 === Hard Requirements
 
@@ -64,7 +65,7 @@ N/A
 * The memory feature will be tested in the QE test suite to ensure that once Artemis has filled its
 addresses in memory for the amount specified by the `global-max-memory-size` attribute, the `address-full-policy` will take effect.
 * Likewise, the disk feature will be tested in the QE test suite to ensure that once Artemis has filled the disk
-up to the percentage set by `global-max-disk-size`, it will block any message processing.
+up to the percentage set by `global-max-disk-usage`, it will block any message processing.
 
 == Community Documentation
 
