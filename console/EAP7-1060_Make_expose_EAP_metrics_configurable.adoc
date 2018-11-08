@@ -1,0 +1,48 @@
+= Implement new infinispan resources
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+This RFE is about to configure the attributes of the subsystem `microprofile-metrics-smallrye`.
+
+The subsystem contains no child resources and two attributes:
+
+* `security-enabled` (`true` by default) - if security is enabled, the HTTP client must be authenticated to query the HTTP endpoints.
+* `exposed-subsystems` - a list of strings corresponding the name of subsystems that exposes their metrics in the HTTP endpoints.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-1060[EAP7-1060]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:spriadka@redhat.com[Simon Priadka]
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+There will be a new configuration screen to configure the attributes of the subsystem `microprofile-metrics-smallrye`.
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+None
