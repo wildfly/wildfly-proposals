@@ -1,0 +1,162 @@
+= WFCORE-3447 Add the ability for the CLI SSL security commands to be able to obtain a server certificate from Let's Encrypt
+:author:            Marek Marusic
+:email:             mmarusic@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          cli,add,Let's,Encrypt,Let's Encrypt,security,commands
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WFCORE-3447 introduced high-level security commands (ssl enable-ssl-management and ssl enable-ssl-http-server)
+for enabling one-way and two-way SSL easily.
+To generate the server certificate,
+these high-level security commands made use of key-store management operations to generate a self-signed certificate.
+Since it is now possible to obtain certificates from the Let's Encrypt certificate authority using the CLI,
+the high-level security commands should be updated so that in addition to being able to generate a self-signed server certificate,
+they can also obtain a server certificate from Let's Encrypt.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-1100[EAP7-1100]
+* https://issues.jboss.org/browse/WFCORE-4227[WFCORE-4227]
+
+=== Related Issues
+
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+* mailto:jdenise@redhat.com[Jean-François Denise]
+
+=== QE Contacts
+
+* mailto:vmarek@redhat.com[Vratislav Marek]
+
+=== Affected Projects or Components
+
+* CLI
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+* Add parameter '--lets-encrypt' to the 'enable-ssl-http-server' and 'enable-ssl-management' security commands
+* The parameter '--lets-encrypt' should be used in combination with the '--interactive' parameter
+* After '--lets-encrypt' parameter is used user is asked for several information needed to obtain the certificate:
+** Account Key-store file name
+** Account Key-store password
+** URL of the ACME server
+** Certificate authority account name
+** Contact url(s)
+** Certificate authority account password
+** Certificate authority account alias
+** Do you agree to Let's Encrypt terms of service?
+** Key-store file name
+** Key-store password
+** Domain name(s)
+** Certificate alias
+** Enable SSL Mutual Authentication
+* Introduce '--ca-account=<name>' parameter to reuse existing certificate authority account.
+** This should be used mainly in combination with --interactive and --lets-encrypt parameters
+** User won't be asked to provide following items since they will be reused:
+*** Account Key-store file name
+*** Account Key-store password
+*** Certificate authority account name
+*** Contact url(s)
+*** Certificate authority account password
+*** Certificate authority account alias
+*** Do you agree to Let's Encrypt terms of service?
+* In case the user does not agree with the Let's Encrypt TOS the interactive mode will be quit, since we are not able to obtain certificate without accepting the TOS.
+
+==== Example of the certificate interactive setup:
+[source,bash]
+----
+[standalone@localhost:9990 /] security enable-ssl-management --interactive --lets-encrypt
+Please provide required pieces of information to enable SSL:
+
+Let's Encrypt account key-store:
+File name (default accounts.keystore.jks):
+Password (blank generated):
+
+Let's Encrypt certificate authority account:
+Account name [admin]:
+Contact email [admin@admin.com]:
+Password (blank generated):
+Alias (blank generated):
+
+Certificate Authority URL (default https://acme-v02.api.letsencrypt.org/directory):"
+
+Let's Encrypt TOS (https://community.letsencrypt.org/tos)
+Do you agree to Let's Encrypt terms of service? y/n (blank n): y
+
+Certificate info:
+Key-store file name (default management.keystore):
+Password (blank generated):
+Domain name (must be accessible by the Let's Encrypt server at 80 & 443 ports) [example.com]:
+Alias (blank generated):
+
+Enable SSL Mutual Authentication y/n (blank n): n
+
+Let's Encrypt options:
+Account key store: accounts.keystore.jks
+Password:xxx
+Account keystore file X will be generated in server configuration directory.
+Let's Encrypt Certificate authority account name: admin
+Contact email: admin@admin.com
+Password:xxxx
+alias: alias-123
+certificate authority URL: https://acme-v02.api.letsencrypt.org/directory
+You provided agreement to Let's Encrypt terms of service.
+
+SSL options:
+key store file: a
+domain name: da14549f.ngrok.io
+password: GwA82e2S
+alias: alias-42723f73-ec17-4c84-9c20-160180490cf8
+Certificate will be obtained from Let's Encrypt server and will be valid for 90 days.
+Server keystore file a will be generated in server configuration directory.
+
+Do you confirm y/n :y
+
+Subject    - CN=da14549f.ngrok.io
+Issuer     - CN=Let's Encrypt Authority X3, O=Let's Encrypt, C=US
+Valid From - Thu Nov 08 12:36:16 CET 2018
+Valid To   - Wed Feb 06 12:36:16 CET 2019
+MD5 : 83:e0:41:16:5e:f1:5b:b8:b3:4a:6f:94:5e:36:cd:03
+SHA1 : a2:98:38:82:9e:79:2c:11:3c:d4:2c:76:28:3e:6d:16:1c:7c:6f:25
+
+Subject    - CN=Let's Encrypt Authority X3,O=Let's Encrypt,C=US
+Issuer     - CN=DST Root CA X3, O=Digital Signature Trust Co.
+Valid From - Thu Mar 17 17:40:46 CET 2016
+Valid To   - Wed Mar 17 17:40:46 CET 2021
+MD5 : b1:54:09:27:4f:54:ad:8f:02:3d:3b:85:a5:ec:ec:5d
+SHA1 : e6:a3:b4:5b:06:2d:50:9b:33:82:28:2d:19:6e:fe:97:d5:95:6c:cb
+
+
+Accept certificate? [N]o, [T]emporarily, [P]ermanently : t
+Server reloaded.
+SSL enabled for http-interface
+ssl-context is ssl-context-7129ee02-add4-4acd-a39a-103a8c1ba495
+key-manager is key-manager-7129ee02-add4-4acd-a39a-103a8c1ba495
+key-store   is key-store-7129ee02-add4-4acd-a39a-103a8c1ba495
+----
+
+=== Nice-to-Have Requirements
+* Possibility to reuse key-store file, account key store file, certificate account name
+
+=== Non-Requirements
+* Possibility to renew expired certificate
+* Possibility to revoke certificate
+
+== Test Plan
+* Cli completion will be tested to verify that the completion is working correctly with the new introduced parameters
+* https://github.com/wildfly/wildfly-core/blob/master/testsuite/standalone/src/test/java/org/jboss/as/test/integration/management/cli/SecurityCommandsTestCase.java[SecurityCommandsTestCase.java] will be extended to test the interactive mode with and without the parameter to reuse existing certificate authority account
+
+== Community Documentation
+https://github.com/wildfly/wildfly/blob/master/docs/src/main/asciidoc/_elytron/Using_the_Elytron_Subsystem.adoc#configure-ssltls[Documentation]
+should be updated with new "--lets-encrypt" and "--ca-account" parameters
