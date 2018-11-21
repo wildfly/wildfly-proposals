@@ -41,8 +41,8 @@ from Artemis or other messaging components.
 
 * Java EE JMS resource definitions must be able to connect to remote Artemis-based brokers.
 * When an archive containing a `JMSDestinationDefinition` is deployed, it MUST create the resources corresponding to the
-  JMS Queue or Topic on the remote Artemis-based brokers. When the archive containing the definitions is
-  undeployed, the resources on the remote Artemis broker MUST be destroyed.
+  JMS Queue or Topic on the remote Artemis-based brokers. If such a resource already exists then it continues.
+* When the archive containing the definitions is undeployed, the resources on the remote Artemis broker MUST NOT be destroyed.
 * When a resource definitions is used to connect to a remote Artemis-based brokers, it MUST not
   require *any* resources under the `/subsystem=messaging-activemq` (other than the subsystem itself).
 
@@ -151,6 +151,8 @@ It corresponds to [1.1.1] of the new behaviour.
     destinationName = "MessageBeanQueue"
     properties= {
         "management-address=remote-activemq.management"
+        "management-user=admin"
+        "management-password=admin"
     }
 )
 ----
