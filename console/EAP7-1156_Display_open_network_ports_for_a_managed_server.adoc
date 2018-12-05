@@ -1,0 +1,49 @@
+= EAP7-1156 Display open network ports for a managed server
+:author:            Claudio Miranda
+:email:             claudio@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+When users wants to list the network open ports of a managed server, they can open HAL model browser and navigate to the socket-bindings and open each socket-binding to show the bound-port, however this is not a productive method.
+This proposal is to list all bound ports and the socket-binding name on a preview pane per server.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/HAL-532
+* https://issues.jboss.org/browse/EAP7-1156
+
+=== Dev Contacts
+
+* mailto:claudio@redhat.com[Claudio Miranda]
+
+=== QE Contacts
+
+* mailto:spriadka@redhat.com[Šimon Priadka]
+
+== Requirements
+
+To show the bound ports, the following operation is to be used.
+
+`/socket-binding-group=standard-sockets/socket-binding=http:read-resource(include-runtime)`
+
+* Show all bound ports of each socket-binding and its name.
+* Show them in the server preview pane.
+* Show the open ports when the server is in the following status: running, reload-required, restart-required
+* Do not show while the server is starting, stopping or in suspended mode.
+* Should work in domain and standalone mode.
+
+=== Non-Requirements
+
+There are services that doesn't register themselves with the socket-binding, as a consequence the socket is open but it is not displayed as bound, they will not be displayed in the "Opent Ports" preview. Currently `modcluster` is one service that doesn't register the socket-binding.
+
+Deployed applications can open sockets and as it is not registered in the socket-binding, the ports will not be displayed in the Open Ports preview pane.
+
+== Community Documentation
+
+No need.
