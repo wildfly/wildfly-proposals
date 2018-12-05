@@ -1,0 +1,37 @@
+= EAP7-1157 - Add support for server-ssl-sni-context
+:author:            Claudio Miranda
+:email:             claudio@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Add the `server-ssl-sni-context` resource to the elytron subsystem configuration.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/HAL-1523
+* https://issues.jboss.org/browse/EAP7-1157
+
+=== Dev Contacts
+
+* mailto:claudio@redhat.com[Claudio Miranda]
+
+=== QE Contacts
+
+* mailto:spriadka@redhat.com[Simon Priadka]
+
+== Requirements
+
+The resource is `/subsystem=elytron/server-ssl-sni-context=*`
+
+It will be placed on the following navigation path `Configuration -> Subsystem Security (Elytron) -> Other Settings -> SSL`
+It will feature te regular table with `add` and `remove` buttons and the form to edit the values.
+
+== Community Documentation
+
+None
