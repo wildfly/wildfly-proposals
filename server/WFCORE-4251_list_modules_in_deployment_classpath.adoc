@@ -1,0 +1,118 @@
+= Provide ability to list modules which are on deployment's classpath via a Management Operation.
+:author:            Yeray Borges
+:email:             yborgess@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+Currently, the list of modules available at classpath by each deployment is only available via jconsole:
+
+jboss.modules -> ModuleLoader -> ServiceModuleLoader -> Operations -> getDependencies( "deployment.<application_war_ear_name>" )
+
+This document describes the RFE to provide the ability to expose this information via a management operation.
+
+When optimizing the application footprint, this information becomes important:
+
+* The user could use this list to identify which dependencies are added implicitly by the server, and then, exclude any unneeded dependency from the deployment.
+* The user could use this information to discover any duplicated artifact bundled together with the deployment and included in one of the modules that the server is adding to the application classpath.
+* This information could facilitate discovering unneeded subsystems in the installation of his servers.
+
+
+The proposed solution is to include a new operation `list-modules` available under `/deployment` and, in case of ears, `/deployment=*/subdeployment` resource:
+
+ [standalone@localhost:9990 /] /deployment=ejb-in-ear.ear:list-modules
+
+ [standalone@localhost:9990 /] /deployment=ejb-in-ear.ear/subdeployment=ejb-in-ear-web.war:list-modules
+
+An example of the information returned by this method could be:
+
+  {
+      "outcome" => "success",
+      "result" => {
+          "ejb-in-ear.ear" => [
+              {
+                  "name" => "com.fasterxml.jackson.datatype.jackson-datatype-jdk8",
+                  "slot" => "main",
+                  "optional" => true,
+                  "export" => false,
+                  "import-services" => true,
+                  "duplicated" => false
+              },
+              {
+                  "name" => "com.fasterxml.jackson.datatype.jackson-datatype-jsr310",
+                  "slot" => "main",
+                  "optional" => true,
+                  "export" => false,
+                  "import-services" => true,
+                  "duplicated" => true
+              },
+              ...
+          ]
+      }
+  }
+
+Where:
+
+* name: The module name.
+* slot: The slot where this module is.
+* optional: If the dependency was added as an optional dependency.
+* export: If the dependency is being exported to other modules.
+* import-services: If this module is importing services from other dependencies.
+* duplicated: If it is a module defined by the user and the server is adding a module implicitly with the same name.
+
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}WFCORE-4251[WFCORE-4251]
+
+=== Related Issues
+
+* {issue-base-url}EAP7-521[EAP7-521]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:[TBD]
+
+=== Affected Projects or Components
+
+* Wildfly Core
+* JBoss Modules (optional, it could help if we finally show the artifacts included on each module, see Nice-to-Have requirements)
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* It must be possible to list the implicit modules added to the classpath for a specific deployment and, in case of ears, for a particular sub-deployment.
+* List of modules should be sorted alphabetically by module name.
+* The list of modules will be only available if the deployment is enabled.
+* The new operation will be available only in standalone mode. Domain mode changes are not going to be covered by this RFE.
+* The output of the operation will include an attribute named `duplicated` which will be true if the module was added by the user in the deployment, via manifest file or deployment-structure.xml, and added implicitly by the server.
+
+
+=== Nice-to-Have Requirements
+
+* The possibility to show together with the module name the artifact name(s), if there is one, that the module is exposing.
+** This possibility could facilitate to the user the task to check which specific artifact(s) and version is added by a module in order to find any duplicate jar bundled by its own application.
+
+
+=== Non-Requirements
+
+== Test Plan
+
+A test case deploying an application and getting the expected list of modules using the new operation.
+The application should include variants, adding and excluding modules or subsystems via in the deployment deployment-structure.xml file.
+
+== Community Documentation
+
+This has to be implemented in wildfly-core. So the documentation will have to be added as a follow up to wildfly.
