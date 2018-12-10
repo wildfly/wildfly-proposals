@@ -51,7 +51,7 @@ Currently there are the same set of resources under /subsystem=messaging-activem
         "pooled-connection-factory",
         "remote-connector",
 
-* Add a menu item in the Messaging Category column named "External ActiveMQ Broker", this is a View to show all resources.
+* Add a menu item in the Messaging Category column named "Remote ActiveMQ Server", this is a View to show all resources.
 * Create a MBUI View to display the resources
 * The *connectors* will be added in a second level menu under menu item "Connector"
 * The other connection-factories and discovery-group will be added as primary level menu items.
