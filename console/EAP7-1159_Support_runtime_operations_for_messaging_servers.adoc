@@ -66,7 +66,7 @@ The new application screen will show various information about the selected mess
 
 === Sessions
 
-* 'list-sessions()`
+* `list-sessions()`
 * `list-sessions-as-json()`
 * `list-producers-info-as-json()`
 * `list-target-destinations(String sessionId)`
