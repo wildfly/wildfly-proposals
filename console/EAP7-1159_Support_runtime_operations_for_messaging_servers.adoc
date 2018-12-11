@@ -1,0 +1,100 @@
+= Support runtime operations for messaging servers
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+There are lots of new runtime operations for messaging servers, which are currently not supported in HAL. This RFE is about to add support for these operations.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-1159[EAP7-1159]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+=== Affected Projects or Components
+
+* HAL
+
+== Requirements
+
+The console adds the following actions to the messaging server runtime column:
+
+* View: Will open a new application screen (see below)
+* `export-journal()`
+* `import-journal(String xmlFile)`: Does this operation support file uploads?
+* `force-failover()`
+* `reset-all-message-counter-histories()`
+* `reset-all-message-counters()`
+
+The new application screen will show various information about the selected messaging server. The following operations will be supported:
+
+=== Connections
+
+* `list-connection-ids()`
+* `list-connections-as-json()`
+* `close-connections-for-address(String ipAddress)`
+* `close-connections-for-user(String user)`
+* `close-consumer-connections-for-address(String addressMatch)`
+
+=== Connectors
+
+* `get-connectors-as-json()`
+
+=== Consumers
+
+* `list-all-consumers-as-json()`
+* `list-consumers-as-json(String connectionId)`
+
+=== Roles
+
+* `get-roles()`
+* `get-roles()-as-json`
+
+=== Sessions
+
+* 'list-sessions()`
+* `list-sessions-as-json()`
+* `list-producers-info-as-json()`
+* `list-target-destinations(String sessionId)`
+* `get-last-sent-message-id(String sessionId, String addressName)`
+* `get-session-creation-time(String sessionId)`
+
+=== Transactions
+
+* `commit-prepared-transaction(String transactionId)`
+* `rollback-prepared-transaction(String transactionId)`
+* `list-heuristic-committed-transactions()`
+* `list-heuristic-rolled-back-transactions()`
+* `list-prepared-transaction-details-as-html()`
+* `list-prepared-transaction-details-as-json()`
+* `list-prepared-transaction-jms-details-as-html()`
+* `list-prepared-transaction-jms-details-as-json()`
+* `list-prepared-transactions()`
+
+=== Unknown Category
+
+* `get-address-settings-as-json(String addressMatch)`
+* `list-remote-addresses(String ipAddress)`
+* `resolve-address-setting(String activeMQAddress)`
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
