@@ -1,0 +1,69 @@
+= Add journal-file-open-timeout attribute to the Artemis messaging server resource
+:author:            Tomas Hofman
+:email:             thofman@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+ActiveMQ Artemis stores information about messages in journal files. Journal files are append-only and are pre-created with
+defined fixed size. A new journal file can be created when all of the space in an existing journal is used. Eventually, when data
+in a given journal file are no longer needed, the file is reclaimed and reused.
+
+Since versions 1.6.0 and 2.2.0 (see ARTEMIS-1237), Artemis allows to configure a timeout for opening journal files
+(previously the timeout was hardcoded to 5 seconds). This timeout needs to be configurable from Wildfly.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-11404
+
+=== Related Issues
+
+* https://issues.apache.org/jira/browse/ARTEMIS-1237
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:mnovak@redhat.com[Miroslav Novak]
+
+=== Affected Projects or Components
+
+* Wildfly
+* ActiveMQ Artemis (finished)
+
+=== Other Interested Projects
+
+== Requirements
+
+* The journalFileOpenTimeout parameter of ActiveMQ Artemis configuration must be configurable via Wildfly management model.
+
+== Implementation Plan
+
+The `journal-file-open-timeout` attribute will be added to messaging server resource.
+
+CLI to set the attribute:
+
+----
+/subsystem=messaging-activemq/server=default:write-attribute(name=journal-file-open-timeout, value=10)
+----
+
+== Test Plan
+
+* The functionality of the journalFileOpenTimeout attribute on Artemis side is covered by
+https://github.com/apache/activemq-artemis/pull/2460.
+
+* Changes in Wildfly management model will be covered in WF testsuite.
+
+== Community Documentation
+
+* Covered by attribute description in management model.
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
