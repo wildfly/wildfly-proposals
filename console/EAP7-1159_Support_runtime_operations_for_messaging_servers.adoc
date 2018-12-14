@@ -31,64 +31,50 @@ There are lots of new runtime operations for messaging servers, which are curren
 
 == Requirements
 
-The console adds the following actions to the messaging server runtime column:
+=== Finder
+
+The console adds new actions to the selected messaging server in "Runtime / Server / Messaging / Server". In the finder the following actions are available for a selected messaging server:
 
 * View: Will open a new application screen (see below)
-* `export-journal()`
-* `import-journal(String xmlFile)`: Does this operation support file uploads?
-* `force-failover()`
-* `reset-all-message-counter-histories()`
-* `reset-all-message-counters()`
+* Force Failover: Executes operation `force-failover()`
+* Reset: Opens a dialog which offers access to the operations `reset-all-message-counter-histories()` and `reset-all-message-counters()`
 
-The new application screen will show various information about the selected messaging server. The following operations will be supported:
+=== Application Screen
 
-=== Connections
+The new application screen will show various information about the selected messaging server.
 
-* `list-connection-ids()`
-* `list-connections-as-json()`
-* `close-connections-for-address(String ipAddress)`
-* `close-connections-for-user(String user)`
-* `close-consumer-connections-for-address(String addressMatch)`
+==== Connections
 
-=== Connectors
+Lists all connections for the selected messaging server (`list-connections-as-json()`). Connections can be closed by specifying an IP address, an address match or an user. This relates to the operations `close-connections-for-address(String ipAddress)`, `close-connections-for-user(String user)` and `close-consumer-connections-for-address(String addressMatch)`.
 
-* `get-connectors-as-json()`
+For each connection one can show the sessions and consumers on a sub-page. This relates to the operations `list-sessions-as-json(String connectionId)` and `list-consumers-as-json(String connectionId)`.
 
-=== Consumers
+==== Consumers
 
-* `list-all-consumers-as-json()`
-* `list-consumers-as-json(String connectionId)`
+Lists all consumers for the selected messaging server as returned by `list-all-consumers-as-json()`.
 
-=== Roles
+==== Producers
 
-* `get-roles()`
-* `get-roles()-as-json`
+Lists all producers of the selected messaging server as returned by `list-producers-info-as-json()`.
 
-=== Sessions
+==== Connectors
 
-* `list-sessions()`
-* `list-sessions-as-json()`
-* `list-producers-info-as-json()`
-* `list-target-destinations(String sessionId)`
-* `get-last-sent-message-id(String sessionId, String addressName)`
-* `get-session-creation-time(String sessionId)`
+Lists all connectors for the selected messaging server as returned by `get-connectors-as-json()`.
 
-=== Transactions
+==== Roles
 
-* `commit-prepared-transaction(String transactionId)`
-* `rollback-prepared-transaction(String transactionId)`
+Lists all roles matching an address as returned by `get-roles(String addressMatch)`.
+
+==== Transactions
+
+Lists all transactions for the selected messaging as returned by `list-prepared-transaction-details-as-json()`. The transactions can be roled back or commited. This related to the operations `rollback-prepared-transaction(String transactionId)` and `commit-prepared-transaction(String transactionId)`.
+
+=== Unused Operations
+
 * `list-heuristic-committed-transactions()`
 * `list-heuristic-rolled-back-transactions()`
-* `list-prepared-transaction-details-as-html()`
-* `list-prepared-transaction-details-as-json()`
-* `list-prepared-transaction-jms-details-as-html()`
-* `list-prepared-transaction-jms-details-as-json()`
-* `list-prepared-transactions()`
-
-=== Unknown Category
-
-* `get-address-settings-as-json(String addressMatch)`
 * `list-remote-addresses(String ipAddress)`
+* `list-target-destinations(String sessionId)`
 * `resolve-address-setting(String activeMQAddress)`
 
 == Test Plan
