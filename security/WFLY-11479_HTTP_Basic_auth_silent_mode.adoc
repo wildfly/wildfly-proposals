@@ -1,0 +1,60 @@
+= <HTTP Basic Authentication - Silent Mode>
+:author:            Diana Vilkolakova
+:email:             dvilkola@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          basic,elytron,silent
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Using HTTP Basic authentication with Undertow it was possible to set silent mode. Basic authentication in silent mode will send a challenge only if the request contained authorization header, otherwise it is assumed another method will send the challenge. This behaviour will allow to combine basic auth with form auth, so human users will use form based auth and programmatic clients can use basic authentication to log in. This RFE is to support the same behaviour in Elytron.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-11479[WFLY-11479]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1154[EAP7-1154]
+* https://issues.jboss.org/browse/ELY-1466[ELY-1466]
+
+=== Dev Contacts
+
+* mailto:dvilkola@redhat.com[dvilkola]
+
+=== QE Contacts
+
+* mailto:mchoma@redhat.com[mchoma]
+
+=== Affected Projects or Components
+
+Wildfly security
+
+Elytron
+
+=== Other Interested Projects
+
+Undertow Core - Basic authentication in Undertow has the same mode available
+
+== Requirements
+
+=== Hard Requirements
+
+This will involve processing optional property `silent` set along with basic authentication. If the property is set as true and request does not contain Authorization header, response will not include `WWW-Authenticate` header and http status code will not be `401`.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+Currently Elytron has tests for http authentication. Test checking response statuses using silent mode will be added.
+Also, after not providing basic auth credentials in header, subsequent authentication using other mechanism will be tested for success.
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
