@@ -1,0 +1,84 @@
+= [WFCORE-4394] Enhanced Audit Logging - RFC support and Configuring Reconnects
+:author:            Justin Michael Cook
+:email:             jucook@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+Currently, Audit Logging in Elytron does not have the same capabilities as Legacy Security. This task is to enhance Elytron Audit Logging to have support for RFC5424/RFC3164 and add the additional ability to configure reconnect attempts.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-4394[WFCORE-4394]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-699[EAP7-699]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:jkasik@redhat.com[Jan Kašík]
+
+=== Testing By
+
+[X] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* Security
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* Support for https://tools.ietf.org/html/rfc5424[RFC 5424] should be enhanced, according to the following parameter,
+which should be added to ```syslog-audit-log``` in the Elytron subsystem
+** An optional ```syslog-format``` attribute should be added which supports a value of ```RFC5424```
+** This attribute will also have ```RFC5424``` as the default value
+** A Rfc5424SyslogEvent should be added as an audit event, which will have the ```RFC5424``` format as a property
+
+* Support for https://tools.ietf.org/html/rfc3164[RFC 3164] should be added to ```syslog-audit-log``` in the Elytron
+subsystem
+** The ```syslog-format``` attribute described in the RFC 5424 section above should also support a value of
+ ```RFC3164```
+** A Rfc3164SyslogEvent should be added as an audit event, which will have the ```RFC3164``` format as a property
+
+* An initial message should be sent to the syslog server when the Elytron Subsystem syslog endpoint is created
+** This message will indicate that Elytron audit logging is enabled and the format it is enabled with
+
+* The ability to configure the amount of reconnect attempts should be added
+** This should be done by configuring the number of reconnect attempts to a syslog-server
+** This should be available as an attribute ```reconnect-attempts``` under ```syslog-audit-log``` in the Elytron
+subsystem
+** The possible values for this parameter would be: -1 - signifying indefinite attempts,
+0 - signifying no attempts, and any positive integer - signifying that nunmber of attempts
+** This would be an optional parameter and have a default value of 0
+** This parameter will only apply for logging to a syslog server with UDP, since TCP already has reconnections
+configured in the jboss-logmanager project
+** This parameter will only apply if an IOException, such as the destination being unreachable, occurs while sending.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+Subsystem parsing and transformer tests will be added
+
+== Community Documentation
+
+These new Audit Logging capabilities will be documented in the WildFly documentation under Audit.
