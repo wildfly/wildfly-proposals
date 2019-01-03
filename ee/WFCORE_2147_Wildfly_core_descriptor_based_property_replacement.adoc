@@ -1,0 +1,85 @@
+= Enable/disable descriptor based property replacement for files parsed by wildfly-core
+:author:            Yeray Borges
+:email:             yborgess@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WildFly (not WildFly Core) supports system property expansion (a.k.a expression expansion) in spec descriptors as well as JBoss/WildFly specific descriptors. For example, the content of the form ${foobar:blah} is processed to look for the foobar system property to be set and in the absence of it, the value is computed as blah. In the presence of the system property, the value is computed to be whatever the system property value is.
+
+The EE subsystem can be used to enable/disable this property replacement using the following attributes:
+
+* jboss-descriptor-property-replacement: It is used to enable or disable property replacement in JBoss/WildFly (vendor-specific) descriptors. For example, these files:
+** jboss-ejb3.xml
+** jboss-app.xml
+** jboss-web.xml
+** *-jms.xml
+** *-ds.xml
+** jboss-client.xml
+** singleton-deployment.xml
+** distributable-web.xml
+** jboss-all.xml when it is wrapping all the above configurations
+
+* spec-descriptor-property-replacement: It is used to enable or disable property replacement in spec descriptors. For example, these files:
+** ejb-jar.xml
+** persistence.xml
+** application-client.xml
+** application.xml
+
+The goal of this RFE is to extend this descriptor based property replacements to the permissions.xml and jboss-permissions.xml which are files managed by wildfly core project:
+
+* permissions.xml (spec)
+* jboss-permissions.xml (vendor specific)
+
+
+The replacement of those files will continue being enabled/disabled via EE subsystem:
+
+ [standalone@localhost:9990 /] /subsystem=ee:write-attribute(name=jboss-descriptor-property-replacement,value=VALUE)
+ [standalone@localhost:9990 /] /subsystem=ee:write-attribute(name=spec-descriptor-property-replacement,value=VALUE)
+
+ [domain@localhost:9990 /] /profile=*/subsystem=ee:write-attribute(name=jboss-descriptor-property-replacement, value=VALUE)
+ [domain@localhost:9990 /] /profile=*/subsystem=ee:write-attribute(name=spec-descriptor-property-replacement, value=VALUE)
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-2147[WFCORE-2147]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFCORE-1295[WFCORE-1295]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:okotek@redhat.com[Ondrej Kotek]
+
+=== Testing By
+[X] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* Wildfly
+* Wildfly Core
+
+== Requirements
+
+=== Hard Requirements
+* If `spec-descriptor-property-replacement` is `true` then property substitution will be activated also for spec descriptors parsed by wildfly-core.
+* If `jboss-descriptor-property-replacement` is `true` then property substitution will be activated also for proprietary descriptors parsed by wildfly-core.
+
+== Test Plan
+We will integrate two tests; one will be a unit test verifying that the permissions parser can replace all the enabled attributes using expressions and nested expressions. The second test will be an integration test to prove that enabling/disabling the configuration attributes in the EE subsystem enables/disables the user rights on a deployed application.
+
+== Community Documentation
+This has to be implemented in wildfly-core. So the documentation will have to be added as a follow up to wildfly.
