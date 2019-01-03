@@ -80,7 +80,7 @@ Where:
 
 === QE Contacts
 
-* mailto:[TBD]
+* mailto:szhantem@redhat.com[Sultan Zhantemirov]
 
 === Affected Projects or Components
 
