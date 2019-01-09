@@ -27,34 +27,74 @@ The proposed solution is to include a new operation `list-modules` available und
 
  [standalone@localhost:9990 /] /deployment=ejb-in-ear.ear/subdeployment=ejb-in-ear-web.war:list-modules
 
+In domain mode this operation will be available via server resource at host level:
+
+ [domain@localhost:9990 /] /host=master/server=server-one/deployment=ejb-in-ear.ear:list-modules
+
+ [domain@localhost:9990 /] /host=master/server=server-one//deployment=ejb-in-ear.ear/subdeployment=ejb-in-ear-web.war:list-modules
+
 An example of the information returned by this method could be:
 
+  [standalone@localhost:9990 /] /deployment=ejb-in-ear.ear:list-modules
   {
       "outcome" => "success",
       "result" => {
-          "ejb-in-ear.ear" => [
+          "system-dependencies" => [
               {
                   "name" => "com.fasterxml.jackson.datatype.jackson-datatype-jdk8",
                   "slot" => "main",
                   "optional" => true,
                   "export" => false,
                   "import-services" => true,
-                  "duplicated" => false
+                  "duplicated" => true
               },
               {
-                  "name" => "com.fasterxml.jackson.datatype.jackson-datatype-jsr310",
+                  "identifier" => "com.fasterxml.jackson.datatype.jackson-datatype-jsr310",
                   "slot" => "main",
                   "optional" => true,
                   "export" => false,
                   "import-services" => true,
+                  "duplicated" => false
+              },
+              ...
+          ],
+          "user-dependencies" => [
+              {
+                  "name" => "com.fasterxml.jackson.datatype.jackson-datatype-jdk8",
+                  "slot" => "main",
+                  "optional" => false,
+                  "export" => false,
+                  "import-services" => false,
                   "duplicated" => true
               },
               ...
-          ]
+          ],
+          "local-dependencies" => [
+              {
+                "name" => "deployment.ejb-in-ear.ear.ejb-in-ear-ejb.jar",
+                "slot" => "main",
+                "optional" => false,
+                "export" => false,
+                "import-services" => true,
+                "duplicated" => false
+              },
+              ...
+          ],
+          "resources" => [
+                 {"resource" => "vfs:/content/ejb-in-ear.ear/ejb-in-ear-ejb.jar/"}
+                 {"resource" => "vfs:/content/ejb-in-ear.ear/lib/commons-logging-commons-logging-1.2.jar/"},
+                 ...
+              ]
       }
   }
 
-Where:
+The information is presented in three different categories:
+
+* system-dependencies: These are the dependencies added implicitly by the server.
+* user-dependencies: These are the dependencies defined by the user via manifest file or deployment-structure.xml.
+* local-dependencies: These are dependencies on other parts of the deployment.
+
+For each category, the following information will be shown:
 
 * name: The module name.
 * slot: The slot where this module is.
@@ -96,7 +136,7 @@ Where:
 * It must be possible to list the implicit modules added to the classpath for a specific deployment and, in case of ears, for a particular sub-deployment.
 * List of modules should be sorted alphabetically by module name.
 * The list of modules will be only available if the deployment is enabled.
-* The new operation will be available only in standalone mode. Domain mode changes are not going to be covered by this RFE.
+* The `list-modules` operation will not be available in domain mode under /deployment=xyz resource. Domain mode changes for this resource are not going to be covered by this RFE.
 * The output of the operation will include an attribute named `duplicated` which will be true if the module was added by the user in the deployment, via manifest file or deployment-structure.xml, and added implicitly by the server.
 
 
