@@ -8,7 +8,7 @@
 :issue-base-url:    https://issues.jboss.org/browse/
 
 == Overview
-Currently, the list of modules available at classpath by each deployment is only available via jconsole:
+Currently, the list of modules available by each deployment can only be retrieved via jconsole:
 
 jboss.modules -> ModuleLoader -> ServiceModuleLoader -> Operations -> getDependencies( "deployment.<application_war_ear_name>" )
 
@@ -17,92 +17,116 @@ This document describes the RFE to provide the ability to expose this informatio
 When optimizing the application footprint, this information becomes important:
 
 * The user could use this list to identify which dependencies are added implicitly by the server, and then, exclude any unneeded dependency from the deployment.
-* The user could use this information to discover any duplicated artifact bundled together with the deployment and included in one of the modules that the server is adding to the application classpath.
+* The user could use this information to discover any duplicated artifact bundled together with the application and included in one of the modules that the container adds implicitly as a module dependency.
 * This information could facilitate discovering unneeded subsystems in the installation of his servers.
 
 
-The proposed solution is to include a new operation `list-modules` available under `/deployment` and, in case of ears, `/deployment=*/subdeployment` resource:
+
+The proposed solution is to include a new operation `list-modules` available under `/deployment` and, in case of ears, `/deployment=*/subdeployment` resource.
+
+In standalone mode:
 
  [standalone@localhost:9990 /] /deployment=ejb-in-ear.ear:list-modules
 
  [standalone@localhost:9990 /] /deployment=ejb-in-ear.ear/subdeployment=ejb-in-ear-web.war:list-modules
 
-In domain mode this operation will be available via server resource at host level:
+In domain mode, this operation will be available via server resource at host level:
 
  [domain@localhost:9990 /] /host=master/server=server-one/deployment=ejb-in-ear.ear:list-modules
 
- [domain@localhost:9990 /] /host=master/server=server-one//deployment=ejb-in-ear.ear/subdeployment=ejb-in-ear-web.war:list-modules
+ [domain@localhost:9990 /] /host=master/server=server-one/deployment=ejb-in-ear.ear/subdeployment=ejb-in-ear-web.war:list-modules
 
-An example of the information returned by this method could be:
+By default, the operation will display a compact view, including only the module name. A new attribute named `verbose=[false*|true]` could be used to enable a detailed response.
 
-  [standalone@localhost:9990 /] /deployment=ejb-in-ear.ear:list-modules
+
+
+The standard output of `list-modules` operation could be:
+
+  [standalone@localhost:9990 /] /deployment=sample-ear-1.0.ear:list-modules
+  {
+      "outcome" => "success",
+      "result" => {
+          "system-dependencies" => [
+              {"name" => "com.fasterxml.jackson.datatype.jackson-datatype-jdk8"},
+              {"name" => "com.fasterxml.jackson.datatype.jackson-datatype-jsr310"},
+              {"name" => "ibm.jdk"},
+              {"name" => "io.jaegertracing.jaeger"},
+              {"name" => "io.opentracing.contrib.opentracing-tracerresolver"},
+              ...
+          ],
+          "local-dependencies" => [
+              {"name" => "deployment.ejb-in-ear.ear.ejb-in-ear-ejb.jar"},
+               ...
+          ],
+          "user-dependencies" => [
+              {"name" => "com.fasterxml.jackson.datatype.jackson-datatype-jdk8"},
+              {"name" => "org.hibernate:4.1"},
+               ...
+          ]
+      }
+  }
+
+And the detailed output could be:
+
+  [standalone@localhost:9990 /] /deployment=sample-ear-1.0.ear:list-modules(verbose=true)
   {
       "outcome" => "success",
       "result" => {
           "system-dependencies" => [
               {
                   "name" => "com.fasterxml.jackson.datatype.jackson-datatype-jdk8",
-                  "slot" => "main",
                   "optional" => true,
                   "export" => false,
-                  "import-services" => true,
-                  "duplicated" => true
+                  "import-services" => true
               },
               {
-                  "identifier" => "com.fasterxml.jackson.datatype.jackson-datatype-jsr310",
-                  "slot" => "main",
+                  "name" => "com.fasterxml.jackson.datatype.jackson-datatype-jsr310",
                   "optional" => true,
                   "export" => false,
-                  "import-services" => true,
-                  "duplicated" => false
-              },
-              ...
-          ],
-          "user-dependencies" => [
-              {
-                  "name" => "com.fasterxml.jackson.datatype.jackson-datatype-jdk8",
-                  "slot" => "main",
-                  "optional" => false,
-                  "export" => false,
-                  "import-services" => false,
-                  "duplicated" => true
+                  "import-services" => true
               },
               ...
           ],
           "local-dependencies" => [
               {
                 "name" => "deployment.ejb-in-ear.ear.ejb-in-ear-ejb.jar",
-                "slot" => "main",
                 "optional" => false,
                 "export" => false,
-                "import-services" => true,
-                "duplicated" => false
+                "import-services" => true
               },
               ...
           ],
-          "resources" => [
-                 {"resource" => "vfs:/content/ejb-in-ear.ear/ejb-in-ear-ejb.jar/"}
-                 {"resource" => "vfs:/content/ejb-in-ear.ear/lib/commons-logging-commons-logging-1.2.jar/"},
-                 ...
-              ]
+          "user-dependencies" => [
+              {
+                  "name" => "com.fasterxml.jackson.datatype.jackson-datatype-jdk8",
+                  "optional" => false,
+                  "export" => false,
+                  "import-services" => false
+              },
+              {
+                  "name" => "org.hibernate:4.1",
+                  "optional" => false,
+                  "export" => false,
+                  "import-services" => false
+              },
+              ...
+          ]
       }
   }
 
-The information is presented in three different categories:
+The information will be presented in three different categories:
 
 * system-dependencies: These are the dependencies added implicitly by the server.
-* user-dependencies: These are the dependencies defined by the user via manifest file or deployment-structure.xml.
 * local-dependencies: These are dependencies on other parts of the deployment.
+* user-dependencies: These are the dependencies defined by the user via manifest file or deployment-structure.xml.
 
-For each category, the following information will be shown:
 
-* name: The module name.
-* slot: The slot where this module is.
+For each category, the meaning of each attribute is:
+
+* name: The module name and, if the slot name is not the default "main" slot, the slot name is concatenated after ":" character separator.
 * optional: If the dependency was added as an optional dependency.
 * export: If the dependency is being exported to other modules.
 * import-services: If this module is importing services from other dependencies.
-* duplicated: If it is a module defined by the user and the server is adding a module implicitly with the same name.
-
 
 == Issue Metadata
 
@@ -125,33 +149,21 @@ For each category, the following information will be shown:
 === Affected Projects or Components
 
 * Wildfly Core
-* JBoss Modules (optional, it could help if we finally show the artifacts included on each module, see Nice-to-Have requirements)
-
-=== Other Interested Projects
 
 == Requirements
 
 === Hard Requirements
 
-* It must be possible to list the implicit modules added to the classpath for a specific deployment and, in case of ears, for a particular sub-deployment.
+* It must be possible to list the modules added as dependency by the container for a specific deployment and, in case of ears, for a particular sub-deployment.
 * List of modules should be sorted alphabetically by module name.
 * The list of modules will be only available if the deployment is enabled.
 * The `list-modules` operation will not be available in domain mode under /deployment=xyz resource. Domain mode changes for this resource are not going to be covered by this RFE.
-* The output of the operation will include an attribute named `duplicated` which will be true if the module was added by the user in the deployment, via manifest file or deployment-structure.xml, and added implicitly by the server.
-
-
-=== Nice-to-Have Requirements
-
-* The possibility to show together with the module name the artifact name(s), if there is one, that the module is exposing.
-** This possibility could facilitate to the user the task to check which specific artifact(s) and version is added by a module in order to find any duplicate jar bundled by its own application.
-
-
-=== Non-Requirements
+* In domain mode, `list-modules` operation will be available under `/host=*/server=*/deployment=xyz` and `/host=*/server=*/deployment=*/subdeployment=xyz`
 
 == Test Plan
 
 A test case deploying an application and getting the expected list of modules using the new operation.
-The application should include variants, adding and excluding modules or subsystems via in the deployment deployment-structure.xml file.
+The application should include variants, adding and excluding modules or subsystems via manifest file or deployment deployment-structure.xml file.
 
 == Community Documentation
 
