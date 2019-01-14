@@ -1,0 +1,71 @@
+= JMS Bridge should display statistics about messages that have been processed.
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+An Artemis JMS Bridge consumes messages from a source JMS destination, and send them to a target JMS destination.
+Typically either the source or the target destinations are on different servers. The bridge can also be used to bridge messages from other non Artemis
+JMS servers, as long as they are JMS 1.1 compliant.
+The goal of this RFE is to display statistics on the number of processed messages and how many were aborted/rolled back. Those statistics were added through to Apache Artemis via ARTEMIS-561/ENTMQBR-1004.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-6684
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/ENTMQBR-1004
+* https://issues.apache.org/jira/browse/ARTEMIS-561
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:jkasik@redhat.com[Jan Kasik]
+
+=== Testing By
+[ ] Engineering
+
+[X] QE
+
+=== Affected Projects or Components
+
+* Wildfly
+* ActiveMQ Artemis (finished)
+
+=== Other Interested Projects
+
+== Requirements
+
+* The messageCount and abortedMessageCount attributes of ActiveMQ Artemis JMS Bridge configuration must be readable via Wildfly management model.
+
+== Implementation Plan
+
+The `message-count` and `aborted-message-count` read-only attributes of type Long will be added to the JMS bridge resource.
+`message-count` displays the number of messages being processed (successfully or not) by the bridge.
+`aborted-message-count` displays the number of messages that were aborted.
+
+CLI to read the attributes:
+
+----
+/subsystem=messaging-activemq/jms-bridge=bridge:read-attribute(name=message-count)
+/subsystem=messaging-activemq/jms-bridge=bridge:read-attribute(name=aborted-message-count)
+----
+
+== Test Plan
+
+* Changes in Wildfly management model will be covered in WF testsuite by a simple integration test: the test only covers the integration with Artemis aka reading the values from Artemis.
+* There is a specific test in Apache Artemis covering those statistics (org.apache.activemq.artemis.tests.extras.jms.bridge.JMSBridgeTest#testAbortedMessages).
+
+== Community Documentation
+
+* Covered by attribute description in management model and subsystem configuration documentation.
