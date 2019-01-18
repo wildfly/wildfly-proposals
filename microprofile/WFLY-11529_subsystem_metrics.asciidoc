@@ -1,0 +1,158 @@
+= [WFLY-11529] Expose WildFly Metrics
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:keywords:          observability,microprofile,metrics,openshift
+
+== Overview
+
+The goal of this feature is to improve observability of WildFly by exposing its own metrics to monitoring tools such as https://prometheus.io[Prometheus]
+and the https://docs.openshift.com/container-platform/3.11/architecture/infrastructure_components/web_console.html[OpenShift Console].
+
+This feature exposes the WildFly metrics (from the subsystem and deployment management models) to the `/metrics` HTTP endpoint in the Prometheus format.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-11529[WFLY-11529] - Expose WildFly metrics in /metrics endpoints
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1169[EAP7-1169] - Expose EAP subsystem Metrics
+* https://issues.jboss.org/browse/EAP7-1026[EAP7-1026] - EAP7-1026 Expose EAP Metrics so that it can be consumed by Kiali (Istio) Console
+** in this feature, base metrics (e.g. JVM) and application metrics (from MicroProfile Metrics API) were exposed but there were none coming
+  from WildFly subsystems and deployments
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:rsvoboda@redhat.com[Rostislav Svoboda]
+
+=== Other Interested Projects
+
+* Prometheus MUST be able to consume and aggregate WildFly metrics.
+
+== Requirements
+
+* Expose WildFly metrics from subsystem and deployment mananagement model to the `/metrics` HTTP endpoint in the Prometheus format.
+* Provide mechanism to be _compatible_ with the WildFly metrics exposed by EAP images in OpenShift (that uses Prometheux JMX exporter as configured in https://github.com/jboss-container-images/jboss-eap-modules/blob/master/jboss/container/eap/prometheus/config/7.2/artifacts/opt/jboss/container/prometheus/etc/jmx-exporter-config.yaml[jmx-exporter-config.yaml])
+** compatibility means that the metric names and labels should be identical (or, if identity is not achievable, similar).
+
+=== Non-requirements
+
+* WildFly metrics are *NOT* exposed to the `/metrics` HTTP endpoint in the JSON format.
+* WildFly metrics are *NOT* exposed to other metrics HTTP endpoints (such as `/metrics/vendor`).
+
+=== Internal requirements
+
+WildFly management model has a notion of metrics for resource attributes (as described in http://docs.wildfly.org/15/Admin_Guide.html#Description_of_the_Management_Model[WildFly Admin Guide]).
+This feature expose these metrics from WildFly management model, such as:
+
+* Transaction metrics (from the http://wildscribe.github.io/WildFly/15.0/subsystem/transactions/index.html[transactions subsystem])
+* HTTP usage (from the http://wildscribe.github.io/WildFly/15.0/subsystem/undertow/server/http-listener/index.html[undertow subsystem])
+* JDBC Pool usage (from the http://wildscribe.github.io/WildFly/15.0/subsystem/datasources/data-source/ExampleDS/statistics/pool/index.html[datasources subsystem])
+
+
+To be exposed, a WildFly metric must satisfy the following requirements:
+
+* it must have been registered as a metric (its `AccessType` is `METRIC` and its `Storage` is `RUNTIME`)
+* its `ModelType` MUST be a single numerical value
+* its `:read-attribute` operation MUST return an actual numerical value (metrics that returns `undefined` are not exposed)
+
+[NOTE]
+====
+The `:read-attribute` operation is called internally with `include-undefined-metric` set to `true` (as explained in https://issues.jboss.org/browse/WFCORE-4190[WFCORE-4190])
+====
+
+=== Subsystem description
+
+This feature adds 2 attributes to the `microprofile-metrics-smallrye` subsystem resource:
+
+* `exposed-subsystems` - a list of strings corresponding the name of subsystems that exposes their metrics in the HTTP endpoints.
+** By default, this attribute is not defined (so there is no metrics from subsystems that are exposed). The special character `*` can be used to specify that __all__ subsystems will
+expose their metrics.
+* `prefix` - A string to prepend to WildFly metrics that are exposed by the HTTP endpoint `/metrics` with the Prometheus output format.
+** By default, this attribute is not defined. However standalone configuration that provides the subsystem will provide the `${wildfly.metrics.prefix:wildfly}` value
+   so that metric names will be prepended by `wildfly_` (and the user can overrides it by providing the `wildfly.metrics.prefix` system property).
+
+[NOTE]
+====
+* the `exposed-subsystems` was already present in the subsystem but it had no impact since the WildFly metrics from subsystems were disabled in https://issues.jboss.org/browse/WFLY-11399[WFLY-11399] after it was found out that the first implementation would not allow aggregation of these metrics.
+With this feature, the `exposed-subsystems` will be relevant again.
+====
+
+[WARNING]
+====
+Having a subsystem be mentioned in `exposed-subsystems` might not be sufficient to expose its metrics. Some subsystems (such as `undertow` and `messaging-activemq`) do not enable their metrics/statistics by default (as it has some memory/performance impact). These metrics provides a `statistics-enabled` attribute to enable their metrics. If this attribute value is `false`, their metrics will not be exposed even if there are listed in `exposed-subsystems`. The standalone profiles distributed with WildFly provides expressions to be able to enable such metrics when the server is started (as explained in https://issues.jboss.org/browse/WFLY-11471[WFLY-11471]).
+====
+
+==== Metric name and labels
+
+The name of a WildFly metric is based on the subsystem that provides it as well as the name of the attribute from the management model.
+The name can also be prepended with a `prefix` (specified on the `/subsystem=microprofile-metrics` resource).
+The name can also be appended with the `_total` suffix if it corresponds to a Counter metrics (as explained in https://issues.jboss.org/browse/WFCORE-4238[WFCORE-4238])
+Other information are stored using labels.
+
+For example Undertow exposes a metric attribute `request-count` (which is a counter) for every Servlet in an application deployment.
+This attribute will be exposed to Prometheus with the name `wildfly_undertow_request_count_total`.
+Other information such as the name of the Servlet are added to the labels of the metric.
+
+The https://github.com/wildfly/quickstart/tree/master/helloworld-rs[helloworld-rs quickstart] creates a JAX-RS application that can be deployed in WildFly.
+ A corresponding metric will be exposed for it with the name and labels:
+
+----
+wildfly_undertow_request_count_total{deployment="helloworld-rs.war",servlet="org.jboss.as.quickstarts.rshelloworld.JAXActivator",subdeployment="helloworld-rs.war"}
+----
+
+For deployment metrics (as above), if the metric belongs to a `deployment`, the `subdeployment` label is also added (with the `deployment` label value) in
+order to facilitate aggregation of data by Prometheus.
+
+The example below returns 3 counters for Undertow servlet request count:
+* for the HTTP and HTTPS listeners in the `undertow` subsystem
+* for one servlet from the https://github.com/wildfly/quickstart/tree/master/helloworld-rs[helloworld-rs quickstart] deployment:
+----
+$ curl -v http://127.0.0.1:9990/metrics/ | grep wildfly_undertow_request_count_total
+...
+# HELP wildfly_undertow_request_count_total The number of requests this listener has served
+# TYPE wildfly_undertow_request_count counter
+wildfly_undertow_request_count_total{server="default-server",http_listener="default",} 8.0
+wildfly_undertow_request_count_total{server="default-server",https_listener="https",} 0.0
+wildfly_undertow_request_count_total{deployment="helloworld-rs.war",servlet="org.jboss.as.quickstarts.rshelloworld.JAXActivator",subdeployment="helloworld-rs.war",} 6.0
+...
+----
+
+===== Implementation Issues
+
+====== Complex WildFly Metrics Are Not Supported
+
+Resources may return arbitrarily complex return types for metrics.
+The registration code in `microprofile-smallrye-metrics` will only register WildFly metrics for simple numerical `ModelType`.
+
+====== Management Resources Added After Server Boot Will Not Expose Their Metrics
+
+The `microprofile-smallrye-metrics` extension will register any valid metric from WildFly Management Model when it is installed.
+However if other management resources are added afterwards, the extension will not be aware of them and will not register their metrics.
+Note that this does not apply to deployments which are handled separately in the extension Deployment Unit Processor.
+
+====== MicroProfile Metrics 1.x Limitation
+
+It was planned for https://issues.jboss.org/browse/EAP7-1026[EAP7-1026] to provide WildFly metrics through MicroProfile Metrics in the `scope` vendor.
+However during development, we found out a blocker limitation from MicroProfile Metrics 1.x that does not allow to register multiple metrics with the same metrics name and different labels. This makes it impossible to provide sensible metrics that can be aggregated by Prometheus.
+We decided to remove WildFly metrics from the MicroProfile Metrics API and provides them only in Prometheus format with this RFE.
+
+MicroProfile Metrics 2.x that is currently in development is supposed to fix this limitation. We may provide WildFly metrics in the MicroProfile metrics `vendor` scope *if* this version if we can provide compatibility with the naming scheme supported by this feature. Note that such upgrade is not planned at the moment and not required to fullfill this feature.
+
+== Test Plan
+
+The WildFly testsuite will be enhanced to ensure that metrics from WildFly subsystem and deployment are exposed in the `/metrics` HTTP endpoint in the Prometheus format.
+
+== Community Documentation
+
+The feature will be documented in WildFly Admin Guide (in the MicroProfile Metrics section).
