@@ -1,0 +1,168 @@
+= Support JMS Java EE resources definition for remote Artemis-based broker
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-10493[WFLY-10493]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1006[EAP71006]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:mnovak@redhat.com[Miroslav Novak]
+
+== User Story
+
+* Use standard Java EE JMS resource definition, either with the (https://docs.oracle.com/javaee/7/api/javax/jms/JMSConnectionFactoryDefinition.html[@JMSConnectionFactoryDefinition]
+  and https://docs.oracle.com/javaee/7/api/javax/jms/JMSDestinationDefinition.html[JMSDestinationDefinition] annotations or XML configuration, to define JMS resources that connects to a remote Artemis-based broker (including AMQ-7 instances).
+
+
+=== Affected Projects or Components
+
+* This is a internal restructuring of the `messaging-activemq` subsystem that requires no changes
+from Artemis or other messaging components.
+
+== Requirements
+
+* Java EE JMS resource definitions must be able to connect to remote Artemis-based brokers.
+* When an archive containing a `JMSDestinationDefinition` is deployed, it MUST create the resources corresponding to the
+  JMS Queue or Topic on the remote Artemis-based brokers. If such a resource already exists then it continues.
+* When the archive containing the definitions is undeployed, the resources on the remote Artemis broker MUST NOT be destroyed.
+* When a resource definitions is used to connect to a remote Artemis-based brokers, it MUST not
+  require *any* resources under the `/subsystem=messaging-activemq` (other than the subsystem itself).
+
+=== Hard Requirements
+
+N/A
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+== Current Design
+
+The Java EE7 resource definitions behave differently depending on the presence of the `resourceAdapter` property.
+
+If that property is set, the `messaging-activemq` subsystem will delegate to the `resource-adapters` subsystem
+(and IronJacamar) to create the JMS resources based on the resource adapter's `admin-objects` and `connection-definitions` resources.
+
+Artemis Resource adapter does not support Administrated Objects and thus it needs a specific way to create JMS destinations.
+This special case is handled by the `messaging-activemq` subsystem by delegating the creation of JMS destination (and JMS connection factory) to a `server` resource that corresponds
+to a local Artemis broker.
+For an external broker, we will use the same mechanism as for a local broker, using a `pooled-connection-factory` to send Artemis management messages to create the required resources.
+Using the properties on a DestinationDefinition we can pass a `management-address` property to define the management address to use for sending the management messages to the remote Artemis broker.
+
+== Proposed Design
+
+This feature requires no change to the `messaging-activemq` subsystem structure.
+
+We will be using the `resourceAdapter` parameter to look for pooled-connection-factories either local or remote.
+
+The Java EE7 specification also expects that a JMS resource definitions works out of the box without having to specify a `resourceAdapter` name.
+
+The new behaviour will be:
+For destinations:
+----
+1. if `resourceAdapter` attribute is specified or one can be defined from the default-binding for the `jms-connection-factory`
+  1.1 if a `pooled-connection-factory` with the specified name exists
+        1.1.1 if it is a `pooled-connection-factory` to a remote broker: use it to connect to the remote broker and send management messages.
+        1.1.2 else it is a 'local' broker : use the `server` resource to create the required destinations.
+2. else
+    2.1 delegate to the `resource-adapters` subsystem (and IronJacamar) to create the JMS resources based on the resource adapter's `admin-objects` and `connection-definitions` resources.
+----
+
+=== Examples
+
+==== Use the default resource adapter
+
+It corresponds to [1.1.1] of the new behavior.
+
+* create a connector `/subsystem=messaging/remote-connector=remote-amq(socket-binding="messaging-remote-throughput")`
+* create a `/subsystem=messaging/pooled-connection-factory=activemq-ra-remote(entries=["java:/jms/remote-amq/JmsConnectionFactory"], connectors=["remote-amq"])` resource
+* define `/subsystem=ee/service=default-bindings:write-attribute(name=jms-connection-factory="java:/jms/remote-amq/JmsConnectionFactory")`
+* use the annotation
+
+[source,java]
+----
+@JMSConnectionFactoryDefinition(
+        name="java:app/myCF"
+)
+----
+
+==== Use a remote Artemis broker
+
+It corresponds to [1.1.1] of the new behaviour.
+
+* use the annotation
+
+[source,java]
+----
+@JMSConnectionFactoryDefinition(
+        name="java:app/myCF"
+        resourceAdapter="myPCF"
+)
+----
+
+==== Use a 3rd party JMS resource adapter
+
+It corresponds to [2.1] of the new behaviour.
+
+* define a `resource-adapter` (e.g. named `wsmq`) in the `/subsystem=resource-adapters` subsystem.
+* use the annotation
+
+[source,java]
+----
+@JMSConnectionFactoryDefinition(
+        name="java:app/myCF"
+        resourceAdapter="wsmq"
+)
+----
+
+==== Use a remote Artemis broker with a specific management.queue
+
+It corresponds to [1.1.1] of the new behaviour.
+
+* use the annotation
+
+[source,java]
+----
+@JMSDestinationDefinition(
+    name = "java:/jms/queue/MessageBeanQueue",
+    interfaceName = "javax.jms.Queue",
+    destinationName = "MessageBeanQueue"
+    properties= {
+        "management-address=remote-activemq.management"
+    }
+)
+----
+== Test Plan
+
+* WildFly test suite covers the default use case (no `resourceAdapter` attribute, use the `default` messaging-activemq's server)
+* Additional test coverage will be added to support connection to a "remote" Artemis broker (that uses a `invm` server locator to connect
+  to the default local server)
+* Coverage for the 3rd party resource adapters is handled by QE and will not require any change
+* QE Test suite will be enhanced with further test for connections to remote Artemis-based brokers (including for example
+  other WildFly instances, AMQ-7 brokers, etc).
+
+== Community Documentation
+
+The feature will be documented in WildFly Admin Guide (in the Messaging Configuration section).
