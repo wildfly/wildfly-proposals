@@ -1,0 +1,91 @@
+= EAP7-984 Search output for CLI
+:author:            JF Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+The intent of this feature is to provide an efficient way to navigate inside a CLI command.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}EAP7-1021[EAP7-1021]
+
+=== Related Issues:
+
+* {issue-base-url}WFCORE-3926
+
+=== Dev Contacts:
+
+* mailto:jdenise@redhat.com[Jean-François Denise]
+
+=== QE Contacts:
+
+* mailto:eduda@redhat.com[Erich Duda]
+
+=== Affected Projects or Components:
+
+* WildFly Core CLI
+
+== Requirements
+
+=== Hard requirements
+
+* Ability to navigate characters and words in the text of a command using keyboard.
+* Go backward or forward to the previous/next word.
+* Go backward/forward to the previous/next character.
+* Go to the End/Start of the line.
+* Support keys that are commonly used in bash. 
+
+=== None requirements
+
+* The intend is not to support all bash keys, just a set of keys allowing efficient navigation.
+* Due to the specificities of some platforms, the navigation could be operated differently according to the Operating System.
+
+== Test Plan
+
+== Community Documentation
+
+Documentation is the main purpose of this RFE, the feature being natively supported by aesh-readline. +
+https://github.com/wildfly/wildfly/pull/11354[Doc PR]
+
+== Design Notes
+
+NB: The CLI doesn't add any special logic on top of what aesh currently support.
+
+=== Go left (back) one word
+
+* Alt+B : Linux, Windows, (Solaris, HP-UX TBD).
+* Can be operated alternatively by Ctrl-Arrow left: Linux, Solaris, HP-UX.
+* Alt Arrow left: Mac OSX.
+
+=== Go right (forward) one word
+
+* Alt+F : Linux, Windows, (Solaris, HP-UX TBD).
+* Can be operated alternatively by Ctrl-Arrow right: Linux, Solaris, HP-UX.
+* Alt Arrow right: Mac OSX.
+
+=== Go to the beginning of the line
+
+* Ctrl+A: Linux, Windows, Solaris, Mac OSX, HP-UX
+* HOME: Linux, Windows, Solaris, HP-UX
+
+=== Go to the end of the line
+
+* Ctrl+E: Linux, Windows, Solaris, Mac OSX, HP-UX
+* END: Linux, Windows, Solaris, HP-UX
+
+=== Go left (back) one character
+
+* Ctrl+B or Left Arrow: Linux, Windows, Solaris, Mac OSX, HP-UX
+
+=== Go right (forward) one character
+
+* Ctrl+F or Right Arrow: Linux, Windows, Solaris, Mac OSX, HP-UX
