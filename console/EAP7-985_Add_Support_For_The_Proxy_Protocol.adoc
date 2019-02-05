@@ -41,3 +41,9 @@ This feature adds support for the new attribute `proxy-protocol` on Undertow lis
 The console adds support for the new attribute `proxy-protocol` in the configuration section of Undertow listeners.
 
 == Test Plan
+
+TBD
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io

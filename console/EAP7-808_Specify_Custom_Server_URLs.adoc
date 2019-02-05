@@ -40,3 +40,9 @@ To specify a custom URL the user selects the server in the finder and chooses th
 * The server preview clearly states whether a custom URL is used or not.
 
 == Test Plan
+
+TBD
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io

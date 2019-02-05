@@ -1,0 +1,52 @@
+= Support Eclipse MicroProfile Config in Web Console
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+Provide a user interface to configure the new subsystem `/subsystem=microprofile-config-smallrye`.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/HAL-1474[HAL-1474]
+* https://issues.jboss.org/browse/EAP7-1020[EAP7-1020]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-10522[WFLY-10522]
+* https://issues.jboss.org/browse/EAP7-1016[EAP7-1016]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+Provide an user interface to configure the resources of the new subsystem `/subsystem=microprofile-config-smallrye`:
+
+* `/subsystem=microprofile-config-smallrye/config-source=*`
+* `/subsystem=microprofile-config-smallrye/config-source-provider=*`
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io

@@ -183,3 +183,7 @@ This issue summaries the enhancements and new features in HAL 3.x.
 == Test Plan
 
 The https://github.com/hal/testsuite.next[new test suite] for HAL includes tests for the features described in the <<overview,overview>> section.
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
