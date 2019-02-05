@@ -1,0 +1,43 @@
+= Provide web console (GUI) full support for Security Manager configuration
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+Provide an UI for the security manager subsystem in the configuration section.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-664[EAP7-664]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+The console provides a dedicated UI for the security manager subsystem in the configuration section.
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
