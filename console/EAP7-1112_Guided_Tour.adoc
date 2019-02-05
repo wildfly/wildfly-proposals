@@ -1,0 +1,43 @@
+= Migrate & Update Guided Tour
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+Migrate & Update Guided Tour.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-1112[EAP7-1112]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+=== Affected Projects or Components
+
+* JBoss EAP
+* HAL
+
+== Requirements
+
+JBoss EAP has a link from the homepage which opens the guided tour in a modal popup.
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+Affects JBoss EAP only
