@@ -26,8 +26,11 @@ the appropriate SSL context will be selected for the name.
 === Dev Contacts
 
 * mailto:{email}[{author}]
+* mailto:darran.lofthouse@redhat.com[Darran Lofthouse]
 
 === QE Contacts
+
+* mailto:jstourac@redhat.com[Jan Stourac]
 
 === Affected Projects or Components
 
@@ -44,7 +47,7 @@ the appropriate SSL context will be selected for the name.
 This will involve adding a new `server-sni-ssl-context` resource to the Elytron subsystem. This resource will have
 a non-optional attribute named `default-ssl-context` that references an existing server-ssl-context.
 
-In addition this resource can have any number of sni-match subresources. These subresources map names (which may be
+In addition this resource has a `host-context-map` attribute, this maps names (which may be
 wildcard names) to `server-ssl-context` resources, and will be used by the SNI support to determine the correct context
 to choose. Wildcard names use `*` as a wildcard, and can only be used to match a single level of subdomain in much the
 same way as with wildcard certificates.
