@@ -157,7 +157,7 @@ For each category, the meaning of each attribute is:
 * It must be possible to list the modules added as dependency by the container for a specific deployment and, in case of ears, for a particular sub-deployment.
 * List of modules should be sorted alphabetically by module name.
 * The list of modules will be only available if the deployment is enabled.
-* The `list-modules` operation will not be available in domain mode under /deployment=xyz resource. Domain mode changes for this resource are not going to be covered by this RFE.
+* The `list-modules` operation will not be available in domain mode under /deployment=xyz and /server-group=*/deployment=xyz. Domain mode changes for these resources are not going to be covered by this RFE.
 * In domain mode, `list-modules` operation will be available under `/host=*/server=*/deployment=xyz` and `/host=*/server=*/deployment=*/subdeployment=xyz`
 
 == Test Plan
