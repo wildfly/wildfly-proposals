@@ -1,0 +1,67 @@
+= WFLY-11597 Eager passivation of SFSBs
+:author:            Paul Ferraro
+:email:             paul.ferraro@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+@Stateful EJB passivation is generally used to keep memory consumption below a given threshold, specified as a number of SFSBs to retain in memory at a given time.
+However, some users want to rely on the eager passivation logic found in older releases of JBoss AS when the cannot quantify their memory constraints as a number of beans.
+This proposal would restore the ability to eagerly passivate SFSBs for such users.
+
+In general, eager passivation is strongly discouraged for the following reasons:
+
+1. Eager passivation in a cluster has a negative impact on performance.
+1. Cluster-wide eviction can result in deadlocks if an SFSB is accessed while in the process of eviction.
+1. Under low load/capacity, eager passivation results in memory under-utilization.
+1. Under high load/capacity, eager passivation does not prevent OOMs.
+
+Given that this is a temporary feature and not one we intend to advertise, eager passivation will be enabled via a system property, rather than via a proper management attribute.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-11597
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:tborgato@redhat.com[Tommaso Borgato]
+
+=== Affected Projects or Components
+
+Clustering, EJB
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+Port eager passivation logic from AS7.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Implementation Plan
+
+* Parse an eager passivation duration (specified in ISO-8601 format) from the "jboss.ejb.stateful._passivation-store_.idle-timeout" system property.
+* If undefined, parse eager passivation duration (specified in ISO-8601 format) from the global "jboss.ejb.stateful.idle-timeout" system property.
+* Enable eager passivation logic only when one of these properties is specified.
+
+== Test Plan
+
+Create integration test that validates that a given passivation capable SFSB is indeed passivated after a configured inactive period.
+No QE tests are required as this is not intended to be a documented feature.
+
+== Community Documentation
+
+This feature is strongly discouraged, and thus will be undocumented.
