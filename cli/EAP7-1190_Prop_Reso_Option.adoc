@@ -1,0 +1,67 @@
+= EAP7-1190. CLI, new option to enable properties resolution
+:author:            Jean-François Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently the only way to enable properties resolution in the CLI is to update the XML configuration file.
+Having to update the XML file creates complexity when automating CLI execution.
+CLI has some command line options that override the content of the XML configuration.
+We are here proposing to introduce a new command line option to enable properties resolution.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-4305[WFCORE-4305]
+
+=== Related Issues
+
+* NONE
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:mnovak@redhat.com[Miroslav Novák]
+
+=== Affected Projects or Components
+
+* CLI
+
+=== Other Interested Projects
+
+* NONE
+
+== Requirements
+
+=== Hard Requirements
+
+* Ability to enable property resolution via CLI option. We are re-using the XML element name
+as the option name. This option has no value, 
+----
+./jboss-cli.sh --resolve-parameter-values
+----
+
+=== Nice-to-Have Requirements
+
+* NONE
+
+=== Non-Requirements
+
+* Ability to disable property resolution via CLI option. 
+
+== Test Plan
+
+* New test in standalone to start CLI with --resolve-parameter-values and check
+that the system property is resolved prior to be sent to server.
+
+== Community Documentation
+The CLI comes with its own documentation (help). Having a new entry for the option
+should be enough.
