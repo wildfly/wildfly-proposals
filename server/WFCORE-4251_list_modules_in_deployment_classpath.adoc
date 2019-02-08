@@ -1,0 +1,170 @@
+= Provide ability to list modules which are on deployment's classpath via a Management Operation.
+:author:            Yeray Borges
+:email:             yborgess@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+Currently, the list of modules available by each deployment can only be retrieved via jconsole:
+
+jboss.modules -> ModuleLoader -> ServiceModuleLoader -> Operations -> getDependencies( "deployment.<application_war_ear_name>" )
+
+This document describes the RFE to provide the ability to expose this information via a management operation.
+
+When optimizing the application footprint, this information becomes important:
+
+* The user could use this list to identify which dependencies are added implicitly by the server, and then, exclude any unneeded dependency from the deployment.
+* The user could use this information to discover any duplicated artifact bundled together with the application and included in one of the modules that the container adds implicitly as a module dependency.
+* This information could facilitate discovering unneeded subsystems in the installation of his servers.
+
+
+
+The proposed solution is to include a new operation `list-modules` available under `/deployment` and, in case of ears, `/deployment=*/subdeployment` resource.
+
+In standalone mode:
+
+ [standalone@localhost:9990 /] /deployment=ejb-in-ear.ear:list-modules
+
+ [standalone@localhost:9990 /] /deployment=ejb-in-ear.ear/subdeployment=ejb-in-ear-web.war:list-modules
+
+In domain mode, this operation will be available via server resource at host level:
+
+ [domain@localhost:9990 /] /host=master/server=server-one/deployment=ejb-in-ear.ear:list-modules
+
+ [domain@localhost:9990 /] /host=master/server=server-one/deployment=ejb-in-ear.ear/subdeployment=ejb-in-ear-web.war:list-modules
+
+By default, the operation will display a compact view, including only the module name. A new attribute named `verbose=[false*|true]` could be used to enable a detailed response.
+
+
+
+The standard output of `list-modules` operation could be:
+
+  [standalone@localhost:9990 /] /deployment=sample-ear-1.0.ear:list-modules
+  {
+      "outcome" => "success",
+      "result" => {
+          "system-dependencies" => [
+              {"name" => "com.fasterxml.jackson.datatype.jackson-datatype-jdk8"},
+              {"name" => "com.fasterxml.jackson.datatype.jackson-datatype-jsr310"},
+              {"name" => "ibm.jdk"},
+              {"name" => "io.jaegertracing.jaeger"},
+              {"name" => "io.opentracing.contrib.opentracing-tracerresolver"},
+              ...
+          ],
+          "local-dependencies" => [
+              {"name" => "deployment.ejb-in-ear.ear.ejb-in-ear-ejb.jar"},
+               ...
+          ],
+          "user-dependencies" => [
+              {"name" => "com.fasterxml.jackson.datatype.jackson-datatype-jdk8"},
+              {"name" => "org.hibernate:4.1"},
+               ...
+          ]
+      }
+  }
+
+And the detailed output could be:
+
+  [standalone@localhost:9990 /] /deployment=sample-ear-1.0.ear:list-modules(verbose=true)
+  {
+      "outcome" => "success",
+      "result" => {
+          "system-dependencies" => [
+              {
+                  "name" => "com.fasterxml.jackson.datatype.jackson-datatype-jdk8",
+                  "optional" => true,
+                  "export" => false,
+                  "import-services" => true
+              },
+              {
+                  "name" => "com.fasterxml.jackson.datatype.jackson-datatype-jsr310",
+                  "optional" => true,
+                  "export" => false,
+                  "import-services" => true
+              },
+              ...
+          ],
+          "local-dependencies" => [
+              {
+                "name" => "deployment.ejb-in-ear.ear.ejb-in-ear-ejb.jar",
+                "optional" => false,
+                "export" => false,
+                "import-services" => true
+              },
+              ...
+          ],
+          "user-dependencies" => [
+              {
+                  "name" => "com.fasterxml.jackson.datatype.jackson-datatype-jdk8",
+                  "optional" => false,
+                  "export" => false,
+                  "import-services" => false
+              },
+              {
+                  "name" => "org.hibernate:4.1",
+                  "optional" => false,
+                  "export" => false,
+                  "import-services" => false
+              },
+              ...
+          ]
+      }
+  }
+
+The information will be presented in three different categories:
+
+* system-dependencies: These are the dependencies added implicitly by the server.
+* local-dependencies: These are dependencies on other parts of the deployment.
+* user-dependencies: These are the dependencies defined by the user via manifest file or deployment-structure.xml.
+
+
+For each category, the meaning of each attribute is:
+
+* name: The module name and, if the slot name is not the default "main" slot, the slot name is concatenated after ":" character separator.
+* optional: If the dependency was added as an optional dependency.
+* export: If the dependency is being exported to other modules.
+* import-services: If this module is importing services from other dependencies.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}WFCORE-4251[WFCORE-4251]
+
+=== Related Issues
+
+* {issue-base-url}EAP7-521[EAP7-521]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:szhantem@redhat.com[Sultan Zhantemirov]
+
+=== Affected Projects or Components
+
+* Wildfly Core
+
+== Requirements
+
+=== Hard Requirements
+
+* It must be possible to list the modules added as dependency by the container for a specific deployment and, in case of ears, for a particular sub-deployment.
+* List of modules should be sorted alphabetically by module name.
+* The list of modules will be only available if the deployment is enabled.
+* The `list-modules` operation will not be available in domain mode under /deployment=xyz and /server-group=*/deployment=xyz. Domain mode changes for these resources are not going to be covered by this RFE.
+* In domain mode, `list-modules` operation will be available under `/host=*/server=*/deployment=xyz` and `/host=*/server=*/deployment=*/subdeployment=xyz`
+
+== Test Plan
+
+A test case deploying an application and getting the expected list of modules using the new operation.
+The application should include variants, adding and excluding modules or subsystems via manifest file or deployment deployment-structure.xml file.
+
+== Community Documentation
+
+This has to be implemented in wildfly-core. So the documentation will have to be added as a follow up to wildfly.
