@@ -1,0 +1,42 @@
+= EAP7-1133 Add "init" runtime operation to trust-manager
+:author:            Claudio Miranda
+:email:             claudio@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+There is a runtime "init" operation for /subsystem=elytron/trust-manager=* resource, it reinitializes the trust manager.
+This operation should be available on the runtime view of the trust manager.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-1133[EAP7-1133]
+
+=== Dev Contacts
+
+* mailto:claudio@redhat.com[Claudio Miranda]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+
+== Requirements
+
+* Add a button named "Initialize" on the table of the trust manager view, it should call the "init" operation of the selected resource.
+* In domain mode, prefix the resource with the host and server name.
+
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+None
