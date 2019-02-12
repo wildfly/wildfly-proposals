@@ -1,0 +1,46 @@
+= EAP7-1164 Show notification of non progressing operations
+:author:            Claudio Miranda
+:email:             claudio@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+It may happen the Server or Host controller is performing some management operation in background and acquired an exclusive lock (writing to the xml file for example) on a resource. 
+
+There is an operation `/core-service=management/service=management-operations:find-non-progressing-operation` to detect if any active operation that acquired the exclusive and is running longer than 15s is categorized as a non progressing operation, it would help the user to display a global notification on the header, if there is a non progressing operation.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/HAL-527
+* https://issues.jboss.org/browse/EAP7-1164
+
+=== Dev Contacts
+
+* mailto:claudio@redhat.com[Claudio Miranda]
+
+=== QE Contacts
+
+* mailto:spriadka@redhat.com[Simon Priadka]
+
+
+== Requirements
+
+The notification of the non progressing operation is to be displayed besides the "Reload Required" area in the top line of the header.
+
+To find out if there is any non progressing operation, make a call to  `/core-service=management/service=management-operations:find-non-progressing-operation` on each running server (and hosts in domain mode) at a configurable period of time.
+
+Two new settings attributes are required to control this periodic behavior:
+
+* Poll: To enable or disable the polling mechanism.
+* Poll Time: The amount of time in seconds in the range of 5 to 300.
+
+These settings attributes will be part of the settings dialog and are persited as cookies in the browser system, similar to the already existing Settings.
+
+== Community Documentation
+
+N/A
