@@ -1,0 +1,46 @@
+= EAP7-773 Add multi-server support to mod_cluster
+:author:            Claudio Miranda
+:email:             claudio@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+https://issues.jboss.org/browse/WFLY-6803[WFLY-6803] changed the modcluster subsystem, from a single configuration [1] to add support to multiple servers [2]. 
+The Modcluster configuration column will change the title to "Proxy" and list all configuration proxies and actions to add and remove a proxy configuration.
+
+1. /subsystem=modcluster/mod-cluster-config=configuration
+2. /subsystem=modcluster/proxy=*
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-773[EAP7-773]
+* https://issues.jboss.org/browse/HAL-1493[HAL-1493]
+
+=== Dev Contacts
+
+* mailto:claudio@redhat.com[Claudio Miranda]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+== Requirements
+
+* Change the Modcluster column title to "Proxy"
+* The "Proxy" column will list all proxies under /subsystem=modcluster/proxy=*
+* "Add" and "Remove" actions to manage proxies
+* The "View" action will open the configuration for the selected proxy.
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+N/A
