@@ -1,0 +1,44 @@
+= EAP7-1163 Show active management operation from hosts and servers in a central place
+:author:            Claudio Miranda
+:email:             claudio@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently HAL displays the active management operations in Runtime -> Server (Standalone) and Runtime -> Host (Domain), for domain mode, it shows the active operations for each host and doesn't show the active operations for servers, also the user must open each host view to see the active operations.
+
+To improve the use experience in domain mode, it would be better to show the active operations of hosts and servers in a central place.
+
+This proposal is to add a "Management Operations" item in "Browse By" column, in domain mode, to show all active operations, this view will call the `/core-service=management/service=management-operations/active-operation=*:read-resource` of all running hosts and servers.
+
+On Standalone mode, the current option in a drop down item on server column actually works, but for a common experience in standalone and domain mode, the "Management Operations" option in Standalone mode is to be available in the Monitor column.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/HAL-1557
+* https://issues.jboss.org/browse/EAP7-1163
+
+=== Dev Contacts
+
+* mailto:claudio@redhat.com[Claudio Miranda]
+
+=== QE Contacts
+
+* mailto:spriadka@redhat.com[Simon Priadka]
+
+== Requirements
+
+* Add a column item "Management Operations" in "Browse By" column in domain mode.
+* Add a column item "Management Operations" in "Monitor" column in standalone mode.
+* Remove the drop-down item "Management Operations" on Hosts and Server columns.
+* Change the actual "Management Operations" view to perform a composite call on all running hosts and servers (`/core-service=management/service=management-operations/active-operation=*:read-resource`)
+
+== Community Documentation
+
+N/A
