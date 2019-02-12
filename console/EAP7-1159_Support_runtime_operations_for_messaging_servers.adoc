@@ -1,0 +1,86 @@
+= Support runtime operations for messaging servers
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+There are lots of new runtime operations for messaging servers, which are currently not supported in HAL. This RFE is about to add support for these operations.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-1159[EAP7-1159]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+=== Affected Projects or Components
+
+* HAL
+
+== Requirements
+
+=== Finder
+
+The console adds new actions to the selected messaging server in "Runtime / Server / Messaging / Server". In the finder the following actions are available for a selected messaging server:
+
+* View: Will open a new application screen (see below)
+* Force Failover: Executes operation `force-failover()`
+* Reset: Opens a dialog which offers access to the operations `reset-all-message-counter-histories()` and `reset-all-message-counters()`
+
+=== Application Screen
+
+The new application screen will show various information about the selected messaging server.
+
+==== Connections
+
+Lists all connections for the selected messaging server (`list-connections-as-json()`). Connections can be closed by specifying an IP address, an address match or an user. This relates to the operations `close-connections-for-address(String ipAddress)`, `close-connections-for-user(String user)` and `close-consumer-connections-for-address(String addressMatch)`.
+
+For each connection one can show the sessions and consumers on a sub-page. This relates to the operations `list-sessions-as-json(String connectionId)` and `list-consumers-as-json(String connectionId)`.
+
+==== Consumers
+
+Lists all consumers for the selected messaging server as returned by `list-all-consumers-as-json()`.
+
+==== Producers
+
+Lists all producers of the selected messaging server as returned by `list-producers-info-as-json()`.
+
+==== Connectors
+
+Lists all connectors for the selected messaging server as returned by `get-connectors-as-json()`.
+
+==== Roles
+
+Lists all roles matching an address as returned by `get-roles(String addressMatch)`.
+
+==== Transactions
+
+Lists all transactions for the selected messaging as returned by `list-prepared-transaction-details-as-json()`. The transactions can be roled back or commited. This related to the operations `rollback-prepared-transaction(String transactionId)` and `commit-prepared-transaction(String transactionId)`.
+
+=== Unused Operations
+
+* `list-heuristic-committed-transactions()`
+* `list-heuristic-rolled-back-transactions()`
+* `list-remote-addresses(String ipAddress)`
+* `list-target-destinations(String sessionId)`
+* `resolve-address-setting(String activeMQAddress)`
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
