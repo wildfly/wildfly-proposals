@@ -1,0 +1,114 @@
+= WFLY-11697 WS integration with WildFly Elytron - AuthenticationClient for Authentication / SSL
+:author:            Diana Vilkolakova
+:email:             dvilkola@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          elytron, client, webservices
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WildFly Elytron uses the Elytron Client project to enable remote clients to authenticate using Elytron.
+Elytron client is already used by other WildFly clients allowing for both use of an Elytron API and pre-defined configurations in the xml file (https://docs.jboss.org/author/display/WFLY/WildFly+Client+Configuration#WildFlyClientConfiguration-wildflyconfig.xmlDiscovery[wildfly-config.xml]).
+
+This requested feature is about making use of Elytron's configuration on the client side of WS deployment so that the WS client supports the common framework available within the application server.
+
+The implementation will involve updating Elytron client configuration with additional settings that will specify the policy (mechanisms) the webservices client will use to authenticate with the server.
+
+The implementation will involve loading of this authentication configuration from Elytron client, specifically credentials, mechanisms and SSL context, and making those available to the Webservices client.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-11697[WFLY-11697]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1097[EAP7-1097]
+
+=== Dev Contacts
+
+* mailto:dvilkola@redhat.com[Diana Vilkolakova]
+
+=== QE Contacts
+
+* mailto:jbliznak@redhat.com[Jan Bliznak]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* Security
+* Web Services
+
+=== Other Interested Projects
+
+N/A
+
+== Requirements
+
+=== Hard Requirements
+
+This RFE seeks to make use of Elytron configuration for the following methods of authentication:
+
+* HTTP Basic authentication
+* Username Token Profile (message level security, adds credentials to SOAP header)
+* TLS protocol
+
+Elytron client configuration can have credentials and SSL context specified based on URL.
+Additional configuration to specify what methods of authentication the client wants to use to authenticate with the server must be added.
+It is important that these additions are in the format that won't clash with future client integrations (eg. planned RESTEasy client integration).
+
+WS client will make use of Elytron to obtain the credentials along with the method of authentication to use them for (Username Token Profile or HTTP Basic auth or both), and SSLContext by default (if this configuration is present and Elytron is on the classpath).
+This means the user will not be prompted for credentials or to accept server certificates if this configuration is present in wildfly-config.xml (or is provided in the client's code by using Elytron API).
+
+Any existing configuration the client already had configured must not be re-written.
+Configuration specified by user in default WS client descriptor within the application (https://docs.jboss.org/author/display/JBWS/Predefined+client+and+endpoint+configurations#Predefinedclientandendpointconfigurations-Automaticconfigurationfromdefaultdescriptors[jaxws-client-config.xml]) has precedence.
+
+This RFE deals only with HTTP authentication. It ignores configuration settings from Elytron that are specified for SASL.
+
+==== Elytron client configuration additions
+
+Additional settings in Elytron client configuration will be added. These will specify whether the credentials should  be used with HTTP BASIC auth, Username Token Profile, or both.
+HTTP BASIC auth mechanism is considered as default. These additions must be in format that won't clash with RESTEasy client (or other clients) integration in the future.
+
+Since Username Token Profile is used only with webservices I propose this setting should be specified under new `webservices` tag.
+
+Setting for BASIC HTTP auth mechanism is shared with RESTEasy client.
+But since RESTEasy client will have additional HTTP mechanisms allowed in this tag (webservices will currently allow only BASIC), this setting will be placed under `webservices` tag as well.
+
+Below is the example setting:
+
+```
+<webservices>
+  <ws-security type="UsernameToken">
+  <set-http-mechanism name="BASIC"/>
+</webservices>
+```
+
+WS-Security is a SOAP message security standard where Username Token Profile is specified. `UsernameToken` will be the only value allowed in this tag. In the future, additional `ws-security` types could be added. The same goes for HTTP mechanism - BASIC will be the only allowed value for now and in the future additional HTTP mechanisms could be added.
+
+=== Non-Requirements
+
+It is not part of this RFE to implement client side of HTTP mechanisms. WS client will only use Elytron client to obtain the credentials, mechanisms and TLS configuration to use for its calls. All requests and authentication calls will be handled by the WS stack as is.
+
+== Implementation Plan
+
+Additional SPI will be defined in https://github.com/jbossws/jbossws-spi[jbossws-spi] repository that Elytron will implement. It will provide methods to obtain credentials and SSL context.
+
+Elytron provider will be loaded during the building and configuration of the client. The credentials and SSLContext will be set only if it is missing.
+
+JBoss Web Services are integrated with Apache CXF. Apache CXF provides methods for setting of TLS parameters and authentication policies that will be used.
+
+Elytron client configuration will be updated to include new settings for `webservices`.
+
+== Test Plan
+
+Functionality tests in WebServices testsuite.
