@@ -1,0 +1,57 @@
+= EAP7-1136 Expose CA management operations for key-store and certificate-authority-account
+:author:            Claudio Miranda
+:email:             claudio@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+EAP7-857 added runtime operations to manage certificates issued by an online CA, the operations are listed below. 
+The operations allows to create the account on an online CA service, retrieve a signed certificate and add it to a key store.
+
+  resource: /subsystem=elytron/certificate-authority-account=*
+    operations: 
+      change-account-key
+      create-account
+      deactivate-account
+      get-metadata
+      update-account
+
+ resource: /subsystem=elytron/key-store=*
+    operations: 
+      obtain-certificate
+      revoke-certificate
+      should-renew-certificate
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-1136[EAP7-1136]
+
+=== Dev Contacts
+
+* mailto:claudio@redhat.com[Claudio Miranda]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+== Requirements
+
+* Add the certificate-authority-account resource to the runtime view of SSL View of Elytron runtime section.
+* Add the following operations to the certificate-authority-account table: create, deactivate, update, get metadata, change account key.
+* The Key Store exists in Runtime / Elytron / Stores, then add the following operations to the Aliases action view: obtain, revoke, verify renew
+* The operations will only be available upon a selection of an item in the table.
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+None
