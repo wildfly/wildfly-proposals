@@ -1,0 +1,56 @@
+= EAP7-1062 Display microprofile health checks on HAL
+:author:            Claudio Miranda
+:email:             claudio@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+There is the /subsystem=microprofile-health-smallrye resource to configure and show the microprofile health checks from microprofile applications. It works only in standalone mode as domain mode is not supported yet (see https://issues.jboss.org/browse/WFLY-10863[WFLY-10863]).
+The configuration for microprofile-health has only one boolean attribute, then for the configuration section the Model Browser already takes care to let users change the attribute.
+There is a check runtime operation to show the health checks and the global outcome as boolean value. HAL should display a preview with the last N checks and the global outcome, there also should be a specific "View" button to show all checks.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/HAL-1543[HAL-1543]
+* https://issues.jboss.org/browse/EAP7-1062[EAP7-1062]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-10863[WFLY-10863 - MP Health is not available in domain mode]
+
+=== Dev Contacts
+
+* mailto:claudio@redhat.com[Claudio Miranda]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+== Requirements
+
+* No change in configuration section of microprofile-health, model browser already takes care of configuration as there is a single boolean attribute.
+* The Monitor column on runtime view will have a microprofile-health option.
+* The microprofile-health will display a preview pane with the following information: 
+** outcome of the health check as an alert (green is UP, red is DOWN)
+** display the last 10 health checks as an list of properties.
+* There will be a "View" button for microprofile-health, this will open a dedicated view to show the global outcome and all health-checks as a list of properties.
+
+
+== Non Requirements
+
+* As domain mode is not supported on subsystem level, there will be no microprofile-health on HAL for domain mode.
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+NA
