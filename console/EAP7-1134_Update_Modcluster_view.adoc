@@ -1,0 +1,50 @@
+= EAP7-1134 Update Modcluster view for new resources load-provider
+:author:            Claudio Miranda
+:email:             claudio@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+Two new singleton resources are available in modcluster subsystem
+
+load-provider=dynamic
+load-provider=simple
+
+The previous dynamic-load-provider=configuration is an alias to load-provider=dynamic. We should update modcluster configuration to use those two new singleton resources.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-1134[EAP7-1134]
+
+=== Dev Contacts
+
+* mailto:claudio@redhat.com[Claudio Miranda]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+
+== Requirements
+
+* Add the load-provider=dynamic as a primary level menu in a proxy view.
+* Add the load-provider=simple as a primary level menu in a proxy view.
+* They are mutually exclusive, each one will be a singleton form, and whenever one is added the other is removed.
+* The load-provider=dynamic contains sub-resources (custom-load-metric and load-metric) they will be added as primary level menu item.
+* The custom-load-metric and load-metric pane will show an alert if the parent load-provider=dynamic doesn't exist.
+* On the custom-load-metric and load-metric view, the add and remove buttons are disabled if there is no load-provider=dynamic resource created.
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+None
