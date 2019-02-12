@@ -1,0 +1,38 @@
+= EAP7-1132 Replace 'list-log-files' with using the 'log-file' resource
+:author:            Claudio Miranda
+:email:             claudio@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+The list-log-files operation is deprecated. Instead, we should use the log-file subresource and read its runtime attributes, there is also the support to read the files in subdirectories of jboss.server.log.dir.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-1132[EAP7-1132]
+
+=== Dev Contacts
+
+* mailto:claudio@redhat.com[Claudio Miranda]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+== Requirements
+
+* Read the log files with :read-resource operation on /subsystem=logging/log-file=* address
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+None
