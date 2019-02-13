@@ -1,0 +1,139 @@
+= WFLY-11622 Multiple Delivery Group Support for Message Driven Beans
+:author:            Flavia Rainone
+:email:             frainone@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently an MDB can belong to a delivery-group, a group identified by a String name.
+If the MDB belongs to a delivery-group, delivery of messages for that MDB will be enabled only when the delivery-group is active.
+If the MDB belongs to a delivery-group and is clustered singleton, delivery wlil be enabled only when the delivery-group is active in the singleton node of the cluster.
+This REF will enhance delivery-group capability, by making possible to associate an MDB to more than one delivery-groups at once.
+Delivery will be enabled only when all delivery-groups the MDB belongs to are active. In the clustered singleton case, that implies that delivery is active only 
+in the singleton node of the cluster and only if all delivery-groups associated with the MDB are active.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-11622
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-720
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:mnovak@redhat.com[Miroslav Novak]
+
+=== Affected Projects or Components
+
+Affects Wildfly EJB and requires a new EJB3 Ext API version
+
+=== Other Interested Projects
+
+EJB3 Ext API should be upgraded
+
+== Requirements
+
+=== Hard Requirements
+
+Allow more than one delivery group per MDB. If an MDB belongs to more than one delivery group, delivery is enabled if and only if all delivery groups are active.
+In clustered scenarios, delivery is active only in the singleton node of the cluster and only if all delivery groups are active for that MDB.
+Delivery groups are defined by:
+- xml, so we will need to have a new version of delivery-active schema (delivery-active:1.2)
+- annotations, @DeliveryGroup to be more specific, we will upgrade this annotation to make it repeatable (annotation is defined in EJB3 Ext API)
+
+Notice that this requires a change to jboss-ejb3-ext-api and an upgrade for that library.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+Add MDBs that are associated with two or more delivery groups and make sure that they are enabled only when both delivery groups are active. Also test on clustered scenario if possible.
+
+An example of a multiple delivery group configured with XML would be as follows:
+[source]
+<?xml version="1.1" encoding="UTF-8"?>
+<jboss:ejb-jar xmlns:jboss="http://www.jboss.com/xml/ns/javaee"
+               xmlns="http://java.sun.com/xml/ns/javaee"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xmlns:d="urn:delivery-active:1.2"
+               xsi:schemaLocation="http://www.jboss.com/xml/ns/javaee http://www.jboss.org/j2ee/schema/jboss-ejb3-2_0.xsd http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/ejb-jar_3_1.xsd"
+               version="3.1"
+               impl-version="2.0">
+    <assembly-descriptor>
+         <d:delivery>
+                <ejb-name>HelloWorldQueueMDB</ejb-name>
+                <d:group>delivery-group-1</d:group>
+                <d:group>delivery-group-2</d:group>
+        </d:delivery>
+    </assembly-descriptor>
+</jboss:ejb-jar>
+
+The same configuration will be set with repeatable annotations as follows:
+
+[source,java]
+@MessageDriven(name = "HelloWorldQueueMDB", activationConfig = {
+        @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
+        @ActivationConfigProperty(propertyName = "destination", propertyValue = "queue/HELLOWORLDMDBQueue"),
+        @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })
+@DeliveryGroup("delivery-group-1")
+@DeliveryGroup("delivery-group-2")
+public class HelloWorldQueueMDB implements MessageListener {
+...
+}
+
+
+To use in conjunction with clustered singleton, at xml, the test can follow the next example:
+
+[source]
+<?xml version="1.1" encoding="UTF-8"?>
+<jboss:ejb-jar xmlns:jboss="http://www.jboss.com/xml/ns/javaee"
+               xmlns="http://java.sun.com/xml/ns/javaee"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xmlns:c="urn:clustering:1.1"
+               xmlns:d="urn:delivery-active:1.2"
+               xsi:schemaLocation="http://www.jboss.com/xml/ns/javaee http://www.jboss.org/j2ee/schema/jboss-ejb3-2_0.xsd http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/ejb-jar_3_1.xsd"
+               version="3.1"
+               impl-version="2.0">
+    <assembly-descriptor>
+        <c:clustering>
+            <ejb-name>HelloWorldQueueMDB</ejb-name>
+            <c:clustered-singleton>true</c:clustered-singleton>
+        </c:clustering>
+         <d:delivery>
+                <ejb-name>*</ejb-name>
+                <d:group>delivery-group-1</d:group>
+                <d:group>delivery-group-2</d:group>
+        </d:delivery>
+    </assembly-descriptor>
+</jboss:ejb-jar>
+
+Notice that in the above example, the ejb-name is a wildcard, this should work as well, only with the difference that all MDBs in the deployment will belong to the configured groups.
+
+Or via annotations:
+[source,java]
+@MessageDriven(name = "HelloWorldQueueMDB", activationConfig = {
+        @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Queue"),
+        @ActivationConfigProperty(propertyName = "destination", propertyValue = "queue/HELLOWORLDMDBQueue"),
+        @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge") })
+@DeliveryGroup({"delivery-group-1", "delivery-group-2"})
+@ClusteredSingleton
+public class HelloWorldQueueMDB implements MessageListener {
+...
+}
+
+== Community Documentation
+
+Update https://docs.jboss.org/author/display/WFLY10/Message+Driven+Beans+Controlled+Delivery with the information that an MDB can belong to more than one delivery group, and, in that case, all delivery groups must be active for delivery to occur.
+
