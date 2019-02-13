@@ -1,0 +1,72 @@
+= WFLY-10769 Integrate mod_cluster ramp-up mechanism when starting new nodes
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          clustering,undertow,mod_cluster
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Newly joined nodes can become overloaded, since they initially report 0% load.
+This has been a problem since inception of the project.
+The problem is that the initial load stays in effect for performing load-balancing decisions until a new stat interval kicks in.
+This effect is mitigated by load decay over time, but for the time a new node joins in, it can get overloaded upon startup.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-10769[WFLY-10769] WFLY-6803 Integrate mod_cluster ramp-up mechanism when starting new nodes
+* https://issues.jboss.org/browse/EAP7-1087[EAP7-1087] Integrate mod_cluster ramp-up mechanism when starting new nodes
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/MODCLUSTER-449[MODCLUSTER-449] Implement ramp-up when starting new nodes
+* https://issues.jboss.org/browse/WFLY-10440[WFLY-10440] Upgrade mod_cluster to 1.4.0.Final
+
+This feature is supported since mod_cluster version 1.4.0.Final and was part of the original upgrade PR,
+but was pushed back by QE.
+
+=== Dev Contacts
+
+* mailto:rhusar@redhat.com[Radoslav Husar]
+
+=== QE Contacts
+
+* mailto:jkasik@redhat.com[Jan Kašík]
+
+=== Affected Projects or Components
+
+* WildFly/EAP
+* mod_cluster
+* Undertow
+
+=== Other Interested Projects
+
+* JWS
+
+== Requirements
+
+=== Hard Requirements
+
+* Nodes are registered with the configured load to gradually ramp them up.
+* The default configuration is that the node is fully loaded (`initial-load="0"`)
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+== Test Plan
+
+QE has already pretested the feature.
+
+== Community Documentation
+
+The upstream documentation for this is submitted with the implementation PR.
+Ideally, general documentation for the mod_cluster subsystem will be updated in the near future.
