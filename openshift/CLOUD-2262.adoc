@@ -1,0 +1,289 @@
+= Transactions propagation and recovery over EJB remoting on OpenShift
+:author:            Ondrej Chaloupka
+:email:             ochaloup@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:keywords:          openshift,transactions,EJB,remoting,recovery
+
+== Overview
+
+The OpenShift JBoss EAP images
+https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/7.2/html/getting_started_with_jboss_eap_for_openshift_container_platform/reference_information#unsupported_transaction_recovery[do not support transaction handling]
+with subordinate transactions. That means it does not support the case
+when JBoss EAP instance calls other JBoss EAP instance over EJB remote call
+while transaction context is passed along such call. Currently, in such
+scenario, the transaction outcome is arbitrary.
+
+=== The problem outline - bare metal example
+
+Let's step back to define the example scenario. We have two bare-metal installations
+of JBoss EAP instances. The first JBoss EAP (naming it as `A`) calls the second one
+(naming it as `B`) with EJB remote call. Let's depict it as `A -> B`.
+
+In such case, there is a call from one host with an IP address to another host.
+The server `A` starts a transaction (we say top-level transaction is started)
+and make the EJB call to `B`. Along with this call, the transaction context is passed.
+Passing context means there is a transaction id passed along the EJB remote call.
+The receiving side (server `B`) obtains the transaction id and it starts
+a child transaction on its side (we call it subordinate transaction).
+This subordinate transaction have set up the parent transaction being that top-level
+one started at server `A`. The subordinate transaction cannot decide independently
+about the transaction outcome. The subordinate transaction is driven by the top-level.
+
+. a client calls EJB at server `A`
+. top-level transaction of id `top-level-A` is started
+. server `A` calls server `B` with EJB call
+. transaction context with id `top-level-A` is propagated to server `B`
+. server `B` starts subordinate transaction id `subordinate-B` with parent transaction of id `top-level-A`
+. server `B` does some business logic, ends the work and return the call back to `B`
+. server `B` waits for being called from server `A`
+. server `A` finishes business logic, ends the work and start with finishing the transaction `top-level-A`
+** finishing the transaction means starting https://developer.jboss.org/wiki/TwoPhaseCommit2PC[two phase commit]
+. server `A` calls prepare on all resources it works with, one of them is the remote call to B with the transaction `subordinate-B`
+. server `A` makes the remote `prepare` call to server `B`
+. server `B` prepares all the resources it had worked with,
+  the `subordinate-B` is marked as prepared and the server returns back to `A`
+. server `A` declares the `top-level-A` to be prepared
+. server `A` makes the remote `commit` call to server `B`
+. server `B` commits all resources it had worked with,
+  the `subordinate-B` is marked as committed and returns back to `A`
+. server `A` declares the `top-level-A` to be committed
+
+What happens when a crash of some server happens during the transaction processing?
+There is a process called recovery manager which periodically tries to finish
+transactions in error state.
+
+Let' say the server `A` had crashed somewhere during the work on finishing the transaction.
+Then the `subordinate-B` transaction is sitting idle waiting for being instructed
+from server `A`. When server `A` is restarted it loads information about
+unfinished transactions. The recovery manager at server `A` makes the remote
+call to server `B` to finish transaction `subordinate-B`.
+
+If there is the server `B` which crashes then server `A` periodically tries
+to connect to server `B` until the server `B` is restarted (with the same
+hostname/IP address it was available before the crash). If `B` is restarted
+then it accepts the call and the `subordinate-B` could be finished.
+
+On top of that, the Narayana transaction manager works with the notion of `node identifier`.
+The `node identifier` is stored as part of the transaction id in the Narayana object store.
+That means that the transaction id `subordinate-B` is capable to provide
+information that node `A` is the node which started the top level transaction `top-level-A`
+which is its parent transaction.
+
+Narayana uses http://narayana.io/docs/project/index.html#d0e9393[presumed abort strategy].
+That simply means if there is no information found in the Narayana object store
+about the transaction then all discovered participants are commanded to roll-back.
+This for example means that if Narayana has no record about transaction `subordinate-B`
+in the object store and after restart of server `A` it finds that there is such
+transaction it ask the server `B` to roll-back it.
+
+The server `A` finds about existence of the transaction in the server `B` because
+the server `A` continuously asks all the registered remote locations if they
+have some transactions to finish. Here the server `A` checks if server `B`
+has some in-doubt transaction to finish. Server `B` responses that there is
+`subordinate-B`. Server `A` does have no record in the objet store
+thus commands the server `B` to roll-back it.
+
+It's important to say that record to object store is saved only after successful
+prepare (as phase of the two-phase commit procedure) happens.
+
+NOTE: Information about unfinished (in-doubt) transactions
+  is basically stored at three places - Narayana transaction object store
+  contains in-doubt transaction info,
+  the configuration of `standalone.xml` stores definition of remote outbound connection
+  for the server knows the endpoints to connect to
+  and unfinished transactions at the side of EJB remoting are presented by
+  files stored with
+  https://github.com/wildfly/wildfly-transaction-client/blob/1.1.3.Final/src/main/java/org/wildfly/transaction/client/provider/jboss/FileSystemXAResourceRegistry.java[WildFly Transaction Client].
+
+=== The problem outline - OpenShift deployment
+
+If a user deploys an EAP instance to OpenShift he considers smooth use of horizontal
+scaling with OpenShift primitives. That's the JBoss EAP image is deployed
+under the OpenShift service and a pod is started for it.
+The user expects to be able to scale up and scale down the number of EAP instances
+running under the service. By default
+https://github.com/jboss-container-images/jboss-eap-7-openshift-image/blob/CD15/templates/eap-cd-basic-s2i.json#L298[the offered configuration for EAP]
+is with using the `DeploymentConfig` which is backed by the
+https://docs.openshift.com/container-platform/3.9/architecture/core_concepts/deployments.html#deployments-and-deployment-configurations[ReplicationController].
+
+Use of the `ReplicationController` means the `service` provides automatic
+load balancing with round robin
+when multiple instances of EAP are started under the scope of one service.
+The pods started by the `ReplicationController` are provided with floating hostname
+which is constructed in a way like `eap-app-<arbitrary-hash>`. When the pod is rescheduled
+(for example the node is switched off) the pod is started again but with different
+hostname. Then the storage of the node is ephemeral by default. But as we said
+the recovery expects the data to survive restarting the pod.
+
+Let's show the issues that the OpenShift brings for the transaction propagation.
+
+Storage volatility::
+  if the pod crashes there is not ensured that the data stored in the Narayana
+  object store will be available for the newly started pod
+Pod hostname volatility::
+  if the pod crashes it's started with different hostname which means the server `A`
+  has an issue to contact the server `B` as `B` is assigned at a different "place"
+  than it was before the restart
+Service calls are not transaction sticky::
+  the service uses load balancing of requests. If we say we have two server instances
+  started under each service. Let's say the first instance of server `A` calls
+  the instance of server `B` with the transaction being propagated. It could happen
+  that the follow-up call for the `prepare/commit` hits the second instance
+  of server `B` which has no idea about the existence of such transaction.
+Scale-down object store orphanage::
+  if the user decides to scale-down the number of instances under the particular service
+  then there could be left unfinished records of in-doubt transactions
+  in the orphaned object store
+
+=== Solution design
+
+The solution is about to be constructed on OpenShift primitives to provides
+a similar environment to bare metal.
+
+The https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/[StatefulSet]
+brings storage and hostname stability. The `StatefulSet` starts pods with
+stable hostname which is not changed even after pod is restarted/rescheduled.
+It ensures the same data storage, as it was before pod restart, will be bound to the restarted pod.
+`StatefulSet` "deactivates" the service load balancing capabilities and leaves
+the application to manage the balancing on its own. Here the JBoss EAP
+clustering abilities will be used to ensures the transaction stickiness.
+Handling of data from orphaned object store after scale-down anticipates user manual intervention.
+The user has to manually deactivate the pod from receiving traffic,
+then let the pod to finish all the unfinished transactions and
+and then it can turn-off the pod. If he does not do so he can experience
+unfinished blocked transactions in database or JMS brokers.
+
+NOTE: The scela-down issues should be possible automatized with use of the
+  https://github.com/luksa/statefulset-scaledown-controller[StatefulSet Scale-Down Controller].
+  The usage of this is currently not expected to be in scope of thie feature
+  request. \+
+  The StatefulSet Scale-Down Controller is not the Kubernetes/OpenShift native
+  object but it's an extension provided to manage this kind of situation. It was
+  productized and is used by AMQ messaging system to migrate messages from the
+  orphaned pods. See
+  https://access.redhat.com/documentation/en-us/red_hat_amq/7.2/html/deploying_amq_broker_on_openshift_container_platform/journal-recovery-broker-ocp[Red Hat AMQ Broker documentation]
+  and the Jira related to this functionality is
+  https://issues.jboss.org/browse/ENTMQBR-1859[ENTMQBR-1859].
+
+If we take the individual issues this setup is about to solve them.
+
+* _Storage volatility_ is about to be solved by the fact that `StatefulSet`
+  guarantees to bind the same storage with same data to the re-started pod
+* _Pod hostname volatility_ is about to be solved by `StatefulSet` as the
+  restarted pod remains with the same hostname as it had before restart
+* _Service calls are not transaction sticky_ is about to be solved by using
+  JBoss EAP clustering. The JBoss EAP instances belonging under one service
+  will establish cluster. This way the EJB remoting client will query the
+  https://kubernetes.io/docs/concepts/services-networking/service/#headless-services[headless service].
+  The `headless service` returns hostnames of all instances under the service.
+  The EJB remoting client is then capable to connect to one of them particularly
+  and guarantee stickiness for Stateful beans and for transction calls
+  or uses the proper load balancing capability if Stateless beans are called. +
+  When a new EAP instances are started then EJB remoting client is capable to gather
+  new cluster topology and works based on the new setup.
+* _Scale-down object store orphanage_ is about to be solved by
+  manual user intervation. He can't let the pod being removed from the service
+  until time all the transactions are processed. Hopefully the functionality
+  of the graceful shutdown that JBoss EAP provides could be used here.
+
+=== Known related issues
+
+In the current setup, the transaction propagation with recovery works only when
+a remote outbound connection is used. Up to that, there are some issues on transaction propagation
+over EJB which are related to https://issues.jboss.org/browse/JBEAP-13963[JBEAP-13963].
+
+Up to this the programmatic way for defining the EJB remote call (aka. dynamically
+call EJB without the use of remote outbound connection configuration for it)
+should be possible. That's tracked as issue https://issues.jboss.org/browse/JBEAP-16149[JBEAP-16149].
+
+For the issues of the subordinate transactions which was fixed recently
+there is https://issues.jboss.org/browse/WFTC-52[WFTC-52] which was causing
+OOM on the remote side when EJB remoting with transactions was used.
+
+==== Design details
+
+The current proposal works with notion of the file system store to be used.
+That's where we use the StatefulSet and expect it provides us the stable file system storage.
+The JBDC storage is not covered as part of this analysis.
+The transaction manager is capable to store transaction into database (JDBC object store)
+but the WildFly Transaction Client stores data only on filesystem so far.
+This should be considered as a new feature request.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/CLOUD-2262[CLOUD-2262]
+* https://issues.jboss.org/browse/EAP7-1192[EAP7-1192]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/JBEAP-13963[JBEAP-13963]
+* https://issues.jboss.org/browse/JBEAP-16149[JBEAP-16149]
+* https://issues.jboss.org/browse/WFTC-52[WFTC-52]
+* https://issues.jboss.org/browse/CLOUD-2261[CLOUD-2261]
+* https://issues.jboss.org/browse/CLOUD-2542[CLOUD-2542]
+
+
+=== Dev Contacts
+
+* mailto:tadamski@redhat.com[Tomasz Adamski]
+* mailto:ochaloup@redhat.com[Ondra Chaloupka]
+
+=== QE Contacts
+
+=== Testing By
+
+[ ] Engineering
+
+[x] QE
+
+ * mailto:fmarchio@redhat.com[Francesco Marchioni]
+
+=== Affected Projects or Components
+
+* Narayana (transactions)
+* EJB
+* Remoting
+* Elytron
+
+=== Other Interested Projects
+
+* Clustering
+
+== Requirements
+
+=== Hard Requirements
+
+* EJB remote calls have to work when application is deployed on JBoss EAP on OpenShift
+* The transaction consistency has to be guaranteed for the transactions propagated
+  over the EJB remote calls
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+* Use of the JDBC storage for the object store. It's expected the filesystem object store is used.
+* Automatic scale down. It's expected the user will do manual intervention to manage the scale-down scenario.
+
+== Developer Resources
+
+* https://docs.google.com/document/d/1BbkjjCPWea7hQJgYPRRIvPKFpGyQPfAm4rBBFj4Eijg/edit?usp=sharing[Distributed transaction support in OpenShift]
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can
+not be delivered all in one go to suggest the strategy. If your feature falls
+into this category, please mention the Release Coordinators on the pull
+request so they are aware.
+////
+
+== Test Plan
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
