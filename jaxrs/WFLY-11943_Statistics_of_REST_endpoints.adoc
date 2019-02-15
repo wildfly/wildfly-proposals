@@ -1,0 +1,78 @@
+= WFLY-11943 / Statistics of REST endpoints
+:author:            Rebecca Searls
+:email:             rsearls@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+Collect and report runtime statistics on REST endpoints running in RESTEasy.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/WFLY-11943[WFLY-11943]
+* {issue-base-url}/EAP7-606[EAP7-606]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-11751[WFLY-11751]
+
+=== Dev Contacts
+
+* mailto:rsearls@redhat.com[Rebecca Searls]
+* mailto:rsigal@redhat.com[Ron Sigal]
+* mailto:asoldano@redhat.com[Alessio Soldano]
+* mailto:ema@redhat.com[Jim Ma]
+* mailto:weli@redhat.com[Wei Nan Li]
+
+=== QE Contacts
+
+* mailto:mkopecky@redhat.com[Marek Kopecky]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[X] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* RESTEasy
+
+=== Other Interested Projects
+
+* HAL
+* CLI
+
+== Requirements
+
+* Collect endpoint statistics when instructed by Wildfly.
+* Report accumulated statistics when requested by Wildfly.
+* Reset endpoint statistics when instructed by Wildfly.
+* Stop data collection and clear accumumlated data when instructed by Wildfly.
+* Wildfly's subsystem attribute `statistics-enabled` will be used to start and stop statistics collection.  Default setting is false.  The default value can be declared to `true` in the Wildfly configuration file, jaxws subsystem element.
+* Wildfly's subsystem operation `read-resource` will display the statistics for each endpoint.
+* Wildfly's subsystem operation `reset` will reset collected statistics to zero.
+* Application restart is NOT required when enabling, disabling and resetting statistics collection.
+* Statistics are NOT save on application restart.
+
+=== Hard Requirements
+* Statistics provided
+** `invocation-cnt` - Total count of calls to endpoint
+** `failed-invocation-cnt` - Number of endpoint calls that failed
+** `avg-execution-time` - The average time in nanosec from the point of endpoint invocation to return.
+** `total-execution-time` - The sum of time in nanosec for all endpoint method invocations.
+
+=== Non-Requirements
+
+* A best effort will be made to report accurate data.  Any lag between report request and data display could provide statistics that are slightly out of date.
+
+* This project is not responsible for the display of the data.  A report request will write the data into Wildfly's reference model for access by other components.
+
