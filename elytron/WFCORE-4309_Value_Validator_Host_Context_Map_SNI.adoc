@@ -1,0 +1,45 @@
+= WFCORE-4309 Value validator for 'host-context-map' attribute of 'server-ssl-sni-context' resource
+:author:            Diana Vilkolakova
+:email:             dvilkola@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          elytron
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/WFCORE-4309
+
+== Overview
+
+`server-ssl-sni-context` has attribute `host-context-map`, which allows to set a mapping between a server name and an SSLContext.
+Currently there is no validation for host matching part, eg. the following mapping is possible: `"\\?...example.com"="SSLContext"`,
+even though the hostname is syntactically invalid.
+Identify clearly invalid host names (only string syntax validation, no DNS queries) and report these to the user.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-4309[WFCORE-4309]
+
+=== Dev Contacts
+
+* mailto:dvilkola@redhat.com[Diana Vilkolakova]
+
+=== QE Contacts
+
+* TBD
+
+=== Affected Projects or Components
+
+* WildFly core
+
+== Requirements
+
+=== Hard Requirements
+
+Identify invalid host names and notify user during configuration of `host-context-map` attribute of `server-ssl-sni-context` resource.
+
+== Test Plan
+
+Test class for testing of `server-ssl-sni-context` resource will be added to Elytron testsuite.
+
