@@ -1,0 +1,55 @@
+= WFLY-11737 RESTEasy support for setting HTTP proxy by using JAX-RS API
+:author:            Petr Jurak
+:email:             pjurak@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+This is about enabling HTTP proxy on the client builder just using JAX-RS API.
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-11737[WFLY-11737]
+* https://issues.jboss.org/browse/EAP7-1200[EAP7-1200]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/RESTEASY-1952[RESTEASY-1952]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+* mailto:asoldano@redhat.com[Alessio Soldano]
+* mailto:ema@redhat.com[Jim Ma]
+
+=== QE Contacts
+
+* mailto:mkopecky@redhat.com[Marek Kopecky]
+* mailto:rsvoboda@redhat.com[Rostislav Svoboda]
+
+=== Testing By
+
+[X] Engineering
+
+[] QE
+
+
+=== Affected Projects or Components
+
+* WildFly
+* RESTEasy
+
+== Requirements
+
+* HTTP proxy can be set up just by using properties on the client builder.
+* Existing RESTEasy functionalities are not affected by this.
+
+== Test Plan
+
+Build and run RESTEasy testsuite.
+
+== Community Documentation
+
+Documentation should be coming as part of the RESTEasy component documentation.
