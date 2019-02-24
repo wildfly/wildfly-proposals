@@ -1,0 +1,60 @@
+= Ability to add a server-side configured Interceptor for the applications without changing the deployments
+:author:            Tomasz Adamski
+:email:             tomasz.adamski@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+The goal of this issue is to implement server side EJB interceptors that can be configured system-wide through ejb3 subsystem configuration.
+
+=== Issue
+* https://issues.jboss.org/browse/WFLY-6143
+
+=== Dev Contacts
+
+* mailto:tadamski@redhat.com
+
+=== QE Contacts
+
+=== Testing By
+[ ] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+EJB
+
+== Requirements
+* Interceptors are implemented and packed inside the custom modules
+* Interceptors should be configured in the subsystem configuration and not in deployments
+* There should be a number of binding points in which the interceptors should be executed (f.e. after security)
+
+== Solution draft
+
+EJB3 subsystem is extended with <server-interceptors> tags, which specifies modules that include the interceptors implementation, interceptors that are going to be plugged and a binding point for each of them.
+Sample XML fragment:
+
+[source,xml]
+----
+<server-interceptors>
+	<modules>
+		<module>org.abccorp:tracing-interceptors:1.0</module>
+		<module>org.abccorp:timers-interceptors:1.1</module>
+	<modules>
+	<interceptors>
+		<interceptor class="org.abccorp.TracingInterceptor" binding="post-security"/>
+		<interceptor class="org.abccorp.TimerInterceptors"/>
+	</interceptors>
+</server-interceptors>
+----
+
+In order to use the extension module must be added to application server (that is moved to $JBOSS_HOME/modules/system/layers/base) and server extension similiar to the one above must be added the the server.
+
+
+
+== Test Plan
+
+== Community Documentation
+Part of the PR.
