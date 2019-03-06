@@ -1,0 +1,173 @@
+= [WFCORE-3769][WFLY-10305] Use Galleon for the WildFly and WildFly Core build
+:author:            Brian Stansberry
+:email:             brian.stansberry@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The Galleon tool is a powerful new tool for doing platform independent provisioning 
+and updating of a software installation. The overall Galleon project consists of 
+core tooling (https://github.com/wildfly/galleon) that isn't specific to provisioning 
+any particular kind of software, and then plugin s(https://github.com/wildfly/galleon-plugins) 
+that allow the tool to deal with particular types of software, e.g. WildFly.
+
+The WildFly project intends to use Galleon for its provisioning needs. This initial proposal 
+is for a very limited use of Galleon -- using it produce the 'thin' and 'fat' distribution 
+zips that are part of a WildFly Core and WildFly release.
+
+This initial work is not really a feature, it is an internal detail of the builds.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-3769
+* https://issues.jboss.org/browse/WFLY-10305
+
+=== Related Issues
+
+* 
+
+=== Dev Contacts
+
+* mailto:alexey.loubyansky@redhat.com
+
+=== QE Contacts
+
+ * mailto:msimka@redhat.com
+
+=== Affected Projects or Components
+
+ * WildFly
+ * WildFly Core
+ * EAP Installer
+
+=== Other Interested Projects
+
+ * WildFly Swarm
+ * Teiid
+ * Keycloak
+ * Infinispan
+
+== Requirements
+
+=== Hard Requirements
+
+ * Produce a 'core' Galleon feature pack as part of the default WildFly Core maven build.
+ * Use that 'core' feature pack to produce a 'thin' core distribution as part of
+   the default WildFly Core maven build. 
+ ** This distribution should be produced in the 'build' maven module and should
+    have the org.wildfly.core:wildly-core-build maven groupId and artifactId. This
+    is the traditional location and maven GA for our 'thin' core distribution.
+ * Use that 'core' feature pack to produce a 'fat' core distribution as part of
+   the default WildFly Core maven build. 
+ ** This distribution should be produced in the 'dist' maven module and should
+    have the org.wildfly.core:wildly-core-dist maven groupId and artifactId. This
+    is the traditional location and maven GA for our 'thin' core distribution.
+ * Produce a 'servlet' Galleon feature pack as part of the default WildFly maven build.
+ ** This feature pack will depend on the 'core' feature pack.
+ * Use that 'servlet' feature pack to produce a 'thin' servlet distribution as part of
+   the default WildFly maven build. 
+ ** This distribution should be produced in the 'servlet-build' maven module and should
+    have the org.wildfly:wildly-servlet-build maven groupId and artifactId. This
+    is the traditional location and maven GA for our 'thin' servlet distribution.
+ * Use that 'servlet' feature pack to produce a 'fat' servlet distribution as part of
+   the default WildFly maven build. 
+ ** This distribution should be produced in the 'servlet-dist' maven module and should
+    have the org.wildfly:wildly-servlet-dist maven groupId and artifactId. This
+    is the traditional location and maven GA for our 'thin' servlet distribution.
+ * Produce a 'full' Galleon feature pack as part of the default WildFly maven build.
+ ** This feature pack will depend on the 'servlet' feature pack.
+ * Use that 'full' feature pack to produce a 'thin' distribution as part of
+   the default WildFly maven build. 
+ ** This distribution should be produced from the 'build' maven module and should
+    have the org.wildfly:wildly-build maven groupId and artifactId. This
+    is the traditional location and maven GA for our 'thin' distribution.
+ * Use that 'full' feature pack to produce a 'fat' distribution as part of
+   the default WildFly maven build. 
+ ** This distribution should be produced from the 'dist' maven module and should
+    have the org.wildfly:wildly-dist maven groupId and artifactId. This
+    is the traditional location and maven GA for our 'thin' distribution.
+ * The default WildFly Core maven build should continue to use the legacy 
+   org.wildfly.build:wildfly-feature-pack-build-maven-plugin to produce a 'legacy
+   core feature pack'. The maven module for this should be the 'core-feature-pack'
+   module, and its maven coordinate should be the same
+   org.wildfly.core:wildfly-core-feature-pack used in previous releases.
+ * The default WildFly maven build should continue to use the legacy 
+   org.wildfly.build:wildfly-feature-pack-build-maven-plugin to produce a 'legacy
+   servlet feature pack'. The maven module for this should be the 'servlet-feature-pack'
+   module, and its maven coordinate should be the same
+   org.wildfly:wildfly-servlet-feature-pack used in previous releases.
+ * The default WildFly Core maven build should continue to use the legacy 
+   org.wildfly.build:wildfly-feature-pack-build-maven-plugin to produce a 'legacy
+   full feature pack'. The maven module for this should be the 'feature-pack'
+   module, and its maven coordinate should be the same
+   org.wildfly:wildfly-feature-pack used in previous releases.
+ * These legacy feature packs should be produced in such a way that their output
+   would be acceptable for release as the primary build output if this shift to 
+   Galleon had not occurred. In other words, these legacy feature packs should be
+   usable by users who are accustomed to consuming our feature packs.
+ * The WildFly Core maven build should include a profile that builds
+   new maven modules that produce 'legacy thin and fat distributions' using the legacy
+   org.wildfly.build:wildfly-server-provisioning-maven-plugin. These will use
+   the 'legacy core feature pack' discussed previously.
+ ** This maven profile should not run by default.
+ * The WildFly maven build should include a profile that builds
+   new maven modules that produce 'legacy servlet and full thin and fat distributions' 
+   using the legacy org.wildfly.build:wildfly-server-provisioning-maven-plugin. These will
+   use the 'legacy servlet feature pack' and 'legacy full feature pack' discussed previously.
+ ** This maven profile should not run by default.
+ * These legacy distributions should be produced in such a way that their output, except 
+   for their maven GAVs, would be acceptable for release as the primary build output if 
+   this shift to Galleon had not occurred. In other words, these distributions should 
+   provide a valid base for comparison to the output of the Galleon build.
+ ** The only purpose of these legacy distributions is to facilitate such comparisons.
+ * The content of the Galleon-produced distributions should functionally match the output
+   of the legacy distributions, with only minimal minor cosmetic differences.
+ * Special distributions of the server that are produced inside the WildFly Core and 
+   WildFly testsuites should be produced by Galleon, not by legacy tooling.
+ ** Copying of distribution content produced in other modules of the build into the
+    needed testsuite locations is acceptable; i.e. there is no requirement that
+    all test distributions be built using Galleon, just as there was no requirement
+    in the past to use the legacy server-provisioning plugin in all places.
+
+=== Nice-to-Have Requirements
+
+None 
+
+=== Non-Requirements
+
+ * Support for any use of the Galleon tooling outside of the maven build steps described in this document. 
+ * Long term support for the initial content details of the Galleon feature packs. The initial version
+   of these feature packs should be regarded as 'Tech Preview', i.e. subject to change in the next WildFly 
+   release if we discover the need to correct things after this initial use. The intent though is to produce 
+   feature packs external parties can look at to learn about how WildFly+Galleon will work and to
+   start planning how their own software can be based on our feature packs. 
+ * Publication of legacy 'thin' and 'fat' distributions to public maven repositories. These are
+   only meant for testing use to verify the Galleon output against the current mechanism output;
+   they are not meant for other consumption. Publishing these is actually an anti-requirement.
+ * Absolutely identical output content of a thin or fat distribution produced using the legacy tooling and 
+   one produced using Galleon. The two are meant to be very, very similar but minor differences that do
+   not affect functionality are acceptable. The intent though is to minimize these.
+ * The exact same "conceptual" content between a legacy feature pack and its Galleon replacement (i.e. what
+   functionality the pack is meant to provide). There may be slight differences.
+ * Any similarity at all in terms of the structure or content details of the legacy and Galleon feature 
+   packs.
+ * Indefinite production of legacy feature packs in future releases. At some point the intent is to drop
+   these.
+ * Indefinite production of legacy distributions in future releases. At some point the goal of proving
+   the correctness of the Galleon build will be considered fulfilled and maintaining the legacy
+   distribution builds will not be needed.
+
+
+
+== Test Plan
+
+ * The content of the Galleon-produced distributions should be compared to the output of the
+   legacy distributions in order to confirm that there are only minor cosmetic differences.
+ * Where distributions produced by the WildFly Core and WildFly testsuites are created by Galleon
+   this further confirms that Galleon produces output consistent with what the testsuite expects.
