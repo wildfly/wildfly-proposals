@@ -1,0 +1,88 @@
+= Provide launch.openshift.io experience
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          openshift,launch,developer
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-881
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[ ] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+This support is provided by Fabric8 launcher: https://github.com/fabric8-launcher.
+
+=== Other Interested Projects
+
+== Requirements
+
+ * provide generators for creation of new applications with WildFly
+ * provide generators for creation of new applications with JBoss EAP
+ * provide a way to discriminate WildFly / JBoss EAP applications
+ * provide _missions_ for the deployment of example applications (trying to reuse our Quickstarts code).
+
+
+== Implementation Plan
+
+There is absolutely NO front-end changes involved, that means that we can concentrate on the backend services of the launcher.
+
+=== Create a New Application
+
+We need to provide the following capabilities of the launcher creator:
+
+- database: to support connection and persistence on a remote database (currently MySQL and Postgresql are supported)
+- health: to provide an health check endpoint.
+- rest: to provide a REST HelloWorld API.
+ 
+Following the document https://github.com/fabric8-launcher/launcher-creator-backend/wiki/Contributing  we are going to provide the generators to support those capabilities:
+
+* create a *platform-wildfly* generator to define the base configuration of a WildFly application with a health check endpoint on _/health_ returning a simple OK.
+Since this must be exposed we can't use the Microprofile Health support of WildFly which is on 9990.
+Here we are also configuring the generated YAML for the OpenShift deployment support.
+* create a *rest-wildfly* generator to define a really simple greeting API: we need to provide a REST endpoint on _/api/greeting_ with a name parameter and returning a simple JSON text.
+* create a *database-crud-wildfly* generator to define a really fruit list managing API, persisting the changes in a database. Here we will need to configure the server image to connect to a remote database using OpenShift secrets.
+
+=== Deploy an Example Application
+
+There are currently several *missions* defined in a catalog for each runtime: https://github.com/fabric8-launcher/launcher-documentation/wiki. We will need to select and implement those missions for WildFly / EAP : 
+
+* 100: HTTP API: *Not needed anymore (provided by application creation)*
+* 101: Relational Database Backend: *Not needed anymore (provided by application creation)*
+* 102: ConfigMap
+* 103: Secured HTTP API
+* 104: Health Check: *Not needed anymore (provided by application creation)*
+* 105: Documentation Site
+* 106: Circuit Breaker
+* 107: Cache
+* 108: Istio Security
+* 109: Istio Distributed Tracing
+* 110: Istio Circuit Breaker
+* 111: Istio Routing
+* 200: AMQ Messaging Work Queue Mission
+
+== Test Plan
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
