@@ -1,0 +1,124 @@
+= WildFly Operator for Kubernetes/OpenShift
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Managing an application running on WildFly in a cloud environment can be a complex task. Things like ensuring containers have access to necessary resources, scaling up and scale down efficiently, integrating with outside services and handling rollout of new versions are all complex tasks that require operation knowledge. An https://coreos.com/blog/introducing-operators.html[Operator] is a specialized form of Kubernetes / OpenShift controller that is meant to encode that kind of operation knowledge in software, allowing users to more easily manage their cloud applications. The goal of this feature is to develop and Operator for managing WildFly-based applications.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-11824[WFLY-11824]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1214[EAP7-1214] - Tech Preview Operator for handling already built EAP/WildFly based images
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+ * mailto:mchoma@redhat.com[Martin Choma]
+
+=== Testing By
+
+[x] QE
+
+=== Affected Projects or Components
+
+ * https://github.com/wildfly/wildfly[WildFly]
+ * https://github.com/openshift-s2i/s2i-wildfly[WildFly s2i]
+
+
+=== Other Interested Projects
+
+ * https://github.com/jboss-dockerfiles/wildfly[WildFly Docker image]
+ * Keycloak / Red Hat SSO
+ * RHPAM
+
+== Requirements
+
+
+=== Hard Requirements
+
+==== Create a Custom Resource Definition (CRD) for WildFly.
+
+Provide a Custom Resource Definition (CRD) for an application based on a WildFly application server.
+
+The CRD will allow the user to:
+
+* Specify the name an application image that incorporates a WildFly server and an deployment that will be deployed by that server.
+** The name can include either a fixed or floating tag.
+* Specify an optional ConfigMap where the WildFly standalone configuration can be read from.
+* Specify the desired number of replicas of that image
+* Specify whether the replicas are intended to form a High Availability cluster (default is true).
+* Specify whether the containers are intended to be 'stateful'
+** default is to be determined (might be inferred from the server configuration)
+* Specify information for interfaces for which a Service and Route should be established
+** perhaps expose 8080 by default with an option to disable that
+** same for 9990 to expose management interface (including health check and metrics endpoints)
+* Specify information for interfaces for which a headless service should be established.
+
+### Operator requirements
+
+The WildFly operation will provide the following features:
+
+* In reaction to deployment of a Custom Resource with the CRD's type start up a cluster of containers running the specified image, with the desired number of replicas.
+* If the containers are meant to form a High Availability cluster, perform scale up and scale down in a manner designed to optimize cluster efficiency
+** Start one container and then start the others, thus ensuring the later nodes see the first as the group coordinator, avoiding mergers.
+* If the resources are configured as stateful
+** Ensure the existence of the necessary persistent volume(s) and persistent volume claims necessary for each container to have access to its own writable persistence
+** If the necessary facilities to allow this are not available, container start should be aborted
+** Appropriate transaction recovery activities should be performed
+* Establish the appropriate services and routes
+* Detect new versions of the image in the container catalog and take appropriate action. Possible actions include
+** Scale down to a min number of nodes, begin replacing old nodes with new until all old gone
+** Leave old and new both running in some sort of A/B scenario
+* Incorporate information about active sessions in all of this (this requires LB integration that is out of scope unless already present)
+
+Another requirement for this operator is to provide a better Observability of EAP such as:
+
+* better integration with Prometheus (e.g. using https://github.com/coreos/prometheus-operator[Prometheus Operator]) to specify how WildFly resources should be monitored
+* Logging consumers
+* Jaeger consumers (sidecar agents or remote servers)
+* Health monitors
+
+=== Nice-to-Have Requirements
+
+* The Operator must operate on Kubernetes as its base platform. However if some functionalities are only available on Openshift, the operator will leverage them to provide additional features in OpenShift.
+* Configure desired metrics values exposed by the containers to scale up and down the number of replicas.
+
+=== Non-Requirements
+
+ * Orchestration of the building of images or the creation of Custom Resource instances. The images are available in the container catalog; how they get there is out of scope for this operator.
+ * Facilitating operation of a container that embeds a messaging broker within the WildFly server (e.g. by ensuring it has access to a persistent volume). Running an embedded broker within WildFly in the cloud is not recommended. Use an external messaging broker.
+
+== Implementation Plan
+
+* Codebase will be hosted in a new GitHub repository at https://github.com/wildfly/wildfly-operator.
+* Develop a WildFly operator based on the https://github.com/operator-framework[Operator Framework].
+
+There is an existing WildFly operator at https://github.com/banzaicloud/wildfly-operator but the codebase for it will not be used.
+
+== Test Plan
+
+* Simple scenario by using an image based on a JAX-RS web application
+** create a custom `WildFlyServer` resource
+** ensure that external routes for the HTTP application port is opened
+* Persistent volume checks
+** test that all persistent volumes and claims are valid before exposing the resource
+* HA scenario
+** test cluster formation of the cluster and that services and routes are not created before the cluster is formed
+* Transaction recovery
+** test transaction recovery so that services and routes are not created before transactions are recovered   
+
+== Community Documentation
+
+The wildfly-operator project will have dedicated documentation about installing and using the WildFly operator with use cases for all the different features (configuration, HA, transaction recovery, etc.)
