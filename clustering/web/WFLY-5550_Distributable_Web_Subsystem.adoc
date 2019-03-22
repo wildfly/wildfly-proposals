@@ -1,0 +1,142 @@
+= Distributable Web Subsystem
+:author:            Paul Ferraro
+:email:             paul.ferraro@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Distributable web applications are indicated by the use of the <distributable/> element within web.xml.
+A distributable web application is one that is capable of passivating state to support the following scenarios:
+* Extending the lifecycle of a web session beyond the size constraints of a single server, i.e. traditional passivation.
+* Extending the lifecycle of a web session across the lifecycle of a single server, i.e. traditional clustering.
+
+Currently, the configuration of a distributable web application is encapsulated within jboss-web.xml via the following elements:
+
+<max-active-sessions/>:: Enables size-based session passivation, when distributed
+<replication-config/>:: Defines replication behavior.  Inappropriately named when used for passivation.
+<cache-name/>::: Overrides the backing cache-container and/or cache. By default, uses default cache of “web” cache-container
+<replication-granularity/>::: SESSION (default) or ATTRIBUTE, i.e. coarse vs fine session → cache entry mapping
+
+This configuration dates back to AS4, and suffers from several limitations:
+
+* Default behavior of distributed session manager not explicitly defined
+** Default cache-container hardcoded to “web”
+** Routing behavior is fixed
+** No mechanism to globally override default behavior
+*** Must override per web application
+* <cache-name/> is inadequate
+** Used to build requirement name of backing Infinispan cache configuration
+** Single value is a relic from JBoss Cache (EAP 4/5)
+** Single element provides up to 2 values: cache-container + cache
+*** e.g. <cache-name>foo</cache-name>
+**** Use default cache of “foo” cache container
+*** e.g. <cache-name>foo.bar</cache-name>
+**** Use “bar” cache of “foo” cache container
+* Hard coded routing cache configuration
+** Created from default cache configuration of “web” cache container
+* WFLY-5497 shared-session-config.xml lacks <distributable/>
+** Currently, we always use distributed session manager, if loadable
+* Default distributable SSO behavior is fixed
+** Hardcoded to use default cache of "web" cache-container
+* Missing ability to customize distributable SSO behavior per host (Undertow SSO) or per application security domain (Elyron SSO)
+
+Additionally, the current configuration mechanism does not easily accommodate upcoming features:
+
+* WFLY-5497 New distributed session manager implementation
+** https://github.com/wildfly-clustering/wildfly-clustering-web-hotrod
+** Need ability to specify which implementation to use
+* WFLY-7719 Configurable routing strategies
+* Configurable concurrency strategies
+
+Proposal is to create a new subsystem that manages sets of session-management configuration (with a designated default), including:
+
+* Which distributed session management implementation
+* Implementation specific configuration, e.g. cache-container, cache, remote-cache-container, etc.
+* Session distribution granularity (aka replication-granularity)
+* Routing strategy
+
+Deployments can use a named configuration, the default configuration, or define a deployment specific configuration.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-5550
+* https://issues.jboss.org/browse/WFLY-6944
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-7719
+* https://issues.jboss.org/browse/WFLY-5497
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:tborgato@redhat.com[Tommasso Borgato]
+
+=== Affected Projects or Components
+
+WFCORE for new DUP prorities
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* Create new subsystem that defines:
+** A set of distributable web session configurations, where one is designated the server-wide default.
+** A set of distributable single sign-on configurations, where one is designated the server-wide default.
+** Server-wide routing configuration
+* Subsystem exposes implementations of org.wildfly.clustering.web.spi as capabilities.
+* DUP for parsing a jboss-all.xml namespace that references a named distributable web session profile
+* Deprecate jboss-web.xml <replication-config/>
+* Support legacy <replication-config/> usage by generating an ad hoc distributable web session profile
+* When subsystem is not defined, system should behave the same as it does currently.
+* Add optimized default cache configurations for SSO and routing
+* Add support for the following routing strategies:
+** NONE - no route appended to session ID
+** LOCAL - route of local node appended to session ID
+** OWNER - route of primary owner appended to session ID (behaves as LOCAL for remote, local, invalidation, scattered caches)
+
+=== Nice-to-Have Requirements
+
+* DUPs for parsing a jboss-all.xml namespace that defines a deployment-specific distributable web session profile
+* Allow per-server (i.e. Undertow server) session management defaults
+* Allow per-host Undertow SSO management defaults
+* Allow per-application security domain SSO management defaults
+
+
+=== Non-Requirements
+
+== Implementation Plan
+
+. Enhance PersistentResourceXMLDescription to support logical grouping of child resources (WFCORE-3939)
+. Create new subsystem (WFLY-5550)
+. Wire Undertow to use SessionManagerFactory attachments if defined, or generate ad hoc SessionManagerFactory based on ReplicationConfig
+. Deprecate <replication-config/> in jboss-web metadata
+. Wire Undertow host SSO and application security domain resources to use configuration from distributable-web subsystem
+. Enhance RouteLocator implementation to support all routing strategies (WFLY-6944)
+. Add support for <distributable/> to shared-session configuration (WFLY-5497)
+. Add support for session/sso management over hotrod (subsequent feature proposal)
+
+== Test Plan
+
+Test cases:
+
+* Validate distributable web application behavior is consistent with WF13 when new subsystem is absent
+* Validate distributable web application using default configuration
+* Validate distributable web application using named configuration
+* Validate distributable web application using ad hoc configuration
+* Validate distributable web application using legacy <replication-config/>
+* Validate each routing strategy works as advertised (these will be simple unit tests)
+
+== Community Documentation
+
+Community documentation will be updated to describe how to use this new subsystem to customize default distributed web session behavior.
