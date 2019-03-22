@@ -1,0 +1,59 @@
+= Distributable Shared Session Configuration
+:author:            Paul Ferraro
+:email:             paul.ferraro@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently, the shared-session-config schema (used to enable use of session sharing for WARs within an EAR) does not indicate whether a distributable or non-distributable session manager should be used.
+Consequently, we assign the session manager implementation based on the availability of the module providing the distributed implementation.
+Since the default infinispan web session configuration attempts to passivate sessions on shutdown, users will see NotSerializableExceptions on shutdown if they use non-serializable session attributes - even if their web applications do not define themselves as being <distributable/>.
+The only existing workaround for this is to remove the requisite clustering modules from the server - which of course means that the same server cannot support any traditional distributable web applications.
+To fix this, we should add a <distributable/> element (a la web.xml) to the shared-session-config schema to determine which session manager implementation to use.
+
+To retain compatibility, version 1.0 of the schema will continue presume to use a distributable shared session manager.
+Beginning with version 2.0, users will need to opt-in to this behavior via the new <distributable/> element (as we already do for individual web applications).
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-5497
+
+=== Related Issues
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:msimka@redhat.com[Martin Simka]
+
+=== Affected Projects or Components
+
+* Clustering, Undertow subsystem
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* Add new version 2.0 of shared-session-config schema, including new <distributable/> element.
+* Add boolean isDistributable() method to SharedSessionConfig meta-data.
+* isDistributable() should return true if version 1.0 of the schema was specified.
+* SharedSessionConfig DUP should only install a distributable session manager if isDistributable() returns true.
+
+=== Nice-to-Have Requirements
+
+* Parameterize existing shared-session-config parser by schema version.
+
+=== Non-Requirements
+
+== Test Plan
+
+* Modify existing shared session config clustering test to use new schema version.
