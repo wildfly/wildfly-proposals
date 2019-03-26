@@ -1,0 +1,118 @@
+= EJB Access Logging
+:author:            Cheng Fang
+:email:             cfang@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-6892 (Access logging for EJBs)
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFCORE-4355 (Add utility for event logging such as audit and access logging)
+* https://issues.jboss.org/browse/EAP7-523 (Access logging for EJBs)
+* https://issues.jboss.org/browse/EAP7-699 (Enhanced Audit Logging - RFC support and reliability/speed customization)
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:jkasik@redhat.com[Jan Kašík]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* ejb3
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* implement the access logging feature similar to WildFly web access logging.
+
+* add access-logging definition to wildfly-ejb3 schema
+
+* configure ejb access logging with CLI
+
+* enable and disable ejb access logging
+
+* users should be able to configure condition/filter to determine which requests to log
+
+* configure how to rotate ejb access logs if applicable
+
+** default should be OFF for performance consideration
+
+* configure output location and format
+
+** directory/file
+
+** stdout
+
+** JSON
+
+* choose from pre-defined logging formats
+
+** common (default):
+
+** combined:
+
+* for more customization, define which attributes to include in ejb access logging
+
+** consider adapting the following attributes that are currently supported by web access logging:
+
+    %a - Remote IP address
+    %A - Local IP address
+    %b - Bytes sent, excluding HTTP headers, or '-' if no bytes were sent
+    %B - Bytes sent, excluding HTTP headers
+    %h - Remote host name
+    %H - Request protocol
+    %l - Remote logical username from identd (always returns '-')
+    %m - Request method
+    %p - Local port
+    %q - Query string (excluding the '?' character)
+    %r - First line of the request
+    %s - HTTP status code of the response
+    %t - Date and time, in Common Log Format format
+    %u - Remote user that was authenticated
+    %U - Requested URL path
+    %v - Local server name
+    %D - Time taken to process the request, in millis
+    %T - Time taken to process the request, in seconds
+    %I - current Request thread name (can compare later with stacktraces)
+
+=== Nice-to-Have Requirements
+
+* configure ejb access logging from management console
+
+=== Non-Requirements
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+== Test Plan
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
