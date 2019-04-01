@@ -1,0 +1,97 @@
+= Make the certificate authority used by a certificate-authority-account configurable
+:author:            Farah Juma, Diana Vilkolakova
+:email:             dvilkola@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently, Let's Encrypt (https://acme-v02.api.letsencrypt.org/directory) is the only certificate authority
+that can be used in a `certificate-authority-account` resource.
+This issue aims to make it possible for the user to configure attribute `certificate-authority` for this resource.
+Each certificate authority can be associated with a production url and a staging url, both of which have to be configurable.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-4362[WFCORE-4362]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1150[EAP7-1150]
+* https://issues.jboss.org/browse/ELY-1797[ELY-1797]
+
+=== Dev Contacts
+
+* mailto:dvilkola@redhat.com[Diana Vilkolakova]
+
+=== QE Contacts
+
+* mailto:mkopecky@redhat.com[Marek Kopecky]
+
+=== Testing By
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* Wildfly Core
+* Elytron
+
+== Requirements
+
+=== Hard Requirements
+
+It must be possible to specify staging url and production url for the attribute `certificate-authority` in the `certificate-authority-account` resource.
+This will be achieved by adding new resource `certificate-authority` to the elytron subsystem.
+
+Eg. the configuration will look like the following:
+
+```
+/subsystem=elytron/certificate-authority=Buypass:add(url="https://api.buypass.com/acme/directory",staging-url="https://api.staging-example.com/acme/directory")
+/subsystem=elytron/certificate-authority-account=exampleCertificateAuthorityAccount:add(certificate-authority=Buypass,alias=example,key-store=exampleKS)
+```
+
+== Implementation Plan
+
+Currently, `certificate-authority-account` contains optional attribute `certificate-authority` of type STRING.
+The default and only allowed value is "LetsEncrypt".
+We should be able to specify staging URL and production URL without breaking backwards compatibility.
+
+In the Elytron subsystem, LetsEncrypt is a value of CertificateAuthority enum. This enum contains name, url and staging url.
+We can add new `certificate-authority` resource to the elytron
+subsystem with non-optional attributes `name`, `url` and optional attribute `staging-url`.
+This way, during the configuration of `certificate-authority-account`
+it will be possible to reference any `certificate-authority` previously added by attribute `name`.
+
+
+The default value for `certificate-authority` attribute in `certificate-authority-account` will continue to be "LetsEncrypt" with url "https://acme-v02.api.letsencrypt.org/directory" and staging-url  "https://acme-staging-v02.api.letsencrypt.org/directory" (same as before).
+If user does not specify `certificate-authority` or specify it to be "LetsEncrypt", these default URLs will be set internally (`certificate-authority` with name "LetsEncrypt" will not be added to avoid changes to configuration and to keep backwards compatibility).
+If user tries to add `certificate-authority` resource with name "LetsEncrypt`, an exception will be thrown to avoid discrepancies.
+
+Implementation will require removal of the enum CertificateAuthority and adding of new class CertificateAuthorityDefinition that extends SimpleResourceDefinition.
+Since AcmeAccountService class (service responsible for a single AcmeAccount instance) uses CertificateAuthority enum,
+it will be changed to use certificate authority class instead.
+
+== Test Plan
+
+Tests will be added to Wildfly Core testsuite under Elytron directory.
+Tests will cover:
+
+* operation `write-attribute` that will change certificate authority in `certificate-authority-account`
+* adding of `certificate-authority` resource
+* adding of `certificate-authority` resource with both `url` and `staging-url` not specified - will fail
+* that operation will fail when trying to use `staging-url` when none specified
+* that `certificate-authority-account` operation `create-account` won't fail when `staging-url` is specified and staging=true
+* that exception will be thrown when adding `certificate-authority` with "LetsEncrypt" name
+
+== Community Documentation
+
+`certificate-authority` resource will be documented in the WildFly documentation under Using the Elytron subsystem.
+There is already an example about how to Configure a Let’s Encrypt account.
+In this example, a note will be added that LetsEncrypt is the default and therefore can be omitted or be replaced with other certificate authority.
+Example of adding `certificate-authority` resource and passing its name to `certificate-authority-account` will be showed along with the note.
