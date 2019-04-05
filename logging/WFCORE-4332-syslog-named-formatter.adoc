@@ -1,0 +1,62 @@
+= Add `named-formatter` to the `syslog-handler`
+:author:            James R. Perkins
+:email:             jperkins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The syslog handler supports adding a formatter. Currently in WildFly only the log message itself is added as the
+message for the payload. Users may want to include other attributes such as the thread or an MDC entry. We should allow
+any formatter to be assigned to the syslog handler for formatter the message portion of the syslog payload.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-4332[WFCORE-4332]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1195[EAP7-1195]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+TBD
+
+=== Testing By
+[X] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly Core
+* WildFly
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* The formatter should allow for any type of `java.util.logging.Formatter`.
+
+== Implementation Plan
+
+This should be as simple as adding a `named-formatter` attribute to the `syslog-handler` resource.
+
+== Test Plan
+
+Tests will be done in the current syslog handler tests.
+
+== Community Documentation
+
+Community documentation will be handled my Wildscribe since this is just a common attribute which is already present on
+most other handlers.
