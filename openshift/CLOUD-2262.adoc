@@ -258,11 +258,18 @@ This should be considered as a new feature request.
 
 === Hard Requirements
 
-* EJB remote calls have to work when application is deployed on JBoss EAP on OpenShift
-* The transaction consistency has to be guaranteed for the transactions propagated
-  over the EJB remote calls
+* allow users to deploy clustered transactional EAP applications on OpenShift
+* applications should be able to communicate using ejb-client/remoting libraries
+* distributed transactional operations among those applications should be fully supported
+* transactions should recover properly if the transaction is interrupted
+* users would create the applications using provided template, which would hide the complexity associated with operation in cloud
+* users would be able to configure connections between applications by configuring remoting subsystem in 'standalone-openshift.xml'
+
 
 === Nice-to-Have Requirements
+* scale-down of number of replicas in StatefulSet - this is planed to be introduced as en extension after the core functionality is implemented and tested
+* users would be able to configure connections between applications programmatically
+* auto-generate 'standalone-openshift.xml' during the config - this is planed to be introduced as en extension after the core functionality is implemented and teste
 
 === Non-Requirements
 
