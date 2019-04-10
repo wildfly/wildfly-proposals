@@ -17,8 +17,8 @@ Managing an application running on WildFly in a cloud environment can be a compl
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1214[EAP7-1214] - Tech Preview Operator for handling already built EAP/WildFly based images
-
+* https://issues.jboss.org/browse/EAP7-1149[EAP7-1149] - Tech Preview Operator for handling already built EAP/WildFly based images
+* https://issues.jboss.org/browse/CLOUD-2262[CLOUD-2262] - Provide support for transaction recovery for transactions which contain subordinate transactions propagated over JBoss Remoting
 === Dev Contacts
 
 * mailto:{email}[{author}]
@@ -35,6 +35,7 @@ Managing an application running on WildFly in a cloud environment can be a compl
 
  * https://github.com/wildfly/wildfly[WildFly]
  * https://github.com/openshift-s2i/s2i-wildfly[WildFly s2i]
+ * https://www.github.com/jboss-dockerfiles/wildfly[WildFly Docker image]
 
 
 === Other Interested Projects
@@ -56,19 +57,20 @@ The CRD will allow the user to:
 
 * Specify the name an application image that incorporates a WildFly server and an deployment that will be deployed by that server.
 ** The name can include either a fixed or floating tag.
-* Specify an optional ConfigMap where the WildFly standalone configuration can be read from.
+** The application image is built on top of the https://www.github.com/jboss-dockerfiles/wildfly[WildFly Docker image]
 * Specify the desired number of replicas of that image
+* Specify an optional ConfigMap where the WildFly standalone configuration can be read from.
 * Specify whether the replicas are intended to form a High Availability cluster (default is true).
-* Specify whether the containers are intended to be 'stateful'
-** default is to be determined (might be inferred from the server configuration)
+* Specify the type of storage it needs
+  * it must define a `PersistentVolumeClaim` if it requires persistent storage.
+  * otherwise a `EmptyDir` wil be associated to the container (without persistence)
 * Specify information for interfaces for which a Service and Route should be established
-** perhaps expose 8080 by default with an option to disable that
-** same for 9990 to expose management interface (including health check and metrics endpoints)
+** expose http port (8080) by default with an option to disable that
 * Specify information for interfaces for which a headless service should be established.
 
 ### Operator requirements
 
-The WildFly operation will provide the following features:
+The WildFly operator will provide the following features:
 
 * In reaction to deployment of a Custom Resource with the CRD's type start up a cluster of containers running the specified image, with the desired number of replicas.
 * If the containers are meant to form a High Availability cluster, perform scale up and scale down in a manner designed to optimize cluster efficiency
@@ -78,9 +80,6 @@ The WildFly operation will provide the following features:
 ** If the necessary facilities to allow this are not available, container start should be aborted
 ** Appropriate transaction recovery activities should be performed
 * Establish the appropriate services and routes
-* Detect new versions of the image in the container catalog and take appropriate action. Possible actions include
-** Scale down to a min number of nodes, begin replacing old nodes with new until all old gone
-** Leave old and new both running in some sort of A/B scenario
 * Incorporate information about active sessions in all of this (this requires LB integration that is out of scope unless already present)
 
 Another requirement for this operator is to provide a better Observability of EAP such as:
@@ -97,8 +96,8 @@ Another requirement for this operator is to provide a better Observability of EA
 
 === Non-Requirements
 
- * Orchestration of the building of images or the creation of Custom Resource instances. The images are available in the container catalog; how they get there is out of scope for this operator.
- * Facilitating operation of a container that embeds a messaging broker within the WildFly server (e.g. by ensuring it has access to a persistent volume). Running an embedded broker within WildFly in the cloud is not recommended. Use an external messaging broker.
+* Orchestration of the building of images or the creation of Custom Resource instances. The images are available in the container catalog; how they get there is out of scope for this operator.
+* Facilitating operation of a container that embeds a messaging broker within the WildFly server (e.g. by ensuring it has access to a persistent volume). Running an embedded broker within WildFly in the cloud is not recommended. Use an external messaging broker.
 
 == Implementation Plan
 
@@ -106,6 +105,28 @@ Another requirement for this operator is to provide a better Observability of EA
 * Develop a WildFly operator based on the https://github.com/operator-framework[Operator Framework].
 
 There is an existing WildFly operator at https://github.com/banzaicloud/wildfly-operator but the codebase for it will not be used.
+
+== Implementation Details
+
+This operator defines the expected behaviour of a WildFly application deployed on Kubernetes and OpenShift.
+
+One of the key decision is the underlying kind of resources to represent the application.
+Currently, the https://github.com/jboss-container-images/jboss-eap-7-openshift-image/blob/89f045c458e1d196c6c4288b34ae5aae4ab58934/templates/eap-cd-basic-s2i.json#L298[EAP S2I templates] uses https://kubernetes.io/docs/concepts/workloads/controllers/deployment/[`DeploymentConfig`].
+However this introduces issues for transaction recovery (such as https://issues.jboss.org/browse/CLOUD-2262[CLOUD-2262]) as the pod names are not stable.
+
+The operator will instead use a https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/[`StatefulSet`] to manage the WildFly applications.
+Compared to using `DeploymentConfig`, this ensures:
+
+* stable, unique network identifiers.
+* stable, persistent storage.
+* ordered, graceful deployment and scaling.
+* ordered, automated rolling updates.
+
+These properties are prerequisites for transaction recovery and ensuring an efficient cluster formation if the application requires clustering with JGroups.
+
+The Operator will let the user configure a https://kubernetes.io/docs/concepts/storage/volumes/#persistentvolumeclaim[`PersistentVolumeClaim`] to define its requirements in terms of persistent storage.
+
+In the case where the application is not stateful and do not requires persistent storage, the Operator will allow to use an https://kubernetes.io/docs/concepts/storage/volumes/#emptydir[`EmptyDir`] that will not be persisted across pod restart.
 
 == Test Plan
 
@@ -121,4 +142,4 @@ There is an existing WildFly operator at https://github.com/banzaicloud/wildfly-
 
 == Community Documentation
 
-The wildfly-operator project will have dedicated documentation about installing and using the WildFly operator with use cases for all the different features (configuration, HA, transaction recovery, etc.)
+The wildfly-operator project will have dedicated https://github.com/wildfly/wildfly-operator/tree/master/doc[documentation] about installing and using the WildFly operator with use cases for all the different features (configuration, HA, transaction recovery, etc.)
