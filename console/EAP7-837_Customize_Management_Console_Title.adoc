@@ -1,0 +1,53 @@
+= Expose EJB runtime data / statistics
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+Customise the title of the management console. A custom title can be specified in the user settings of the console. The title can contain the following placeholders:
+
+- `%n`: The name attribute of the the root resource (standalone mode) resp. of the host resource (domain mode)
+- `%o`: The organization attribute of the the root resource (standalone mode) resp. of the host resource (domain mode)
+
+If the title is not specified, the built in title will be used. If the a variable is used, but the attribute is undefined "n/a" will be used instead.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-837[EAP7-837]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:pjelinek@redhat.com[Pavel Jelinek]
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+- Add an entry in the user setting to customise the title
+- If no title is specified the built in title will be used
+- If a title is specified use this title as borwser / tab title
+- Replace `%n` with the value of the name attribute of the root resource (standalone mode) resp. host resource (domain mode)
+- Replace `%o` with the value of the organization attribute of the root resource (standalone mode) resp. host resource (domain mode)
+- If a placeholder resolve to an undefined attribute use "n/a".
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
