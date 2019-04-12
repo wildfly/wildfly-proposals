@@ -1,4 +1,4 @@
-= Expose EJB runtime data / statistics
+= Request Supported Method for Customizing Title of JBoss Admin Console
 :author:            Harald Pehl
 :email:             hpehl@redhat.com
 :toc:               left
