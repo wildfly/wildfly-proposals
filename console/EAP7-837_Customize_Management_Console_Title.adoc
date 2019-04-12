@@ -43,6 +43,8 @@ If the title is not specified, the built in title will be used. If a placeholder
 - Replace `%n` with the value of the `name` attribute of the root resource
 - Replace `%o` with the value of the `organization` (standalone) resp. `domain-organization` (domain) attribute of the root resource
 - If a placeholder resolves to an undefined attribute use "n/a"
+- If the `name`, `organization` or `domain-organization` attribute is modified using the console and one of these attributes is used as a placeholder for the title, the browser title must reflect the new value after the attributes were saved successfully.
+- If the `name`, `organization` or `domain-organization` attribute is modified outside the console and one of these attributes is used as a placeholder for the title, the browser title must reflect the new value after reloading the console.
 
 == Test Plan
 
