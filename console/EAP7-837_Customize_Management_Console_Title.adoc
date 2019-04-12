@@ -28,7 +28,7 @@ If the title is not specified, the built in title will be used. If a placeholder
 
 === QE Contacts
 
-* mailto:pjelinek@redhat.com[Pavel Jelinek]
+* mailto:jkasik@redhat.com[Jan Kasik]
 
 === Affected Projects or Components
 
@@ -39,7 +39,7 @@ If the title is not specified, the built in title will be used. If a placeholder
 
 - Add an entry in the user setting to customise the title
 - If no title is specified the built in title will be used
-- If a title is specified use this title as borwser / tab title
+- If a title is specified use this title as browser / tab title
 - Replace `%n` with the value of the `name` attribute of the root resource
 - Replace `%o` with the value of the `organization` (standalone) resp. `domain-organization` (domain) attribute of the root resource
 - If a placeholder resolves to an undefined attribute use the built in title.
