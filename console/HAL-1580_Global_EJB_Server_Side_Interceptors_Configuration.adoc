@@ -1,0 +1,49 @@
+= Customise Browser Title
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    {issue-base-url}/browse
+
+== Overview
+
+The goal of this issue is to provide support in HAL to configure system-wide server side EJB interceptors through the ejb3 subsystem.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1580[HAL-1580]
+
+=== Related Issues
+
+* {issue-base-url}/EAP7-1240[EAP7-1240]
+* {issue-base-url}/EAP7-474[EAP7-474]
+* {issue-base-url}/WFLY-6143[WFLY-6143]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:jkasik@redhat.com[Jan Kasik]
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+* Interceptors should be configured in the EJB3 subsystem
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
