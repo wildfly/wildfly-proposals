@@ -241,7 +241,7 @@ This should be considered as a new feature request.
 
 [x] QE
 
- * mailto:fmarchio@redhat.com[Francesco Marchioni]
+ * mailto:msimka@redhat.com[Martin Simka]
 
 === Affected Projects or Components
 
