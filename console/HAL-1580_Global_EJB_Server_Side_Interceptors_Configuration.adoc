@@ -31,6 +31,12 @@ The goal of this issue is to provide support in HAL to configure system-wide ser
 
 * mailto:jkasik@redhat.com[Jan Kasik]
 
+=== Testing By
+    
+[ ] Engineering
+    
+[x] QE
+
 === Affected Projects or Components
 
 * WildFly
