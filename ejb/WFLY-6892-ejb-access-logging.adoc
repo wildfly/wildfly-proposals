@@ -19,6 +19,7 @@
 * https://issues.jboss.org/browse/WFCORE-4355 (Add utility for event logging such as audit and access logging)
 * https://issues.jboss.org/browse/EAP7-523 (Access logging for EJBs)
 * https://issues.jboss.org/browse/EAP7-699 (Enhanced Audit Logging - RFC support and reliability/speed customization)
+* https://issues.jboss.org/browse/WFLY-11031 (Json encoding of Access Log Events)
 
 === Dev Contacts
 
@@ -26,14 +27,14 @@
 
 === QE Contacts
 
-* mailto:jkasik@redhat.com[Jan Kašík]
+* mailto:szhantem@redhat.com[Sultan Zhantemirov]
 
 === Testing By
 // Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
 // Discuss with QE during the Kickoff state to decide this
 [x] Engineering
 
-[ ] QE
+[x] QE
 
 === Affected Projects or Components
 
@@ -53,8 +54,6 @@
 
 * enable and disable ejb access logging
 
-* users should be able to configure condition/filter to determine which requests to log
-
 * configure how to rotate ejb access logs if applicable
 
 ** default should be OFF for performance consideration
@@ -65,13 +64,11 @@
 
 ** stdout
 
-** JSON
+* choose from pre-defined logging formats (need to adapt for ejb invocation):
 
-* choose from pre-defined logging formats
+** common (default): %h %l %u %t "%r" %s %b
 
-** common (default):
-
-** combined:
+** combined: %h %l %u %t "%r" %s %b "%{i,Referer}" "%{i,User-Agent}"
 
 * for more customization, define which attributes to include in ejb access logging
 
@@ -91,7 +88,7 @@
     %s - HTTP status code of the response
     %t - Date and time, in Common Log Format format
     %u - Remote user that was authenticated
-    %U - Requested URL path
+    %U - Requested URL path (ejb invocation equivalent)
     %v - Local server name
     %D - Time taken to process the request, in millis
     %T - Time taken to process the request, in seconds
@@ -99,9 +96,14 @@
 
 === Nice-to-Have Requirements
 
-* configure ejb access logging from management console
+* users should be able to configure condition/filter to determine which requests to log
+
+* users should be able to configure JSON as the output format for ejb access logging
 
 === Non-Requirements
+
+* configure ejb access logging from management console
+
 
 //== Implementation Plan
 ////
