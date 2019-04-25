@@ -1,0 +1,175 @@
+= [WFCORE-4361] Enhanced mapping of an X509Certificate to the underlying identity
+:author:            Farah Juma
+:email:             fjuma@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Elytron provides support for `X509PeerCertificateChainEvidence`, i.e., evidence that is composed of a
+verified X509 certificate chain. Currently, the principal that is associated with this type of evidence
+is hard-coded to be the subject from the first certificate in the certificate chain, as an `X500Principal`.
+This principal then gets mapped/rewritten using the configured principal decoders and principal transformers
+to obtain the name that should be used when locating and loading the identity from the underlying identity store.
+
+The https://www.ietf.org/rfc/rfc3280.txt[X509 v3 Subject Alternative Name extension] provides the ability
+to specify one or more alternative non-X500 names that can be used in addition to or instead of the
+certificate's subject name. It should be possible to specify that one of these alternative names should be
+used as the principal associated with `X509PeerCertificateChainEvidence`. This principal will then get
+mapped/rewritten using the configured principal decoders and principal transformers to obtain the name that
+should be used when locating and loading the identity from the underlying identity store.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-4361[WFCORE-4361]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1173[EAP7-1173]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:okotek@redhat.com[Ondrej Kotek]
+
+=== Testing By
+
+[ ] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+
+* WildFly, Security
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* A new `org.wildfly.security.evidence-decoder` capability will be added.
+
+* It should be possible to configure an `x509-subject-alt-name-evidence-decoder` in the `mappers` configuration
+in the Elytron subsystem. This evidence decoder will be used to decode the principal that should be associated
+with the given `X509PeerCertificateChainEvidence`. In particular, this new resource will have the following two
+attributes:
+
+** `alt-name-type` - The subject alternative name type to decode from the given `X509PeerCertificateChainEvidence` evidence.
+This attribute is required. Must be one of the subject alternative name types that can be represented as a `String`:
+*** `rfc822Name`
+*** `dNSName`
+*** `uniformResourceIdentifier`
+*** `iPAddress`
+*** `registeredID`
+*** `directoryName`
+
+** `segment` - The 0-based occurrence of the subject alternative name to map. This attribute is optional and only used
+when there is more than one subject alternative name of the given `alt-name-type`. The default value is `0`.
+
+For example, consider the following X509 v3 Subject Alternative Name extension from the first certificate in an
+`X509PeerCertificateChainEvidence`:
+
+[source,xml]
+----
+X509v3 Subject Alternative Name:
+    DNS:one.example.org, IP Address:127.0.0.1
+----
+
+To associate the evidence with the principal "one.example.org", the following `x509-subject-alt-name-evidence-decoder`
+could be configured:
+
+[source,xml]
+----
+<mappers>
+...
+    <x509-subject-alt-name-evidence-decoder name="dnsDecoder" alt-name-type="dNSName"/>
+...
+</mappers>
+----
+
+Next, consider following X509 v3 Subject Alternative Name extension from the first certificate in an `X509PeerCertificateChainEvidence`:
+
+[source,xml]
+----
+X509v3 Subject Alternative Name:
+    DNS:one.example.org, DNS:two.example.org, IP Address:127.0.0.1
+----
+
+To associate the evidence with the principal "two.example.org", the following `x509-subject-alt-name-evidence-decoder`
+could be configured:
+
+[source,xml]
+----
+<mappers>
+...
+    <x509-subject-alt-name-evidence-decoder name="dnsDecoder" alt-name-type="dNSName" segement="1"/>
+...
+</mappers>
+----
+
+* It should be possible to configure an `x500-subject-evidence-decoder` in the `mappers` configuration in the
+Elytron subsystem. This evidence decoder will be used to decode the principal that should be associated with the given
+`X509PeerCertificateChainEvidence`.This evidence decoder will extract the subject from the first certificate in the
+certificate chain, as an `X500Principal`. Example configuration:
+
+[source,xml]
+----
+<mappers>
+...
+    <x500-subject-evidence-decoder name="subjectDecoder"/>
+...
+</mappers>
+----
+
+* It should be possible to configure an `aggregate-evidence-decoder` in the `mappers` configuration in the Elytron subsystem.
+This will consist of two or more `evidence-decoder` elements where each element will contain a reference to a configured
+evidence decoder. Given evidence, these evidence decoders will be attempted in order until one returns a non-null principal
+or until there are no more evidence decoders left to try.
+
+Example configuration:
+
+[source,xml]
+----
+<mappers>
+...
+    <x509-subject-alt-name-evidence-decoder name="emailDecoder" alt-name-type="rfc822Name"/>
+    <x509-subject-alt-name-evidence-decoder name="dnsDecoder" alt-name-type="dNSName"/>
+    <x500-subject-evidence-decoder name="subjectDecoder" />
+    <aggregate-evidence-decoder name="aggregateDecoder">
+        <evidence-decoder name="emailDecoder"/>
+        <evidence-decoder name="subjectDecoder"/>
+        <evidence-decoder name="dnsDecoder"/>
+    </aggregate-evidence-decoder>
+...
+</mappers>
+----
+
+* It should be possible to configure an `evidence-decoder` for a `security-domain` in the Elytron subsystem. This optional
+attribute will be a reference to an evidence decoder that has been configured in the `mappers` configuration in the
+Elytron subsystem.
+
+** If no `evidence-decoder` is specified for a `security-domain`, then the principal associated with the evidence will
+just be the default principal for the evidence type, i.e., for `X509PeerCertificateChainEvidence`, this would continue to
+default to the subject from the first certificate in the certificate chain, as an `X500Principal`.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+Elytron subsystem parsing and transformer tests will be added. Tests will be added to both the Elytron testsuite and the
+Elytron subsystem tests to ensure that the correct principal is extracted from `X509PeerCertificateChainEvidence` based
+on the configured evidence decoders.
+
+== Community Documentation
+
+Documentation on evidence decoders will be added to the "Elytron Subsystem" section in the WildFly documentation.
