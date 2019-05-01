@@ -48,7 +48,7 @@
 
 * implement the access logging feature similar to WildFly web access logging.
 
-* add access-logging definition to wildfly-ejb3 schema
+* add access-logging definition to wildfly-ejb3 schema (see next section below)
 
 * configure ejb access logging with CLI
 
@@ -93,6 +93,24 @@
     %D - Time taken to process the request, in millis
     %T - Time taken to process the request, in seconds
     %I - current Request thread name (can compare later with stacktraces)
+
+=== New elements in wildfly-ejb3_6_0.xsd schema
+ejb30 subsystem is extended with a new top-level element access-log, defined as follows:
+[source,xml]
+----
+    <xs:complexType name="accessLogType">
+        <xs:attribute name="pattern" use="optional" type="xs:string" default="common"/>
+        <xs:attribute name="worker" use="optional" type="xs:string" default="default"/>
+        <xs:attribute name="directory" use="optional" type="xs:string" default="${jboss.server.log.dir}"/>
+        <xs:attribute name="relative-to" use="optional" type="xs:string" />
+        <xs:attribute name="prefix" use="optional" type="xs:string" default="access_log."/>
+        <xs:attribute name="suffix" use="optional" type="xs:string" default="log"/>
+        <xs:attribute name="rotate" use="optional" type="xs:string" default="true"/>
+        <xs:attribute name="use-server-log" use="optional" type="xs:string" default="false"/>
+        <xs:attribute name="extended" use="optional" type="xs:string" default="false" />
+        <xs:attribute name="predicate" use="optional" type="xs:string" />
+    </xs:complexType>
+----
 
 === Nice-to-Have Requirements
 
