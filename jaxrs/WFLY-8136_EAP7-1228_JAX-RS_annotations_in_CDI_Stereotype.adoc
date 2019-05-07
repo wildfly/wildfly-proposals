@@ -1,0 +1,128 @@
+= WFLY-8136 / EAP7-1228 Allow JAX-RS annotations in CDI @Stereotype
+:author:            Martin Stefanko
+:email:             mstefank@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This feature provides support for JAX-RS annotations to be defined as a part of 
+CDI `@Stereotype` definitions. This will allow JAX-RS annotations like `@Produces` 
+or `@Consumes` to be reused by several JAX-RS resources or providers.
+
+Example:
+
+[java]
+---- 
+@Stereotype
+@Produces(MediaType.APPLICATION_JSON)
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface RestService {
+}
+
+@Path("/some")
+@RestService
+public class SomeRestService {
+    @GET
+    @Path("/")
+    public Response getSome() {
+        return Response.ok().entity("{\"x\" : 42, \"y\" : \"foo\"}").build();
+    }
+}
+----
+
+The full list of JAX-RS annotations that should work in combination with 
+CDI Stereotypes:
+
+* @Produces
+* @Consumes
+* @ContrainedTo
+* @Encoded
+* @Path
+* @PreMatching
+* @Provider
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-1228[EAP7-1228]
+* https://issues.jboss.org/browse/WFLY-8136[WFLY-8136]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/RESTEASY-1821[RESTEASY-1821]
+
+=== Dev Contacts
+
+* mailto:mstefank@redhat.com[Martin Stefanko]
+* mailto:asoldano@redhat.com[Alessio Soldano]
+* mailto:rsigal@redhat.com[Ron Sigal]
+
+=== QE Contacts
+
+* mailto:mkopecky@redhat.com[Marek Kopecky]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* RESTEasy
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* RESTEasy will be able to process JAX-RS annotations in CDI Stereotype when run in 
+the CDI environment
+* RESTEasy will ignore JAX-RS annotations in CDI Stereotypes when no CDI environment 
+will be available
+
+=== Non-Requirements
+
+* As Stereotypes can be defined only at class, method and field levels, JAX-RS 
+annotations that cannot be applied at these places are not covered by this proposal. 
+This for instance covers https://docs.oracle.com/javaee/7/api/javax/ws/rs/NameBinding.html[@NameBinding]
+as it can be applied only to annotations (ElementType.ANNOTATION_TYPE). Specifically 
+cases like:
+
+----
+@NameBinding
+@Retention(RUNTIME)
+@Target({ METHOD, TYPE })
+public @interface MyFilterBinding {
+}
+
+@Stereotype
+@Retention(RUNTIME)
+@Target(TYPE)
+@MyFilterBinding
+public @interface CustomStereotype {
+}
+----
+
+are not supported as `@MyFilterBinding` is not a JAX-RS annotation.
+
+* RESTEasy client proxy and MicroProfile REST client can also use JAX-RS annotations. 
+However, their use is restricted to interfaces which is not typical use-case for 
+CDI stereotypes which is why they are not covered by this proposal.
+
+== Test Plan
+
+The feature will be tested in RESTEasy testsuite by a collection of new tests verifying 
+that the JAX-RS annotations are usable in CDI Stereotypes.
+
+== Community Documentation
+
+The community documentation will be added to upstream RESTEasy documentation - 
+http://docs.jboss.org/resteasy/docs/. It does not need to be a part of WildFly.
