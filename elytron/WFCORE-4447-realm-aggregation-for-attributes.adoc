@@ -1,0 +1,88 @@
+= WFCORE-4447 Aggregation of SecurityRealms for Attribute Loading
+:author:            Darran Lofthouse
+:email:             darran.lofthouse@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WildFly Elytron provides a very flexible approach to assigning roles and permissions to an identity based on arbitrary attributes loaded by an identitie's `SecurityRealm`, presently we support authenticating an identity against one realm and loading the identitie's attributes from a second realm.  This enhancement is to add support for loading the attributes from multiple realms and aggregating the results together. 
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-4447[WFCORE-4447]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/ELY-1804[ELY-1804]
+* https://issues.jboss.org/browse/WFLY-12051[WFLY-12051]
+* https://issues.jboss.org/browse/EAP7-1194[EAP7-1194]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:okotek@redhat.com[Ondrej Kotek]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[ x ] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+ * WildFly Elytron
+ * WildFly Core
+ * WildFly (Documentation and Tests Only)
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+Presently it is possible to configure WildFly Elytron to use one `SecurityRealm` to load credential information about an identity or to perform `Evidence` verification and then use a second `SecurityRealm` to load the resulting identity and it's attributes.  This enhancement is to add support for loading the attributes of an identity using multiple security realms and aggregating the results together into a single identity.
+
+Where multiple realms are aggregated together to load the attributes the identity is not required to exist in any of them.
+
+The architecture presently in use places the implementation of components within the WildFly Elytron project with the integration within WildFly Core focused on the management model integration, this separation should be preserved for this feature.
+
+=== Nice-to-Have Requirements
+
+If possible it will be preferable to make use of an existing resource within the Elytron subsystem such as the `aggregate-realm` resource instead of adding a new resource specifically for attribute aggregation.
+
+=== Non-Requirements
+
+The intention is to keep the scope of this enhancement simple, the enhancement will only offer a single merge strategy of taking the first definition of each attribute.  If multiple aggregated realms all return values for the same attribute only the first instance will be used.
+
+When defining configuration which aggregates multiple resources of the same type it is possible to introduce circular dependencies between the resources, it is outside the scope of this enhancement to detect and handle the circular references.
+
+The implementation added to the WildFly Elytron project will be a private implementation for use by the subsystem, in the future we way want to consider if some of this should form public API but that is out of scope for this RFE.
+
+== Implementation Plan
+
+This enhancement will be delivered across the following projects: -
+
+ * WildFly Elytron - Implementation of the attribute aggregation and associated unit tests.
+ * WildFly Core - Management model enhancements to support the new aggregation as well as testing of the management model including transformers.
+ * WildFly - Documentation of the new management model and testing of the enhancement being used for securing a deployment.
+
+== Test Plan
+
+The component developed within the WildFly Elytron project will also be accompanied with a set of low level unit tests to test various permutations of attribute aggregation from more than one security realm.
+
+Within WildFly Core tests will be added for the new management model including the parsing and persisting of configuration as well as transformer testing.
+
+Within the WildFly project further tests for agreagtion will be added testing a deployment configured using a security realm which supports attribute aggregation.
+
+== Community Documentation
+
+The WildFly Elytron subsystem already contains extensive documentation within the WildFly project documentation, for this enhancement further additions will be added to describe the aggregation available.  If necessary where an existing resource is used in-depth documentation for that resource may also need to be added. 
