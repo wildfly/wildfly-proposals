@@ -64,59 +64,308 @@
 
 ** stdout
 
+** JSON
+
 * choose from pre-defined logging formats (need to adapt for ejb invocation):
 
-** common (default): %h %l %u %t "%r" %s %b
+** short: date time ip user ejb method
 
-** combined: %h %l %u %t "%r" %s %b "%{i,Referer}" "%{i,User-Agent}"
+*** For example: 2019-05-05 12:23:27,003 127.0.0.1 admin hello/helloBean hello
 
-* for more customization, define which attributes to include in ejb access logging
+** long : date time ip user ejb method invocation event
 
-** consider adapting the following attributes that are currently supported by web access logging:
+*** For example: 2019-05-05 12:23:27,003 127.0.0.1 user1 hello/helloBean hello 1234 received
+                 2019-05-05 12:23:30,003 127.0.0.1 user1 hello/helloBean hello 1234 finished
 
-    %a - Remote IP address
-    %A - Local IP address
-    %b - Bytes sent, excluding HTTP headers, or '-' if no bytes were sent
-    %B - Bytes sent, excluding HTTP headers
-    %h - Remote host name
-    %H - Request protocol
-    %l - Remote logical username from identd (always returns '-')
-    %m - Request method
-    %p - Local port
-    %q - Query string (excluding the '?' character)
-    %r - First line of the request
-    %s - HTTP status code of the response
-    %t - Date and time, in Common Log Format format
-    %u - Remote user that was authenticated
-    %U - Requested URL path (ejb invocation equivalent)
-    %v - Local server name
-    %D - Time taken to process the request, in millis
-    %T - Time taken to process the request, in seconds
-    %I - current Request thread name (can compare later with stacktraces)
+** default: short
+
+* for more customization, define which attributes to include in ejb access logging with the following attributes:
+
+** date:
+** time
+** ip: client ip address
+** user: authenticated caller user name
+** ejb: ejb name (may need to prefix with application name)
+** method: ejb method
+** invocation: invocation id
+** event: event type ("received", "failed", "completed"; subject to available events from ejb container)
+** host: client host name
+** port: client port number
+** protocol: protocol used for this invocation
+** thread: thread name for this invocation
+** server: local server name
+
+* For example, one may configure the following custom pattern, which can be applied to both pattern formatter or
+JSON formatter:
+
+** pattern="date time client ejb method server thread"
+
 
 === New elements in wildfly-ejb3_6_0.xsd schema
-ejb30 subsystem is extended with a new top-level element access-log, defined as follows:
+ejb30 subsystem is extended with a new top-level element access-logging, defined as follows:
 [source,xml]
 ----
-    <xs:complexType name="accessLogType">
-        <xs:attribute name="pattern" use="optional" type="xs:string" default="common"/>
-        <xs:attribute name="worker" use="optional" type="xs:string" default="default"/>
-        <xs:attribute name="directory" use="optional" type="xs:string" default="${jboss.server.log.dir}"/>
-        <xs:attribute name="relative-to" use="optional" type="xs:string" />
-        <xs:attribute name="prefix" use="optional" type="xs:string" default="access_log."/>
-        <xs:attribute name="suffix" use="optional" type="xs:string" default="log"/>
-        <xs:attribute name="rotate" use="optional" type="xs:string" default="true"/>
-        <xs:attribute name="use-server-log" use="optional" type="xs:string" default="false"/>
-        <xs:attribute name="extended" use="optional" type="xs:string" default="false" />
-        <xs:attribute name="predicate" use="optional" type="xs:string" />
-    </xs:complexType>
+    <xs:element name="access-logging" type="accessLoggingType" minOccurs="0" maxOccurs="1" />
+
+    <xs:complexType name="accessLoggingType">
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="console-access-log" type="consoleAccessLogType"/>
+                <xs:element name="file-access-log" type="fileAccessLogType"/>
+                <xs:element name="periodic-rotating-file-access-log" type="periodicFileAccessLogType"/>
+                <xs:element name="size-rotating-file-access-log" type="sizeFileAccessLogType"/>
+                <xs:element name="server-log-access-log" type="serverLogAccessLogType"/>
+                <xs:element name="formatter" type="formatterType"/>
+            </xs:choice>
+        </xs:complexType>
+
+        <xs:complexType name="consoleAccessLogType">
+            <xs:annotation>
+                <xs:documentation>
+                    Defines an access log which writes to the console.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:all>
+                <xs:element name="encoding" type="valueType" minOccurs="0"/>
+                <xs:element name="formatter" type="accessLogFormatterType" minOccurs="0"/>
+                <xs:element name="target" minOccurs="0">
+                    <xs:complexType>
+                        <xs:attribute name="name" use="required">
+                            <xs:simpleType>
+                                <xs:restriction base="xs:token">
+                                    <xs:enumeration value="System.out"/>
+                                    <xs:enumeration value="System.err"/>
+                                    <xs:enumeration value="console"/>
+                                </xs:restriction>
+                            </xs:simpleType>
+                        </xs:attribute>
+                    </xs:complexType>
+                </xs:element>
+            </xs:all>
+            <xs:attribute name="autoflush" type="xs:boolean" use="optional" default="true"/>
+            <xs:attribute name="name" type="xs:string" use="required"/>
+            <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
+        </xs:complexType>
+
+        <xs:complexType name="serverLogAccessLogType">
+            <xs:annotation>
+                <xs:documentation>
+                    Defines an access log which writes to the server log.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:all>
+                <xs:element name="formatter" type="accessLogFormatterType" minOccurs="0"/>
+            </xs:all>
+            <xs:attribute name="name" type="xs:string" use="required"/>
+            <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
+        </xs:complexType>
+
+        <xs:complexType name="fileAccessLogType">
+            <xs:annotation>
+                <xs:documentation>
+                    Defines an access log which writes to a file.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:all>
+                <xs:element name="encoding" type="valueType" minOccurs="0"/>
+                <xs:element name="formatter" type="accessLogFormatterType" minOccurs="0"/>
+                <xs:element name="file" type="pathType" minOccurs="1"/>
+                <xs:element name="append" type="booleanValueType" minOccurs="0"/>
+            </xs:all>
+            <xs:attribute name="autoflush" type="xs:boolean" use="optional" default="true"/>
+            <xs:attribute name="name" type="xs:string" use="required"/>
+            <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
+        </xs:complexType>
+
+        <xs:complexType name="periodicFileAccessLogType">
+            <xs:annotation>
+                <xs:documentation>
+                    Defines an access log which writes to a file, rotating the log after a time period derived from the given
+                    suffix string, which should be in a format understood by java.text.SimpleDateFormat.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:all>
+                <xs:element name="encoding" type="valueType" minOccurs="0"/>
+                <xs:element name="formatter" type="accessLogFormatterType" minOccurs="0"/>
+                <xs:element name="file" type="pathType"/>
+                <xs:element name="suffix" type="valueType"/>
+                <xs:element name="append" type="booleanValueType" minOccurs="0"/>
+            </xs:all>
+            <xs:attribute name="autoflush" type="xs:boolean" use="optional" default="true"/>
+            <xs:attribute name="name" type="xs:string" use="required"/>
+            <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
+        </xs:complexType>
+
+        <xs:complexType name="sizeFileAccessLogType">
+            <xs:annotation>
+                <xs:documentation>
+                    Defines an access log which writes to a file, rotating the log after the size of the file grows beyond a
+                    certain point and keeping a fixed number of backups.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:all>
+                <xs:element name="encoding" type="valueType" minOccurs="0"/>
+                <xs:element name="formatter" type="accessLogFormatterType" minOccurs="0"/>
+                <xs:element name="file" type="pathType"/>
+                <xs:element name="rotate-size" type="sizeType" minOccurs="0"/>
+                <xs:element name="max-backup-index" type="positiveIntType" minOccurs="0"/>
+                <xs:element name="suffix" type="valueType" minOccurs="0"/>
+                <xs:element name="append" type="booleanValueType" minOccurs="0"/>
+            </xs:all>
+            <xs:attribute name="autoflush" type="xs:boolean" use="optional" default="true"/>
+            <xs:attribute name="name" type="xs:string" use="required"/>
+            <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
+            <xs:attribute name="rotate-on-boot" type="xs:boolean" use="optional" default="false"/>
+        </xs:complexType>
+
+        <xs:complexType name="refType">
+            <xs:annotation>
+                <xs:documentation>
+                    A named reference to another object.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:attribute name="name" type="xs:string" use="required"/>
+        </xs:complexType>
+
+        <xs:complexType name="valueType">
+            <xs:attribute name="value" use="required" type="xs:string"/>
+        </xs:complexType>
+
+        <xs:complexType name="pathType">
+            <xs:attribute name="relative-to" use="optional" type="xs:string"/>
+            <xs:attribute name="path" use="required" type="xs:string"/>
+        </xs:complexType>
+
+        <xs:complexType name="sizeType">
+            <xs:attribute name="value">
+                <xs:simpleType>
+                    <xs:restriction base="xs:string">
+                        <!-- XSD doesn't allow ^ or $ so ^[0-9]+[bkmgtp]?$ is invalid -->
+                        <xs:pattern value="[0-9]+[bkmgtp]"/>
+                    </xs:restriction>
+                </xs:simpleType>
+            </xs:attribute>
+        </xs:complexType>
+
+        <xs:complexType name="positiveIntType">
+            <xs:attribute name="value" use="required" type="xs:positiveInteger"/>
+        </xs:complexType>
+
+        <xs:complexType name="booleanValueType">
+            <xs:attribute name="value" use="required" type="xs:boolean"/>
+        </xs:complexType>
+
+        <xs:complexType name="propertiesType">
+            <xs:annotation>
+                <xs:documentation>
+                    A collection of free-form properties.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="property">
+                    <xs:complexType>
+                        <xs:attribute name="name" type="xs:string" use="required"/>
+                        <xs:attribute name="value" type="xs:string" use="optional"/>
+                    </xs:complexType>
+                </xs:element>
+            </xs:choice>
+        </xs:complexType>
+
+        <xs:complexType name="formatterType">
+            <xs:annotation>
+                <xs:documentation>
+                    A formatter that can be assigned to an access log.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:choice minOccurs="1" maxOccurs="1">
+                <xs:element name="simple-formatter" type="simpleFormatterType" maxOccurs="1"/>
+                <xs:element name="json-formatter" type="jsonFormatterType">
+                </xs:element>
+            </xs:choice>
+            <xs:attribute name="name" type="xs:string" use="required"/>
+        </xs:complexType>
+
+        <xs:complexType name="accessLogFormatterType">
+            <xs:annotation>
+                <xs:documentation>
+                    Defines a formatter.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:choice minOccurs="1" maxOccurs="1">
+                <xs:element name="pattern-formatter" type="simpleFormatterType" maxOccurs="1"/>
+                <xs:element name="named-formatter" type="namedFormatterType" maxOccurs="1"/>
+            </xs:choice>
+        </xs:complexType>
+
+        <xs:complexType name="simpleFormatterType">
+            <xs:annotation>
+                <xs:documentation>
+                    Defines a simple pattern formatter.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:attribute name="pattern" type="xs:string" use="required"/>
+        </xs:complexType>
+
+        <xs:complexType name="namedFormatterType">
+            <xs:annotation>
+                <xs:documentation>
+                    The name of a defined formatter that will be used to format the log message.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:attribute name="name" type="xs:string" use="required"/>
+        </xs:complexType>
+
+        <xs:complexType name="jsonFormatterType">
+            <xs:annotation>
+                <xs:documentation>
+                    Defines a JSON pattern formatter.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:all>
+                <xs:element name="record-delimiter" type="valueType" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The value to be used to indicate the end of a record. If set to null no delimiter will be used
+                            at the end of the record. The default value is a line feed.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="meta-data" type="propertiesType" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Sets the meta data to use in the structured format. Properties will be added to each log message.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+            </xs:all>
+            <xs:attribute name="pattern" type="xs:string" use="required"/>
+            <xs:attribute name="date-format" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The date/time format pattern. The pattern must be a valid
+                        java.time.format.DateTimeFormatter.ofPattern() pattern.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="pretty-print" type="xs:boolean" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        Indicates whether or not pretty printing should be used when formatting.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="zone-id" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The zone ID for formatting the date and time. The system default is used if left undefined.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
 ----
 
 === Nice-to-Have Requirements
 
 * users should be able to configure condition/filter to determine which requests to log
-
-* users should be able to configure JSON as the output format for ejb access logging
 
 === Non-Requirements
 
