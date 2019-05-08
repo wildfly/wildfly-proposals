@@ -1,0 +1,80 @@
+= Event Logger
+:author:            James R. Perkins
+:email:             jperkins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+There are open feature requests to add the ability to write audit and access logs to `stdout` in a JSON format. It would
+useful to have a common API which could be used to write this data.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-4355[WFCORE-4355]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-6892[WFLY-6892]
+* https://issues.jboss.org/browse/WFLY-11031[WFLY-11031]
+* https://issues.jboss.org/browse/EAP7-1196[EAP7-1196]
+* https://issues.jboss.org/browse/EAP7-699[EAP7-699]
+* https://issues.jboss.org/browse/ELY-1712[ELY-1712]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+For this specific case there will not be a QE contact as each individual JIRA will have an associated QE contact and
+it's that data that needs to be validated.
+
+=== Testing By
+
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+* WildFly Core management audit logging
+* Elytron security audit logging
+* WildFly EJB access logging
+* Undertow (in WildFly subsystem) access logging
+
+NOTE: | There is not currently a requirement for these projects to use this API. It's only purpose is to make it easy
+to write JSON to `stdout`.
+
+== Requirements
+
+=== Hard Requirements
+
+* This should be a fairly simple API. We don't want to re-implement a full log manager.
+* The initial implementation should allow for asynchronous writes.
+* The output should default to JSON.
+* The output should be written to `stdout` by default.
+
+=== Nice-to-Have Requirements
+
+* It may be helpful to have a writer that writes to a file which can handle rotation of the file.
+
+=== Non-Requirements
+
+* This will not be a full log manager. There is no current intent to allow filtering messages.
+
+== Implementation Plan
+
+== Test Plan
+
+The test plan will simply be unit tests.
+
+== Community Documentation
+
+In this specific case there will not be any community documentation. This is not meant to be a public API at this point.
