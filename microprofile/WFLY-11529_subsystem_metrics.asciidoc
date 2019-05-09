@@ -44,6 +44,7 @@ This feature exposes the WildFly metrics (from the subsystem and deployment mana
 * Expose WildFly metrics from subsystem and deployment mananagement model to the `/metrics` HTTP endpoint in the Prometheus format.
 * Provide mechanism to be _compatible_ with the WildFly metrics exposed by EAP images in OpenShift (that uses Prometheux JMX exporter as configured in https://github.com/jboss-container-images/jboss-eap-modules/blob/master/jboss/container/eap/prometheus/config/7.2/artifacts/opt/jboss/container/prometheus/etc/jmx-exporter-config.yaml[jmx-exporter-config.yaml])
 ** compatibility means that the metric names and labels should be identical (or, if identity is not achievable, similar).
+* The `management` HTTP interface must be accessible by the HTTP clients querying the metrics. By default, the `management` HTTP interface is bound to `127.0.0.1`. If HTTP clients are not on the same host, they will not be able to query the metrics. The `management` HTTP interface can be bound to `0.0.0.0` to ensure it is accessible from other host. Note that this exposes not only the `/metrics` HTTP endpoint but other endpoints such as `/health`, `/management`.
 
 === Non-requirements
 
