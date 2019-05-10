@@ -1,0 +1,66 @@
+= [WFLY-12038] Expose the enable1Prefixes configuration on external (pooled) connection factories
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:          messaging,jms
+:idseparator:       -
+
+== Overview
+When connecting to a remote broker the prefixes used for Artemis 1.5.x compatibility might not be required nor used. While this can be set for a pure client, in WildFly you can't set it for the connection factory you are using. This feature aims to fix that by enabling to configure this at the connection factory level.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE[WFLY-12038]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/ENTESB-10484[ENTESB-10484]
+Fuse is connecting to a remote broker 2.6.x  where the topic is created by the broker itself without the prefix.
+They access this topic through a Wildfly connection factory which will append the compatibility prefix thus making the resolution of the topic name fail.
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+jkasik
+
+=== Testing By
+[X] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+== Requirements
+
+* Add a `enable-amq1-prefix`  boolean attribute to the https://wildscribe.github.io/WildFly/16.0/subsystem/messaging-activemq/connection-factory/[/subsystem=messaging-activemq/connection-factory resource] to control the enablement of Artemis 1.x prefix. Default is `true` (meaning that name retro-compatibility is enabled).
+
+* Add a `enable-amq1-prefix`  boolean attribute to the https://wildscribe.github.io/WildFly/16.0/subsystem/messaging-activemq/pooled-connection-factory/[/subsystem=messaging-activemq/pooled-connection-factory resource] to control the enablement of Artemis 1.x prefix. Default is `true` (meaning that name retro-compatibility is enabled).
+
+=== Hard Requirements
+
+N/A
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+== Test Plan
+
+Create a core queue on a remote broker without the prefixes and connect to it disabling the enable1Prefixes on the pooled-connection-factory to access it by its name.
+Create a core queue on a remote broker without the prefixes and try to connect to it without disabling the enable1Prefixes on the pooled-connection-factory to access it by its name.
+
+== Community Documentation
+
+The feature will be documented in WildFly Admin Guide (in the Messaging Configuration section).
