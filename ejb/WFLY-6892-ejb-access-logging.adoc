@@ -82,7 +82,8 @@
 * for more customization, define which attributes to include in ejb access logging with the following attributes:
 
 ** date:
-** time
+** time:
+** timezone:
 ** ip: client ip address
 ** user: authenticated caller user name
 ** ejb: ejb name (may need to prefix with application name)
@@ -105,78 +106,63 @@ JSON formatter:
 ejb30 subsystem is extended with a new top-level element access-logging, defined as follows:
 [source,xml]
 ----
-    <xs:element name="access-logging" type="accessLoggingType" minOccurs="0" maxOccurs="1" />
+    <xs:element name="access-log" type="accessLogType" minOccurs="0" maxOccurs="1" />
 
-    <xs:complexType name="accessLoggingType">
+    <xs:complexType name="accessLogType">
             <xs:choice minOccurs="0" maxOccurs="unbounded">
-                <xs:element name="console-access-log" type="consoleAccessLogType"/>
-                <xs:element name="file-access-log" type="fileAccessLogType"/>
-                <xs:element name="periodic-rotating-file-access-log" type="periodicFileAccessLogType"/>
-                <xs:element name="size-rotating-file-access-log" type="sizeFileAccessLogType"/>
-                <xs:element name="server-log-access-log" type="serverLogAccessLogType"/>
+                <xs:element name="console-handler" type="consoleHandlerType"/>
+                <xs:element name="file-handler" type="fileHandlerType"/>
+                <xs:element name="periodic-rotating-file-handler" type="periodicFileHandlerType"/>
+                <xs:element name="server-log-handler" type="serverLogHandlerType"/>
                 <xs:element name="formatter" type="formatterType"/>
             </xs:choice>
         </xs:complexType>
 
-        <xs:complexType name="consoleAccessLogType">
+        <xs:complexType name="consoleHandlerType">
             <xs:annotation>
                 <xs:documentation>
                     Defines an access log which writes to the console.
                 </xs:documentation>
             </xs:annotation>
             <xs:all>
-                <xs:element name="encoding" type="valueType" minOccurs="0"/>
-                <xs:element name="formatter" type="accessLogFormatterType" minOccurs="0"/>
-                <xs:element name="target" minOccurs="0">
-                    <xs:complexType>
-                        <xs:attribute name="name" use="required">
-                            <xs:simpleType>
-                                <xs:restriction base="xs:token">
-                                    <xs:enumeration value="System.out"/>
-                                    <xs:enumeration value="System.err"/>
-                                    <xs:enumeration value="console"/>
-                                </xs:restriction>
-                            </xs:simpleType>
-                        </xs:attribute>
-                    </xs:complexType>
-                </xs:element>
+                <xs:element name="formatter" type="namedFormatterType" minOccurs="0"/>
             </xs:all>
-            <xs:attribute name="autoflush" type="xs:boolean" use="optional" default="true"/>
             <xs:attribute name="name" type="xs:string" use="required"/>
-            <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
+            <xs:attribute name="encoding" type="xs:string" use="optional"/>
+            <xs:attribute name="autoflush" type="xs:boolean" use="optional" default="true"/>
         </xs:complexType>
 
-        <xs:complexType name="serverLogAccessLogType">
+        <xs:complexType name="serverLogHandlerType">
             <xs:annotation>
                 <xs:documentation>
                     Defines an access log which writes to the server log.
                 </xs:documentation>
             </xs:annotation>
             <xs:all>
-                <xs:element name="formatter" type="accessLogFormatterType" minOccurs="0"/>
+                <xs:element name="formatter" type="namedFormatterType" minOccurs="0"/>
             </xs:all>
             <xs:attribute name="name" type="xs:string" use="required"/>
-            <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
         </xs:complexType>
 
-        <xs:complexType name="fileAccessLogType">
+        <xs:complexType name="fileHandlerType">
             <xs:annotation>
                 <xs:documentation>
                     Defines an access log which writes to a file.
                 </xs:documentation>
             </xs:annotation>
             <xs:all>
-                <xs:element name="encoding" type="valueType" minOccurs="0"/>
-                <xs:element name="formatter" type="accessLogFormatterType" minOccurs="0"/>
-                <xs:element name="file" type="pathType" minOccurs="1"/>
-                <xs:element name="append" type="booleanValueType" minOccurs="0"/>
+                <xs:element name="formatter" type="namedFormatterType" minOccurs="0"/>
             </xs:all>
-            <xs:attribute name="autoflush" type="xs:boolean" use="optional" default="true"/>
             <xs:attribute name="name" type="xs:string" use="required"/>
-            <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
+            <xs:attribute name="encoding" type="xs:string" use="optional"/>
+            <xs:attribute name="autoflush" type="xs:boolean" use="optional" default="true"/>
+            <xs:attribute name="append" type="xs:boolean" use="optional" default="true"/>
+            <xs:attribute name="path" type="xs:string" use="required" />
+            <xs:attribute name="relative-to" type="xs:string" use="optional" default="jboss.server.log.dir"/>
+
         </xs:complexType>
 
-        <xs:complexType name="periodicFileAccessLogType">
+        <xs:complexType name="periodicFileHandlerType">
             <xs:annotation>
                 <xs:documentation>
                     Defines an access log which writes to a file, rotating the log after a time period derived from the given
@@ -184,74 +170,19 @@ ejb30 subsystem is extended with a new top-level element access-logging, defined
                 </xs:documentation>
             </xs:annotation>
             <xs:all>
-                <xs:element name="encoding" type="valueType" minOccurs="0"/>
-                <xs:element name="formatter" type="accessLogFormatterType" minOccurs="0"/>
-                <xs:element name="file" type="pathType"/>
-                <xs:element name="suffix" type="valueType"/>
-                <xs:element name="append" type="booleanValueType" minOccurs="0"/>
+                <xs:element name="formatter" type="namedFormatterType" minOccurs="0"/>
             </xs:all>
+            <xs:attribute name="name" type="xs:string" use="required"/>
+            <xs:attribute name="encoding" type="xs:string" use="optional"/>
             <xs:attribute name="autoflush" type="xs:boolean" use="optional" default="true"/>
-            <xs:attribute name="name" type="xs:string" use="required"/>
-            <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
-        </xs:complexType>
-
-        <xs:complexType name="sizeFileAccessLogType">
-            <xs:annotation>
-                <xs:documentation>
-                    Defines an access log which writes to a file, rotating the log after the size of the file grows beyond a
-                    certain point and keeping a fixed number of backups.
-                </xs:documentation>
-            </xs:annotation>
-            <xs:all>
-                <xs:element name="encoding" type="valueType" minOccurs="0"/>
-                <xs:element name="formatter" type="accessLogFormatterType" minOccurs="0"/>
-                <xs:element name="file" type="pathType"/>
-                <xs:element name="rotate-size" type="sizeType" minOccurs="0"/>
-                <xs:element name="max-backup-index" type="positiveIntType" minOccurs="0"/>
-                <xs:element name="suffix" type="valueType" minOccurs="0"/>
-                <xs:element name="append" type="booleanValueType" minOccurs="0"/>
-            </xs:all>
-            <xs:attribute name="autoflush" type="xs:boolean" use="optional" default="true"/>
-            <xs:attribute name="name" type="xs:string" use="required"/>
-            <xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
-            <xs:attribute name="rotate-on-boot" type="xs:boolean" use="optional" default="false"/>
-        </xs:complexType>
-
-        <xs:complexType name="refType">
-            <xs:annotation>
-                <xs:documentation>
-                    A named reference to another object.
-                </xs:documentation>
-            </xs:annotation>
-            <xs:attribute name="name" type="xs:string" use="required"/>
+            <xs:attribute name="append" type="xs:boolean" use="optional" default="true"/>
+            <xs:attribute name="path" type="xs:string" use="required" />
+            <xs:attribute name="relative-to" type="xs:string" use="optional" default="jboss.server.log.dir"/>
+            <xs:attribute name="suffix" type="xs:string" use="required" />
         </xs:complexType>
 
         <xs:complexType name="valueType">
             <xs:attribute name="value" use="required" type="xs:string"/>
-        </xs:complexType>
-
-        <xs:complexType name="pathType">
-            <xs:attribute name="relative-to" use="optional" type="xs:string"/>
-            <xs:attribute name="path" use="required" type="xs:string"/>
-        </xs:complexType>
-
-        <xs:complexType name="sizeType">
-            <xs:attribute name="value">
-                <xs:simpleType>
-                    <xs:restriction base="xs:string">
-                        <!-- XSD doesn't allow ^ or $ so ^[0-9]+[bkmgtp]?$ is invalid -->
-                        <xs:pattern value="[0-9]+[bkmgtp]"/>
-                    </xs:restriction>
-                </xs:simpleType>
-            </xs:attribute>
-        </xs:complexType>
-
-        <xs:complexType name="positiveIntType">
-            <xs:attribute name="value" use="required" type="xs:positiveInteger"/>
-        </xs:complexType>
-
-        <xs:complexType name="booleanValueType">
-            <xs:attribute name="value" use="required" type="xs:boolean"/>
         </xs:complexType>
 
         <xs:complexType name="propertiesType">
@@ -277,31 +208,20 @@ ejb30 subsystem is extended with a new top-level element access-logging, defined
                 </xs:documentation>
             </xs:annotation>
             <xs:choice minOccurs="1" maxOccurs="1">
-                <xs:element name="simple-formatter" type="simpleFormatterType" maxOccurs="1"/>
+                <xs:element name="pattern-formatter" type="patternFormatterType" maxOccurs="1"/>
                 <xs:element name="json-formatter" type="jsonFormatterType">
                 </xs:element>
             </xs:choice>
             <xs:attribute name="name" type="xs:string" use="required"/>
         </xs:complexType>
 
-        <xs:complexType name="accessLogFormatterType">
-            <xs:annotation>
-                <xs:documentation>
-                    Defines a formatter.
-                </xs:documentation>
-            </xs:annotation>
-            <xs:choice minOccurs="1" maxOccurs="1">
-                <xs:element name="pattern-formatter" type="simpleFormatterType" maxOccurs="1"/>
-                <xs:element name="named-formatter" type="namedFormatterType" maxOccurs="1"/>
-            </xs:choice>
-        </xs:complexType>
-
-        <xs:complexType name="simpleFormatterType">
+        <xs:complexType name="patternFormatterType">
             <xs:annotation>
                 <xs:documentation>
                     Defines a simple pattern formatter.
                 </xs:documentation>
             </xs:annotation>
+            <xs:attribute name="name" type="xs:string" use="required"/>
             <xs:attribute name="pattern" type="xs:string" use="required"/>
         </xs:complexType>
 
@@ -337,6 +257,7 @@ ejb30 subsystem is extended with a new top-level element access-logging, defined
                     </xs:annotation>
                 </xs:element>
             </xs:all>
+            <xs:attribute name="name" type="xs:string" use="required"/>
             <xs:attribute name="pattern" type="xs:string" use="required"/>
             <xs:attribute name="date-format" type="xs:string">
                 <xs:annotation>
@@ -361,6 +282,7 @@ ejb30 subsystem is extended with a new top-level element access-logging, defined
                 </xs:annotation>
             </xs:attribute>
         </xs:complexType>
+
 ----
 
 === Nice-to-Have Requirements
