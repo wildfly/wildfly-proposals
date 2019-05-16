@@ -1,0 +1,76 @@
+= JSON Formatted Access Logs
+:author:            James Perkins
+:email:             jperkins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently access logs can only be written as plain text. This plain text will be written to either a specific file or
+logged via the normal logging facilities. It's desirable for a log aggregator to accept formatted log messages. Using
+JSON seems to be the most common format.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-11031[WFLY-11031]
+* https://issues.jboss.org/browse/EAP7-1183[EAP7-1183]
+
+=== Related Issues
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:jstourac@redhat.com[Jan Stourac]
+
+=== Affected Projects or Components
+
+* WildFly
+** Undertow subsystem
+
+=== Other Interested Projects
+
+* OpenShift
+
+== Requirements
+
+=== Hard Requirements
+
+* The output must be well formed JSON.
+* The formatted message must be on a single line.
+* The output must be able to write to standard out. This is required for OpenShift.
+* A label of some sort, whether it's hard-coded or user defined, must be added to the output. This allows filtering
+  log messages of different types.
+
+=== Nice-to-Have Requirements
+
+* Allow the user to choose which attributes are added to the JSON.
+* The ability to add custom key/value (meta-data) pairs to the output.
+    ** This would be something like `{ "@version" : "1" }`
+
+=== Non-Requirements
+
+* Messages will only be written to `stdout` at this point.
+* Messages cannot go through a log manager. The message itself needs to be structured
+  which would not be the case if going through a log manager.
+* Messages written to the console for domain servers will not remove the
+  [server-name] prefix from standard out.
+
+== Implementation Plan
+
+The implementation will be done in WildFly and we should not need to do anything to Undertow itself.
+
+A new `setting` resource will be introduced. The resource will be
+`/subsystem=undertow/server=default-server/host=default-host/setting=console-access-log`. This allows
+no changes to the current access logging and allows the console access logging to be used independently
+from the file or standard logging access logging.
+
+== Test Plan
+
+Standard unit and integration tests will be used.
