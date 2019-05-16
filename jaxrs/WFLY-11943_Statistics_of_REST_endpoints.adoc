@@ -21,6 +21,7 @@ Collect and report runtime statistics on REST endpoints running in RESTEasy.
 === Related Issues
 
 * https://issues.jboss.org/browse/WFLY-11751[WFLY-11751]
+* https://issues.jboss.org/browse/WFLY-12091[WFLY-12091]
 
 === Dev Contacts
 
@@ -57,17 +58,17 @@ Collect and report runtime statistics on REST endpoints running in RESTEasy.
 * Report accumulated statistics when requested by Wildfly.
 * Reset endpoint statistics when instructed by Wildfly.
 * Stop data collection and clear accumumlated data when instructed by Wildfly.
-* Wildfly's subsystem attribute `statistics-enabled` will be used to start and stop statistics collection.  Default setting is false.  The default value can be declared to `true` in the Wildfly configuration file, jaxws subsystem element.
-* Wildfly's subsystem operation `read-resource` will display the statistics for each endpoint.
-* Wildfly's subsystem operation `reset` will reset collected statistics to zero.
+* Subsystem attribute `statistics-enabled` will be used to start and stop statistics collection.  Default setting is false.  The default value can be declared to `true` in the Wildfly configuration file, jaxws subsystem element.
+* Subsystem operation `read-resource` will display the statistics for each endpoint.
+* Subsystem operation `reset` will reset collected statistics to zero.
 * Application restart is NOT required when enabling, disabling and resetting statistics collection.
 * Statistics are NOT save on application restart.
 
 === Hard Requirements
 * Statistics provided
-** `invocation-cnt` - Total count of calls to endpoint
-** `failed-invocation-cnt` - Number of endpoint calls that failed
-** `avg-execution-time` - The average time in nanosec from the point of endpoint invocation to return.
+** `invocation-count` - Total count of calls to endpoint
+** `failed-invocation-count` - Number of endpoint calls that failed
+** `average-execution-time` - The average time in nanosec from the point of endpoint invocation to return.
 ** `total-execution-time` - The sum of time in nanosec for all endpoint method invocations.
 
 === Non-Requirements
@@ -76,3 +77,19 @@ Collect and report runtime statistics on REST endpoints running in RESTEasy.
 
 * This project is not responsible for the display of the data.  A report request will write the data into Wildfly's reference model for access by other components.
 
+== Test Plan
+One or more test case classes will be added to wildfly/testsuite/integration/basic.
+A test will be provided for each of the following.
+
+* Confirm subsystem attribute, statistics_enabled, can be read and written.
+* Confirm correct invocation-cnt returned on endpoint.
+* Confirm correct failure-cnt returned on endpoint.
+* Confirm statistics provided for each endpoint declared in a resource class.
+* Confirm statistics provided on all endpoints in an app with multiple resource classes.
+* Confirm statistics reset command works.
+
+Tests of this feature in HAL and CLI are not provided.
+
+== Community Documentation
+This feature uses the existing commands and attribute of wildfly metrics
+and thus does not need separate documentation.
