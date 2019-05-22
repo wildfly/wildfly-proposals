@@ -1,0 +1,71 @@
+= Support messaging clusters (Artemis Clusters) behind http load balancers
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          messaging,jms,load-balancer
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-11829
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/ENTMQBR-1001
+* https://issues.apache.org/jira/browse/ARTEMIS-1322
+* https://issues.apache.org/jira/browse/EAP7-704
+* https://issues.jboss.org/browse/EAP7-669
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:fmarchio@redhat.com[Francesco Marchioni]
+* mailto:pkremens@redhat.com[Petr Kremensky]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+[X] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+== Requirements
+
+* Add a boolean `use-topology-for-load-balancing` attribute, with a default value set to `true`, to
+- the https://wildscribe.github.io/WildFly/16.0/subsystem/messaging-activemq/connection-factory/[/subsystem=messaging-activemq/connection-factory resource]
+- the https://wildscribe.github.io/WildFly/16.0/subsystem/messaging-activemq/server/connection-factory[/subsystem=messaging-activemq/server=*/connection-factory resource]
+- the https://wildscribe.github.io/WildFly/16.0/subsystem/messaging-activemq/pooled-connection-factory/[/subsystem=messaging-activemq/pooled-connection-factory resource]
+- the https://wildscribe.github.io/WildFly/16.0/subsystem/messaging-activemq/server/pooled-connection-factory/[/subsystem=messaging-activemq/server=*/pooled-connection-factory resource]
+
+The load balancing happens on session creation not on messages. The HTTP Upgrade will be load-balanced then the connection will be reused for the full JMS session.
+Setting these attributes to false will change the behavior of the obtained connection factory. Instead of using the initial connector to obtain the cluster topology to connect to the cluster it will only use the initial connector for all its connections to the cluster.
+
+=== Hard Requirements
+
+N/A
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+== Test Plan
+
+== Community Documentation
+The feature will be documented in WildFly Admin Guide (in the Messaging Configuration section).
