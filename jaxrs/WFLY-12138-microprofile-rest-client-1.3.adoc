@@ -1,0 +1,53 @@
+= EAP7-1209 / WFLY-12138 Microprofile REST Client 1.3 support
+:author:            Alessio Soldano
+:email:             asoldano@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+This is about providing an implementation of the Microprofile REST Client 1.3.1 spec (https://github.com/eclipse/microprofile-rest-client/releases/tag/microprofile-rest-client-1.0).
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/WFLY-12138[WFLY-12138]
+* {issue-base-url}/EAP7-1209[EAP7-1209]
+
+=== Related Issues:
+
+* {issue-base-url}/RESTEASY-2257[RESTEASY-2257]
+
+=== Dev Contacts:
+
+* mailto:asoldano@redhat.com[Alessio Soldano]
+* mailto:rsigal@redhat.com[Ron Sigal]
+* mailto:bburke@redhat.com[Bill Burke]
+
+=== QE Contacts:
+
+* mailto:nziakova@redhat.com[Nikoleta Ziakova]
+
+=== Affected Projects or Components:
+
+* WildFly
+* RESTEasy
+
+== Requirements
+
+* RESTEasy provides an implementation of Microprofile REST Client 1.3.1.
+* Existing RESTEasy functionalities are not affected by the addition (except for MP tests enforcing old MP spec behaviors, if any)
+
+=== Test Plan
+
+Build and run RESTEasy testsuite, which pulls the TCK for MP REST Client 1.3.1 in a dedicated testsuite submodule.
+
+== Community Documentation
+
+Documentations should be coming as part of the RESTEasy component documentation.
+
