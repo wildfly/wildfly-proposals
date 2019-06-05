@@ -86,8 +86,8 @@ has some in-doubt transaction to finish. Server `B` responses that there is
 `subordinate-B`. Server `A` does have no record in the objet store
 thus commands the server `B` to roll-back it.
 
-It's important to say that record to object store is saved only after successful
-prepare (as phase of the two-phase commit procedure) happens.
+It's important to say that for Narayana JTA implementation the record is saved to object store
+after successful prepare (as phase of the two-phase commit procedure).
 
 NOTE: Information about unfinished (in-doubt) transactions
   is basically stored at three places - Narayana transaction object store
@@ -156,18 +156,6 @@ then let the pod to finish all the unfinished transactions and
 and then it can turn-off the pod. If he does not do so he can experience
 unfinished blocked transactions in database or JMS brokers.
 
-NOTE: The scela-down issues should be possible automatized with use of the
-  https://github.com/luksa/statefulset-scaledown-controller[StatefulSet Scale-Down Controller].
-  The usage of this is currently not expected to be in scope of thie feature
-  request. \+
-  The StatefulSet Scale-Down Controller is not the Kubernetes/OpenShift native
-  object but it's an extension provided to manage this kind of situation. It was
-  productized and is used by AMQ messaging system to migrate messages from the
-  orphaned pods. See
-  https://access.redhat.com/documentation/en-us/red_hat_amq/7.2/html/deploying_amq_broker_on_openshift_container_platform/journal-recovery-broker-ocp[Red Hat AMQ Broker documentation]
-  and the Jira related to this functionality is
-  https://issues.jboss.org/browse/ENTMQBR-1859[ENTMQBR-1859].
-
 If we take the individual issues this setup is about to solve them.
 
 * _Storage volatility_ is about to be solved by the fact that `StatefulSet`
@@ -184,10 +172,21 @@ If we take the individual issues this setup is about to solve them.
   or uses the proper load balancing capability if Stateless beans are called. +
   When a new EAP instances are started then EJB remoting client is capable to gather
   new cluster topology and works based on the new setup.
-* _Scale-down object store orphanage_ is about to be solved by
-  manual user intervation. He can't let the pod being removed from the service
-  until time all the transactions are processed. Hopefully the functionality
-  of the graceful shutdown that JBoss EAP provides could be used here.
+* _Scale-down object store orphanage_ issues is possible to be automatized with use of the
+  https://github.com/luksa/statefulset-scaledown-controller[StatefulSet Scale-Down Controller].
+  The StatefulSet Scale-Down Controller is not the Kubernetes/OpenShift native
+  object but it's an extension provided to manage this kind of situation.
+  The scale down controller is a standalone 'Kubernetes object'
+  which needs to be separatelly deployed, it hooks to the Kubernetes API
+  and is capable to drive `StatefulSet` during scaledown.
+  The main issue of the controller is that is a deprecated solution
+  (even the
+  https://access.redhat.com/documentation/en-us/red_hat_amq/7.2/html/deploying_amq_broker_on_openshift_container_platform/journal-recovery-broker-ocp[Red Hat AMQ Broker used it]
+  (see Jira https://issues.jboss.org/browse/ENTMQBR-1859[ENTMQBR-1859]).
+  But they already stopped to do so.\+
+  For scale-down handling we should create a operator which will basically
+  provide the same functionality as the controller - it hooks up to the Kubernetes API
+  and it will watch to scale down actions on the `StatefulSet`.
 
 === Known related issues
 
@@ -203,14 +202,13 @@ For the issues of the subordinate transactions which was fixed recently
 there is https://issues.jboss.org/browse/WFTC-52[WFTC-52] which was causing
 OOM on the remote side when EJB remoting with transactions was used.
 
-==== Design details
+The other relate WFTC issue is issue https://issues.jboss.org/browse/WFTC-52[WFTC-63]
+that should bring a way to store WFTC records in JDBC storage.
 
-The current proposal works with notion of the file system store to be used.
-That's where we use the StatefulSet and expect it provides us the stable file system storage.
-The JBDC storage is not covered as part of this analysis.
-The transaction manager is capable to store transaction into database (JDBC object store)
-but the WildFly Transaction Client stores data only on filesystem so far.
-This should be considered as a new feature request.
+Then there are few minor WFTC issues about records storage as
+https://issues.jboss.org/browse/WFLY-12031[WFLY-12031] and
+https://issues.jboss.org/browse/WFTC-64[WFTC-64].
+
 
 == Issue Metadata
 
@@ -226,7 +224,9 @@ This should be considered as a new feature request.
 * https://issues.jboss.org/browse/WFTC-52[WFTC-52]
 * https://issues.jboss.org/browse/CLOUD-2261[CLOUD-2261]
 * https://issues.jboss.org/browse/CLOUD-2542[CLOUD-2542]
-
+* https://issues.jboss.org/browse/WFTC-52[WFTC-63]
+* https://issues.jboss.org/browse/WFLY-12031[WFLY-12031]
+* https://issues.jboss.org/browse/WFTC-64[WFTC-64]
 
 === Dev Contacts
 
@@ -264,29 +264,28 @@ This should be considered as a new feature request.
 * transactions should recover properly if the transaction is interrupted
 * users would create the applications using provided template, which would hide the complexity associated with operation in cloud
 * users would be able to configure connections between applications by configuring remoting subsystem in 'standalone-openshift.xml'
-
+* scale-down of number of replicas in StatefulSet
 
 === Nice-to-Have Requirements
-* scale-down of number of replicas in StatefulSet - this is planed to be introduced as en extension after the core functionality is implemented and tested
 * users would be able to configure connections between applications programmatically
-* auto-generate 'standalone-openshift.xml' during the config - this is planed to be introduced as en extension after the core functionality is implemented and teste
+* auto-generate 'standalone-openshift.xml' during the config - this is planed to be introduced as en extension after the core functionality is implemented and tested
+* Use of the JDBC storage for the object store. It's expected the filesystem object store is used.
 
 === Non-Requirements
 
-* Use of the JDBC storage for the object store. It's expected the filesystem object store is used.
-* Automatic scale down. It's expected the user will do manual intervention to manage the scale-down scenario.
+* communication amongs older versions of the server (like EAP 6.4 to EAP 7.3, vice versa and similar). This is a RFE - a new feature - and is concentrated to the new version EAP when released.
 
 == Developer Resources
 
 * https://docs.google.com/document/d/1BbkjjCPWea7hQJgYPRRIvPKFpGyQPfAm4rBBFj4Eijg/edit?usp=sharing[Distributed transaction support in OpenShift]
 
-//== Implementation Plan
-////
-Delete if not needed. The intent is if you have a complex feature which can
-not be delivered all in one go to suggest the strategy. If your feature falls
-into this category, please mention the Release Coordinators on the pull
-request so they are aware.
-////
+== Implementation Plan
+
+* consider, verify and fix all issues regarding of the OpenShift deployment of JBoss EAP with StatefulSet while the clustered applications communicate via ejb remoting
+** there will be a OpenShift template and setup for `standalone-openshift.xml` to define `remote-outbound-connection` between EAP servers to run ejb remotion over it
+** transaction propagation and recovery functionality needs to be verified
+* investigate, cosider and provide fixes for usage of the programmatic lookup (and not only the remote-outbound-connection setup)
+* implementation of the automatic scale-down functionality with use of operator (preferrably) or standalone controller
 
 == Test Plan
 
