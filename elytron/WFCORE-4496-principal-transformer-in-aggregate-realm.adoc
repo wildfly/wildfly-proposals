@@ -1,0 +1,75 @@
+= [WFCORE-4496] Adding principal-transformer in aggregate-realm
+:author:            Ashley Abdel-Sayed
+:email:             aabdelsa@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+Elytron currently has an aggregate security realm which is a combination of two or more realms: an authentication realm
+and one or more authorization realms. Currently, the principal undergoes transformations before being used to load the
+aggregate identity, but there is no way to transform the principal in between loading the authentication identity and
+loading the authorization identity. This would be needed in the case where the principal stored in the authentication realm
+is different than the principal stored in the authorization realm(s).
+
+This enhancement would allow transformations to be applied to the principal after loading the authentication identity
+and before loading the authorization identity. The principal-transformer attribute will be added to aggregate-realm and
+would be a reference to a transformer defined in the mappers configuration. It will be an optional attribute.
+
+** Example configuration:
+
+```
+   /subsystem=elytron/aggregate-realm=AggregateRealm:add(authentication-realm=KeyStoreRealm,authorization-realm=ApplicationRealm,principal-transformer=myCustomTransformer)
+```
+
+== Issue Metadata
+
+=== Issue
+* https://issues.jboss.org/browse/WFCORE-4496[WFCORE-4496]
+
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-12202[WFLY-12202]
+* https://issues.jboss.org/browse/ELY-1829[ELY-1829]
+* https://issues.jboss.org/browse/EAP7-1220[EAP7-1220]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+* mailto:vmarek@redhat.com[Vratislav Marek]
+
+=== Testing By
+[ ] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+* WildFly, Security, WildFly-Core, Elytron
+
+=== Other Interested Projects
+
+== Requirements 
+
+=== Hard Requirements
+
+* It should be possible to configure an ```aggregate-realm``` with the optional attribute ```principal-transformer``` which
+will define transformations to the principal after the authentication identity is obtained but before the authorization
+identity is obtained. This principal transformer will be a reference to a ```principal-transformer``` that has been defined
+in the ```mappers``` configuration in the Elytron subsystem.
+
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+Subsystem parsing and transformer tests will be added. Tests will also be added to the Elytron testsuite and the Elytron
+subsystem tests to ensure that the principal is correctly transformed after authentication and before authorization.
+
+== Community Documentation
+Documentation will be added in the "Aggregate Security Realm" section under elytron/components in the WildFly documentation to indicate that a
+principal transformer can be used between authentication and authorization for ```aggregate-realm```
