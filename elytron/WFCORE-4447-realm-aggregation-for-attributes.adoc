@@ -59,6 +59,8 @@ The architecture presently in use places the implementation of components within
 
 If possible it will be preferable to make use of an existing resource within the Elytron subsystem such as the `aggregate-realm` resource instead of adding a new resource specifically for attribute aggregation.
 
+Where adapting an existing resource if a configuration is defined that could be represented using the existing resource i.e. a single `authentication-realm` with a single `authorization-realm` the transformers should be updated to transform the resource to the original definition instead of defaulting to rejecting the use of any new attributes outright.
+
 === Non-Requirements
 
 The intention is to keep the scope of this enhancement simple, the enhancement will only offer a single merge strategy of taking the first definition of each attribute.  If multiple aggregated realms all return values for the same attribute only the first instance will be used.
