@@ -11,6 +11,23 @@
 
 Collect and report runtime statistics on REST endpoints running in RESTEasy.
 
+=== Project Scope
+
+Statistics reporting by Wildfly components (e.g. clustering, connector, ejb3, undertow)
+has existed from before Wildfly 7.0.0.Final.  The earliest introduction of this
+feature into Wildfly has not been found.  The feature defines XML attribute,
+`statistics-enabled` used in subsystem definitions to declare the default setting
+for data collection, and it is used in the CLI to turn on and off data collection,
+This feature also provides command `reset-statistics` to clear collected data and start a new.
+This RFE is adding component jaxrs to the set of reporting components using this feature.
+
+This RFE will not use or replace undertow's statistics data.  Endpoint data from
+within RESTeasy is reported.
+
+=== Not Project Scope
+
+This RFE is NOT related to Eclipse MicroProfile Metrics nor to the microprofile-metrics-smallrye.
+
 == Issue Metadata
 
 === Issue
