@@ -57,7 +57,9 @@ The CRD will allow the user to:
 
 * Specify the name an application image that incorporates a WildFly server and an deployment that will be deployed by that server.
 ** The name can include either a fixed or floating tag.
-** The application image is built on top of the https://www.github.com/jboss-dockerfiles/wildfly[WildFly Docker image]
+** Application images must be built on top of [WildFly S2I](https://github.com/wildfly/wildfly-s2i) starting with WildFly 17.
+** The Operator should be able to manage operatios built with the [legacy WildFly S2I for WildFly 16](https://github.com/openshift-s2i/s2i-wildfly)
+** Application images built on top of older WildFly versions are not supported.
 * Specify the desired number of replicas of that image
 * Specify an optional ConfigMap where the WildFly standalone configuration can be read from.
 * Specify whether the replicas are intended to form a High Availability cluster (default is true).
@@ -65,7 +67,7 @@ The CRD will allow the user to:
   * it must define a `PersistentVolumeClaim` if it requires persistent storage.
   * otherwise a `EmptyDir` wil be associated to the container (without persistence)
 * Specify information for interfaces for which a Service and Route should be established
-** expose http port (8080) by default with an option to disable that
+** expose http port (8080) by default
 * Specify information for interfaces for which a headless service should be established.
 
 ### Operator requirements
