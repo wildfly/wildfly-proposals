@@ -1,0 +1,60 @@
+= WFLY-12192 / EAP7-1248 Support for java.util.Optional on PathParam and QueryParam
+:author:            Wei Nan Li
+:email:             weli@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+Currently, `PathParam` and `QueryParam` support the following construct (from https://docs.jboss.org/resteasy/docs/3.0.17.Final/userguide/html_single/#_PathParam):
+
+> The parameter type you inject into can be any primitive type, a String, or any Java object that has a constructor that takes a String parameter, or a static `valueOf` method that takes a String as a parameter.
+
+This proposal is to support `java.util.Optional.ofNullable` as a wrapper object for Strings, which is always called. This will eliminate all null checks for optional parameters in resource classes with the different Optional followup methods, such as optional.ifPresent.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/EAP7-1248[EAP7-1248]
+* {issue-base-url}/WFLY-12192[WFLY-12192]
+
+=== Related Issues:
+
+* {issue-base-url}/RESTEASY-1419[RESTEASY-1419]
+
+=== Dev Contacts:
+
+* mailto:weli@redhat.com[Wei Nan Li]
+* mailto:rsigal@redhat.com[Ron Sigal]
+* mailto:asoldano@redhat.com[Alessio Soldano]
+* mailto:ema@redhat.com[Jim Ma]
+* mailto:rsearls@redhat.com[Rebecca Searls]
+
+=== QE Contacts:
+
+* mailto:rsvoboda@redhat.com[Rostislav Svoboda]
+* mailto:kanovotn@redhat.com[Katerina Novotna]
+* mailto:mkopecky@redhat.com[Marek Kopecky]
+
+=== Affected Projects or Components:
+
+* WildFly
+* RESTEasy
+
+== Requirements
+
+The behavior described in the first section is expected.
+
+=== Test Plan
+
+The feature is already extensively tested in RESTEasy testsuite, so that should be run against relevant WildFly version.
+
+=== Community Documentation
+
+N/A
+
