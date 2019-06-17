@@ -1,0 +1,52 @@
+= [WFLY-12189] Add MicroProfile Config TCK to the WildFly integration test suite
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:keywords:          microprofile,config,openshift
+
+== Overview
+
+Full support for Eclipse MicroProfile Config for applications deployed in WildFly requires to test that WildFly passes the MicroProfile Config TCK.
+
+This RFE covers inclusion of the MicroProfile Config TCK in WildFly integration test suite.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-12189[WFLY-12189]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1210[EAP7-1210] - Transition Eclipse MicroProfile Config to the latest supported version by Thorntail
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:mjurc@redhat.com[Michal Jurč]
+
+=== Affected Projects or Components
+
+The MicroProfile Config TCK will be run as submodule of the existing https://github.com/wildfly/wildfly/tree/master/testsuite/integration/microprofile-tck[`microprofile-tck` module of WildFly integration testsuite].
+
+== Requirements
+
+* Run the Eclipse MicroProfile Config TCK without failures
+
+== Implementation Plan
+
+* Add a `config` children module to the `microprofile-tck` module with setup and configuration to https://github.com/eclipse/microprofile-config/blob/master/tck/running_the_tck.asciidoc[run the MicroProfile Config TCK].
+
+== Test Plan
+
+* Run the `microprofile-tck/config` module from WildFly integration test suite and checks that there are no failures.
+
+== Community Documentation
+
+No community documentation is required to setup and run the MicroProfile Config TCK in WildFly
