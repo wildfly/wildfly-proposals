@@ -1,0 +1,112 @@
+= Global EJB Client Side Interceptors Configuration
+:email:             tomasz.adamski@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+The goal of this issue is to implement client side EJB interceptors that can be configured system-wide through ejb3 subsystem configuration.
+
+=== Issue
+* https://issues.jboss.org/browse/WFLY-6144
+
+=== Dev Contacts
+
+* mailto:tadamski@redhat.com
+
+=== QE Contacts
+
+=== Testing By
+[ ] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+EJB
+
+== Requirements
+* Interceptors are implemented and packed inside the custom modules
+* Interceptors should be configured in the subsystem configuration and not in deployments
+* Interceptors conform to jboss-ejb-client interceptor API
+
+== Solution draft
+
+=== Subystem XML
+EJB3 subsystem is extended with <client-interceptors> tag containing a number of <interceptor> children tags. <interceptor> tags contains attributes for the module and the class of the interceptor. Sample XML fragment:
+
+[source,xml]
+----
+<client-interceptors>
+	<interceptor module="org.abccorp:tracing-interceptors:1.0" class="org.abccorp.TracingInterceptor"/>
+	<interceptor module="org.abccorp:timers-interceptors:1.1" class="org.abccorp.TimerInterceptors"/>
+</client-interceptors>
+----
+
+=== Management model
+The management model is as follows: client interceptors are represented as object list attribute of ejb3 subystem. Each object in the list contains two fields:
+
+* module: the name of the module in which the interceptor is implemented
+* class: the interceptor class
+
+DMR model:
+
+[source]
+----
+[standalone@localhost:9990 subsystem=ejb3] :read-attribute(name=client-interceptors)
+{
+    "outcome" => "success",
+    "result" => [
+        {
+            "module" => "test",
+            "class" => "org.testsuite.ejb.clientinterceptor.TestClientInterceptor"
+        },
+        {
+            "module" => "my-interceptors",
+            "class" => "org.mycompany.interceptors.CoolInterceptor"
+        }
+    ]
+}
+----
+
+Any change to client-interceptors attribute should move server to the reload-required state.
+
+=== Interceptor class
+* Interceptors implement org.jboss.ejb.client.EJBClientInterceptor interface
+
+Sample client-interceptor class:
+
+[source:java]
+----
+package org.jboss.as.test.multinode.interceptor;
+
+import org.jboss.ejb.client.EJBClientInterceptor;
+import org.jboss.ejb.client.EJBClientInvocationContext;
+
+public class ClientInterceptor implements EJBClientInterceptor {
+
+    @Override
+    public void handleInvocation(EJBClientInvocationContext context) throws Exception {
+        context.sendRequest();
+    }
+
+    @Override
+    public Object handleInvocationResult(EJBClientInvocationContext context) throws Exception {
+        return context.getResult();
+    }
+}
+----
+
+=== Interceptor module
+Client interceptor classes should be located in a module and place in $JBOSS_HOME/modules directory.
+
+
+== Draft implementation
+
+The draft implementation of client-interceptors is already done and works: https://github.com/tadamski/wildfly/tree/WFLY-6144.
+
+
+== Test Plan
+
+== Community Documentation
+Part of the PR.
