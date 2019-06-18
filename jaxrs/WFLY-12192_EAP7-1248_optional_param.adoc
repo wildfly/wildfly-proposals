@@ -37,9 +37,13 @@ This proposal is to support `java.util.Optional.ofNullable` as a wrapper object 
 
 === QE Contacts:
 
-* mailto:rsvoboda@redhat.com[Rostislav Svoboda]
-* mailto:kanovotn@redhat.com[Katerina Novotna]
-* mailto:mkopecky@redhat.com[Marek Kopecky]
+* mailto:vmarek@redhat.com[Vratislav Marek]
+
+=== Testing By
+
+[X] Engineering
+
+[] QE
 
 === Affected Projects or Components:
 
@@ -56,5 +60,5 @@ The feature is already extensively tested in RESTEasy testsuite, so that should 
 
 === Community Documentation
 
-N/A
+Documentation should be coming as part of the RESTEasy component documentation.
 
