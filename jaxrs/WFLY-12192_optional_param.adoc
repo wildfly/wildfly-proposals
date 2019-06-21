@@ -20,11 +20,11 @@ This proposal is to support `java.util.Optional.ofNullable` as a wrapper object 
 
 === Issue:
 
-* {issue-base-url}/EAP7-1248[EAP7-1248]
 * {issue-base-url}/WFLY-12192[WFLY-12192]
 
 === Related Issues:
 
+* {issue-base-url}/EAP7-1248[EAP7-1248]
 * {issue-base-url}/RESTEASY-1419[RESTEASY-1419]
 
 === Dev Contacts:
