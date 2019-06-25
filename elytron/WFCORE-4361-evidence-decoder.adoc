@@ -129,6 +129,10 @@ certificate chain, as an `X500Principal`. Example configuration:
 </mappers>
 ----
 
+* It should be possible to configure a `custom-evidence-decoder` in the `mappers` configuration in the Elytron
+subsystem in order to make use of a custom `EvidenceDecoder` implementation. This will have the same attributes
+as any other Elytron custom component.
+
 * It should be possible to configure an `aggregate-evidence-decoder` in the `mappers` configuration in the Elytron subsystem.
 This will consist of two or more `evidence-decoder` elements where each element will contain a reference to a configured
 evidence decoder. Given evidence, these evidence decoders will be attempted in order until one returns a non-null principal
