@@ -1,0 +1,123 @@
+= OCSP certificate revocation
+:author:            Martin Mazanek
+:email:             mmazanek@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-3947[WFCORE-3947]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/ELY-1617[ELY-1617]
+
+=== Dev Contacts
+
+* mailto:mmazanek@redhat.com[Martin Mazanek]
+
+=== QE Contacts
+
+* mailto:jstourac@redhat.com[Jan Stourac]
+
+=== Affected Projects or Components
+
+* Security
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* New class X509RevocationTrustManager
+* Configurable certificate revocation using OCSP. This will be implemented using PKIXRevocationChecker.
+* Configuration will be done using Builder class and will include:
+** Current configuration in X509CRLExtendedTrustManager
+** OCSP Responder URI for overriding default, where the default is retrieved from AIA extension (RFC5280) or from `ocsp.responderURL` security property
+** Default revocation mechanism (OCSP/CRL) in a form of prefer-crls (by default OCSP if preferred)
+** Fallback behaviour - cases for unavailable CRL / OCSP responder services
+** Checking of leaf certificates only
+* Deprecating X509CRLExtendedTrustManager, both mechanisms will share one class for fallback purposes and easier configuration
+
+Current subsystem CRL configuration:
+
+```xml
+<trust-manager name="trust-with-ocsp-crl" algorithm="PKIX" key-store="ElytronCaTruststore">
+    <certificate-revocation-list path="crl.pem" maximum-cert-path="2"/>
+</trust-manager>
+```
+
+Proposed subsystem configuration:
+
+```xml
+<trust-manager name="trust-with-ocsp-crl" algorithm="PKIX" key-store="ElytronCaTruststore" soft-fail="true" only-leaf-cert="true" maximum-cert-path="2">
+    <certificate-revocation-list path="crl.pem"/>
+    <ocsp responder="responderUri" prefer-crls="true" responder-certificate="certalias" responder-keystore="responder-store"/>
+</trust-manager>
+```
+
+
+New subsystem configuration elements:
+
+ * `trust-manager` elements:
+ ** `soft-fail` can pass certificates, where revocation status could not be obtained due to network or internal responder error. This is optional false by default.
+ ** `only-leaf-cert` will check revocation status of only the leaf certificate. This is optional and false by default.
+ ** `maximum-cert-path` moved from `certificate-revocation-list` to `trust-manager`, as this can be used by OCSP without CRL configured.
+ * `ocsp` element:
+ ** `responder` this overrides OCSP Responder URI resolved from certificate.
+ ** `prefer-crls` when both OCSP and CRL is configured, OCSP will be executed first by default. When `prefer-crls` is true, CRL will be checked first instead.
+ ** `responder-keystore` alternative keystore for responder certificate. `responder-certificate` must be defined.
+ ** `responder-certificate` alias for responder certificate located int `responder-keystore` or `trust-manager` keystore if responder-keystore is not defined
+Order of revocation mechanisms (if both are defined) will be based on attribute of `ocsp` - `prefer-crls`, defaults to false (OCSP prioritized by default).
+
+Other configuration is done using security properties of elytron subsystem, see: https://docs.oracle.com/javase/8/docs/technotes/guides/security/certpath/CertPathProgGuide.html#AppC
+
+
+==== Elytron client configuration
+
+Current elytron-client configuration:
+
+```xml
+<ssl-context name="ssl-crl-context">
+    <trust-store key-store-name="ca"/>
+    <certificate-revocation-list path="crl.pem" maximum-cert-path=4/>
+</ssl-context>
+```
+
+
+Proposed elytron-client configuration:
+
+```xml
+<ssl-context name="ssl-crl-context">
+    <trust-store key-store-name="ca"/>
+    <trust-manager algorithm="PKIX" maximum-cert-path=4 soft-fail="true" only-leaf-cert="true"/>
+    <certificate-revocation-list path="crl.pem"/>
+    <ocsp responder="responderUri" prefer-crls="true" responder-certificate="certalias" responder-keystore="responder-store"/>
+</ssl-context>
+```
+
+
+
+Note: This RFE does not officially support OCSP stamping, but as the stamping support released with JDK9 http://openjdk.java.net/jeps/249[JEP249] is configured using Security and System properties, it will
+be possible to configure and use it. Issues related to OCSP stamping will likely have another RFE with tests and more documentation.
+
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+* OCSP tests in Elytron using mock OCSP Responder
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
