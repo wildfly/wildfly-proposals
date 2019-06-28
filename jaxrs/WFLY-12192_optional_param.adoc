@@ -1,4 +1,4 @@
-= WFLY-12192 / EAP7-1248 Support for java.util.Optional on PathParam and QueryParam
+= WFLY-12192 Add support for injecting Optional<T> parameter types
 :author:            Wei Nan Li
 :email:             weli@redhat.com
 :toc:               left
