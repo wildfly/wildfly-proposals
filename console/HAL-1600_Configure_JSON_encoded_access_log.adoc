@@ -1,0 +1,93 @@
+= Expose ability to configure the JSON encoded access logs
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+Provide a way to configure the recently added resource `/subsystem=undertow/server=foo/host=bar/setting=console-access-log`.
+
+Currently undertow hosts are configured as part of the undertow server application. To open the application, the user has to select an undertow server and click on "View":
+
+Congiguration &rarr; Subsystem = Web &rarr; Settings = Server &rarr; Server = default-server
+
+In the server application screen, the user then selects "Hosts" in the left hand side navigation and finally selects the host in the table at the top. Host configuration follows the typical master-detail pattern with the attributes of the selected host showing up at the bottom (seperated across several tabs). This gives limited space for host configuration. With the addition of the `console-access-log` resource this becomes an issue.
+
+Therefore this RFE is also about an UI refactoring of the host configuration. Hosts will be moved to its own finder column. When selecting an undertow server in the finder, a new column will be appended which manages the hosts of this server. Adding hosts will be done using column actions. To configure the host, the user will select the host and press "View".
+
+The new host application screen will have its own left hand side navigation:
+
+- Attributes
+- Access Log
+- Console Access Log
+- HTTP Invoker
+- Single Sign On
+- Filters
+- Local Cache
+
+The 'Console Access Log' item will include the configuration for the `console-access-log` resource. It will have two tabs:
+
+1. Attributes: Manages the follwing attributes:
+    - `include-host-name`
+    - `metadata`
+    - `predicate`
+    - `worker`
+2. Directives: Manages the attribute `attributes`
+
+The `attributes` attribute is a complex attribute containing nested objects with similar structure. It controls the output of the JSON log. Most of the nested objects only contain one attribute: `key`. This is the name / key in the JSON output. This attribute usualy has a default value and can be customized. Some nested objects have additional attributes to give more control about the JSON output.
+
+The UI for the directives will be a dynamic form where the user can add and remove directives. The form will follow the normal view-edit-save pattern used all across the console. In view mode the form will show the configured directives and their values. If the user switches to edit mode, he can modify existing directives, add new directives and remove existing directives.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1600[HAL-1600]
+* {issue-base-url}/EAP7-1289[EAP7-1289]
+
+=== Related Issues
+
+* {issue-base-url}/EAP7-1183[EAP7-1183]
+* {issue-base-url}/WFLY-11031[WFLY-11031]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:jstourac@redhat.com[Jan Stourac]
+
+=== Testing By
+    
+[x] Engineering
+    
+[ ] QE
+
+Please note that this includes also rewriting existing tests for hosts defined in the undertow subsystem. Since hosts now have their own finder column existing tests are expected to break and need to be adjusted to the new UI.
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+1. Refactor the UI to configure undertyow hosts: Move the UI from the server application screen to its own finder column.
+2. Provide an UI to configure the `console-access-log` resource.
+
+== Nice-to-Have Requirements
+
+Provide a preview feature of the JSON output with dummy / random data.
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
