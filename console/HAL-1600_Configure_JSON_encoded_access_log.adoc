@@ -36,11 +36,11 @@ The 'Console Access Log' item will include the configuration for the `console-ac
     - `metadata`
     - `predicate`
     - `worker`
-2. Directives: Manages the attribute `attributes`
+2. Keys: Manages the attribute `attributes`
 
 The `attributes` attribute is a complex attribute containing nested objects with similar structure. It controls the output of the JSON log. Most of the nested objects only contain one attribute: `key`. This is the name / key in the JSON output. This attribute usualy has a default value and can be customized. Some nested objects have additional attributes to give more control about the JSON output.
 
-The UI for the directives will be a dynamic form where the user can add and remove directives. The form will follow the normal view-edit-save pattern used all across the console. In view mode the form will show the configured directives and their values. If the user switches to edit mode, he can modify existing directives, add new directives and remove existing directives.
+The UI for the keys will be a dynamic form where the user can add and remove keys. The form will follow the normal view-edit-save pattern used all across the console. In view mode the form will show the configured keys and their values. If the user switches to edit mode, he can modify existing keys, add new keys and remove existing keys.
 
 == Issue Metadata
 
