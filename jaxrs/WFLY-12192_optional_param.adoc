@@ -10,11 +10,11 @@
 
 == Overview
 
-Currently, `PathParam` and `QueryParam` support the following construct (from https://docs.jboss.org/resteasy/docs/3.0.17.Final/userguide/html_single/#_PathParam):
+Currently, The parameter type supports the following construct (from https://docs.jboss.org/resteasy/docs/3.0.17.Final/userguide/html_single/#_PathParam):
 
 > The parameter type you inject into can be any primitive type, a String, or any Java object that has a constructor that takes a String parameter, or a static `valueOf` method that takes a String as a parameter.
 
-This proposal is to support `java.util.Optional.ofNullable` as a wrapper object for Strings, which is always called. This will eliminate all null checks for optional parameters in resource classes with the different Optional followup methods, such as optional.ifPresent.
+This proposal is to support `java.util.Optional.ofNullable` as a wrapper object for Strings, which is always called. This will eliminate all null checks for optional parameters in resource classes with the different `Optional` followup methods, such as `optional.ifPresent`.
 
 == Issue Metadata
 
