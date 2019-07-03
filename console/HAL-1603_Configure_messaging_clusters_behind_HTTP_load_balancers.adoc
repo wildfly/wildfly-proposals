@@ -1,0 +1,61 @@
+= Customise Browser Title
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+* Expose attribute `use-topology-for-load-balancing` for various message resources.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1603[HAL-1603]
+* {issue-base-url}/EAP7-1293[EAP7-1293]
+
+=== Related Issues
+
+* {issue-base-url}/WFLY-11829[WFLY-11829]
+* {issue-base-url}/EAP7-704[EAP7-704]
+* {issue-base-url}/EAP7-669[EAP7-669]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:tradej@redhat.com[Tomas Radej]
+
+=== Testing By
+    
+[x] Engineering
+    
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+* Expose the boolean `use-topology-for-load-balancing` attribute for the following resources:
+
+- `/subsystem=messaging-activemq/connection-factory=*`
+- `/subsystem=messaging-activemq/pooled-connection-factory=*`
+- `/subsystem=messaging-activemq/server=*/connection-factory=*`
+- `/subsystem=messaging-activemq/server=*/pooled-connection-factory=*`
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
