@@ -42,6 +42,45 @@ The `attributes` attribute is a complex attribute containing nested objects with
 
 The UI for the keys will be a dynamic form where the user can add and remove keys. The form will follow the normal view-edit-save pattern used all across the console. In view mode the form will show the configured keys and their values. If the user switches to edit mode, he can modify existing keys, add new keys and remove existing keys.
 
+This is the list the nested objects for attribute `attributes`. If not specified each nested object has an attribute `key`.
+
+```
+authentication-type
+bytes-sent
+date-time -> {key, date-format, time-zone}
+host-and-port
+local-ip
+local-port
+local-server-name
+path-parameter -> {key-prefix, names[]}
+predicate -> {key-prefix, names[]}
+query-parameter -> {key-prefix, names[]}
+query-string -> {key, include-question-mark}
+relative-path
+remote-host
+remote-ip -> {key, obfuscated}
+remote-user
+request-header -> {key-prefix, names[]}
+request-line
+request-method
+request-path
+request-protocol
+request-scheme
+request-url
+resolved-path
+response-code
+response-header -> {key-prefix, names[]}
+response-reason-phrase
+response-time -> {key, time-unit = "NANOSECONDS | MICROSECONDS | MILLISECONDS | SECONDS"}
+secure-exchange
+ssl-cipher
+ssl-client-cert
+ssl-session-id
+stored-response
+thread-name
+transport-protocol
+```
+
 == Issue Metadata
 
 === Issue
