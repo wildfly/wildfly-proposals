@@ -1,0 +1,58 @@
+= Make journal-file-open-timeout Attribute Configurable for Messaging Server Resource
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+ActiveMQ Artemis stores information about messages in journal files. Journal files are append-only and are pre-created with defined fixed size. A new journal file can be created when all of the space in an existing journal is used. Eventually, when data in a given journal file are no longer needed, the file is reclaimed and reused.
+
+Since versions 1.6.0 and 2.2.0 (see ARTEMIS-1237), Artemis allows to configure a timeout for opening journal files (previously the timeout was hardcoded to 5 seconds). This timeout needs to be configurable from Wildfly.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1604[HAL-1604]
+* {issue-base-url}/EAP7-1295[EAP7-1295]
+
+=== Related Issues
+
+* {issue-base-url}/WFLY-11404[WFLY-11404]
+* {issue-base-url}/EAP7-1165[EAP7-1165]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:vobratil@redhat.com[Vilém Obrátil]
+
+=== Testing By
+    
+[x] Engineering
+    
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+- Expose the new attribute `journal-file-open-timeout` of resource `/subsystem=messaging-activemq/server=*`. The new attribute will be available in "Configuration &rarr; Subsystems / Subsystem &rarr; Messaging / Category &rarr; Server / Server &rarr; default", section "Configuration", tab "Journal".
+"
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
