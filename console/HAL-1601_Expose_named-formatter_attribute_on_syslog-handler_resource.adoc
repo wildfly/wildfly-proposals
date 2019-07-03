@@ -1,0 +1,55 @@
+= Expose named-formatter Attribute on the syslog-handler Resource
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+Expose the new `named-formatter` attribute to the `/subsystem=logging/syslog-handler=*` resource.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1601[HAL-1601]
+* {issue-base-url}/EAP7-1291[EAP7-1291]
+
+=== Related Issues
+
+* {issue-base-url}/WFCORE-4332[WFCORE-4332]
+* {issue-base-url}/EAP7-1195[EAP7-1195]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:jkasik@redhat.com[Jan Kasik]
+
+=== Testing By
+    
+[x] Engineering
+    
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+* Include new `named-formatter` attribute for `/subsystem=logging/syslog-handler=*` resource.
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
