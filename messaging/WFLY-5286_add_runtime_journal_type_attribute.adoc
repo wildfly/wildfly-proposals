@@ -1,0 +1,81 @@
+= Provide CLI operation which returns used journal type -NIOxASYNCIO.
+:author:            Emmanuel hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:          messaging,jms
+:idseparator:       -
+
+== Overview
+
+When configuring the use of ASYNCIO for journal persistence, the Artemis server may fall back to NIO if the libaio binaries are not located. This state is not displayed to the user so he doesn't know the effective journal type that is used.
+Adding a new `runtime-journal-type` attribute to read the effective journal type.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-5286[WFLY-5286]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-850[EAP7-850]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:tterem@redhat.com[Tomas Terem]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+[X] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* Wildfly
+* ActiveMQ Artemis (finished)
+
+=== Other Interested Projects
+
+== Requirements
+
+* Add a new `runtime-journal-type`read-only attribute to the https://wildscribe.github.io/WildFly/17.0/subsystem/messaging-activemq/server/[/subsystem=messaging-activemq/server resource] to obtain the effective journal type.
+The authorized values are 
+* *NONE*: persistence disabled
+* *NIO*: Java NIO used
+* *ASYNCIO*: AsyncIO used with libaio
+* *DATABASE*: JDBC persistence
+
+
+CLI to read the attribute:
+----
+/subsystem=messaging-activemq/server=default:read-attribute(name=runtime-journal-type)
+----
+
+=== Hard Requirements
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can
+not be delivered all in one go to suggest the strategy. If your feature falls
+into this category, please mention the Release Coordinators on the pull
+request so they are aware.
+////
+== Test Plan
+
+* Changes in Wildfly management model will be covered in WF testsuite.
+* Checking the effective value on fall back will be tested in WF testsuite.
+
+== Community Documentation
+
+* Covered by attribute description in management model.
