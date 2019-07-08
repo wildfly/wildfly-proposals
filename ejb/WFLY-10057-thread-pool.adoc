@@ -1,0 +1,120 @@
+= EJB subsystem configure max threads and core threads independently
+:author:            Cheng Fang
+:email:             cfang@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-10057 (EJB subsystem configure max threads and core threads independently)
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-488 (Fine-grained control on ejb3 thread-pool and reuse idle threads in pool before creating new)
+
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:rjanik@redhat.com[Richard Janik]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[x] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+
+* ejb3
+* wildfly-core
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+The following table shows the new requirements vs the existing behavior in ejb3 subsystem:
+
+
+|===
+|New Requirement |Existing Behavior of EJB3 Subsystem thread-pool
+
+|Ability to configure core-threads and max-threads independently
+|max-threads is configurable, but core-threads is not configurable and always equals to max-threads
+
+|Ability to reuse available threads as much as possible, without unnecessary creation of new threads
+|Upon new request, new threads are created up to the limit of max-threads, even though idle threads are available
+
+|Ability to timeout idle non-core threads after keepalive-timeout
+|Idle threads are not timed out, and keepalive-timeout is ignored
+
+|Ability to create and use non-core threads after core threads are saturated
+|Income tasks are queued after core threads are used up
+|===
+
+
+=== New elements in wildfly-ejb3_6_0.xsd schema
+
+Need to add a new sub-element under thread-pool element:
+
+[source]
+<xs:element name="core-threads" type="threads:countType"/>
+
+=== New attribute in ejb3 subsystem resource model
+
+Need to add a new attribute to ejb3 subsystem resource model to represent core-threads configuration, as a peer
+to the existing max-threads attribute.
+
+=== Nice-to-Have Requirements
+
+* ability to switch between the existing thread-pool and the new thread-pool backed by EnhancedQueueExecutor
+
+=== Non-Requirements
+
+* improvement of thread-pool configuration in subsystems other than ejb3
+* ability to configure ejb3 thread-pool queue size
+* ability to allow ejb3 thread-pool core threads to timeout
+* configuration in ejb3 subsystem of advanced features in EnhancedQueueExecutor, e.g., resistence factor.
+
+
+== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+
+* switch ejb3 subsystem thread-pool to the thread-pool backed by org.jboss.threads.EnhancedQueueExecutor
+* need to modify wildfly-core threads sub-project
+** enhance org.jboss.as.threads.ManagedJBossThreadPoolExecutorService to support org.jboss.threads.EnhancedQueueExecutor,
+in addition to the existing org.jboss.threads.JBossThreadPoolExecutor
+** expose core-threads configuration in org.jboss.as.threads.ThreadPoolManagementUtils.BaseThreadPoolParameters
+
+== Test Plan
+
+* Some of the basic testing outline:
+** verify basic CRUD operations of the new attribute in ejb3 subsystem resource model
+** transformer tests
+** behavior tests:
+*** verify core-threads and max-threads can be configured independently to different values
+*** verify core-threads are re-used, if available, and no new core threads are created unnecessarily
+**** by using @Schedule ejb timers, or async ejb invocations
+*** verify number of core threads are kept at a relative low number after certain number of operations, such as ejb timer or async ejb invocations.
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
