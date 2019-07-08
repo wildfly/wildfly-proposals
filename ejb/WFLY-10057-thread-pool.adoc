@@ -37,7 +37,7 @@
 === Affected Projects or Components
 
 * ejb3
-* wildfly-core
+* wildfly-core/threads
 
 === Other Interested Projects
 
@@ -45,7 +45,7 @@
 
 === Hard Requirements
 
-The following table shows the new requirements vs the existing behavior in ejb3 subsystem:
+The following table shows the new requirements vs the existing behavior in ejb3 subsystem thread-pool:
 
 
 |===
@@ -79,14 +79,15 @@ to the existing max-threads attribute.
 
 === Nice-to-Have Requirements
 
-* ability to switch between the existing thread-pool and the new thread-pool backed by EnhancedQueueExecutor
+* ability to switch between the existing thread-pool and the new thread-pool backed by `EnhancedQueueExecutor`
 
 === Non-Requirements
 
 * improvement of thread-pool configuration in subsystems other than ejb3
 * ability to configure ejb3 thread-pool queue size
 * ability to allow ejb3 thread-pool core threads to timeout
-* configuration in ejb3 subsystem of advanced features in EnhancedQueueExecutor, e.g., resistence factor.
+* improvement to thread-factory configuration in ejb3 subsystem thread-pool
+* configuration in ejb3 subsystem of advanced features in `EnhancedQueueExecutor`, e.g., growth resistance factor.
 
 
 == Implementation Plan
@@ -97,11 +98,11 @@ into this category, please mention the Release Coordinators on the pull
 request so they are aware.
 ////
 
-* switch ejb3 subsystem thread-pool to the thread-pool backed by org.jboss.threads.EnhancedQueueExecutor
+* switch ejb3 subsystem thread-pool to the thread-pool backed by `org.jboss.threads.EnhancedQueueExecutor`
 * need to modify wildfly-core threads sub-project
-** enhance org.jboss.as.threads.ManagedJBossThreadPoolExecutorService to support org.jboss.threads.EnhancedQueueExecutor,
-in addition to the existing org.jboss.threads.JBossThreadPoolExecutor
-** expose core-threads configuration in org.jboss.as.threads.ThreadPoolManagementUtils.BaseThreadPoolParameters
+** enhance `org.jboss.as.threads.ManagedJBossThreadPoolExecutorService` to support `org.jboss.threads.EnhancedQueueExecutor`,
+in addition to the existing `org.jboss.threads.JBossThreadPoolExecutor`
+** expose core-threads configuration in `org.jboss.as.threads.ThreadPoolManagementUtils.BaseThreadPoolParameters`
 
 == Test Plan
 
