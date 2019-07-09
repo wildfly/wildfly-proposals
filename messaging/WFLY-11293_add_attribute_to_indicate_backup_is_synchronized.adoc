@@ -1,0 +1,70 @@
+= Add attribute to model which will indicate that backup is synchronized with live server
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:          messaging,jms,ha,cluster
+:idseparator:       -
+
+== Overview
+
+If HA is configured with replicated journal then it takes some time to backup to synchronize with live server. Once backup is in sync with live then following information appears in server.log:
+----
+13:20:00,739 INFO  [org.apache.activemq.artemis.core.server] (Thread-3 (ActiveMQ-client-netty-threads-457000966)) AMQ221024: Backup server ActiveMQServerImpl::serverUUID=bc015b34-fd73-11e5-80ca-1b35f669abb8 is synchronized with live-server.
+13:20:01,500 INFO  [org.apache.activemq.artemis.core.server] (Thread-2 (ActiveMQ-server-org.apache.activemq.artemis.core.server.impl.ActiveMQServerImpl$2@41f992ab-83559664)) AMQ221031: backup announced
+----
+Reading server logs to see whether backup is in sync is not convenient and user friendly way. By adding a new attribute on the `live` and `backup` nodes the user should be able to know when this synchronization is finished.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-11293[WFLY-11293]
+
+=== Related Issues
+
+ * https://issues.jboss.org/browse/EAP7-884[EAP7-884]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:tterem@redhat.com[Tomas Terem]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[X] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+
+=== Other Interested Projects
+
+== Requirements
+
+* Add a boolean `synchronized-with-backup` runtime-only attribute to the https://wildscribe.github.io/WildFly/17.0/subsystem/messaging-activemq/server/ha-policy/replication-master[/subsystem=messaging-activemq//server=*/ha-policy=replication-master].
+* Add a boolean `synchronized-with-live` runtime-only attribute to the https://wildscribe.github.io/WildFly/17.0/subsystem/messaging-activemq/server/ha-policy/replication-slave[/subsystem=messaging-activemq//server=*/ha-policy=replication-slave].
+
+=== Hard Requirements
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Implementation Plan
+
+Expose `org.apache.activemq.artemis.api.core.management.ActiveMQServerControl#isReplicaSync` as it represents the synchronization status of the backup with the live node on each node.
+
+== Test Plan
+
+* Changes in Wildfly management model will be covered in WF testsuite.
+
+== Community Documentation
+
+* Covered by attribute description in management model.
