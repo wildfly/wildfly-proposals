@@ -1,0 +1,82 @@
+= [WFLY-12228] Upgrade MicroProfile Health 2.0.1.
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:keywords:          observability,microprofile,health,openshift
+
+== Overview
+
+WildFly is providing MicroProfile Health 1.0 for applications deployed in WildFly.
+
+MicroProfile 3.0 has been released with a new major version for MicroProfile Health 2.0.1 that contains new features and breaking changes as described in its https://github.com/eclipse/microprofile-health/releases/tag/2.0.1[release notes].
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-12228[WFLY-12228]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1206[EAP7-1206]
+* https://issues.jboss.org/browse/CLOUD-3326[CLOUD-3326] - Integrate MicroProfile Health 2.0.1 HTTP endpoints in EAP probes
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TBD
+
+=== Testing By
+
+* [x] QE
+
+=== Affected Projects or Components
+
+The implementation of Eclipse MicroProfile Health is provided by https://github.com/smallrye/smallrye-health[smallrye-health].
+
+smallrye-health uses CDI to discover all health check probes and provides a `SmallryeHeathReporter` that is `@ApplicationScope`-d.
+
+WildFly extensions are not using CDI and the health probes must be available even when there is no deployed application.
+The microprofile-health-smallrye will provide its own "reporter" that aggreated healtch checks procecures when applications are deployed/undeployed.
+
+
+== Requirements
+
+* Support Eclipse MicroProfile Health 2.0.1 for applications deployed in WildFly.
+* Provide two additional HTTP endpoints `/health/live` and `/health/ready` to check exclusilvely liveness checks probes and readiness check probes.
+* Provide two additional management operations `:check-live` and `:check-ready` to check exclusilvely liveness checks probes and readiness check probes.
+* Repurpose the existing HTTP endpoint `/health` and `:check` operation to check *all* check probes (both liveness and readiness probes)
+* Provides two management attributes to specify the global status when no readiness or liveness probes are defined. This allows applications to report `DOWN` until their probes verify that the application is ready/live. By default, these attributes will report `UP`.
+
+== Non Requirements
+
+* The integration of the health HTTP endpoints or operations in EAP or WildFly probes for Kubernetes is out of scope of this feature. It will be tracked in a separate https://issues.jboss.org/browse/CLOUD-3326[CLOUD-3326] issue.
+
+== Implementation Plan
+
+* Add dependencies to `io.smallrye:smallrye-health-2.0` and `org.eclipse.microprofile.health:microprofile-health-api:2.0` artifacts
+* Modify the HealthContextService to expose additional HTTP endpoints `/health/live` and `/health/ready`.
+* Modify the subsystem to provide additional methods `check-readiness` and `check-live` to check exclusively resp. the readiness and liveness probes.
+
+=== Subsystem description
+
+The subsystem has 2 additional attributes:
+
+* `empty-readiness-checks-status` (`UP` by default) - Defines the global status returned by the `/health/ready` HTTP endpoint and `:check-ready` operation if no readiness probes have been registered.
+* `empty-liveness-checks-status` (`UP` by default) - Defines the global status returned by the `/health/live` HTTP endpoint and `:check-live` operation if no readiness probes have been registered.
+
+The `/health` HTTP endpoint and `:check` operation that checks both readiness and liveness probes also take into account these 2 attributes.
+
+== Test Plan
+
+* Update the testsuite/integration/microprofile-tck/health test suite to ensure that WildFly is passing the MicroProfile Health Check 2.0 TCK.
+
+== Community Documentation
+
+The feature is documented in WildFly Admin Guide in the MicroProfile Health section.
