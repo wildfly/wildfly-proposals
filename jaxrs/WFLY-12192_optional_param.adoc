@@ -58,7 +58,7 @@ This proposal is to support a series of `java.util.Optional` types as a wrapper 
 
 === Test Plan
 
-The feature is already extensively tested in RESTEasy testsuite, so that should be run against relevant WildFly version.
+The tests for this feature will be stored in the RESTEasy testsuite.
 
 === Community Documentation
 
