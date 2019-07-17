@@ -1,0 +1,73 @@
+= WFCORE-4483 Add support for missing MP-JWT requirements
+:author:            Martin Mazanek
+:email:             mmazanek@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+There are two main security pieces that are currently missing but will be needed for MP JWT support whenever that happens:
+
+* Support for injection of the currently authenticated caller as a JsonWebToken
+* The java.security.Principal returned from javax.ws.rs.core.SecurityContext.getUserPrincipal() must be an instance of org.eclipse.microprofile.jwt.JsonWebToken
+
+This issue focuses on adding these requirements.
+
+https://www.eclipse.org/community/eclipse_newsletter/2017/september/article2.php[Eclipse MP-JWT overview]
+
+This issue is not intended as an official support for MP-JWT, so this is not targeted towards specific MP-JWT spec version. Development will be done using version 1.1.1.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-1259[EAP7-1259]
+* https://issues.jboss.org/browse/WFCORE-4483[WFCORE-4483]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/ELY-1834[ELY-1834]
+//* https://issues.jboss.org/browse/WFLY-1834[WFLY-1834]
+
+=== Dev Contacts
+
+* mailto:mmazanek@redhat.com[Martin Mazanek]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly, Security
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* change java.security.Principal returned from javax.ws.rs.core.SecurityContext.getUserPrincipal() to be instance of org.eclipse.microprofile.jwt.JsonWebToken instead of current org.wildfly.security.auth.principal.NamePrincipal
+* support injection (using CDI @Inject) of currently authenticated caller as a JsonWebToken
+
+=== Nice-to-Have Requirements
+
+* support injection of current token claims using org.eclipse.microprofile.jwt.Claim qualifier
+
+=== Non-Requirements
+
+== Test Plan
+
+Most of the testing will be done using existing token related tests. This issue requires only few more tests to make sure the obtained identity is of a right type and if the CDI side works.
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
