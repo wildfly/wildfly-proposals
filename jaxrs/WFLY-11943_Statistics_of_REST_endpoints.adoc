@@ -75,7 +75,7 @@ This RFE is NOT related to Eclipse MicroProfile Metrics nor to the microprofile-
 * Report accumulated statistics when requested by Wildfly.
 * Reset endpoint statistics when instructed by Wildfly.
 * Stop data collection and clear accumumlated data when instructed by Wildfly.
-* Subsystem attribute `statistics-enabled` will be used to start and stop statistics collection.  Default setting is false.  The default value can be declared to `true` in the Wildfly configuration file, jaxws subsystem element.
+* Subsystem attribute `statistics-enabled` will be used to start and stop statistics collection.  Default setting is false.  The default value can be declared to `true` in the Wildfly configuration file, jaxrs subsystem element.
 * Subsystem operation `read-resource` will display the statistics for each endpoint.
 * Subsystem operation `reset` will reset collected statistics to zero.
 * Application restart is NOT required when enabling, disabling and resetting statistics collection.
@@ -84,7 +84,9 @@ This RFE is NOT related to Eclipse MicroProfile Metrics nor to the microprofile-
 === Hard Requirements
 * Statistics provided
 ** `invocation-count` - Total count of calls to endpoint
-** `failed-invocation-count` - Number of endpoint calls that failed
+** `failed-invocation-count` - Number of endpoint calls that failed.
+Fail here means exception thrown. A response object returning any
+status is not considered a failure in this case.
 ** `average-execution-time` - The average time in nanosec from the point of endpoint invocation to return.
 ** `total-execution-time` - The sum of time in nanosec for all endpoint method invocations.
 
