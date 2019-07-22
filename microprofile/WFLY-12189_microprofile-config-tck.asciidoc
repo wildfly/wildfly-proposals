@@ -9,7 +9,10 @@
 
 == Overview
 
-Full support for Eclipse MicroProfile Config for applications deployed in WildFly requires to test that WildFly passes the MicroProfile Config TCK.
+MicroProfile 3.0 has been released without any upgrade to the MicroProfile Config specification which remains at 1.3.
+WildFly already integrates this version and uses smallrye-config 1.3.6 which is the latest version of smallrye-config that supports this version (smallrye-config 1.3.7 is more recent but challenges the MP Config 3.0 TCK related to the handling of empty property config).
+
+To ensure that WildFly properly supports Eclipse MicroProfile Config for applications deployed in WildFly, we must verify that WildFly passes the MicroProfile Config TCK.
 
 This RFE covers inclusion of the MicroProfile Config TCK in WildFly integration test suite.
 
@@ -31,6 +34,10 @@ This RFE covers inclusion of the MicroProfile Config TCK in WildFly integration 
 
 * mailto:mjurc@redhat.com[Michal Jurč]
 
+=== Testing By
+
+* [X] Engineering
+
 === Affected Projects or Components
 
 The MicroProfile Config TCK will be run as submodule of the existing https://github.com/wildfly/wildfly/tree/master/testsuite/integration/microprofile-tck[`microprofile-tck` module of WildFly integration testsuite].
@@ -46,6 +53,7 @@ The MicroProfile Config TCK will be run as submodule of the existing https://git
 == Test Plan
 
 * Run the `microprofile-tck/config` module from WildFly integration test suite and checks that there are no failures.
+* Run the WilFly basic integration test suite and check that all tests related to MicroProfile Config pass (from the `org.wildfly.test.integration.microprofile.config.smallrye` package).
 
 == Community Documentation
 
