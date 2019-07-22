@@ -1,0 +1,67 @@
+= [WFLY-12294] Upgrade MicroProfile Metrics 2.0.1
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:keywords:          microprofile,metrics,openshift
+
+== Overview
+
+MicroProfile 3.0 provides a major version of Metrics 2.0.1 that introduces breaking changes in both the Java API and REST specification.
+
+This component upgrade also covers inclusion of the MicroProfile Metrics TCK (both API & Rest) in WildFly integration test suite.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-12294[WFLY-12294]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1146[EAP7-1146] - Transition EAP Metrics to support MicroProfile Metrics 2.0.1
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+
+=== QE Contacts
+
+* mailto:jstourac@redhat.com [Jan Stourac]
+
+=== Testing By
+
+* [X] Engineering
+
+=== Affected Projects or Components
+
+The MicroProfile Metrics TCK will be run as submodule of the existing https://github.com/wildfly/wildfly/tree/master/testsuite/integration/microprofile-tck[`microprofile-tck` module of WildFly integration testsuite].
+
+== Requirements
+
+* Upgrade MicroProfile Metrics 2.0.1
+* Run any metrics test in WildFly integration test suite
+** tests may require changes as this major version has breaking changes.
+* Run the Eclipse MicroProfile Metrics TCK without failures
+
+== Non-Requirements
+
+* This component upgrade will *not* change the code used to expose WildFly subsystems metrics (that uses prometheus client to collect and expose the data). This will be addressed in a subsequent issue.
+
+== Implementation Plan
+
+* Upgrade MicroProfile Metrics 2.0.1 artifacts and corresponding smallrye-metrics artifacts
+* Add a `metrics` children module to the `microprofile-tck` module with setup and configuration to https://github.com/eclipse/microprofile-metrics/blob/master/tck/running_the_tck.asciidoc[run the MicroProfile Config TCK].
+
+== Test Plan
+
+* Run the (updated) WildFly integration basic test suite and checks there are no failures related to metrics tests.
+* Run the `microprofile-tck/metrics` module from WildFly integration test suite and checks that there are no failures.
+
+== Community Documentation
+
+* Community documentation for the `microprofile-metrics-smallrye` subsystem in the admin guide does not require any changes.
+* No community documentation is required to setup and run the MicroProfile Metrics TCK in WildFly.
