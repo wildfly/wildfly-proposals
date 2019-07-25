@@ -3,7 +3,7 @@
 :email:             weli@redhat.com
 :toc:               left
 :icons:             font
-:keywords:          comma,separated,tags
+:keywords:          RESTEasy,JAX-RS,Injection
 :idprefix:
 :idseparator:       -
 :issue-base-url:    https://issues.jboss.org/browse
