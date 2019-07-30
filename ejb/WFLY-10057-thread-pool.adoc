@@ -72,6 +72,50 @@ Need to add a new sub-element under thread-pool element:
 [source]
 <xs:element name="core-threads" type="threads:countType"/>
 
+=== Expected CLI Operations and resources
+
+[source]
+/subsystem=ejb3/thread-pool=default:read-resource
+{
+"outcome" => "success",
+"result" => {
+  "core-threads" => 2,
+  "keepalive-time" => {
+    "time" => 1000L,
+    "unit" => "SECONDS"
+  },
+  "max-threads" => 10,
+  "name" => "default",
+  "thread-factory" => undefined
+}
+}
+
+[source]
+
+/subsystem=ejb3/thread-pool=default:write-attribute(name=core-threads, value=3)
+{"outcome" => "success"}
+
+[source]
+
+/subsystem=ejb3/thread-pool=default:read-attribute(name=core-threads)
+{
+"outcome" => "success",
+"result" => 3
+}
+
+[source]
+
+/subsystem=ejb3/thread-pool=default:write-attribute(name=max-threads, value=9)
+{"outcome" => "success"}
+
+[source]
+
+/subsystem=ejb3/thread-pool=default:read-attribute(name=max-threads)
+{
+"outcome" => "success",
+"result" => 9
+}
+
 === New attribute in ejb3 subsystem resource model
 
 Need to add a new attribute to ejb3 subsystem resource model to represent core-threads configuration, as a peer
@@ -100,9 +144,9 @@ request so they are aware.
 
 * switch ejb3 subsystem thread-pool to the thread-pool backed by `org.jboss.threads.EnhancedQueueExecutor`
 * need to modify wildfly-core threads sub-project
-** enhance `org.jboss.as.threads.ManagedJBossThreadPoolExecutorService` to support `org.jboss.threads.EnhancedQueueExecutor`,
-in addition to the existing `org.jboss.threads.JBossThreadPoolExecutor`
-** expose core-threads configuration in `org.jboss.as.threads.ThreadPoolManagementUtils.BaseThreadPoolParameters`
+** add to wildfly-core threads sub-project `EnhancedQueueExecutorService`, which is backed by `org.jboss.threads.EnhancedQueueExecutor`
+** add related classes to support the new `EnhancedQueueExecutorService`, such as `EnhancedQueueExecutorAdd`, `EnhancedQueueExecutorRemove`,
+`EnhancedQueueExecutorResourceDefinition`, `EnhancedQueueExecutorWriteAttributeHandler`, etc
 
 == Test Plan
 
