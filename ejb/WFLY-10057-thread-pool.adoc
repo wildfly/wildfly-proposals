@@ -17,6 +17,7 @@
 === Related Issues
 
 * https://issues.jboss.org/browse/EAP7-488 (Fine-grained control on ejb3 thread-pool and reuse idle threads in pool before creating new)
+* https://issues.jboss.org/browse/WFCORE-1446 (EJB thread pool keepalive not honored and is not reusing inactive threads)
 
 
 === Dev Contacts
@@ -25,7 +26,7 @@
 
 === QE Contacts
 
-* mailto:rjanik@redhat.com[Richard Janik]
+* mailto:szhantem@redhat.com[Sultan Zhantemirov]
 
 === Testing By
 // Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
