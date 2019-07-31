@@ -116,6 +116,30 @@ Need to add a new sub-element under thread-pool element:
 "result" => 9
 }
 
+[source]
+
+/subsystem=ejb3/thread-pool=default:read-resource(include-runtime=true)
+{
+    "outcome" => "success",
+    "result" => {
+        "active-count" => 0,
+        "completed-task-count" => 242L,
+        "core-threads" => 1,
+        "current-thread-count" => 1,
+        "keepalive-time" => {
+            "time" => 1000L,
+            "unit" => "MILLISECONDS"
+        },
+        "largest-thread-count" => 2,
+        "max-threads" => 10,
+        "name" => "default",
+        "queue-size" => 0,
+        "rejected-count" => 0,
+        "task-count" => 228L,
+        "thread-factory" => undefined
+    }
+}
+
 === New attribute in ejb3 subsystem resource model
 
 Need to add a new attribute to ejb3 subsystem resource model to represent core-threads configuration, as a peer
@@ -151,13 +175,46 @@ request so they are aware.
 == Test Plan
 
 * Some of the basic testing outline:
-** verify basic CRUD operations of the new attribute in ejb3 subsystem resource model
+** verify basic CRUD operations of the new attribute in ejb3 subsystem resource model (see CLI operations above)
 ** transformer tests
 ** behavior tests:
 *** verify core-threads and max-threads can be configured independently to different values
 *** verify core-threads are re-used, if available, and no new core threads are created unnecessarily
 **** by using @Schedule ejb timers, or async ejb invocations
 *** verify number of core threads are kept at a relative low number after certain number of operations, such as ejb timer or async ejb invocations.
+
+For example, to verify core thread reuse, configure core-threads = 1, deploy the following singleton ejb that
+contains an auto timer that expires in every second. The single core thread should be able to service all timeout
+calls and no other threads should be created.
+
+[source]
+
+@Startup
+@Singleton
+public class ScheduleSingleton {
+    private final ConcurrentSkipListSet<String> threadNames = new ConcurrentSkipListSet<String>();
+
+    @Schedule(second="*/1", minute="*", hour="*", persistent=false)
+    public void timeout(Timer t) {
+        threadNames.add(Thread.currentThread().getName());
+    }
+
+    public Set<String> getThreadNames() {
+        return Collections.unmodifiableSet(threadNames);
+    }
+}
+
+After sleeping a while, the test servlet can call `getThreadNames()` to verify that it only contains 1 element, e.g.,
+`[EJB default - 1]`
+
+
+To verify non-core thread timeout, configure ejb thread-pool timeout to be a short one, add another similar timeout
+method to `ScheduleSingleton` so 2 timers will fire at every second and at least one non-core threads will be created.
+As non-core threads time out, new non-core threads will be created to service timeout calls.  So the output will be like:
+
+[source]
+
+EJB default - 1, EJB default - 10, EJB default - 11, EJB default - 12, EJB default - 13, EJB default - 14, EJB default - 2, EJB default - 3, EJB default - 4, EJB default - 5, EJB default - 6, EJB default - 7, EJB default - 8, EJB default - 9
 
 == Community Documentation
 ////
