@@ -16,6 +16,8 @@ Currently, The parameter type supports the following construct (from RESTEasy do
 
 This proposal is to support a series of `java.util.Optional` types as a wrapper object types. This will give users the ability to use optional typed parameters, and eliminate all null checks by using methods like `Optional.orElse()`.
 
+Please note that `@PathParam` is an exception and that using `Optional` with `@PathParam` doesn't allow us to omit that parameter from the path. The reason is that the path param must be exist in path, and when we don't have it in path, actually we have a different path and it will either be served by a method mapped to that different path, or that path doesn't exist.
+
 == Issue Metadata
 
 === Issue:
