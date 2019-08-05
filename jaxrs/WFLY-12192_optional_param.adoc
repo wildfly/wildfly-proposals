@@ -28,6 +28,7 @@ Please note that `@PathParam` is an exception and that using `Optional` with `@P
 
 * {issue-base-url}/EAP7-1248[EAP7-1248]
 * {issue-base-url}/RESTEASY-1419[RESTEASY-1419]
+* {issue-base-url}/RESTEASY-2287[RESTEASY-2287]
 
 === Dev Contacts:
 
