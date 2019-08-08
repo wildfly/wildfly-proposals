@@ -48,7 +48,7 @@ Expose the new `named-formatter` attribute to the `/subsystem=logging/syslog-han
 
 == Test Plan
 
-TBD
+The test will add a new test case to the test suite which will navigate to the logging configuration application and make sure the attribute is exposaed. The test will also modify the attribute and make sure the changes are persisted in the management model.
 
 == Community Documentation
 
