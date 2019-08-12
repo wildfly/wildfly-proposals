@@ -150,11 +150,12 @@ It ensures the same data storage, as it was before pod restart, will be bound to
 `StatefulSet` "deactivates" the service load balancing capabilities and leaves
 the application to manage the balancing on its own. Here the JBoss EAP
 clustering abilities will be used to ensures the transaction stickiness.
-Handling of data from orphaned object store after scale-down anticipates user manual intervention.
-The user has to manually deactivate the pod from receiving traffic,
-then let the pod to finish all the unfinished transactions and
-and then it can turn-off the pod. If he does not do so he can experience
-unfinished blocked transactions in database or JMS brokers.
+Handling of data from orphaned object store after scale-down will be managed
+by functionality implemented in WildFly operator.
+User has to deploy the WildFly operator for the automatic scale-down functionality
+is available.
+The WildFly operator is hard requirement for running the transaction recovery
+fully and with guarantee of data consistency.
 
 If we take the individual issues this setup is about to solve them.
 
@@ -172,21 +173,20 @@ If we take the individual issues this setup is about to solve them.
   or uses the proper load balancing capability if Stateless beans are called. +
   When a new EAP instances are started then EJB remoting client is capable to gather
   new cluster topology and works based on the new setup.
-* _Scale-down object store orphanage_ issues is possible to be automatized with use of the
+* _Scale-down object store orphanage_ issues will be automatized by adding a new functionality
+  to WildFly operator.
+  For scale-down handling functionality the WildFly operator will be required.
+  Operator will watch to scale down actions on the `StatefulSet`. If scale-down happens it manages
+  all transactions are cleaned-up and only then the pod can be shutdown.
+  The operator functionality will be similar to what was considered as a possible solution before.
+  Which was the use of the
   https://github.com/luksa/statefulset-scaledown-controller[StatefulSet Scale-Down Controller].
-  The StatefulSet Scale-Down Controller is not the Kubernetes/OpenShift native
-  object but it's an extension provided to manage this kind of situation.
-  The scale down controller is a standalone 'Kubernetes object'
-  which needs to be separatelly deployed, it hooks to the Kubernetes API
-  and is capable to drive `StatefulSet` during scaledown.
-  The main issue of the controller is that is a deprecated solution
-  (even the
-  https://access.redhat.com/documentation/en-us/red_hat_amq/7.2/html/deploying_amq_broker_on_openshift_container_platform/journal-recovery-broker-ocp[Red Hat AMQ Broker used it]
-  (see Jira https://issues.jboss.org/browse/ENTMQBR-1859[ENTMQBR-1859]).
-  But they already stopped to do so.\+
-  For scale-down handling we should create a operator which will basically
-  provide the same functionality as the controller - it hooks up to the Kubernetes API
-  and it will watch to scale down actions on the `StatefulSet`.
+  The controller was applied by the project
+  https://access.redhat.com/documentation/en-us/red_hat_amq/7.2/html/deploying_amq_broker_on_openshift_container_platform/journal-recovery-broker-ocp[Red Hat AMQ Broker]
+  (see Jira https://issues.jboss.org/browse/ENTMQBR-1859[ENTMQBR-1859])
+  but the functionality was deprecated and they moved to the
+  https://docs.google.com/document/d/1fW-AWLFyyMr8hOUBUuEdOcRsCxza4n1BAkCGeRzN1Mc/edit[AMQ operator].
+  We go the same way.
 
 === Known related issues
 
@@ -262,9 +262,10 @@ https://issues.jboss.org/browse/WFTC-64[WFTC-64].
 * applications should be able to communicate using ejb-client/remoting libraries
 * distributed transactional operations among those applications should be fully supported
 * transactions should recover properly if the transaction is interrupted
-* users would create the applications using provided template, which would hide the complexity associated with operation in cloud
 * users would be able to configure connections between applications by configuring remoting subsystem in 'standalone-openshift.xml'
-* scale-down of number of replicas in StatefulSet
+* user deploys the WildFly operator which manages the number of replicas and hide the complexity associated with operation in cloud
+* transaction recovery depends on the deployment of the WildFly operator. WildFly operator provides the gurantee for the transaction consistency.
+  The safe recovery won't be possible without the use of the WildFly operator.
 
 === Nice-to-Have Requirements
 * users would be able to configure connections between applications programmatically
@@ -282,10 +283,10 @@ https://issues.jboss.org/browse/WFTC-64[WFTC-64].
 == Implementation Plan
 
 * consider, verify and fix all issues regarding of the OpenShift deployment of JBoss EAP with StatefulSet while the clustered applications communicate via ejb remoting
-** there will be a OpenShift template and setup for `standalone-openshift.xml` to define `remote-outbound-connection` between EAP servers to run ejb remotion over it
 ** transaction propagation and recovery functionality needs to be verified
 * investigate, cosider and provide fixes for usage of the programmatic lookup (and not only the remote-outbound-connection setup)
-* implementation of the automatic scale-down functionality with use of operator (preferrably) or standalone controller
+* implementation of the automatic scale-down functionality with use of operator
+* WildFly operator provides a runtime information about what happens to the WildFly cluster during recovery scale-down processing
 
 == Test Plan
 
