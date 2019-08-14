@@ -22,7 +22,13 @@ For example,
 
 would allow an operator to turn off XML security features.
 
-The intention, for this feature, is for any changes to affect only future deployments, so that no restarts or reloads are necessary.
+Limitations for current implementation:
+
+* The intention, for now, is for any changes to affect only future deployments, so that no restarts or reloads are necessary. No
+  current deployments would be affected unless they are re-deployed.
+* The configurable parameters will be global to the RESTEasy subsystem, and will passed to each deployment as context parameters.
+
+The changes will be to the jaxrs /subsystem model only.
 
 == Issue Metadata
 
@@ -45,8 +51,7 @@ The intention, for this feature, is for any changes to affect only future deploy
 
 === QE Contacts:
 
-* mailto:rsvoboda@redhat.com[Rostislav Svoboda]
-* mailto:mkopecky@redhat.com[Marek Kopecky]
+* mailto:fmarchio@redhat.com[Francesco Marchioni]
 
 === Affected Projects or Components:
 
