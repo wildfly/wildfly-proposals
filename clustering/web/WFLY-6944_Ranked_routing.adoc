@@ -1,4 +1,4 @@
-= Ranked routing
+= WFLY-6944 Ranked routing
 :author:            Paul Ferraro
 :email:             paul.ferraro@redhat.com
 :toc:               left
@@ -14,26 +14,29 @@ Thus, if the primary owner of a given session is inactive (from the load balance
 
 When configured to use RANKED routing, the route will contain:
 
-# The primary owner
-# The backup owners
-# The local node (if not already present)
+. The primary owner
+. The backup owners
+. The local node (if not already present)
+
+The load balancer must be explicitly configured to enable support for parsing ranked routing; initially supporting Undertow-based load balancer.
 
 == Issue Metadata
 
 === Issue
 
 * https://issues.jboss.org/browse/WFLY-6944
+* https://issues.jboss.org/browse/WFLY-12144
 
 === Related Issues
 
 * https://issues.jboss.org/browse/WFLY-5550
 * https://issues.jboss.org/browse/UNDERTOW-1432
-* https://issues.jboss.org/browse/WFLY-12144
 * https://issues.jboss.org/browse/MODCLUSTER-673
 
 === Dev Contacts
 
 * mailto:{email}[{author}]
+* mailto:rhusar@redhat.com[Radoslav Husar]
 
 === QE Contacts
 
@@ -53,6 +56,7 @@ mod_cluster, Undertow
 
 * Add new RANKED routing strategy option to the distributed session manager configuration.
 * Fallback to OWNER routing strategy logic if cache in non-distributed.
+* Add parsing support in the proxy implementation when WildFly is used as a load balancer.
 
 === Nice-to-Have Requirements
 
@@ -62,8 +66,8 @@ mod_cluster, Undertow
 
 * Add unit test to verify RouteLocator behavior when routing strategy is RANKED
 * Clustering testsuite will contain integration test that validates routing
-* Once support for ranked routing is available in Undertow (UNDERTOW-1432, WFLY-12144) and mod_cluster (MODCLUSTER-673), add a full-scope integration test (including load balancer and cluster of application servers) that validates failover behavior to backup owners.
+* Add a full-scope integration test (including load balancer and cluster of application servers) that validates failover behavior to backup owners (tests integration code in Undertow (UNDERTOW-1432, WFLY-12144) and mod_cluster (MODCLUSTER-673))
 
 == Community Documentation
 
-Community documentation will be updated to include RANKED routing configuration.
+Community documentation will be updated to include RANKED routing server and load balancer configuration.
