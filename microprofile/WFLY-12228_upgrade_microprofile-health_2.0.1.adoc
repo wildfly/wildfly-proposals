@@ -30,7 +30,7 @@ MicroProfile 3.0 has been released with a new major version for MicroProfile Hea
 
 === QE Contacts
 
-* TBD
+* mailto:jstourac@redhat.com [Jan Stourac]
 
 === Testing By
 
