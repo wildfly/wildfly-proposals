@@ -54,7 +54,8 @@
 
 == Test Plan
 
-TBD
+Add tests which will navigate to the messaging configuration applications and make sure the attribute for the resources above is exposed. 
+Add tests to modify the attribute and make sure the modifications are stored in the management model.
 
 == Community Documentation
 
