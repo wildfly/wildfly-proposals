@@ -67,8 +67,7 @@ Limitations for current implementation:
 * The intention, for now, is for any changes to affect only future deployments, so that no restarts or reloads are necessary. No
   current deployments would be affected unless they are re-deployed.
 * The configurable parameters will be global to the RESTEasy subsystem, and will passed to each deployment as context parameters.
-
-The changes will be to the jaxrs /subsystem model only.
+  For now, there will be no per deployment configuration.
 
 === Test Plan
 
