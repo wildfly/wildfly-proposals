@@ -266,6 +266,8 @@ https://issues.jboss.org/browse/WFTC-64[WFTC-64].
 * user deploys the WildFly operator which manages the number of replicas and hide the complexity associated with operation in cloud
 * transaction recovery depends on the deployment of the WildFly operator. WildFly operator provides the gurantee for the transaction consistency.
   The safe recovery won't be possible without the use of the WildFly operator.
+* the prior solution for transaction recovery - which was the use of the migration pod implemented by https://issues.jboss.org/browse/CLOUD-2261[CLOUD-2261]
+  - is not supported by this RFE and is prohibitted to use the migration pod together with the WildFly operator
 
 === Nice-to-Have Requirements
 * users would be able to configure connections between applications programmatically
