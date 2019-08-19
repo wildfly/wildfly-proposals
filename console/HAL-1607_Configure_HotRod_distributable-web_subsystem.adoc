@@ -33,9 +33,9 @@ Expose the resources of the `distributable-web` subsystem using a dedicated UI.
 
 === Testing By
     
-[ ] Engineering
+[x] Engineering
     
-[x] QE
+[ ] QE
 
 === Affected Projects or Components
 
