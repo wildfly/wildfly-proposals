@@ -48,7 +48,7 @@ Expose the resources of the `distributable-web` subsystem using a dedicated UI.
 
 == Test Plan
 
-TBD
+Write CRUD tests for resources of the of the `distributable-web` subsystem.
 
 == Community Documentation
 
