@@ -218,6 +218,6 @@ As non-core threads time out, new non-core threads will be created to service ti
 EJB default - 1, EJB default - 10, EJB default - 11, EJB default - 12, EJB default - 13, EJB default - 14, EJB default - 2, EJB default - 3, EJB default - 4, EJB default - 5, EJB default - 6, EJB default - 7, EJB default - 8, EJB default - 9
 
 == Community Documentation
-////
-Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
-////
+
+Enhance WildFly community docs (docs/src/main/asciidoc/_admin-guide/subsystem-configuration/EJB3.adoc) to describe
+the new attribute `core-threads` and affected changes. `EJB3.adoc` has been updated and included in the PR to WildFly.
