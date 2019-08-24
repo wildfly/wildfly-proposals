@@ -1,0 +1,77 @@
+= Transition OpenTracing to Microprofile 3.0
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          Microprofile,opentracing
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+
+MicroProfile 3.0 provides a major version of OpenTracing 1.3.0 that introduces breaking changes in both the Java API and REST specification.
+This component upgrade also covers inclusion of the MicroProfile Opentracing TCK (both API & Rest) in WildFly integration test suite.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-12306[WFLY-12306]
+
+=== Related Issues
+
+* https://issues.apache.org/jira/browse/EAP7-1082
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[X] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+The MicroProfile OpenTracing TCK will be run as submodule of the existing https://github.com/wildfly/wildfly/tree/master/testsuite/integration/microprofile-tck[`microprofile-tck` module of WildFly integration testsuite].
+
+=== Other Interested Projects
+
+== Requirements
+
+* Upgrade MicroProfile Opentracing 1.3.0
+* Run any OpenTracing test in WildFly integration test suite
+** tests may require changes as this major version has breaking changes.
+* Run the Eclipse MicroProfile OpenTracing TCK without failures
+
+=== Hard Requirements
+
+N/A
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+This component upgrade will *not* change the code used to expose WildFly subsystems opentracing. This will be addressed in a subsequent issue.
+
+== Implementation Plan
+
+* Upgrade MicroProfile OpenTracing 1.3.0 artifacts and corresponding smallrye-metrics artifacts
+* Setup and configuration to https://github.com/eclipse/microprofile-metrics/blob/master/tck/running_the_tck.asciidoc[run the MicroProfile Config TCK] to run the rest-client part of the OpenTracing TCK.
+
+== Test Plan
+
+* Run the (updated) WildFly integration basic test suite and checks there are no failures related to opentracing tests.
+* Run the `microprofile-tck/opentracing` module from WildFly integration test suite and checks that there are no failures.
+
+== Community Documentation
+
+* Community documentation for the `microprofile-opentracing-smallrye` subsystem in the admin guide needs to be updated to version 1.3.
+* No community documentation is required to setup and run the MicroProfile OpenTracing TCK in WildFly.
