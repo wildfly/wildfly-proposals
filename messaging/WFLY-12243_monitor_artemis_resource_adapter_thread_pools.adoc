@@ -1,0 +1,115 @@
+= Monitor Artemis resource adapter thread pools
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:          messaging,jms
+:idseparator:       -
+
+== Overview
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-12243[WFLY-12243]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[X] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+== Requirements
+
+Expose the following metrics from those ThreadPools:
+
+* `keepalive-time`: The amount of time that pool threads should be kept running when idle; if not specified, threads will run until the executor is shut down.
+* `active-count`: The approximate number of threads used by all ActiveMQ clients that are actively executing tasks.
+* `completed-task-count`: The approximate number of tasks that have been executed by all ActiveMQ clients.
+* `current-thread-count`: The current number of threads in the pool used by all ActiveMQ clients.
+* `largest-thread-count`: The largest number of threads that have ever simultaneously been in the pool used by all ActiveMQ clients.
+* `task-count`: The approximate total number of tasks that have ever been scheduled by all ActiveMQ clients.
+
+
+=== Hard Requirements
+
+* Add a integer `global-client-scheduled-thread-pool-active-count` metric to https://wildscribe.github.io/WildFly/17.0/subsystem/messaging-activemq/[/subsystem=messaging-activemq]
+* Add a long `global-client-scheduled-thread-pool-completed-task-count` metric to https://wildscribe.github.io/WildFly/17.0/subsystem/messaging-activemq/[/subsystem=messaging-activemq]
+* Add a integer `global-client-scheduled-thread-pool--current-thread-count` metric to https://wildscribe.github.io/WildFly/17.0/subsystem/messaging-activemq/[/subsystem=messaging-activemq]
+* Add a long (in nanoseconds) `global-client-scheduled-thread-pool-keepalive-time` metric to https://wildscribe.github.io/WildFly/17.0/subsystem/messaging-activemq/[/subsystem=messaging-activemq]
+* Add a integer `global-client-scheduled-thread-pool-largest-thread-count` metric to https://wildscribe.github.io/WildFly/17.0/subsystem/messaging-activemq/[/subsystem=messaging-activemq]
+* Add a long `global-client-scheduled-thread-pool-task-count` metric to https://wildscribe.github.io/WildFly/17.0/subsystem/messaging-activemq/[/subsystem=messaging-activemq]
+* Add a integer `global-client-thread-pool-active-count` metric to https://wildscribe.github.io/WildFly/17.0/subsystem/messaging-activemq/[/subsystem=messaging-activemq]
+* Add a long `global-client-thread-pool-completed-task-count` metric to https://wildscribe.github.io/WildFly/17.0/subsystem/messaging-activemq/[/subsystem=messaging-activemq]
+* Add a integer `global-client-thread-pool-current-thread-count` metric to https://wildscribe.github.io/WildFly/17.0/subsystem/messaging-activemq/[/subsystem=messaging-activemq]
+* Add a long (in nanoseconds) `global-client-thread-pool-keepalive-time` metric to https://wildscribe.github.io/WildFly/17.0/subsystem/messaging-activemq/[/subsystem=messaging-activemq]
+* Add a integer `global-client-thread-pool-largest-thread-count` metric to https://wildscribe.github.io/WildFly/17.0/subsystem/messaging-activemq/[/subsystem=messaging-activemq]
+* Add a long `global-client-thread-pool-task-count` metric to https://wildscribe.github.io/WildFly/17.0/subsystem/messaging-activemq/[/subsystem=messaging-activemq]
+
+
+CLI to read the metrics:
+
+----
+[standalone@localhost:9990 /] /subsystem=messaging-activemq:read-resource(include-runtime)
+{
+    "outcome" => "success",
+    "result" => {
+        "global-client-scheduled-thread-pool-active-count" => 0,
+        "global-client-scheduled-thread-pool-completed-task-count" => 0L,
+        "global-client-scheduled-thread-pool-current-thread-count" => 0,
+        "global-client-scheduled-thread-pool-keepalive-time" => 10000000L,
+        "global-client-scheduled-thread-pool-largest-thread-count" => 0,
+        "global-client-scheduled-thread-pool-max-size" => undefined,
+        "global-client-scheduled-thread-pool-task-count" => 0L,
+        "global-client-thread-pool-active-count" => 0,
+        "global-client-thread-pool-completed-task-count" => 2L,
+        "global-client-thread-pool-current-thread-count" => 2,
+        "global-client-thread-pool-keepalive-time" => 60000000000L,
+        "global-client-thread-pool-largest-thread-count" => 2,
+        "global-client-thread-pool-max-size" => undefined,
+        "global-client-thread-pool-task-count" => 2L,
+        "connection-factory" => undefined,
+        "connector" => undefined,
+        "discovery-group" => undefined,
+        "external-jms-queue" => undefined,
+        "external-jms-topic" => undefined,
+        "http-connector" => undefined,
+        "in-vm-connector" => undefined,
+        "jms-bridge" => undefined,
+        "pooled-connection-factory" => undefined,
+        "remote-connector" => undefined,
+        "server" => {"default" => undefined}
+    }
+}
+----
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+== Test Plan
+
+* Changes in Wildfly management model will be covered in WF testsuite.
+
+== Community Documentation
+
+* Covered by attribute description in management model.
