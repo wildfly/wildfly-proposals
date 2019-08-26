@@ -1,0 +1,76 @@
+= Provide a set of EAP XP QuickStarts that can run on OpenShift
+:author:            Eduardo Martins
+:email:             emartins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+All Quickstarts distributed in JBoss EAP XP should be made compatible with JBoss EAP XP for Openshift.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-13645[WFLY-13645]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1512[EAP7-1512]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:szhantem@redhat.com[Sultan Zhantemirov]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[ ] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+
+* EAP XP Quickstarts
+
+=== Other Interested Projects
+
+* NONE
+
+== Requirements
+
+=== Hard Requirements
+
+* For a JBoss EAP *XP* release, *all* Quickstarts should be fully compatible with JBoss EAP XP for OpenShift source-to-image (S2I) for Openshift.
+
+* For a JBoss EAP *XP* release, the README.adoc for each Quickstart should include:
+** a "Getting Started with OpenShift" section, similar to the one included for JBoss EAP CD releases
+** a "Prepare OpenShift for Quickstart Deployment" section, similar to the one included for JBoss EAP CD releases
+** an "Import the Latest JBoss EAP XP for OpenShift Image Streams and Templates" section, adapted from section "Import the Latest JBoss EAP XP for OpenShift Image Streams and Templates" included for JBoss EAP CD releases
+** a "Deploy the JBoss EAP XP for OpenShift Source-to-Image (S2I) Quickstart to OpenShift" section, adapted from section "Deploy the JBoss EAP XP for OpenShift Source-to-Image (S2I) Quickstart to OpenShift" included for JBoss EAP CD releases
+** a "Completing post-deployment tasks for JBoss EAP XP source-to-image (S2I) application" section, which should document how the user should use the app on Openshift, for instance how to properly translate local application URLs. Content should be adapted from JBoss EAP XP main docs section with same name.
+
+* For a JBoss EAP *XP* release, there should be a branch of quickstarts sources published at https://github.com/jboss-developer/jboss-eap-quickstarts[JBoss Developer's EAP Quickstarts Repository], which content matches the EAP Quickstarts ZIP distribution, and which *name* should match the name of the related dev branch at JBoss EAP's Quickstart Repository, e.g. "xp-2.0.x".
+This branch should be used by JBoss EAP XP Main docs and JBoss EAP XP Openshift Image templates.
+
+=== Nice-to-Have Requirements
+
+* Rather then creating new sections *similar* to the ones already included by JBoss EAP CD releases, if possible existent sections should be enhanced to support XP releases too, using Asciidoc shared attributes to tailor the content for each specific release.
+
+=== Non-Requirements
+
+* NONE
+
+== Test Plan
+
+* 
+
+== Community Documentation
+
+* The new sections should be to the 'shared-docs' directory of the WildFly Quickstarts repository, but only included on the READMEs built for JBoss EAP XP releases.
