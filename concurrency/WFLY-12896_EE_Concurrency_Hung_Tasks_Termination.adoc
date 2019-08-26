@@ -1,0 +1,99 @@
+= EE Concurrency Hung Tasks Termination
+:author:            Eduardo Martins
+:email:             emartins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The managed executors in the EE subsystem are capable of identifying tasks which are running for a long unexpected time, also know as hung tasks, and this proposal specifies new functionality that will allows users to manually and automatically terminate such tasks.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-12896[WFLY-12896]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1397[EAP7-1397]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:tborgato@redhat.com[Tommaso Borgato]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+
+=== Other Interested Projects
+
+* NONE
+
+== Requirements
+
+=== Hard Requirements
+
+* Add the following attribute to the https://wildscribe.github.io/WildFly/18.0/subsystem/ee/managed-executor-service/[/subsystem=ee/managed-executor-service resource]:
+** *hung-task-termination-period*: the period, in milliseconds, for hung tasks automatic termination. A value of 0, which is the default, deactivates the feature.
+
+CLI to read the attribute from the Managed Executor Service resource named *default*:
+----
+/subsystem=ee/managed-executor-service=default:read-attribute(name=hung-task-termination-period)
+----
+
+* Add the following operation to the https://wildscribe.github.io/WildFly/18.0/subsystem/ee/managed-executor-service/[/subsystem=ee/managed-executor-service resource]:
+** *terminate-hung-tasks*: manually terminates all executor tasks that are hung.
+
+CLI to execute the operation from the Managed Executor Service resource named *default*:
+----
+/subsystem=ee/managed-executor-service=default:terminate-hung-tasks()
+----
+
+* Add the following attribute to the https://wildscribe.github.io/WildFly/18.0/subsystem/ee/managed-scheduled-executor-service/[/subsystem=ee/managed-scheduled-executor-service resource]:
+** *hung-task-termination-period*: the period, in milliseconds, for hung tasks automatic termination. A value of 0, which is the default, deactivates the feature.
+
+CLI to read the attribute from the Managed Scheduled Executor Service resource named *default*:
+----
+/subsystem=ee/managed-scheduled-executor-service=default:read-attribute(name=hung-task-termination-period)
+----
+
+* Add the following operation to the https://wildscribe.github.io/WildFly/18.0/subsystem/ee/managed-scheduled-executor-service/[/subsystem=ee/managed-scheduled-executor-service resource]:
+** *terminate-hung-tasks()*: manually terminates all executor tasks that are hung.
+
+CLI to execute the operation from the Managed Scheduled Executor Service resource named *default*:
+----
+/subsystem=ee/managed-scheduled-executor-service=default:terminate-hung-tasks()
+----
+
+=== Nice-to-Have Requirements
+
+* NONE
+
+=== Non-Requirements
+
+* Domain mode:
+** the new attribute discussed in this proposal will be provided on the servers in a managed domain, and registered with the /profile=*/subsystem=ee resources, being automatically discarded for servers which do not support it.
+** the new operation discussed in this proposal will be provided on the servers in a managed domain, and registered only with the /host=*/server=*/subsystem=ee resources.
+
+== Test Plan
+
+* Changes in Wildfly management model will be covered in WFLY testsuite.
+* Checking the new featured functionality work as expected will be covered in WFLY testsuite.
+
+== Community Documentation
+
+* Covered by local descriptions in management model.
