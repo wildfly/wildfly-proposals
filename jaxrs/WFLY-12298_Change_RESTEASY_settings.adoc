@@ -3,7 +3,7 @@
 :email:             rsigal@redhat.com
 :toc:               left
 :icons:             font
-:keywords:          comma,separated,tags
+:keywords:          Wildfly, RESTEasy, management model, web context parameters
 :idprefix:
 :idseparator:       -
 :issue-base-url:    https://issues.jboss.org/browse
