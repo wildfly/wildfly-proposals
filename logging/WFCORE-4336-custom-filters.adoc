@@ -1,0 +1,79 @@
+= Custom Filter
+:author:            James R. Perkins
+:email:             jperkins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently logging filters are limited to the filters provided by the JBoss Log Manager. Allowing users to create their
+own filters will allow for a higher degree of control over logging. As an example a filter could be created to filter
+messages based on the cause of the log message.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-4336[WFCORE-4336]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1199[EAP7-1199]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TBD
+
+=== Testing By
+
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly Core
+* WildFly
+
+=== Other Interested Projects
+
+* Any consumer of WildFly Core that uses the logging subsystem.
+
+== Requirements
+
+=== Hard Requirements
+
+* The resource will require a module name and class name.
+* The class must be of type `java.util.logging.Filter`.
+* There should be a set of properties which can be set.
+  ** The properties should also support whether or not they are construction properties. This may or may not be a
+     separate resource and will be determined at implementation time.
+* Filters will only be usable on the `filter-spec` attribute.
+* Filters should be alowed to be added to an already existing `filter-spec`. For example
+  `any(match(".\*example.*"), my-filter-name)`.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+* This will not add any new filters.
+
+== Implementation Plan
+
+This will essentially be a copy of the `custom-formatter`. The name should just be `filter` since no other resources in
+the logging subsystem have this name.
+
+== Test Plan
+
+The test plan will simply be unit and integration tests.
+
+== Community Documentation
+
+Documentation will be updated to add documentation and examples of adding ``filter``'s. The filter documentation
+will also be updated to show how a filter can be used.
