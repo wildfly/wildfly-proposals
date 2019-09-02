@@ -1,0 +1,79 @@
+= WFLY-12473 Obfuscate session-route
+:author:            Flavia Rainone
+:email:             frainone@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          undertow,instance-id,obfuscate-session-route
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This feature is to be able to obfuscate the value of UndertowService.instanceId when routing. Routes are used as
+part of generated session ids when a remote invocation (such as EJB, naming or serving a wildfly-services address)
+is handled by HTTP Invoker. This data is sent across connections as part of the request and response JSESSION_ID
+cookie.
+EAP6 Web Server would similarly allow obfuscation of instance-id at routing by allowing a generated
+UUID to be used as the instance-id.
+This UUID was the default value used whenever instance-id configuration was absent, while Undertow default value
+for instance-id is ${jboss.node.name}.
+Some users would like to have a way of obfuscating the instance-id value in the route.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-12473[WFLY-12473]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1187
+* https://issues.jboss.org/browse/PRODMGT-1934
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[X] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+WildFly, Undertow component
+
+=== Other Interested Projects
+
+WildFly clustering
+
+== Requirements
+
+This will be implemented as an additional attribute under the `subsystem=undertow` management model address.
+
+This will be a simple boolean attribute called `obfuscate-session-route` that indicates that instance-id value must be obfuscated
+when used at the server route.
+
+=== Hard Requirements
+
+The route must not change across server restarts when `obfuscate-session-route` value is `true`.
+
+=== Nice-to-Have Requirements
+It is ideal to make it hard to find out the instance-id value via reverse engineering of the value used in route. For that, we are going
+to use the server name as a salt when generating the obfuscated instance-id bytes.
+
+
+=== Non-Requirements
+
+== Test Plan
+
+A few test cases will be submitted to verifying that the instance-id of Undertow subsystem is obfuscated on routing when `obfuscate-session-route` is `true`, and to
+verify that affected functionalities (namely, remote invocation via HTTP invoker) work as expected when session route is obfuscated.
+
+== Community Documentation
+
+Update the WildFly documentation to document the new attribute.
