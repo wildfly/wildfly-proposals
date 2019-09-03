@@ -1,0 +1,223 @@
+= EJB subsystem configure max threads and core threads independently
+:author:            Cheng Fang
+:email:             cfang@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-10057 (EJB subsystem configure max threads and core threads independently)
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-488 (Fine-grained control on ejb3 thread-pool and reuse idle threads in pool before creating new)
+* https://issues.jboss.org/browse/WFCORE-1446 (EJB thread pool keepalive not honored and is not reusing inactive threads)
+
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:szhantem@redhat.com[Sultan Zhantemirov]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[x] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+
+* ejb3
+* wildfly-core/threads
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+The following table shows the new requirements vs the existing behavior in ejb3 subsystem thread-pool:
+
+
+|===
+|New Requirement |Existing Behavior of EJB3 Subsystem thread-pool
+
+|Ability to configure core-threads and max-threads independently
+|max-threads is configurable, but core-threads is not configurable and always equals to max-threads
+
+|Ability to reuse available threads as much as possible, without unnecessary creation of new threads
+|Upon new request, new threads are created up to the limit of max-threads, even though idle threads are available
+
+|Ability to timeout idle non-core threads after keepalive-timeout
+|Idle threads are not timed out, and keepalive-timeout is ignored
+
+|Ability to create and use non-core threads after core threads are saturated
+|Income tasks are queued after core threads are used up
+|===
+
+
+=== New elements in wildfly-ejb3_6_0.xsd schema
+
+Need to add a new sub-element under thread-pool element:
+
+[source]
+<xs:element name="core-threads" type="threads:countType"/>
+
+=== Expected CLI Operations and resources
+
+[source]
+/subsystem=ejb3/thread-pool=default:read-resource
+{
+"outcome" => "success",
+"result" => {
+  "core-threads" => 2,
+  "keepalive-time" => {
+    "time" => 1000L,
+    "unit" => "SECONDS"
+  },
+  "max-threads" => 10,
+  "name" => "default",
+  "thread-factory" => undefined
+}
+}
+
+[source]
+
+/subsystem=ejb3/thread-pool=default:write-attribute(name=core-threads, value=3)
+{"outcome" => "success"}
+
+[source]
+
+/subsystem=ejb3/thread-pool=default:read-attribute(name=core-threads)
+{
+"outcome" => "success",
+"result" => 3
+}
+
+[source]
+
+/subsystem=ejb3/thread-pool=default:write-attribute(name=max-threads, value=9)
+{"outcome" => "success"}
+
+[source]
+
+/subsystem=ejb3/thread-pool=default:read-attribute(name=max-threads)
+{
+"outcome" => "success",
+"result" => 9
+}
+
+[source]
+
+/subsystem=ejb3/thread-pool=default:read-resource(include-runtime=true)
+{
+    "outcome" => "success",
+    "result" => {
+        "active-count" => 0,
+        "completed-task-count" => 242L,
+        "core-threads" => 1,
+        "current-thread-count" => 1,
+        "keepalive-time" => {
+            "time" => 1000L,
+            "unit" => "MILLISECONDS"
+        },
+        "largest-thread-count" => 2,
+        "max-threads" => 10,
+        "name" => "default",
+        "queue-size" => 0,
+        "rejected-count" => 0,
+        "task-count" => 228L,
+        "thread-factory" => undefined
+    }
+}
+
+=== New attribute in ejb3 subsystem resource model
+
+Need to add a new attribute to ejb3 subsystem resource model to represent core-threads configuration, as a peer
+to the existing max-threads attribute.
+
+=== Nice-to-Have Requirements
+
+* ability to switch between the existing thread-pool and the new thread-pool backed by `EnhancedQueueExecutor`
+
+=== Non-Requirements
+
+* improvement of thread-pool configuration in subsystems other than ejb3
+* ability to configure ejb3 thread-pool queue size
+* ability to allow ejb3 thread-pool core threads to timeout
+* improvement to thread-factory configuration in ejb3 subsystem thread-pool
+* configuration in ejb3 subsystem of advanced features in `EnhancedQueueExecutor`, e.g., growth resistance factor.
+
+
+== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+
+* switch ejb3 subsystem thread-pool to the thread-pool backed by `org.jboss.threads.EnhancedQueueExecutor`
+* need to modify wildfly-core threads sub-project
+** add to wildfly-core threads sub-project `EnhancedQueueExecutorService`, which is backed by `org.jboss.threads.EnhancedQueueExecutor`
+** add related classes to support the new `EnhancedQueueExecutorService`, such as `EnhancedQueueExecutorAdd`, `EnhancedQueueExecutorRemove`,
+`EnhancedQueueExecutorResourceDefinition`, `EnhancedQueueExecutorWriteAttributeHandler`, etc
+
+== Test Plan
+
+* Some of the basic testing outline:
+** verify basic CRUD operations of the new attribute in ejb3 subsystem resource model (see CLI operations above)
+** transformer tests
+** behavior tests:
+*** verify core-threads and max-threads can be configured independently to different values
+*** verify core-threads are re-used, if available, and no new core threads are created unnecessarily
+**** by using @Schedule ejb timers, or async ejb invocations
+*** verify number of core threads are kept at a relative low number after certain number of operations, such as ejb timer or async ejb invocations.
+
+For example, to verify core thread reuse, configure core-threads = 1, deploy the following singleton ejb that
+contains an auto timer that expires in every second. The single core thread should be able to service all timeout
+calls and no other threads should be created.
+
+[source]
+
+@Startup
+@Singleton
+public class ScheduleSingleton {
+    private final ConcurrentSkipListSet<String> threadNames = new ConcurrentSkipListSet<String>();
+
+    @Schedule(second="*/1", minute="*", hour="*", persistent=false)
+    public void timeout(Timer t) {
+        threadNames.add(Thread.currentThread().getName());
+    }
+
+    public Set<String> getThreadNames() {
+        return Collections.unmodifiableSet(threadNames);
+    }
+}
+
+After sleeping a while, the test servlet can call `getThreadNames()` to verify that it only contains 1 element, e.g.,
+`[EJB default - 1]`
+
+
+To verify non-core thread timeout, configure ejb thread-pool timeout to be a short one, add another similar timeout
+method to `ScheduleSingleton` so 2 timers will fire at every second and at least one non-core threads will be created.
+As non-core threads time out, new non-core threads will be created to service timeout calls.  So the output will be like:
+
+[source]
+
+EJB default - 1, EJB default - 10, EJB default - 11, EJB default - 12, EJB default - 13, EJB default - 14, EJB default - 2, EJB default - 3, EJB default - 4, EJB default - 5, EJB default - 6, EJB default - 7, EJB default - 8, EJB default - 9
+
+== Community Documentation
+
+Enhance WildFly community docs (docs/src/main/asciidoc/_admin-guide/subsystem-configuration/EJB3.adoc) to describe
+the new attribute `core-threads` and affected changes. `EJB3.adoc` has been updated and included in the PR to WildFly.
