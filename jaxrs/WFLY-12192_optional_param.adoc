@@ -1,0 +1,69 @@
+= WFLY-12192 Add support for injecting Optional<T> parameter types
+:author:            Wei Nan Li
+:email:             weli@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          RESTEasy,JAX-RS,Injection
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+Currently, The parameter type supports the following construct (from RESTEasy document):
+
+> The parameter type you inject into can be any primitive type, a String, or any Java object that has a constructor that takes a String parameter, or a static `valueOf` method that takes a String as a parameter.
+
+This proposal is to support a series of `java.util.Optional` types as a wrapper object types. This will give users the ability to use optional typed parameters, and eliminate all null checks by using methods like `Optional.orElse()`.
+
+Please note that `@PathParam` is an exception for which `Optional` is not available. The reason is that `Optional` for the `@PathParam` use case would just be a NO-OP, since an element of the path cannot be omitted.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/WFLY-12192[WFLY-12192]
+
+=== Related Issues:
+
+* {issue-base-url}/EAP7-1248[EAP7-1248]
+* {issue-base-url}/RESTEASY-1419[RESTEASY-1419]
+* {issue-base-url}/RESTEASY-2287[RESTEASY-2287]
+
+=== Dev Contacts:
+
+* mailto:weli@redhat.com[Wei Nan Li]
+* mailto:rsigal@redhat.com[Ron Sigal]
+* mailto:asoldano@redhat.com[Alessio Soldano]
+* mailto:ema@redhat.com[Jim Ma]
+* mailto:rsearls@redhat.com[Rebecca Searls]
+
+=== QE Contacts:
+
+* mailto:tterem@redhat.com[Tomas Terem]
+
+=== Testing By
+
+[X] Engineering
+
+[] QE
+
+=== Affected Projects or Components:
+
+* WildFly
+* RESTEasy
+
+== Requirements
+
+* RESTEasy will offer a mechanism to support a series of `java.util.Optional` types as a wrapper object types. This will give users the ability to use optional typed parameters, and eliminate all null checks by using methods like `Optional.orElse()`.
+* Default behavior won't change.
+* WildFly will allow using the new RESTEasy functionality.
+
+=== Test Plan
+
+The tests for this feature will be stored in the RESTEasy testsuite.
+
+=== Community Documentation
+
+Documentation should be coming as part of the RESTEasy component documentation.
+
