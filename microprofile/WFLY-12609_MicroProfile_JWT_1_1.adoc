@@ -1,0 +1,109 @@
+= WFLY-12609 MicroProfile JWT 1.1 Support
+:author:            Darran Lofthouse
+:email:             darran.lofthouse@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This proposal is in relation to adding support to WildFly for the MicroProfile JWT 1.1 specification.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-12609[WFLY-12609]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1346[EAP7-1346]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[ ] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+The primary integration will be happening by the addition of a new subsystem `microprofile=jwt` within https://github.com/wildfly/wildfly[WildFly].
+
+Additional integration may be added within https://github.com/wildfly-security/wildfly-elytron[WildFly Elytron] to bridge into the application server's security framework.
+
+=== Other Interested Projects
+
+The integration will also be making use of https://github.com/smallrye/smallrye-jwt[SmallRye JWT] as well as pulling in the https://github.com/eclipse/microprofile-jwt-auth[Eclipse MicroProfile JWT] API library.
+
+== Requirements
+
+=== Hard Requirements
+
+Primarily this enhancement will be delivered using a new subsystem `microprofile-jwt` which will be added to WildFly.  The subsystem will install a DeploymentUnitProcessor which will detect if MicroProfile JWT is required and activate a suitable security configuration as described within this proposal.
+
+At the outset activation will only occur in the following circumstances: -
+
+ * A `@org.eclipse.microprofile.auth.LoginConfig` annotation is detected with an `auth-method` of `MP-JWT`.
+ * An auth method of `MP-JWT` is specified in any web.xml.
+
+This activation scope is deliberately constrained to allow us to incrementally increase the scope at a later point. 
+
+At the point activation occurs the deployment will not make use of a configured `SecurityDomain` instead a "Virtual" `SecurityDomain` will be created to meet the requirements of the deployment and will be used across all sub-deployments.  The common `SecurityDomain` will allow for identity propagation across all sub-deployments whilst the virtual nature of the domain will make it unavailable for propagation across unrelated deployments allowing for deployment level isolation.
+
+Activation will add module dependencies as required on SmallRye JWT, Elytron JWT, and the MicroProfile JWT API.
+
+Activation will also ensure activation of the SmallRye JWT CDI extension as well as any Elytron JWT CDI extension if deemed required and any Elytron specific overrides.
+
+Finally activation will ensure the activation of the `MP-JWT` authentication mechanism for the deployment.
+
+The combination of SmallRye JWT with Elytron JWT will be the pair of projects responsible for providing the functionality described in the MicorProfile JWT specification combined with tying in the integration to the application server's security framework to ensure aspects such as identity association and establishment are correctly performed.
+
+Once an identity has been established according to the steps described by the MicroProfile JWT specification the remaining security decisions required are covered by the relevant Jakarta EE specifications in use by the various subsystems. 
+
+=== Nice-to-Have Requirements
+
+It will not be a priority of this enhancement to add support for alternative authentication mechanisms to `MP-JWT` as this brings a lot of additional complexity.  For this initial integration how we provide support for the `MP-JWT` mechanism should be largely transparent to the deployment allowing us to evolve this aspect further.
+
+Some of the issues we need to consider may be worthwhile discussing at the specification level.
+
+Presently SmallRye JWT is making use of EE Security to provide an authentication mechanism.  A big benefit of making use of EE Security is that a deployment can also make use of this specification to provide an `@IdentityStore` implementation as described in the MP JWT specification.  Deployments also have the option of bringing in their own authentication mechanisms if they are not making use of `MP-JWT`.
+
+However there are a couple of draw backs from the EE Security approach.  A first drawback is this brings in dependencies on JASPI and JACC both of which must be correctly enabled on the server, the `MP-JWT` mechanism is a very trivial light weight mechanism so a lot of overhead is pulled in.  A second draw back is that it should be possible for standard and vendor specific mechanisms to be specified, this brings us additional challenges as many of our mechanisms are native WildFly Elytron mechanisms.  Making use of native mechanisms has it's own complexities as we may need to bridge into using an `@IdentityStore` made available by CDI, alternatively this may require configuration of domains not covered by MicroProfile Config values.  We could consider porting some of our vendor specific mechanisms to EE security but one of the features of our mechanisms is the ability to support multiple mechanisms concurrently which is not completely covered by EE security.  The `MP-JWT` mechanism is also ideally suited to being used in parallel with other authentication mechanisms however we could end up in a situation with a hybrid of native mechanisms and an EE Security mechanism.
+
+Overall these issues can be considered and solved, however I believe the primary motivation for activating MicroProfile JWT is to make use of the `MP-JWT` authentication mechanism so that will be the primary focus of this RFE, depending on time constraints consideration of alternative authentication mechanisms will either take place towards the end of this enhancement or in a follow up enhancement.
+
+=== Non-Requirements
+
+This integration will be making use of WildFly Elytron exclusively, no support will be added for the deprecated PicketBox project.  Having said that the underlying security framework will be transparent for deployments developed according to the specification - the framework only becomes apparent if there is a desire to use vendor specific APIs.
+
+This integration will not be supporting the use of pre-configured SecurityDomains, the general motivation to use MicroProfile JWT is to use an authentication mechanism where identities are self described using the tokens exchanged eliminating the need for configured security resources for the secured endpoint(s).  Use cases could be identified where pre-configured resources add an additional benefit but those would be reviewed under their own enhancements.
+
+It is assumed when working with the MicroProfile specifications that we will be supporting a single deployment, this deployment may contain sub-deployments.  The SecurityDomain of each top level deployment will be isolated from the SecurityDomain of any parallel top level deployment.  Advanced WildFly Elytron features such identity propagation across domains / top level deployments will not be supported.  At a later point we could consider an enhancement to offer more control of the SecurityDomains in use but that is out of scope for this enhancement.
+
+== Implementation Plan
+
+The primary entry point for this enhancement will be a new subsystem `microprofile-jwt` which will be added to the WildFly project.  The WildFly project will also pull in SmallRye JWT as well as the MicroProfile JWT API.
+
+Finally there will be an additional project `Elytron JWT` added to the WildFly Elytron project, this will also depend on SmallRye JWT, the purpose of this project will be to add any tighter integration required with the WildFly Elytron APIs.  The contents of the `Elytron JWT` project will be considered private API and will be subject to change between releases.
+
+If enhancements are required these will be submitted directly to the SmallRye JWT project, the Elytron JWT project will be a back up if we need a location to hold enhancements whilst the availability in SmallRye JWT is considered.
+
+== Test Plan
+
+Details are still to be discussed but in general testing will make use of the MicroProfile TCK, additionally integration tests will be added to the WildFly testsuite using deployments configured to use MicroProfile JWT.  Any code added to WildFly Elytron will also be tested using co-located unit tests.
+
+One aspect we may consider is the generation of tokens as that is outside the specification, within the testsuites and possibly as a stand alone example we may want an endpoint which is capable of generating the JWT tokens - this would not be a part of our supported distribution however it would be useful to allow for deployments to use MicroProfile JWT without additional infrastructure requirements.  Something such as this should have the ability to take a WildFly Elytron SecurityIdentity and convert it into a JWT token.
+
+== Community Documentation
+
+Documentation will be added to the WildFly documentation showing how a MicroProfile JWT deployment can be deployed, we may want to restrict the level of detail as the behaviour will predominantly be covered by the specification.
+
+
