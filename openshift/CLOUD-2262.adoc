@@ -188,6 +188,14 @@ If we take the individual issues this setup is about to solve them.
   https://docs.google.com/document/d/1fW-AWLFyyMr8hOUBUuEdOcRsCxza4n1BAkCGeRzN1Mc/edit[AMQ operator].
   We go the same way.
 
+=== Specific states of the transactions
+
+The transaction may be finished with commit or rollback. But there is a third state of the transaction outcome which is `<<unknown>>`.
+That's named as `HEURISTIC` and means that there is need a human intervation to decide about the transaction.
+This is not possible to do in automatic way. In such case the pod is left as active for an administrator may manually
+check it. The pod is reported as being not-terminated and it won't be stopped until all heuristics are resolved by administrator
+(he needs to connect with jboss-cli.sh to the app server in the pod and resolve it).
+
 === Known related issues
 
 In the current setup, the transaction propagation with recovery works only when
@@ -258,7 +266,8 @@ https://issues.jboss.org/browse/WFTC-64[WFTC-64].
 
 === Hard Requirements
 
-* allow users to deploy clustered transactional EAP applications on OpenShift
+* allow users to deploy clustered transactional EAP applications on OpenShift 4
+* OpenShift 3 is not in scope of this solution. The EJB remoting and safe transaction recovery is not about to be resolved with this on OpenShift 3. The solution for safe transaction recovery for single EAP cluster is part of the S2I for JBoss EAP.
 * applications should be able to communicate using ejb-client/remoting libraries
 * distributed transactional operations among those applications should be fully supported
 * transactions should recover properly if the transaction is interrupted
