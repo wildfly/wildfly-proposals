@@ -1,0 +1,130 @@
+= Ability to add a server-side configured Interceptor for the applications without changing the deployments
+:author:            Tomasz Adamski
+:email:             tomasz.adamski@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+The goal of this issue is to implement server side EJB interceptors that can be configured system-wide through ejb3 subsystem configuration.
+
+=== Issue
+* https://issues.jboss.org/browse/WFLY-6143
+
+=== Dev Contacts
+
+* mailto:tadamski@redhat.com
+
+=== QE Contacts
+
+=== Testing By
+[ ] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+EJB
+
+=== WildFLY custom interceptors
+
+WildFly allows users to implement their own intereceptors as a part of the deployment (https://docs.wildfly.org/17/Developer_Guide.html#Container_interceptors). Most important characteristics of those are as follows:
+
+* interceptors are POJO classes marked whose interceptor methods are marked by annotations
+* interceptor provider can specify in the descriptor the rules to match interceptors with specific beans
+
+In order to keep programming model consistent server-side interceptors would use the same APIs (POJO with javax.interceptor annotation's). Contrarily to customer interceptors, server-interceptors must be decoupled from the deployments. As a result, server-interceptors would not provide the ability to match them with specific beans.
+
+
+== Requirements
+* Interceptors are implemented and packed inside the custom modules
+* Interceptors should be configured in the subsystem configuration and not in deployments
+* Server interceptors are executed after wildfly-specific interceptors (specifically at _InterceptorOrder#COMPONENT_USER_INTERCEPTORS_ step)
+
+== Non-requirements
+* There should be a number of binding points in which the interceptors should be executed (f.e. after security)
+
+== Solution draft
+
+=== Subystem XML
+EJB3 subsystem is extended with <server-interceptors> tag containing a number of <interceptor> children tags. <interceptor> tags contains attributes for the name, module and the class of the interceptor. Sample XML fragment:
+
+[source,xml]
+----
+<server-interceptors>
+	<interceptor module="org.abccorp:tracing-interceptors:1.0" class="org.abccorp.TracingInterceptor"/>
+	<interceptor module="org.abccorp:timers-interceptors:1.1" class="org.abccorp.TimerInterceptors"/>
+</server-interceptors>
+----
+
+=== Management model
+The management model is as follows: server interceptors are represented as object list attribute of ejb3 subystem. Each object in the list contains two fields:
+
+* module: the name of the module in which the interceptor is implemented
+* class: the interceptor class
+
+DMR model:
+
+[source]
+----
+[standalone@localhost:9990 subsystem=ejb3] :read-attribute(name=server-interceptors)
+{
+    "outcome" => "success",
+    "result" => [
+        {
+            "module" => "test",
+            "class" => "org.testsuite.ejb.serverinterceptor.TestServerInterceptor"
+        },
+        {
+            "module" => "my-interceptors",
+            "class" => "org.mycompany.interceptors.CoolInterceptor"
+        }
+    ]
+}
+----
+
+Any change to server-interceptors attribute should move server to the reload-required state.
+
+=== Interceptor class
+* Interceptors are POJO classes
+* Interceptor methods are marked by javax.interceptor.AroundInvoke, and javax.interceptor.AroundTimeout annotations
+* Interceptor methods must take one argument: object of class javax.interceptor.InvocationContext and return object of the same class
+
+Sample server-interceptor class:
+
+[source:java]
+----
+package org.testsuite.ejb.serverinterceptor;
+
+import javax.annotation.PostConstruct;
+import javax.interceptor.AroundInvoke;
+import javax.interceptor.InvocationContext;
+
+public class TestServerInterceptor {
+
+    @AroundInvoke
+    public Object aroundInvoke(final InvocationContext invocationContext) throws Exception {
+				/**
+        some interceptor stuff here
+				*/
+        return invocationContext.proceed();
+    }
+}
+----
+
+=== Interceptor module
+Server interceptor classes should be located in a module and place in $JBOSS_HOME/modules directory.
+
+== Binding points
+I suggest not to implement binding points currently. Adding binding points is a simple fix but I would prefer not to overengineer here and and add them based on customer demand instead of arbitrary selection. Furthermore, custom interceptors do not implement them as well and if there is a customer demand for specific binding point then we may consider implementing them both in server and customer interceptors to keep models consistent.
+
+
+== Draft implementation
+
+The draft implementation of server-interceptors is already done and works: https://github.com/tadamski/wildfly/tree/WFLY-6143.
+
+
+== Test Plan
+
+== Community Documentation
+Part of the PR.
