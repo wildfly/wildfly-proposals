@@ -22,7 +22,7 @@ something that will likely change before a stable version.
 
 Jaeger is composed by:
 
-* the Jaeger Client, which is the Java library responsible for sending spans to an Agent or Collector. This is added as dependendy to applications being deployed into WildFly as part of this proposal
+* the Jaeger Client, which is the Java library responsible for sending spans to an Agent or Collector. This is added as dependency to applications being deployed into WildFly as part of this proposal
 * Jaeger Agent, which is a daemon typically running on `localhost` acting as a buffer, accepting spans via UDP and sending them to a remote Collector
 * Jaeger Collector, which is a backend service connected to a permanent storage for writing, receiving spans either from Agents or directly from applications via HTTP
 * Jaeger Query / UI, which is a frontend service connected to the permanent storage for reading, providing a query and web user interface

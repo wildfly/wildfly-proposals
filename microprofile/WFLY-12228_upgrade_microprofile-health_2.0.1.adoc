@@ -30,7 +30,7 @@ MicroProfile 3.0 has been released with a new major version for MicroProfile Hea
 
 === QE Contacts
 
-* mailto:jstourac@redhat.com [Jan Stourac]
+* mailto:jstourac@redhat.com[Jan Stourac]
 
 === Testing By
 
@@ -43,14 +43,14 @@ The implementation of Eclipse MicroProfile Health is provided by https://github.
 smallrye-health uses CDI to discover all health check probes and provides a `SmallryeHeathReporter` that is `@ApplicationScope`-d.
 
 WildFly extensions are not using CDI and the health probes must be available even when there is no deployed application.
-The microprofile-health-smallrye will provide its own "reporter" that aggreated healtch checks procecures when applications are deployed/undeployed.
+The microprofile-health-smallrye will provide its own "reporter" that aggreated health checks procecures when applications are deployed/undeployed.
 
 
 == Requirements
 
 * Support Eclipse MicroProfile Health 2.0.1 for applications deployed in WildFly.
-* Provide two additional HTTP endpoints `/health/live` and `/health/ready` to check exclusilvely liveness checks probes and readiness check probes.
-* Provide two additional management operations `:check-live` and `:check-ready` to check exclusilvely liveness checks probes and readiness check probes.
+* Provide two additional HTTP endpoints `/health/live` and `/health/ready` to check exclusively liveness checks probes and readiness check probes.
+* Provide two additional management operations `:check-live` and `:check-ready` to check exclusively liveness checks probes and readiness check probes.
 * Repurpose the existing HTTP endpoint `/health` and `:check` operation to check *all* check probes (both liveness and readiness probes)
 * Provides two management attributes to specify the global status when no readiness or liveness probes are defined. This allows applications to report `DOWN` until their probes verify that the application is ready/live. By default, these attributes will report `UP`.
 
@@ -75,7 +75,7 @@ The `/health` HTTP endpoint and `:check` operation that checks both readiness an
 
 == Test Plan
 
-* Update the testsuite/integration/microprofile-tck/health test suite to ensure that WildFly is passing the MicroProfile Health Check 2.0 TCK.
+* Update the `testsuite/integration/microprofile-tck/health` test suite to ensure that WildFly is passing the MicroProfile Health Check 2.0 TCK.
 
 == Community Documentation
 

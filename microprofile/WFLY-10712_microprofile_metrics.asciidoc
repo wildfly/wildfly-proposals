@@ -391,7 +391,7 @@ If two different deployment register the same non-reusable metric, smallrye-metr
 
 ====== Metrics are all unregistered during undeployment
 
-smallry-metrics unregisters *all* metrics when it is undeployed from the server (as explained in https://github.com/smallrye/smallrye-metrics/issues/12[smallrye-metrics #12]).
+smallrye-metrics unregisters *all* metrics when it is undeployed from the server (as explained in https://github.com/smallrye/smallrye-metrics/issues/12[smallrye-metrics #12]).
 This leads to a blocker issue as base and vendor metrics are removed when any deployment is undeployed (or redeployed).
 
 == Test Plan
