@@ -1,0 +1,128 @@
+= [WFCORE-4725] Making additional attributes available for authorization decisions
+:author:            Farah Juma
+:email:             fjuma@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently, Elytron provides the ability to assign roles and permissions to a security
+identity based on attributes that are loaded from the identity's security realm.
+Sometimes it might be necessary to take into account additional information beyond
+what is retrieved from the identity's security realm when making authorization
+decisions. As an example, we might want to make use of the IP address of a remote
+client in order to assign a user a particular role when establishing a connection
+to the server from a corporate network and a different role when establishing a
+connection to the server from a different network. This enhancement is to add the
+ability for additional runtime attributes to be taken into account when making
+authorization decisions. In particular, this enhancement will focus on making the IP
+address of a remote client available when making authorization decisions.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-4725[WFCORE-4725]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/ELY-1894[ELY-1894]
+* https://issues.jboss.org/browse/REM3-349[REM3-349]
+* https://issues.jboss.org/browse/WFLY-12661[WFLY-12661]
+* https://issues.jboss.org/browse/EAP7-448[EAP7-448]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
+* mailto:mkopecky@redhat.com[Marek Kopecky]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly Elytron
+* WildFly Core
+* WildFly (tests and documentation)
+* JBoss Remoting
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* It should be possible to configure a `role-decoder` for a `security-domain` in the
+Elytron subsystem. This role decoder will be used to extract role information from
+any runtime attributes that pertain to an identity. During the role mapping process,
+these roles will be combined with the roles extracted from the authorization identity
+using the role decoder associated with the identity's security realm.
+
+* It should be possible to configure a `source-address-role-decoder` in the `mappers`
+configuration in the Elytron subsystem. This role decoder will extract the actual
+IP address of the remote client from the runtime attributes that pertain to an
+identity. If the extracted IP address matches the given address, this role decoder
+will associate a set of roles with the identity. In particular, this new resource will
+have the following attributes:
+
+** `source-address` - The IP address of the remote client.
+** `pattern` - A regular expression that specifies the IP address to match.
+** `roles` - The list of roles to assign if the source IP address matches the given address.
+
+Only one of `source-address` and `pattern` should be specified.
+
+For example, the following `source-address-role-decoder` could be configured to specify
+that a user should be assigned the "Administrator" role when establishing a connection to
+the server from a specific IP address:
+
+[source,xml]
+----
+/subsystem=elytron/source-address-role-decoder=decoder1:add(source-address="10.10.10.10", roles=["Administrator"])
+----
+
+* It should be possible to configure an `aggregate-role-decoder` in the `mappers`
+configuration in the Elytron subsystem. This will consist of references to two or
+more configured role decoders. This aggregate role decoder will combine the roles
+obtained using each role decoder.
+
+Example configuration:
+
+[source,xml]
+----
+/subsystem=elytron/source-address-role-decoder=decoder1:add(source-address="10.10.10.10", roles=["Administrator"])
+/subsystem=elytron/source-address-role-decoder=decoder2:add(source-address="12.12.12.12", roles=["Users"])
+/subsystem=elytron/aggregate-role-decoder=aggregateDecoder:add(role-decoders=[decoder1, decoder2])
+----
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+Although this enhancement adds the ability to make additional runtime attributes
+available when making authorization decisions, the only runtime attribute that we
+will be adding support for initially is the IP address of a remote client.
+
+== Test Plan
+
+Elytron subsystem parsing and transformer tests will be added. Tests will be added to the Elytron testsuite,
+the Elytron subsystem tests in the WildFly Core testsuite, and to the WildFly testsuite to ensure the
+correct roles are determined using the configured source address role decoder.
+
+== Community Documentation
+
+Appropriate documentation will be added to the Elytron section in the WildFly documentation.
+
+== Release Note Content
+
+It is now possible to make use of the IP address of a remote client when making
+authorization decisions.
