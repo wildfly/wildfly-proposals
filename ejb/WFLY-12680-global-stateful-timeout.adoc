@@ -66,7 +66,7 @@ should take effect.
 [standalone@localhost:9990 /] /subsystem=ejb3:read-attribute(name=default-stateful-bean-session-timeout)
 {
 "outcome" => "success",
-"result" => 5000
+"result" => -1
 }
 [standalone@localhost:9990 /] /subsystem=ejb3:write-attribute(name=default-stateful-bean-session-timeout, value=6000)
 {"outcome" => "success"}
@@ -94,7 +94,7 @@ request so they are aware.
 [source]
 <xs:complexType name="stateful-beanType">
     ...
-    <xs:attribute name="default-session-timeout" type="xs:positiveInteger" default="300000" use="optional">
+    <xs:attribute name="default-session-timeout" type="xs:integer" default="-1" use="optional">
         <xs:annotation>
             <xs:documentation>
                 The default session timeout, for stateful session beans, in milliseconds
@@ -124,7 +124,7 @@ request so they are aware.
 "outcome" => "success",
 "result" => {
     ...
-    "default-stateful-bean-session-timeout" => 5000,
+    "default-stateful-bean-session-timeout" => -1,
     ...
 }
 
