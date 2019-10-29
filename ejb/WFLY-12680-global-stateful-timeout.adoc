@@ -41,6 +41,11 @@
 
 == Requirements
 
+The standard way to configure stateful bean session timeout for each ejb is via `@StatefulTimeout` annotation,
+or `stateful-timeout` in ejb-jar.xml.  But WildFly currently (version 18) lacks the ability to configure a default
+global stateful bean session timeout for all deployed stateful beans.  This feature is useful to deploy and
+configure multiple stateful beans consistently in a server instance or cluster.
+
 === Hard Requirements
 
 * Users should be able to configure default global stateful timeout in server config file for all deployed stateful session beans.
@@ -49,8 +54,11 @@
 ** remove this configuration via CLI
 ** update this configuration to a new value via CLI
 ** read this configuration value via CLI
-* `@StatefulTomeout` annotation in bean class should override this default global stateful timeout in server config file
+* `@StatefulTimeout` annotation in bean class should override this default global stateful timeout in server config file
 * `stateful-timeout` in ejb-jar.xml should override this default global stateful timeout in server config file
+* when neither `@StatefulTimeout` nor `stateful-timeout` is present, the configured `default-stateful-bean-session-timeout`
+should take effect.
+
 
 === Expected CLI Operations and resources
 
@@ -122,7 +130,7 @@ request so they are aware.
 
 == Test Plan
 
-* structural tests with CLI CRUB operations of the new attribute `default-session-timeout`
+* structural tests with CLI CRUB operations of the new attribute `default-stateful-bean-session-timeout`
 * behavioral tests of default stateful session timeout
 ** when this attribute is absent in server config file, a stateful session bean should not timeout and be removed.  This is the existing behavior before this RFE is implemented.
 ** when this attribute is set to a certain value, a stateful session bean should timeout and subject to removal after this duration (there could be some delay between timeout and actual removal)
@@ -133,4 +141,4 @@ request so they are aware.
 == Community Documentation
 
 Enhance WildFly community docs (docs/src/main/asciidoc/_admin-guide/subsystem-configuration/EJB3.adoc) to describe
-the new attribute `default-session-timeout` and affected changes.
+the new attribute `default-stateful-bean-session-timeout` and affected changes.
