@@ -1,0 +1,55 @@
+= Pass the Jakarta EE 8 certification testsuite
+:author:            Scott Marlow
+:email:             smarlow@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+We will run and pass the Jakarta EE 8 TCK with WildFly and our EAP 7.3 product.  This will be done with https://github.com/eclipse-ee4j/jakartaee-tck.  FYI, the TCK development mailing list is https://www.eclipse.org/lists/jakartaee-tck-dev/maillist.html.  
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-1193 Jakarta EE 8 Certification
+* https://github.com/eclipse-ee4j/jakartaee-tck/issues/132 TCK challenge that EAP 7.3.0 needs to pass in Elytron mode, we already are passing in legacy security mode.
+
+=== Dev Contacts
+
+* mailto:{Scott Marlow}[{smarlow@redhat.com}] JPA / WildFly integration lead
+
+=== QE Contacts
+
+mailto:{Martin Simka}[{msimka@redhat.com}]
+mailto:{Marek Kopecky}[{mkopecky@redhat.com}]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[ ] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+
+Since EAP 7.3.0+ will also be Java EE 8 certified, EAP 7.3.0 should also pass the Jakarta EE 8 platform TCK.
+
+We do plan to make related changes, such as https://issues.jboss.org/browse/WFLY-12300, which is for converting to Jakarta EE 8 specification APIs, as the Java EE 8 specification APIs repos on github are in archived state (meaning no further changes are expected).  This means that bug fixes for these artifacts will come via Jakarta (https://github.com/eclipse-ee4j).
+
+=== Known Blockers
+
+We need to ensure that we are running the Jakarta EE 8 TCKs correctly.  
+
+=== Hard Requirements
+
+EAP 7.3.0 passes the https://github.com/eclipse-ee4j/jakartaee-tck 8.0.1 TCK and file our TCK results on https://github.com/RedHatOfficial/jbosseap-certifications.
+Red Hat will create a https://github.com/eclipse-ee4j/jakartaee-platform/issues issue for Web Profile certification.
+Red Hat will create a https://github.com/eclipse-ee4j/jakartaee-platform/issues issue for Full Platform certification.
+Red Hat will follow the steps on https://jakarta.ee/compatibility/get_listed/#how-to
+
+== Test Plan
+
+Download the Jakarta EE 8 TCK and pass it with EAP 7.3.0.
