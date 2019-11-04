@@ -16,6 +16,8 @@ We will run and pass the Jakarta EE 8 TCK with WildFly and our EAP 7.3 product. 
 
 * https://issues.jboss.org/browse/EAP7-1193 Jakarta EE 8 Certification
 * https://github.com/eclipse-ee4j/jakartaee-tck/issues/132 TCK challenge that EAP 7.3.0 needs to pass in Elytron mode, we already are passing in legacy security mode.
+* https://issues.jboss.org/browse/WFLY-12490 is related for BOM/Quickstarts changes.
+* https://issues.jboss.org/browse/WFLY-12468 is related for change from frozen Java EE 8 specification artifacts, to instead use Jakarta EE 8 specification artifacts.
 
 === Dev Contacts
 
@@ -49,6 +51,14 @@ EAP 7.3.0 passes the https://github.com/eclipse-ee4j/jakartaee-tck 8.0.1 TCK and
 Red Hat will create a https://github.com/eclipse-ee4j/jakartaee-platform/issues issue for Web Profile certification.
 Red Hat will create a https://github.com/eclipse-ee4j/jakartaee-platform/issues issue for Full Platform certification.
 Red Hat will follow the steps on https://jakarta.ee/compatibility/get_listed/#how-to
+
+EAP 7.3.0 needs to pass both Java EE 8 CTS + Jakarta EE 8 platform TCK with the legacy security configuration.  
+We also require that Java EE 8 CTS + Jakarta EE 8 platform TCK pass with the Elytron security configuration, with https://github.com/eclipse-ee4j/jakartaee-tck/issues/132 tests either patched or excluded.
+
+=== Non-Requirements
+
+EAP 7.3.0 will be both Java EE 8 + Jakarta EE 8 compliant.
+
 
 == Test Plan
 
