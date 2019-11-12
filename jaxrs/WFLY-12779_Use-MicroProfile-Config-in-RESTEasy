@@ -1,0 +1,77 @@
+= Use MicroProfile Config in RESTEasy
+:author:            Ron Sigal
+:email:             rsigal@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently, RESTEasy 3.x (targeted to Wildfly) uses servlet context-params to obtain
+configuration information. In RESTEasy 4.x, we have updated configuration to access
+all standard MicroProfile Config sources. Also, we have added three additional ConfigSources:
+
+* servlet init-params [ordinal 60]
+* filter init-params [ordinal 50]
+* servlet context-params [ordinal 40]
+
+In RESTEasy 4.x, all parameters, both RESTEasy parameters and application parameters, are
+available from all ConfigSources to both RESTEasy and application code. In RESTEasy 3.x, we
+propose to add a RESTEasy parameter, "resteasy.config.resteasy.parameters.only", which, when
+set to "true", will limit the three RESTEasy ConfigSources to returning RESTEasy parameters
+only. It will default to "true".
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/EAP7-??? [EAP7-???]
+* {issue-base-url}/WFLY-12779 [WFLY-12779]
+
+=== Related Issues
+
+* {issue-base-url}/RESTEASY-2406 [RESTEASY-2406]
+
+=== Dev Contacts
+
+* mailto:rsigal@redhat.com[Ron Sigal]
+* mailto:asoldano@redhat.com[Alessio Soldano]
+
+=== QE Contacts
+
+* ??
+
+=== Testing By
+
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* RESTEasy, Wildfly
+
+=== Other Interested Projects
+
+https://github.com/smallrye/smallrye-config
+
+== Requirements
+
+=== Hard Requirements
+
+* Update RESTEasy to retrieve all configuration parameters from MicroProfile ConfigSources.
+* Add to RESTEasy three ConfigSources for servlet context-params, servlet init-params, and filter
+  init-params.
+* Add to RESTEasy a parameter, "resteasy.config.resteasy.parameters.only", which, when set to
+  "true", will restrict RESTEasy specific ConfigSources to returning RESTEasy parameters.
+
+== Test Plan
+
+Tests already exist in the RESTEasy codebase for RESTEasy 4.x These can be ported to 
+RESTEasy 3.x.
+
+== Community Documentation
+
+The RESTEasy 4.x user guide discusses the use of MicroProfile in JAX-RS applications. That
+material can be re-used. 
