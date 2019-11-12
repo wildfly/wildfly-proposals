@@ -26,7 +26,7 @@ only. It will default to "true".
 
 === Issue
 
-* {issue-base-url}/EAP7-??? [EAP7-???]
+* {issue-base-url}/EAP7-1386 [EAP7-1386]
 * {issue-base-url}/WFLY-12779 [WFLY-12779]
 
 === Related Issues
