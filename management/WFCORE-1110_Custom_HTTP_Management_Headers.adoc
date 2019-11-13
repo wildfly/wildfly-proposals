@@ -1,0 +1,84 @@
+= <INSERT TITLE HERE>
+:author:            Darran Lofthouse
+:email:             darran.lofthouse@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-1110[WFCORE-1110]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-12787[WFLY-12787]
+* https://issues.jboss.org/browse/EAP7-1335[EAP7-1335]
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[ ] Engineering
+
+[X] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+The HTTP management endpoint of the application server already returns a pre-defined set of HTTP headers in all of the responses that are sent to the clients, however it is sometimes desirable that additional headers can be returned to satisfy the requirements of an environment the application server is installed within.  This enhancement is to add support for an end user to specify a custom set of HTTP headers that should be returned within each response.
+
+Predominantly we have two endpoints made available from the HTTP management endpoint by default.
+
+ * `/management` - The endpoint for servicing management requests over HTTP.
+ * `/console` - The endpoint to provide the admin console initial page and complete JavaScript.
+
+As we have different endpoints it may be desirable for them to return different headers, as an example some headers are only applicable to the handling of pages or interpretation of the JavaScript so should only be applied to the `/console` endpoint whilst other headers may be applicable to both.
+
+Configuration will be added to the HTTP management endpoint to allow headers to be specified, an example configuration will be added later but in general the following will be apply: -
+
+ * The configuration will allow the end user to specify which context the headers apply to or if they apply to both contexts.
+ * This will be a new `custom-headers` attribute on the `/core-service=management/management-interface=http-interface` resource.
+ * Within the `custom-headers` attribute it will be possible to specify a set of headers represented as an ordered list of key / value pairs against a specific patch.
+ * If a header is already set by the corresponding endpoint and the configuration overrides the value the configuration will have higher precedence.
+ * If a header is specified to apply to both context and is redefined for a specific context the definition for the specific context will have higher precedence. 
+
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+This enhancement is only supporting the default endpoints, dynamic endpoints are excluded.  Typically the headers are most appropriate for and endpoint providing JavaScript.
+
+== Test Plan
+
+== Community Documentation
+
+Community documentation will need to be added describing how to configure custome HTTP headers that should be returned on every request.
+
+== Release Note Content
+
+TODO
+
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
