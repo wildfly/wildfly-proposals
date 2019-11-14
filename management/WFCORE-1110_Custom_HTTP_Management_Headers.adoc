@@ -57,13 +57,9 @@ Configuration will be added to the HTTP management endpoint to allow headers to 
  * The configuration will allow an end user to specify headers to be added based on a specified path prefix.
  * This will be a new `custom-headers` attribute on the `/core-service=management/management-interface=http-interface` resource.
  * Within the `custom-headers` attribute it will be possible to specify a set of headers using key / value pairs against a specific path.
- * For a specific path all keys must be unique i.e. a single header can not be added multiple times.
  * All paths will be assumed to be prefixes starting with `/` - any paths missing a leading `/` will be handled as though the leading `/` has been specified.
-
-As the matching is path based it is possible that a single request can match against multiple path definitions e.g. `/` and `/console`.  All paths will be evaluated, if a header is defined against multiple paths the value for the most specific path will take precedence  i.e. if a header was defined both for `/` and `/console` if the request was to `/console` the header defined against the `/console` path would be used.  However in this example if the request was to `/management` then the header defined against `/` would be applied to the response.
-
-TODO can add a table here with some example configuration and the results of various requests.
-
+ * If a specific header is defined multiple times it will be added to the response multiple times.
+ * Configured headers will not override any headers added by the corresponding endpoint.
 
 === Nice-to-Have Requirements
 
