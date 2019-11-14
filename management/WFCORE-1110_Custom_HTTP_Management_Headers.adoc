@@ -1,4 +1,4 @@
-= <INSERT TITLE HERE>
+= WFCORE-1110 Custom HTTP Headers for the HTTP Management Interface
 :author:            Darran Lofthouse
 :email:             darran.lofthouse@redhat.com
 :toc:               left
@@ -52,7 +52,7 @@ Configuration will be added to the HTTP management endpoint to allow headers to 
 
  * The configuration will allow the end user to specify which context the headers apply to or if they apply to both contexts.
  * This will be a new `custom-headers` attribute on the `/core-service=management/management-interface=http-interface` resource.
- * Within the `custom-headers` attribute it will be possible to specify a set of headers represented as an ordered list of key / value pairs against a specific patch.
+ * Within the `custom-headers` attribute it will be possible to specify a set of headers represented as an ordered list of key / value pairs against a specific path.
  * If a header is already set by the corresponding endpoint and the configuration overrides the value the configuration will have higher precedence.
  * If a header is specified to apply to both context and is redefined for a specific context the definition for the specific context will have higher precedence. 
 
