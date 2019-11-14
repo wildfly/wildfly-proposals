@@ -8,6 +8,8 @@
 
 == Overview
 
+The HTTP management endpoint of the application server already returns a pre-defined set of HTTP headers in all of the responses that are sent to the clients, however it is sometimes desirable that additional headers can be returned to satisfy the requirements of an environment the application server is installed within.  This enhancement is to add support for an end user to specify a custom set of HTTP headers that should be returned within each response.
+
 == Issue Metadata
 
 === Issue
@@ -24,6 +26,8 @@
 
 === QE Contacts
 
+* mailto:tterem@redhat.com[Tomas Terem]
+
 === Testing By
 // Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
 // Discuss with QE during the Kickoff state to decide this
@@ -38,8 +42,6 @@
 == Requirements
 
 === Hard Requirements
-
-The HTTP management endpoint of the application server already returns a pre-defined set of HTTP headers in all of the responses that are sent to the clients, however it is sometimes desirable that additional headers can be returned to satisfy the requirements of an environment the application server is installed within.  This enhancement is to add support for an end user to specify a custom set of HTTP headers that should be returned within each response.
 
 Predominantly we have two endpoints made available from the HTTP management endpoint by default.
 
@@ -61,7 +63,7 @@ Configuration will be added to the HTTP management endpoint to allow headers to 
 
 === Non-Requirements
 
-This enhancement is only supporting the default endpoints, dynamic endpoints are excluded.  Typically the headers are most appropriate for and endpoint providing JavaScript.
+This enhancement is only supporting the default endpoints, dynamic endpoints are excluded.  Typically the headers are most appropriate for an endpoint providing JavaScript.
 
 == Test Plan
 
