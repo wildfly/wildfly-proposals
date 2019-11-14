@@ -57,7 +57,7 @@ These integrations will heavily inform, though not dictate, the corresponding in
 *** io.smallrye:smallrye-open-api
 *** org.eclipse.microprofile.openapi:microprofile-openapi-api
 *** com.fasterxml.jackson.dataformat:jackson-dataformat-yaml
-** Which feature packs will use this layer is still TBD.
+** Subsystem will be included in the default standalone-openshift.xml feature pack.
 * The microprofile-openapi spec module must be exposed to web deployments
 * The `/openapi` endpoint shall be registered relative to the root of the virtual host associated with the deployment.
 ** N.B. The `/openapi` endpoint is intended for a public interface, not a management interface, as with the `/health` and `/metrics` endpoints.
