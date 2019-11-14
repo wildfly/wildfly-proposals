@@ -43,27 +43,33 @@ The HTTP management endpoint of the application server already returns a pre-def
 
 === Hard Requirements
 
-Predominantly we have two endpoints made available from the HTTP management endpoint by default.
+The HTTP management interface provides access to a number of contexts, our primary contexts are accessed at the following paths: -
 
  * `/management` - The endpoint for servicing management requests over HTTP.
  * `/console` - The endpoint to provide the admin console initial page and complete JavaScript.
+ 
+Subsystems can also dynmically register additional contexts to dynamically provide additional functionality or content over the HTTP management interface. 
 
 As we have different endpoints it may be desirable for them to return different headers, as an example some headers are only applicable to the handling of pages or interpretation of the JavaScript so should only be applied to the `/console` endpoint whilst other headers may be applicable to both.
 
 Configuration will be added to the HTTP management endpoint to allow headers to be specified, an example configuration will be added later but in general the following will be apply: -
 
- * The configuration will allow the end user to specify which context the headers apply to or if they apply to both contexts.
+ * The configuration will allow an end user to specify headers to be added based on a specified path prefix.
  * This will be a new `custom-headers` attribute on the `/core-service=management/management-interface=http-interface` resource.
- * Within the `custom-headers` attribute it will be possible to specify a set of headers represented as an ordered list of key / value pairs against a specific path.
- * If a header is already set by the corresponding endpoint and the configuration overrides the value the configuration will have higher precedence.
- * If a header is specified to apply to both context and is redefined for a specific context the definition for the specific context will have higher precedence. 
+ * Within the `custom-headers` attribute it will be possible to specify a set of headers using key / value pairs against a specific path.
+ * For a specific path all keys must be unique i.e. a single header can not be added multiple times.
+ * All paths will be assumed to be prefixes starting with `/` - any paths missing a leading `/` will be handled as though the leading `/` has been specified.
+
+As the matching is path based it is possible that a single request can match against multiple path definitions e.g. `/` and `/console`.  All paths will be evaluated, if a header is defined against multiple paths the value for the most specific path will take precedence  i.e. if a header was defined both for `/` and `/console` if the request was to `/console` the header defined against the `/console` path would be used.  However in this example if the request was to `/management` then the header defined against `/` would be applied to the response.
+
+TODO can add a table here with some example configuration and the results of various requests.
 
 
 === Nice-to-Have Requirements
 
 === Non-Requirements
 
-This enhancement is only supporting the default endpoints, dynamic endpoints are excluded.  Typically the headers are most appropriate for an endpoint providing JavaScript.
+As the contexts supported by the HTTP management interface can be added dynamically by subsystems no validation will be performed to verify that the specified paths are genuinely reachable paths as this information is not available to us at the time we perform model validation.
 
 == Test Plan
 
