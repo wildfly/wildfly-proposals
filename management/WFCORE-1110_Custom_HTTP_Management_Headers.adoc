@@ -61,6 +61,45 @@ Configuration will be added to the HTTP management endpoint to allow headers to 
  * If a specific header is defined multiple times it will be added to the response multiple times.
  * Configured headers will not override any headers added by the corresponding endpoint.
 
+
+The new attribute to be added to the `/core-service=management/management-interface=http-interface` resource will be called `constant-headers` and will be defined as: -
+
+----
+            "constant-headers" => {
+                "type" => LIST,
+                "description" => "The set of constant HTTP headers to apply to response messages.",
+                "expressions-allowed" => false,
+                "required" => false,
+                "value-type" => {
+                    "path" => {
+                        "type" => STRING,
+                        "description" => "The path the headers should be applied to.",
+                        "expressions-allowed" => true,
+                        "required" => true,
+                    },
+                    "headers" => {
+                        "type" => LIST,
+                        "description" => "The headers to set for the matched path.",
+                        "expressions-allowed" => false,
+                        "required" => false,
+                        "value-type" => {
+                            "header" => {
+                                "type" => STRING,
+                                "description" => "The name of the HTTP header to set.",
+                                "expressions-allowed" => true,
+                                "required" => true,
+                            },
+                            "value" => {
+                                "type" => STRING,
+                                "description" => "The value to set for the HTTP header.",
+                                "expressions-allowed" => true,
+                                "required" => true,
+                            }
+                        }
+                    }
+                }
+----
+
 === Nice-to-Have Requirements
 
 === Non-Requirements
