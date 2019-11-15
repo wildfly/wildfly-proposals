@@ -100,6 +100,12 @@ The new attribute to be added to the `/core-service=management/management-interf
                 }
 ----
 
+The following example hows how the interface can be configured to add a custom header for the `/management` endpoint: -
+
+----
+/] /core-service=management/management-interface=http-interface:write-attribute(name=constant-headers, value=[{path=/management, headers=[{header=X-Header, value=HeaderValue}]}])
+----
+
 === Nice-to-Have Requirements
 
 === Non-Requirements
