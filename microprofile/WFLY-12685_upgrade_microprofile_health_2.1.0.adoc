@@ -1,4 +1,4 @@
-= Upgrade MicroProfile Health to 2.1.0
+= Upgrade MicroProfile Health to 2.1
 :author:            Jeff Mesnil
 :email:             jmesnil@redhat.com
 :toc:               left
@@ -10,9 +10,9 @@
 == Overview
 
 
-MicroProfile 3.1 provides a minor upgrade for https://github.com/eclipse/microprofile-health/releases/tag/2.1[MicroProfile Health 2.1.0].
+MicroProfile 3.1 provides a minor upgrade for https://github.com/eclipse/microprofile-health/releases/tag/2.1[MicroProfile Health 2.1].
 
-This component upgrade also covers the upgrade of smallrye-health 2.2.0 that implements MicroProfile Health 2.1.0.
+This component upgrade also covers the upgrade of smallrye-health 2.1.0 that implements MicroProfile Health 2.1.
 
 == Issue Metadata
 
@@ -55,7 +55,7 @@ This component upgrade also covers the upgrade of smallrye-health 2.2.0 that imp
 
 * Run the WildFly integration basic test suite and checks there are no failures related to MicroProfle Health tests.
 * Run the `microprofile-tck/health` module from WildFly integration test suite and checks that there are no failures.
-* There are no existing tests for MicroProfile Health in https://github.com/thorntail/thorntail/tree/master/testsuite[Thorntail test suite] that needs to be ported to WildFly integration test suite.
+* There is only one test for MicroProfile Health in https://github.com/thorntail/thorntail/tree/master/testsuite[Thorntail test suite] https://github.com/thorntail/thorntail/blob/master/fractions/microprofile/microprofile-health/src/test/java/org/wildfly/swarm/health/ParserTest.java[ParserTest]. The tests in MicroProfile Healh TCK and WildFly integration test suite already covers it and this test will not be brought in WildFly test suite.
 
 == Community Documentation
 
