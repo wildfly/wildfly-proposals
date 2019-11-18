@@ -20,6 +20,7 @@ The HTTP management endpoint of the application server already returns a pre-def
 
 * https://issues.jboss.org/browse/WFLY-12787[WFLY-12787]
 * https://issues.jboss.org/browse/EAP7-1335[EAP7-1335]
+
 === Dev Contacts
 
 * mailto:{email}[{author}]
@@ -52,11 +53,11 @@ Subsystems can also dynmically register additional contexts to dynamically provi
 
 As we have different endpoints it may be desirable for them to return different headers, as an example some headers are only applicable to the handling of pages or interpretation of the JavaScript so should only be applied to the `/console` endpoint whilst other headers may be applicable to both.
 
-Configuration will be added to the HTTP management endpoint to allow headers to be specified, an example configuration will be added later but in general the following will be apply: -
+Configuration will be added to the HTTP management endpoint to allow headers to be specified, the following will be apply when applying the headers: -
 
  * The configuration will allow an end user to specify headers to be added based on a specified path prefix.
- * This will be a new `custom-headers` attribute on the `/core-service=management/management-interface=http-interface` resource.
- * Within the `custom-headers` attribute it will be possible to specify a set of headers using key / value pairs against a specific path.
+ * This will be a new `constant-headers` attribute on the `/core-service=management/management-interface=http-interface` resource.
+ * Within the `constant-headers` attribute it will be possible to specify a set of headers using key / value pairs against a specific path.
  * All paths will be assumed to be prefixes starting with `/` - any paths missing a leading `/` will be handled as though the leading `/` has been specified.
  * If a specific header is defined multiple times it will be added to the response multiple times.
  * Configured headers will not override any headers added by the corresponding endpoint.
@@ -83,7 +84,7 @@ The new attribute to be added to the `/core-service=management/management-interf
                         "expressions-allowed" => false,
                         "required" => false,
                         "value-type" => {
-                            "header" => {
+                            "name" => {
                                 "type" => STRING,
                                 "description" => "The name of the HTTP header to set.",
                                 "expressions-allowed" => true,
@@ -100,11 +101,13 @@ The new attribute to be added to the `/core-service=management/management-interf
                 }
 ----
 
-The following example hows how the interface can be configured to add a custom header for the `/management` endpoint: -
+The following example hows how the interface can be configured to add a constant header for the `/management` endpoint: -
 
 ----
-/] /core-service=management/management-interface=http-interface:write-attribute(name=constant-headers, value=[{path=/management, headers=[{header=X-Header, value=HeaderValue}]}])
+/] /core-service=management/management-interface=http-interface:write-attribute(name=constant-headers, value=[{path=/management, headers=[{name=X-Header, value=HeaderValue}]}])
 ----
+
+The `write-attribute` operation will trigger a `reload-required` state as the management interface will need to be re-initialised.
 
 === Nice-to-Have Requirements
 
@@ -114,9 +117,12 @@ As the contexts supported by the HTTP management interface can be added dynamica
 
 == Test Plan
 
+Within the WildFly Core project we will add add a test case against the `/management` and `/error` endpoints, this will allow us to verify headers can be applied both via a common root context and to specific contexts.  This testing will also make use of the management interface to perform the actual configuration which will trigger persistence and require reload of the configuration.
+
+
 == Community Documentation
 
-Community documentation will need to be added describing how to configure custome HTTP headers that should be returned on every request.
+Community documentation will need to be added describing how to configure custom HTTP headers that should be returned on every request.
 
 == Release Note Content
 
