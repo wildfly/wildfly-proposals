@@ -20,6 +20,7 @@ The HTTP management endpoint of the application server already returns a pre-def
 
 * https://issues.jboss.org/browse/WFLY-12787[WFLY-12787]
 * https://issues.jboss.org/browse/EAP7-1335[EAP7-1335]
+* https://issues.jboss.org/browse/WFCORE-4749[WFCORE-4749]
 
 === Dev Contacts
 
@@ -30,8 +31,7 @@ The HTTP management endpoint of the application server already returns a pre-def
 * mailto:tterem@redhat.com[Tomas Terem]
 
 === Testing By
-// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
-// Discuss with QE during the Kickoff state to decide this
+
 [ ] Engineering
 
 [X] QE
@@ -44,6 +44,8 @@ The HTTP management endpoint of the application server already returns a pre-def
 
 === Hard Requirements
 
+This enhancement is to allow an administrator to define a constant set of headers that can be returned from requests handled via the management HTTP interface of the application server.
+ 
 The HTTP management interface provides access to a number of contexts, our primary contexts are accessed at the following paths: -
 
  * `/management` - The endpoint for servicing management requests over HTTP.
@@ -57,11 +59,15 @@ Configuration will be added to the HTTP management endpoint to allow headers to 
 
  * The configuration will allow an end user to specify headers to be added based on a specified path prefix.
  * This will be a new `constant-headers` attribute on the `/core-service=management/management-interface=http-interface` resource.
- * Within the `constant-headers` attribute it will be possible to specify a set of headers using key / value pairs against a specific path.
+ * Within the `constant-headers` attribute it will be possible to specify a set of headers using key / value pairs against a specific path prefix.
  * All paths will be assumed to be prefixes starting with `/` - any paths missing a leading `/` will be handled as though the leading `/` has been specified.
  * If a specific header is defined multiple times it will be added to the response multiple times.
- * Configured headers will not override any headers added by the corresponding endpoint.
 
+For a specific request multiple configured path prefixes may match, as an example a request to `/management` would match both `/` and `/management` - in this case the defined headers for both mappings will be applied to the resulting response.
+
+The primary motivation of this enhancement is to allow an administrator to specify headers that should be returned where we do not already set the specified header.  As headers are the first thing to be be returned in a response to a client we are required to set our custom headers early as any endpoint could trigger the response being sent to the client.  As the configured headers are set early the target endpoint will still have the opportunity to replace any headers, in many cases the headers set by an endpoint will take precendence over any configured headers however this is not guaranteed as an endpoint may check for the presence of a header before setting it's own.
+
+The headers `Connection` and `Date` define the behaviour of the connection management of the endpoint and are integral to correctly caching resources so it will not be possible for these to be set, if an administrator attempts to set these headers an error will be reported.  An error will also be reported if the name of a header specified includes invalid characters as defined by the HTTP specification RFCs.
 
 The new attribute to be added to the `/core-service=management/management-interface=http-interface` resource will be called `constant-headers` and will be defined as: -
 
@@ -115,14 +121,18 @@ The `write-attribute` operation will trigger a `reload-required` state as the ma
 
 As the contexts supported by the HTTP management interface can be added dynamically by subsystems no validation will be performed to verify that the specified paths are genuinely reachable paths as this information is not available to us at the time we perform model validation.
 
+It is not intended that configured headers alter how an endpoint processes a response, however as endpoint process a response after the custom headers have been set an endpoint could still choose to check if a header has already been set by a previous handler and alter it's behaviour but this is outside the scope of this enhancement.
+
 == Test Plan
 
 Within the WildFly Core project we will add add a test case against the `/management` and `/error` endpoints, this will allow us to verify headers can be applied both via a common root context and to specific contexts.  This testing will also make use of the management interface to perform the actual configuration which will trigger persistence and require reload of the configuration.
 
+Tests will also be added verifying invalid header names are correctly rejected.
+
 
 == Community Documentation
 
-Community documentation will need to be added describing how to configure custom HTTP headers that should be returned on every request.
+Community documentation will need to be added describing how to configure custom HTTP headers that should be returned on every request.  The documentation will be added within section 3.1 of the "WildFly Admin Guide" adding a description of the new configuration attribute as well as describing how it affects the resulting response.
 
 == Release Note Content
 
