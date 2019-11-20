@@ -136,14 +136,5 @@ Community documentation will need to be added describing how to configure custom
 
 == Release Note Content
 
-TODO
+A new attribute `constant-headers` has been added to the HTTP management interface resource definition.  Administrators can make use of this attribute to specify additional HTTP headers to be returned in the responses to requests made against the HTTP management interface.  See the WildFly Admin Guide for information on how to configure this feature.
 
-////
-Draft verbiage for up to a few sentences on the feature for inclusion in the
-Release Note blog article for the release that first includes this feature. 
-Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
-This content will be edited, so there is no need to make it perfect or discuss
-what release it appears in.  "See Overview" is acceptable if the overview is
-suitable. For simple features best covered as an item in a bullet-point list 
-of features containing a few words on each, use "Bullet point: <The few words>" 
-////
