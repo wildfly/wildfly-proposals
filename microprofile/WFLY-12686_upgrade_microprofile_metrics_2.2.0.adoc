@@ -39,11 +39,16 @@ This component upgrade also covers the upgrade of smallrye-metrics 2.3.0 that im
 
 == Requirements
 
-* Upgrade MicroProfile Metrics to 2.2.0
-* Upgrade smallrye-metrics to 2.3.0
+* Upgrade MicroProfile Metrics to 2.2.1
+* Upgrade smallrye-metrics to 2.3.2
 * Run any MicroProfile Metrics test in WildFly integration test suite
 * Run the Eclipse MicroProfile Metrics TCK without failures
-* Add https://github.com/thorntail/thorntail/tree/master/testsuite/testsuite-microprofile-metrics[tests from Thorntail test suite that relates to MicroProfile Metrics] which is not already covered by the MicroProfile TCK or WildFly integration test suite
+* After reviewing https://github.com/thorntail/thorntail/tree/master/testsuite/testsuite-microprofile-metrics[tests from Thorntail test suite that relates to MicroProfile Metrics]; there are no behaviour that is not already covered by WildFly test suite or MicroProfile Metrics TCK. No tests from Thorntail will be backported.
+
+== Non-Requirements
+
+* Using non-reusable metrics with same name across multiple deployments and/or subdeployments is not supported.
+* https://github.com/eclipse/microprofile-metrics/blob/master/spec/src/main/asciidoc/architecture.adoc#usage-of-microprofile-metrics-in-application-servers-with-multiple-applications[Recommendation for multiple applications] is not supported. Applications that wants to be supported in a multiple deployment state should provide a `mp.metrics.appName` configuration properties in the `META-INF/microprofile-config.properties` that is bundled in the archive.
 
 == Implementation Plan
 
