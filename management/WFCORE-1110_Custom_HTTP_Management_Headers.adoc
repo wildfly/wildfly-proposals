@@ -65,9 +65,18 @@ Configuration will be added to the HTTP management endpoint to allow headers to 
 
 For a specific request multiple configured path prefixes may match, as an example a request to `/management` would match both `/` and `/management` - in this case the defined headers for both mappings will be applied to the resulting response.
 
-The primary motivation of this enhancement is to allow an administrator to specify headers that should be returned where we do not already set the specified header.  As headers are the first thing to be be returned in a response to a client we are required to set our custom headers early as any endpoint could trigger the response being sent to the client.  As the configured headers are set early the target endpoint will still have the opportunity to replace any headers, in many cases the headers set by an endpoint will take precendence over any configured headers however this is not guaranteed as an endpoint may check for the presence of a header before setting it's own.
+Any headers specified within the configuration will be applied just before the response is sent to the client, this means any headers specified will override any of the headers set by the endpoint which handled the request.
 
-The headers `Connection` and `Date` define the behaviour of the connection management of the endpoint and are integral to correctly caching resources so it will not be possible for these to be set, if an administrator attempts to set these headers an error will be reported.  An error will also be reported if the name of a header specified includes invalid characters as defined by the HTTP specification RFCs.
+Some headers are integral to the correct operation of the server and so can not be overridden, these headers are: -
+
+ * `Connection`
+ * `Content-Length`
+ * `Content-Type`
+ * `Date`
+
+If an administrator attempts to set these headers an error will be reported.
+
+An error will also be reported if the name of a header specified includes invalid characters as defined by the HTTP specification RFCs.
 
 The new attribute to be added to the `/core-service=management/management-interface=http-interface` resource will be called `constant-headers` and will be defined as: -
 
