@@ -73,6 +73,7 @@ Some headers are integral to the correct operation of the server and so can not 
  * `Content-Length`
  * `Content-Type`
  * `Date`
+ * `Transfer-Encoding`
 
 If an administrator attempts to set these headers an error will be reported.
 
