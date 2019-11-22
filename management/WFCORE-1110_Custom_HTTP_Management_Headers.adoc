@@ -51,14 +51,14 @@ The HTTP management interface provides access to a number of contexts, our prima
  * `/management` - The endpoint for servicing management requests over HTTP.
  * `/console` - The endpoint to provide the admin console initial page and complete JavaScript.
  
-Subsystems can also dynmically register additional contexts to dynamically provide additional functionality or content over the HTTP management interface. 
+Subsystems can also dynamically register additional contexts to dynamically provide additional functionality or content over the HTTP management interface. 
 
 As we have different endpoints it may be desirable for them to return different headers, as an example some headers are only applicable to the handling of pages or interpretation of the JavaScript so should only be applied to the `/console` endpoint whilst other headers may be applicable to both.
 
-Configuration will be added to the HTTP management endpoint to allow headers to be specified, the following will be apply when applying the headers: -
+Configuration will be added to the HTTP management endpoint to allow headers to be specified, the following constraints will apply when applying the headers: -
 
  * The configuration will allow an end user to specify headers to be added based on a specified path prefix.
- * This will be a new `constant-headers` attribute on the `/core-service=management/management-interface=http-interface` resource.
+ * There will be a new `constant-headers` attribute on the `/core-service=management/management-interface=http-interface` resource.
  * Within the `constant-headers` attribute it will be possible to specify a set of headers using key / value pairs against a specific path prefix.
  * All paths will be assumed to be prefixes starting with `/` - any paths missing a leading `/` will be handled as though the leading `/` has been specified.
  * If a specific header is defined multiple times it will be added to the response multiple times.
@@ -117,7 +117,7 @@ The new attribute to be added to the `/core-service=management/management-interf
                 }
 ----
 
-The following example hows how the interface can be configured to add a constant header for the `/management` endpoint: -
+The following example shows how the interface can be configured to add a constant header for the `/management` endpoint: -
 
 ----
 /] /core-service=management/management-interface=http-interface:write-attribute(name=constant-headers, value=[{path=/management, headers=[{name=X-Header, value=HeaderValue}]}])
