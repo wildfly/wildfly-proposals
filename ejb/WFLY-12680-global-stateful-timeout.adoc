@@ -79,6 +79,7 @@ should take effect.
 
 * ability to configure default global stateful timeout in WildFly admin console
 * ability to specify default global stateful timeout in custom time unit
+* ability to immediately apply the updated default global stateful timeout value to deployed stateful beans
 
 
 == Implementation Plan
@@ -130,11 +131,16 @@ request so they are aware.
 
 == Test Plan
 
-* structural tests with CLI CRUB operations of the new attribute `default-stateful-bean-session-timeout`
+New tests will be added to `wildfly/testsuite/integration/basic/src/test/java/org/jboss/as/test/integration/ejb/stateful/timeout`,
+and existing test case in that directory will be enhanced to verify the new feature.
+
+* structural tests with CLI CRUD operations of the new attribute `default-stateful-bean-session-timeout`
+** write attribute `default-stateful-bean-session-timeout` to `-1`, `0`, and `1000`, and then read and verify the attribute value
+** rewrite the attribute to some other value, and then read and verify the updated attribute value
 * behavioral tests of default stateful session timeout
 ** when this attribute is absent in server config file, a stateful session bean should not timeout and be removed.  This is the existing behavior before this RFE is implemented.
 ** when this attribute is set to a certain value, a stateful session bean should timeout and subject to removal after this duration (there could be some delay between timeout and actual removal)
-** `@StatefulTomeout` annotation in bean class should override this attribute in server config file
+** `@StatefulTimeout` annotation in bean class should override this attribute in server config file
 ** `stateful-timeout` in `ejb-jar.xml` should override this attribute in server config file
 * transformer tests should be added to `Ejb3TransformersTestCase`
 
