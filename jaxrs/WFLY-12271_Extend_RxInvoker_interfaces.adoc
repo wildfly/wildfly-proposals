@@ -1,0 +1,129 @@
+= WFLY-12271 Extend RxInvoker interfaces to return Response objects
+:author:            Ron Sigal
+:email:             rsigal@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+Currently, FlowableRxInvokerImpl and ObservableRxInvokerImpl
+in package org.jboss.resteasy.rxjava2 in RESTEasy module resteasy-rxjava2
+(see https://github.com/resteasy/Resteasy/tree/master/resteasy-rxjava2)
+implement the javax.ws.rs.client.RxInvoker interface
+
+[source,java]
+----
+public interface RxInvoker<T> {
+
+    public T get();
+    ...
+}
+----
+For example, FlowableRxInvokerImpl looks like
+
+[source,java]
+----
+    public Flowable<?> get() { ... }
+    ...
+----
+In particular, all of the methods return a Flowable. Here, we propose extending
+FlowableRxInvokerImpl, etc., to implement methods that return CompletionStage<Response>. For
+example,
+
+[source,java]
+----
+    CompletionStage<Response> getResponse();
+---- 
+This extension would support, for example,
+
+[source,java]
+----
+FlowableRxInvoker invoker = client.target(generateURL("/get/thing")).request().rx(FlowableRxInvoker.class);
+Response response = invoker.getResponse().toCompletableFuture().get();
+System.out.println("status: " + response.getStatus());
+Flowable<?> flowable = response.readEntity(Flowable.class);
+----
+
+Proposed interface extension:
+
+[source,java]
+----
+public interface RxInvokerExt
+{
+ CompletionStage<Response> getResponse(Class<?> responseType);
+ CompletionStage<Response> getResponse(GenericType<?> genericType);
+ CompletionStage<Response> putResponse(Entity<?> entity, Class<?> responseType);
+ CompletionStage<Response> putResponse(Entity<?> entity, GenericType<?> genericType);
+ CompletionStage<Response> postResponse(Entity<?> entity, Class<?> responseType);
+ CompletionStage<Response> postResponse(Entity<?> entity, GenericType<?> genericType);
+ CompletionStage<Response> deleteResponse(Class<?> responseType);
+ CompletionStage<Response> deleteResponse(GenericType<?> genericType);
+ CompletionStage<Response> headResponse(Class<?> responseType);
+ CompletionStage<Response> headResponse(GenericType<?> genericType);
+ CompletionStage<Response> optionsResponse(Class<?> responseType);
+ CompletionStage<Response> optionsResponse(GenericType<?> genericType);
+ CompletionStage<Response> traceResponse(Class<?> responseType);
+ CompletionStage<Response> traceResponse(GenericType<?> genericType);
+ CompletionStage<Response> methodResponse(String name, Class<?> responseType);
+ CompletionStage<Response> methodResponse(String name, GenericType<?> genericType);
+ CompletionStage<Response> methodResponse(String name, Entity<?> entity, Class<?> responseType);
+ CompletionStage<Response> methodResponse(String name, Entity<?> entity, GenericType<?> genericType);
+}
+----
+
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/EAP7-1313 [EAP7-1313]
+* {issue-base-url}/WFLY-12271[WFLY-12271]
+
+=== Related Issues:
+
+* {issue-base-url}/RESTEASY-1886[RESTEASY-1886]
+
+=== Dev Contacts:
+
+* mailto:separdau@redhat.com[Stephane Epardaud]
+* mailto:asoldano@redhat.com[Alessio Soldano]
+* mailto:ema@redhat.com[Jim Ma]
+* mailto:rsigal@redhat.com[Ron Sigal]
+* mailto:rsearls@redhat.com[Rebecca Searls]
+* mailto:weli@redhat.com[Wei Nan Li]
+
+=== QE Contacts:
+
+* mailto:rsvoboda@redhat.com[Rostislav Svoboda]
+* mailto:mkopecky@redhat.com[Marek Kopecky]
+
+=== Affected Projects or Components:
+
+* RESTEasy
+
+== Requirements
+
+The new methods will be added to three interfaces in RESTEasy's resteasy-rxjava2 module:
+
+* org.jboss.resteasy.rxjava2.FlowableRxInvoker
+* org.jboss.resteasy.rxjava2.ObservableRxInvoker
+* org.jboss.resteasy.rxjava2.SingleInvoker
+
+and their implementation classes:
+
+* org.jboss.resteasy.rxjava2.FlowableRxInvokerImpl
+* org.jboss.resteasy.rxjava2.ObservableRxInvokerImpl
+* org.jboss.resteasy.rxjava2.SingleInvokerImpl
+
+=== Test Plan
+
+RESTEasy tests will be created upstream.
+
+=== Community Documentation
+
+The documentation will come with the release of the RESTEasy component
+(3.9.0.Final) that's bringing the feature to WildFly.

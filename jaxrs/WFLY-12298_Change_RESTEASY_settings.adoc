@@ -1,0 +1,66 @@
+= WFLY-12271 Extend RxInvoker interfaces to return Response objects
+:author:            Ron Sigal
+:email:             rsigal@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+This proposal calls for exposing RESTEasy configuration parameters through the Command Line Interface to the
+Wildfly management model. The initial facility, subject to later elaboration, is meant to allow operators
+to configure RESTEasy context parameters and providers.
+
+For example,
+
+[source,java]
+----
+/subsystem=jaxrs:write-attribute(name=resteasy.document.secure.processing.feature,value="false")
+----
+
+would allow an operator to turn off XML security features.
+
+The intention, for this feature, is for any changes to affect only future deployments, so that no restarts or reloads are necessary.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/EAP7-634 [EAP7-634]
+* {issue-base-url}/WFLY-12298[WFLY-12298]
+
+=== Related Issues:
+
+* {issue-base-url}/RESTEASY-1510[RESTEASY-1510]
+
+=== Dev Contacts:
+
+* mailto:asoldano@redhat.com[Alessio Soldano]
+* mailto:ema@redhat.com[Jim Ma]
+* mailto:rsigal@redhat.com[Ron Sigal]
+* mailto:rsearls@redhat.com[Rebecca Searls]
+* mailto:weli@redhat.com[Wei Nan Li]
+
+=== QE Contacts:
+
+* mailto:rsvoboda@redhat.com[Rostislav Svoboda]
+* mailto:mkopecky@redhat.com[Marek Kopecky]
+
+=== Affected Projects or Components:
+
+* RESTEasy
+
+== Requirements
+
+
+=== Test Plan
+
+Tests will be needed in the Wildfly testsuite.
+
+=== Community Documentation
+
+A subsection of Chapter 9 "Subsystem configuration" of the WildFly Admin Guide
+(https://docs.wildfly.org/17/Admin_Guide.html) will be needed.
