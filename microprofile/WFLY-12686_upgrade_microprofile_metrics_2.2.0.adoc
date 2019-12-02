@@ -47,8 +47,9 @@ This component upgrade also covers the upgrade of smallrye-metrics 2.3.0 that im
 
 == Non-Requirements
 
-* Using non-reusable metrics with same name across multiple deployments and/or subdeployments is not supported.
-* https://github.com/eclipse/microprofile-metrics/blob/master/spec/src/main/asciidoc/architecture.adoc#usage-of-microprofile-metrics-in-application-servers-with-multiple-applications[Recommendation for multiple applications] is not supported. Applications that wants to be supported in a multiple deployment state should provide a `mp.metrics.appName` configuration properties in the `META-INF/microprofile-config.properties` that is bundled in the archive.
+* Using non-reusable metrics with same name across subdeployments of the same EAP deployments is not supported.
+* Using non-reusable metrics with same name across multiple deployments is not supported.
+  *  https://github.com/eclipse/microprofile-metrics/blob/master/spec/src/main/asciidoc/architecture.adoc#usage-of-microprofile-metrics-in-application-servers-with-multiple-applications[The recommendation for multiple applications] can however be used instead.
 
 == Implementation Plan
 
