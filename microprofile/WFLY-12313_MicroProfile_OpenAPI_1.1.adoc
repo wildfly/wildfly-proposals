@@ -90,6 +90,9 @@ These integrations will heavily inform, though not dictate, the corresponding in
 ** Provides a means for generating OpenAPI documentation for multiple applications associated with the same virtual host.
 ** Potentially useful to support legacy OpenAPI tooling (e.g. `/swagger`)
 ** Analogous to the `quarkus.smallrye-openapi.path` property in Quarkus.
+* Use a `mp.openapi.extensions.relative` property to configure whether auto-generated Server records should be absolute or relative.
+** When relative, the generated record will contain the context path of the deployment
+** When absolute, generated records will include all hosts/ports at which the given deployment is accessible.
 * Allow optional authentication/authorization constraints for the `/openapi` endpoint.
 ** Consider for a future enhancement
 * Add an optional endpoint for browsing OpenAPI documentation via SwaggerUI (e.g. https://quarkus.io/guides/openapi-swaggerui-guide).
