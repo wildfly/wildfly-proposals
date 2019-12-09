@@ -63,7 +63,7 @@ Not interested in our integration per se, but projects that have already integra
 
 * Support Eclipse MicroProfile Fault Tolerance version 2.0 for all applications deployed in WildFly.
 * The extension will be provided as Galleon layer called `microprofile-fault-tolerance`.
-* [WILL BE CLARIFIED] The extension will be added to relevant default configurations provided by WildFly (standalone and domain mode).
+* The extension will *not* be part of default configurations provided by WildFly (standalone and domain mode) – instead a galleon layer `microprofile-fault-tolerance` will be provided.
 * Upstream Eclipse MicroProfile Fault Tolerance TCK test suite will be added to `microprofile-tck` WildFly upstream test suite.
 * Add integration tests above the scope of TCK (e.g. from https://github.com/thorntail/thorntail/tree/master/testsuite/testsuite-microprofile-fault-tolerance[Thorntail])
 * Support for multiple deployments. Only the first deployment processed will however configure the underlying Hystrix library, the subsequent deployment issues a warning message.
