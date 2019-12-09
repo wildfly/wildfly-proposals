@@ -83,7 +83,7 @@ These integrations will heavily inform, though not dictate, the corresponding in
 *** Additionally, if the Undertow server/host associated with the application does not define an HTTP endpoint (as required by the spec), we should log a WARN message.
 ** The MicroProfile OpenAPI specification suggests, but does not require, the use of a `format=JSON` or `format=YAML` parameter for the `/openapi` endpoint, used to define content type of the resulting document, in lieu of an `Accept` header.
 *** This is very reasonable, and is simple enough to do.  See: https://download.eclipse.org/microprofile/microprofile-open-api-1.1.2/microprofile-openapi-spec.html#_query_parameters
-* Use a `mp.openapi.extensions.disable` property to disable OpenAPI documentation globally (via mp-config subsystem) or per-application (e.g. /META-INF/mp-config.properties).
+* Use a `mp.openapi.extensions.enabled` property to disable OpenAPI documentation globally (via mp-config subsystem) or per-application (e.g. /META-INF/mp-config.properties).
 ** Provides a parameterizable means of disabling OpenAPI documentation in specific environments (e.g. prod vs dev)
 ** Provides a mechanism to control which application associated with a given virtual host should generate an MicroProfile OpenAPI model.
 * Use a `mp.openapi.extensions.path` property to customize the path of the OpenAPI endpoint.
@@ -110,7 +110,7 @@ These integrations will heavily inform, though not dictate, the corresponding in
 * Add the microprofile-tck tests to the MicroProfile TCK testsuite in WildFly.
 * Integration tests should cover vendor specific behavior, not covered by the TCK tests, including:
 ** Ensuring that services deployed using a non-root context path are documented with the correct `server` elements.
-** Any multi-deployment or multi-module deployment behavior, e.g. `mp.openapi.extensions.disable`
+** Any multi-deployment or multi-module deployment behavior, e.g. `mp.openapi.extensions.enabled`
 ** Alternate OpenAPI endpoint registration according to `mp.openapi.extensions.path`
 ** Fetching JSON vs YAML documentation via `format` parameter
 ** Loading JSON vs YAML static OpenAPI documentation
