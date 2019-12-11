@@ -52,81 +52,86 @@ recent versions of WildFly, we need to expose them as runtime resources.  Exampl
 * Bean statistics
 * Pool statistics
 
+The following lists the existing ejb3 runtime resources that are already supported in WildFly,
+and other deployment information that may be potentially added as new ejb3 management runtime resources.
+The plan is to add important ones as new ejb3 runtime resources, and skip those information that are
+either not commonly used, or intended for legacy features.
+
 === Stateless: existing deployment info as runtime resources
 (http://wildscribe.github.io/WildFly/18.0//deployment/subsystem/ejb3/stateless-session-bean/index.html)
 
-* component-class-name The component's class name.
-* declared-roles The roles declared (via @DeclareRoles) on this EJB component.
-* execution-time Time spend within a bean method.
-* invocations Number of invocations processed.
-* methods Invocation metrics per method.
-* peak-concurrent-invocations Peak concurrent invocations.
-* pool-available-count The number of available (i.e. not in use) instances in the pool.
-* pool-create-count The number of bean instances that have been created.
-* pool-current-size The current size of the pool.
-* pool-max-size The maximum size of the pool.
-* pool-name The name of the pool.
-* pool-remove-count The number of bean instances that have been removed.
-* run-as-role The run-as role (if any) for this EJB component.
-* security-domain The security domain for this EJB component.
-* timers EJB timers associated with the component.
-* wait-time Time spend waiting to obtain an instance.
+* component-class-name: The component's class name.
+* declared-roles: The roles declared (via @DeclareRoles) on this EJB component.
+* execution-time: Time spend within a bean method.
+* invocations: Number of invocations processed.
+* methods: Invocation metrics per method.
+* peak-concurrent-invocations: Peak concurrent invocations.
+* pool-available-count: The number of available (i.e. not in use) instances in the pool.
+* pool-create-count: The number of bean instances that have been created.
+* pool-current-size: The current size of the pool.
+* pool-max-size: The maximum size of the pool.
+* pool-name: The name of the pool.
+* pool-remove-count: The number of bean instances that have been removed.
+* run-as-role: The run-as role (if any) for this EJB component.
+* security-domain: The security domain for this EJB component.
+* timers: EJB timers associated with the component.
+* wait-time: Time spend waiting to obtain an instance.
 
 
 === Stateful: existing deployment info as runtime resources
 (http://wildscribe.github.io/WildFly/18.0//deployment/subsystem/ejb3/stateful-session-bean/index.html)
 
-* cache-size Cache size.
-* component-class-name The component's class name.
-* declared-roles The roles declared (via @DeclareRoles) on this EJB component.
-* execution-time Time spend within a bean method.
-* invocations Number of invocations processed.
-* methods Invocation metrics per method.
-* passivated-count Passivated count.
-* peak-concurrent-invocations Peak concurrent invocations.
-* run-as-role The run-as role (if any) for this EJB component.
-* security-domain The security domain for this EJB component.
-* total-size Total size.
-* wait-time Time spend waiting to obtain an instance.
+* cache-size: Cache size.
+* component-class-name: The component's class name.
+* declared-roles: The roles declared (via @DeclareRoles) on this EJB component.
+* execution-time: Time spend within a bean method.
+* invocations: Number of invocations processed.
+* methods: Invocation metrics per method.
+* passivated-count: Passivated count.
+* peak-concurrent-invocations: Peak concurrent invocations.
+* run-as-role: The run-as role (if any) for this EJB component.
+* security-domain: The security domain for this EJB component.
+* total-size: Total size.
+* wait-time: Time spend waiting to obtain an instance.
 
 
 === Singleton: existing deployment info as runtime resources
 (http://wildscribe.github.io/WildFly/18.0//deployment/subsystem/ejb3/singleton-bean/index.html)
 
-* component-class-name The component's class name.
-* declared-roles The roles declared (via @DeclareRoles) on this EJB component.
-* execution-time Time spend within a bean method.
-* invocations Number of invocations processed.
-* methods Invocation metrics per method.
-* peak-concurrent-invocations Peak concurrent invocations.
-* run-as-role The run-as role (if any) for this EJB component.
-* security-domain The security domain for this EJB component.
-* timers EJB timers associated with the component.
-* wait-time Time spend waiting to obtain an instance.
+* component-class-name: The component's class name.
+* declared-roles: The roles declared (via @DeclareRoles) on this EJB component.
+* execution-time: Time spend within a bean method.
+* invocations: Number of invocations processed.
+* methods: Invocation metrics per method.
+* peak-concurrent-invocations: Peak concurrent invocations.
+* run-as-role: The run-as role (if any) for this EJB component.
+* security-domain: The security domain for this EJB component.
+* timers: EJB timers associated with the component.
+* wait-time: Time spend waiting to obtain an instance.
 
 
 === Potential deployment information to be exposed for stateless, stateful & singleton:
 * jndi bindings
-* [.line-through]#description#
-* [.line-through]#display-name#
-* [.line-through]#icon#
-* [.line-through]#ejb-name#
-* [.line-through]#home (except singleton)#
-* [.line-through]#remote (except singleton)#
-* [.line-through]#local-home (except singleton)#
-* [.line-through]#local (except singleton)#
+* description (skip)
+* display-name (skip)
+* icon (skip)
+* ejb-name (skip)
+* home (except singleton) (skip)
+* remote (except singleton) (skip)
+* local-home (except singleton) (skip)
+* local (except singleton) (skip)
 * business-local
 * business-remote
 * local-bean
 * service-endpoint (slsb only)
-* [.line-through]#ejb-class#
+* ejb-class (skip)
 * stateful-timeout (sfsb only)
 * timeout-method
 * init-on-startup (singleton only)
 * concurrency-management-type (sfsb & singleton only)
 * concurrent-method (sfsb & singleton only)
 * depends-on (singleton only)
-* [.line-through]#init-method (sfsb only)#
+* init-method (sfsb only) (skip)
 * remove-method (sfsb only)
 * async-method
 * transaction-type
@@ -135,8 +140,8 @@ recent versions of WildFly, we need to expose them as runtime resources.  Exampl
 * after-completion-method (sfsb only)
 * around-invoke
 * around-timeout
-* [.line-through]#post-activate (sfsb only)#
-* [.line-through]#pre-passivate (sfsb only)#
+* post-activate (sfsb only) (skip)
+* pre-passivate (sfsb only) (skip)
 * security-role-ref (need to check if already exposed with declared-roles)
 * security-identity (need to check if already exposed with run-as-role)
 * passivation-capable (sfsb only)
@@ -145,31 +150,31 @@ recent versions of WildFly, we need to expose them as runtime resources.  Exampl
 === Message-driven Bean: existing deployment info as runtime resources
 (http://wildscribe.github.io/WildFly/17.0//deployment/subsystem/ejb3/message-driven-bean/index.html)
 
-* component-class-name The component's class name.
-* declared-roles The roles declared (via @DeclareRoles) on this EJB component.
-* delivery-active Indicates whether messages are delivered to this message-driven bean.
-* execution-time Time spend within a bean method.
-* invocations Number of invocations processed.
-* methods Invocation metrics per method.
-* peak-concurrent-invocations Peak concurrent invocations.
-* pool-available-count The number of available (i.e. not in use) instances in the pool.
-* pool-create-count The number of bean instances that have been created.
-* pool-current-size The current size of the pool.
-* pool-max-size The maximum size of the pool.
-* pool-name The name of the pool.
-* pool-remove-count The number of bean instances that have been removed.
-* run-as-role The run-as role (if any) for this EJB component.
-* security-domain The security domain for this EJB component.
-* timers EJB timers associated with the component.
-* wait-time Time spend waiting to obtain an instance.
+* component-class-name: The component's class name.
+* declared-roles: The roles declared (via @DeclareRoles) on this EJB component.
+* delivery-active: Indicates whether messages are delivered to this message-driven bean.
+* execution-time: Time spend within a bean method.
+* invocations: Number of invocations processed.
+* methods: Invocation metrics per method.
+* peak-concurrent-invocations: Peak concurrent invocations.
+* pool-available-count: The number of available (i.e. not in use) instances in the pool.
+* pool-create-count: The number of bean instances that have been created.
+* pool-current-size: The current size of the pool.
+* pool-max-size: The maximum size of the pool.
+* pool-name: The name of the pool.
+* pool-remove-count: The number of bean instances that have been removed.
+* run-as-role: The run-as role (if any) for this EJB component.
+* security-domain: The security domain for this EJB component.
+* timers: EJB timers associated with the component.
+* wait-time: Time spend waiting to obtain an instance.
 
 === Potential deployment information to be exposed for MDB:
 * jndi of message destination
-* [.line-through]#description#
-* [.line-through]#display-name#
-* [.line-through]#icon#
-* [.line-through]#ejb-name#
-* [.line-through]#ejb-class#
+* description (skip)
+* display-name (skip)
+* icon (skip)
+* ejb-name (skip)
+* ejb-class (skip)
 * messaging-type
 * timeout-method
 * transaction-type
