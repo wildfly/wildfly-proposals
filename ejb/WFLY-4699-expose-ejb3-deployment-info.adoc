@@ -1,0 +1,248 @@
+= Expose EJB3 Deployment Information as Runtime Resources
+:author:            Cheng Fang
+:email:             cfang@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-4699 (Expose EJB3 deployment information at runtime)
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-435 (Expose EJB3 deployment information at runtime)
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:szhantem@redhat.com[Sultan Zhantemirov]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+[x] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+
+* ejb3
+
+=== Other Interested Projects
+
+== Requirements
+
+Users should be able to view deployment information for an EJB as runtime resources via CLI or admin console.
+These deployment information comes from ejb-jar.xml and annotation on bean classes.
+With previous versions of WildFly, users could access them via JMX, and since JMX access does not exist in
+recent versions of WildFly, we need to expose them as runtime resources.  Examples of such information:
+
+* Class name
+* JNDI name
+* Security roles
+* Bean statistics
+* Pool statistics
+
+=== Stateless: existing deployment info as runtime resources
+(http://wildscribe.github.io/WildFly/18.0//deployment/subsystem/ejb3/stateless-session-bean/index.html)
+
+* component-class-name The component's class name.
+* declared-roles The roles declared (via @DeclareRoles) on this EJB component.
+* execution-time Time spend within a bean method.
+* invocations Number of invocations processed.
+* methods Invocation metrics per method.
+* peak-concurrent-invocations Peak concurrent invocations.
+* pool-available-count The number of available (i.e. not in use) instances in the pool.
+* pool-create-count The number of bean instances that have been created.
+* pool-current-size The current size of the pool.
+* pool-max-size The maximum size of the pool.
+* pool-name The name of the pool.
+* pool-remove-count The number of bean instances that have been removed.
+* run-as-role The run-as role (if any) for this EJB component.
+* security-domain The security domain for this EJB component.
+* timers EJB timers associated with the component.
+* wait-time Time spend waiting to obtain an instance.
+
+
+=== Stateful: existing deployment info as runtime resources
+(http://wildscribe.github.io/WildFly/18.0//deployment/subsystem/ejb3/stateful-session-bean/index.html)
+
+* cache-size Cache size.
+* component-class-name The component's class name.
+* declared-roles The roles declared (via @DeclareRoles) on this EJB component.
+* execution-time Time spend within a bean method.
+* invocations Number of invocations processed.
+* methods Invocation metrics per method.
+* passivated-count Passivated count.
+* peak-concurrent-invocations Peak concurrent invocations.
+* run-as-role The run-as role (if any) for this EJB component.
+* security-domain The security domain for this EJB component.
+* total-size Total size.
+* wait-time Time spend waiting to obtain an instance.
+
+
+=== Singleton: existing deployment info as runtime resources
+(http://wildscribe.github.io/WildFly/18.0//deployment/subsystem/ejb3/singleton-bean/index.html)
+
+* component-class-name The component's class name.
+* declared-roles The roles declared (via @DeclareRoles) on this EJB component.
+* execution-time Time spend within a bean method.
+* invocations Number of invocations processed.
+* methods Invocation metrics per method.
+* peak-concurrent-invocations Peak concurrent invocations.
+* run-as-role The run-as role (if any) for this EJB component.
+* security-domain The security domain for this EJB component.
+* timers EJB timers associated with the component.
+* wait-time Time spend waiting to obtain an instance.
+
+
+=== Potential deployment information to be exposed for stateless, stateful & singleton:
+* jndi bindings
+* [.line-through]#description#
+* [.line-through]#display-name#
+* [.line-through]#icon#
+* [.line-through]#ejb-name#
+* [.line-through]#home (except singleton)#
+* [.line-through]#remote (except singleton)#
+* [.line-through]#local-home (except singleton)#
+* [.line-through]#local (except singleton)#
+* business-local
+* business-remote
+* local-bean
+* service-endpoint (slsb only)
+* [.line-through]#ejb-class#
+* stateful-timeout (sfsb only)
+* timeout-method
+* init-on-startup (singleton only)
+* concurrency-management-type (sfsb & singleton only)
+* concurrent-method (sfsb & singleton only)
+* depends-on (singleton only)
+* [.line-through]#init-method (sfsb only)#
+* remove-method (sfsb only)
+* async-method
+* transaction-type
+* after-begin-method (sfsb only)
+* before-completion-method (sfsb only)
+* after-completion-method (sfsb only)
+* around-invoke
+* around-timeout
+* [.line-through]#post-activate (sfsb only)#
+* [.line-through]#pre-passivate (sfsb only)#
+* security-role-ref (need to check if already exposed with declared-roles)
+* security-identity (need to check if already exposed with run-as-role)
+* passivation-capable (sfsb only)
+
+
+=== Message-driven Bean: existing deployment info as runtime resources
+(http://wildscribe.github.io/WildFly/17.0//deployment/subsystem/ejb3/message-driven-bean/index.html)
+
+* component-class-name The component's class name.
+* declared-roles The roles declared (via @DeclareRoles) on this EJB component.
+* delivery-active Indicates whether messages are delivered to this message-driven bean.
+* execution-time Time spend within a bean method.
+* invocations Number of invocations processed.
+* methods Invocation metrics per method.
+* peak-concurrent-invocations Peak concurrent invocations.
+* pool-available-count The number of available (i.e. not in use) instances in the pool.
+* pool-create-count The number of bean instances that have been created.
+* pool-current-size The current size of the pool.
+* pool-max-size The maximum size of the pool.
+* pool-name The name of the pool.
+* pool-remove-count The number of bean instances that have been removed.
+* run-as-role The run-as role (if any) for this EJB component.
+* security-domain The security domain for this EJB component.
+* timers EJB timers associated with the component.
+* wait-time Time spend waiting to obtain an instance.
+
+=== Potential deployment information to be exposed for MDB:
+* jndi of message destination
+* [.line-through]#description#
+* [.line-through]#display-name#
+* [.line-through]#icon#
+* [.line-through]#ejb-name#
+* [.line-through]#ejb-class#
+* messaging-type
+* timeout-method
+* transaction-type
+* message-destination-type
+* message-destination-link
+* activation-config
+* around-invoke
+* around-timeout
+* security-role-ref
+* security-identity
+
+=== Hard Requirements
+
+* Users should be able to view ejb deployment information as runtime resources via CLI for all ejb bean types:
+** stateless
+** stateful
+** singleton
+** MDB
+* EJB deployment information can come from ejb-jar.xml or annotations on bean classes, or both.  Users should be able to view the effective and merged deployment information as runtime resources via CLI.
+* Some deployment information, though not present in either ejb-jar.xml or annotations, are useful and therefore should also be exposed as runtime resources.  For example, jndi bindings, invocation stats, etc.
+
+=== Example CLI Operations and resources
+The following is an example CLI command output showing the management resources of a single EJB.
+Note that `jndi-names` is the new resource to be implemented. Other new resources are not shown here.
+[source]
+/deployment=singleton-hello.jar/subsystem=ejb3/singleton-bean=SingletonHello:read-resource(include-runtime, recursive)
+{
+    "outcome" => "success",
+    "result" => {
+        "component-class-name" => "sample.SingletonHello",
+        "declared-roles" => [],
+        "execution-time" => 0L,
+        "invocations" => 0L,
+        "jndi-names" => [
+            "java:global/singleton-hello/SingletonHello!sample.SingletonHello",
+            "java:module/SingletonHello!sample.SingletonHello",
+            "java:module/SingletonHello",
+            "java:global/singleton-hello/SingletonHello",
+            "java:app/singleton-hello/SingletonHello!sample.SingletonHello",
+            "java:app/singleton-hello/SingletonHello"
+        ],
+        "methods" => {},
+        "peak-concurrent-invocations" => 0L,
+        "run-as-role" => undefined,
+        "security-domain" => "other",
+        "timers" => [],
+        "wait-time" => 0L,
+        "service" => undefined
+    }
+}
+=== Nice-to-Have Requirements
+
+* ability to read these deployment information from admin console
+
+=== Non-Requirements
+
+* ability to modify these deployment information via CLI or admin console;
+* ability to expose deployment information from jboss-specific deployment descriptors;
+* ability to expose ALL deployment information from ejb-jar.xml and annotations for an EJB.
+* ability to expose deployment information from sources other than ejb3.
+
+== Test Plan
+
+New tests will be added to `testsuite/integration/basic/src/test/java/org/jboss/as/test/integration/ejb/management/deployments`.
+
+* verify that deployment information should be available as runtime info for all ejb bean types:
+** stateless
+** stateful
+** singleton
+** MDB
+* verify the correctly merged value is exposed as runtime resources via CLI, when some deployment information is specified in both ejb-jar.xml and annotations.
+
+== Community Documentation
+
+Enhance WildFly community docs (docs/src/main/asciidoc/_developer-guide/EJB3_Reference_Guide.adoc) to describe
+the new ejb3 management resources derived from deployment information.
