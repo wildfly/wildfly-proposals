@@ -149,5 +149,7 @@ Documentation will be added to the WildFly documentation showing how a MicroProf
 
 We don't presently have an agreed approach however quickstarts should be considered to ensure a quickstart exists that can be used with WildFly.  We do already have a pure WildFly Elytron quickstart making use of JWT so one option will be to fork that quickstart and adapt to use MicroProfile JWT exclusively without WildFly Elytron configuration.
 
+== Release Note Content
 
+Support has been added for the https://microprofile.io/project/eclipse/microprofile-jwt-auth[Eclipse MicroProfile JWT RBAC] version 1.1.1 specification with the addition of a new subsystem `microprofile-jwt-smallrye`.  Traditionally the security for deployments would depend on resources defined within the management model to access local or remote stores containing the definitions of the identities.  MicroProfile JWT provides the abililty that with minimal configuration contained within a deployment for authenticated identities to be established from the contents of cryptographically signed JWT tokens received with each request.
 
