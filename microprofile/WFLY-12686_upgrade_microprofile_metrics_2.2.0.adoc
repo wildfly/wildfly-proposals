@@ -1,0 +1,64 @@
+= Upgrade MicroProfile Metrics to 2.2.0
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          microprofile,metrics,observability
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+
+MicroProfile 3.1 provided a minor upgrade for MicroProfile Metrics 2.1. However this version introduced a regression and a 2.2 version was released shortly after to fix this regression.
+This component upgrade will integrate https://github.com/eclipse/microprofile-metrics/releases/tag/2.2[MicroProfile Metrics 2.2].
+This component upgrade also covers the upgrade of smallrye-metrics 2.3.0 that implements MicroProfile Metrics 2.2.0
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-12686[WFLY-12686]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-12735[WFLY-12735] - Upgrade smallrye-metrics to 2.3.0
+* https://issues.jboss.org/browse/EAP7-1349[EAP7-1349]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:istraka@redhat.com[Ivan Straka]
+
+=== Testing By
+
+[X] QE
+
+== Requirements
+
+* Upgrade MicroProfile Metrics to 2.2.1
+* Upgrade smallrye-metrics to 2.3.2
+* Run any MicroProfile Metrics test in WildFly integration test suite
+* Run the Eclipse MicroProfile Metrics TCK without failures
+* After reviewing https://github.com/thorntail/thorntail/tree/master/testsuite/testsuite-microprofile-metrics[tests from Thorntail test suite that relates to MicroProfile Metrics]; there are no behaviour that is not already covered by WildFly test suite or MicroProfile Metrics TCK. No tests from Thorntail will be backported.
+
+== Non-Requirements
+
+* Using non-reusable metrics with same name across subdeployments of the same EAP deployments is not supported.
+* Using non-reusable metrics with same name across multiple deployments is not supported.
+  *  https://github.com/eclipse/microprofile-metrics/blob/master/spec/src/main/asciidoc/architecture.adoc#usage-of-microprofile-metrics-in-application-servers-with-multiple-applications[The recommendation for multiple applications] can however be used instead.
+
+== Implementation Plan
+
+== Test Plan
+
+* Add https://github.com/thorntail/thorntail/tree/master/testsuite/testsuite-microprofile-metrics[tests from Thorntail test suite that relates to MicroProfile Metrics] which is not already covered by the MicroProfile TCK or WildFly integration test suite. These new test cases will be added to WildFly basic ntegration test suite
+* Run the WildFly integration basic test suite and checks there are no failures related to MicroProfle Metrics tests.
+* Run the `microprofile-tck/metrics` module from WildFly integration test suite and checks that there are no failures.
+
+== Community Documentation
+
+* No community documentation is required for this upgrade
