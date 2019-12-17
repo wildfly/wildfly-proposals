@@ -52,7 +52,7 @@ This enhancement is focused on adding support for the MicroProfile JWT 1.1 speci
 
 Primarily this enhancement will be delivered using a new subsystem `microprofile-jwt-smallrye` which will be added to WildFly.  The subsystem will install a DeploymentUnitProcessor which will detect if MicroProfile JWT is required and activate a suitable security configuration as described within this proposal.
 
-The new subsystem initially will contain no configuration, it's presence alone will enable support for MicorProfile JWT.
+The new subsystem initially will contain no configuration, it's presence alone will enable support for MicroProfile JWT.
 
 [source,xml]
 ----
@@ -61,7 +61,7 @@ The new subsystem initially will contain no configuration, it's presence alone w
 
 Additionally the initial version of this subsystem will expose no operations and no attributes.
 
-The default location to specify the authentication requirements is within the `web.xml` deployment descriptor, the MicorProfile JWT specification add a new annotation `@org.eclipse.microprofile.auth.LoginConfig` which allows a JAX-RS `javax.ws.rs.core.Application` to be annotated to specify the desired `auth-method` and `realm-name`.
+The default location to specify the authentication requirements is within the `web.xml` deployment descriptor, the MicroProfile JWT specification add a new annotation `@org.eclipse.microprofile.auth.LoginConfig` which allows a JAX-RS `javax.ws.rs.core.Application` to be annotated to specify the desired `auth-method` and `realm-name`.
 
 During deployment, deployments will be scanned for a class extending `Application` annotated with the new `@LoginConfig` annotation - if the authentication configuration was not previously specified within the `web.xml` the configuration from this annotation will be used instead.  If the authentication configuration has already been specified in the `web.xml` annotation scanning will be skipped as the configuration in the `web.xml` takes precendence over the annotation.
 
@@ -81,7 +81,7 @@ Activation will also ensure activation of the SmallRye JWT CDI extension as well
 
 Finally activation will ensure the activation of the `MP-JWT` authentication mechanism for the deployment.
 
-The combination of SmallRye JWT with Elytron JWT will be the pair of projects responsible for providing the functionality described in the MicorProfile JWT specification combined with tying in the integration to the application server's security framework to ensure aspects such as identity association and establishment are correctly performed.
+The combination of SmallRye JWT with Elytron JWT will be the pair of projects responsible for providing the functionality described in the MicroProfile JWT specification combined with tying in the integration to the application server's security framework to ensure aspects such as identity association and establishment are correctly performed.
 
 Once an identity has been established according to the steps described by the MicroProfile JWT specification the remaining security decisions required are covered by the relevant Jakarta EE specifications in use by the various subsystems. 
 
@@ -105,7 +105,7 @@ It is assumed that any deployment making use of MicroProfile JWT will have alrea
 
 As this is quite a large topic it deserves it's own heading, when discussing alternative authentication mechanisms we are really looking at mechanisms like `FORM`, `SPNEGO`, `DIGEST` etc...
 
-It will not be a priority of this enhancement to add support for alternative authentication mechanisms to `MP-JWT` as this brings a lot of additional complexity.  For this initial integration how we provide support for the `MP-JWT` mechanism should be largely transparent to the deployment allowing us to evolve this aspect further.
+This enhancement will not be adding support for alternative authentication mechanisms to `MP-JWT` as this brings a lot of additional complexity.  For this initial integration how we provide support for the `MP-JWT` mechanism should be largely transparent to the deployment allowing us to evolve this aspect further.  Applications that require the use of these mechanisms can continue to use the existing security services offered by the application server.
 
 Some of the issues we need to consider may be worthwhile discussing at the specification level.
 
@@ -125,29 +125,34 @@ Finally there will be an additional project `Elytron JWT` added to the WildFly E
 
 If enhancements are required these will be submitted directly to the SmallRye JWT project, the Elytron JWT project will be a back up if we need a location to hold enhancements whilst the availability in SmallRye JWT is considered.
 
-Overall this will lead to four new distinct modules being added to WildFly: -
+Overall this will lead to five new distinct modules being added to WildFly: -
 
- * `org.eclips./microprofile.jwt.auth.api` - Public
+ * `org.eclipse.microprofile.jwt.auth.api` - Public
  * `io.smallrye.jwt` - Private
  * `org.wildfly.security.elytron-jwt` - Private
  * `org.wildfly.extension.microprofile.jwt-smallrye` - Private
-
+ * `org.bitbucket.jose4j` - Private
 
 == Test Plan
 
-Details are still to be discussed but in general testing will make use of the MicroProfile TCK, additionally integration tests will be added to the WildFly testsuite using deployments configured to use MicroProfile JWT.  Any code added to WildFly Elytron will also be tested using co-located unit tests.
+Within WildFly the TCK from the MicroProfile JWT project will be added so that the default suite of tests will be executed as part of our normal full test runs.
 
-The Thorntail project also contains existing MicroProfile JWT tests, we will review the feasibility of porting these to WildFly for testing.
+If additional scenarios are identified that require a test these will be added separatly to the WildFly testsuite. 
 
-When considering the tests to add to WildFly it will be worth considering the scenarios not tested by the MicroProfile JWT and ensure we add some coverage of our own, one recent example identified is testing of a deployment that exclusively makes use of the `web.xml` for configuration and does not make use of the `@LoginConfig` annotation.  Overall tests we add should complement not duplicate the MicroProfile JWT TCK tests as we are already executing those.
-
-One aspect we may consider is the generation of tokens as that is outside the specification, within the testsuites and possibly as a stand alone example we may want an endpoint which is capable of generating the JWT tokens - this would not be a part of our supported distribution however it would be useful to allow for deployments to use MicroProfile JWT without additional infrastructure requirements.  Something such as this should have the ability to take a WildFly Elytron SecurityIdentity and convert it into a JWT token.
+Additional tests will be developed within QE.
 
 == Community Documentation
 
-Documentation will be added to the WildFly documentation showing how a MicroProfile JWT deployment can be deployed, we may want to restrict the level of detail as the behaviour will predominantly be covered by the specification.
+Within the community documentation the focus will cover the following topics.
 
-We don't presently have an agreed approach however quickstarts should be considered to ensure a quickstart exists that can be used with WildFly.  We do already have a pure WildFly Elytron quickstart making use of JWT so one option will be to fork that quickstart and adapt to use MicroProfile JWT exclusively without WildFly Elytron configuration.
+ * Installation of the extension / subsystem.
+ * The triggers to activate the MicroProfile JWT integration for a specific deployment.
+ * The MicroProfile Config properties as defined in the MicroProfile JWT specification.
+ * Additional MicroProfile Config properties as supported by SmallRye JWT. 
+
+An appropriate Quickstart will be handled under it's own RFE, the Quickstart will be where a full end to end example is described.
+
+Beyond this the MicroProfle JWT specification should be the definitive source of relevent information.
 
 == Release Note Content
 
