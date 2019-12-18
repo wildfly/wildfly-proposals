@@ -22,7 +22,7 @@ This component upgrade also covers the upgrade of smallrye-health 2.1.0 that imp
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFLY-12734[WFLY-12734] - Upgrade smallrye-health to 2.2.0
+* https://issues.jboss.org/browse/WFLY-12734[WFLY-12734] - Upgrade smallrye-health to 2.1.0
 * https://issues.jboss.org/browse/EAP7-1348[EAP7-1348]
 
 === Dev Contacts
@@ -39,8 +39,8 @@ This component upgrade also covers the upgrade of smallrye-health 2.1.0 that imp
 
 == Requirements
 
-* Upgrade MicroProfile Health to 2.1.0
-* Upgrade smallrye-health to 2.2.0
+* Upgrade MicroProfile Health to 2.1
+* Upgrade smallrye-health to 2.1.0
 * Run any MicroProfile Health test in WildFly integration test suite
 * Run the Eclipse MicroProfile Health TCK without failures
 
@@ -48,6 +48,7 @@ This component upgrade also covers the upgrade of smallrye-health 2.1.0 that imp
 
 * Support of the `mp.health.disable-default-procedures` config property is postponed to https://issues.jboss.org/browse/WFLY-12342[WFLY-12342] that will add default server procedures.
 * Porting of https://github.com/thorntail-examples/health-check/blob/f164faa787d4adb616424116a1ec84a1f28b30eb/src/main/java/io/thorntail/example/HealthChecks.java#L31[test for Thorntail health-check example] is out of scope and will be done in the context of https://issues.jboss.org/browse/WFLY-12342[WFLY-12342] that will adds a proper server probes to check the `server-state` status.
+* Health checks in subdeployments of EAR deployment are not supported.
 
 == Implementation Plan
 
