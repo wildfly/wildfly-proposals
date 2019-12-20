@@ -1,0 +1,105 @@
+= WFLY-12590 Integrate MicroProfile Fault Tolerance 2.0
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:keywords:          microprofile,fault-tolerance,openshift
+
+== Overview
+
+Integrate support for Eclipse MicroProfile (MP) Fault Tolerance (FT) for applications deployed in WildFly.
+This proposal pertains to MP FT version 2.0 given the timing of this RFE.
+The integration is based on SmallRye project, specifically `smallrye-fault-tolerance` module.
+The `smallrye-fault-tolerance` module is already in use by projects https://thorntail.io/[Thorntail] (WildFly Swarm) and https://quarkus.io/[Quarkus].
+
+MicroProfile Fault Tolerance specification simplifies the challenges brought by the distributed nature of microservices.
+This is because the communication with external systems is inherently unreliable.
+This increases demand on resiliency of applications.
+
+The patterns brought by this specification are annotations such as `@Timeout`, `@Retry`, `@Fallback`, `@CircuitBreaker`, `@Bulkhead` and `@Asynchronous`.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-12590[WFLY-12590 Integrate MicroProfile Fault Tolerance 2.0]
+* https://issues.jboss.org/browse/EAP7-1347[EAP7-1347 Integrate MP Fault Tolerance 2.0 into EAP]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-10522[WFLY-10522 Support Eclipse MicroProfile Config] - dependency; already integrated
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:mnovak@redhat.com[Miroslav Novak]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+[ ] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+
+* The specification repository resides at official Eclipse organization on GitHub in https://github.com/eclipse/microprofile-fault-tolerance[eclipse/microprofile-fault-tolerance] repository.
+* The implementation of Eclipse MicroProfile Fault Tolerance will be provided by SmallRye project https://github.com/smallrye/smallrye-fault-tolerance[smallrye/smallrye-fault-tolerance].
+* The underlying library used by _current_ SmallRye implementation is Hystrix which resides in official Netflix GitHub organization https://github.com/Netflix/Hystrix[Netflix/Hystrix].
+
+=== Other Interested Projects
+
+Not interested in our integration per se, but projects that have already integrated MP FT:
+
+* https://thorntail.io/[Thorntail] has integrated MicroProfile Fault Tolerance as a https://github.com/thorntail/thorntail/tree/master/fractions/microprofile/microprofile-fault-tolerance[fraction].
+* https://quarkus.io/[Quarkus] has integrated MicroProfile Fault Tolerance as an https://github.com/quarkusio/quarkus/tree/master/extensions/smallrye-fault-tolerance[extension].
+
+== Requirements
+
+* Support Eclipse MicroProfile Fault Tolerance version 2.0 for all applications deployed in WildFly.
+* The extension will be provided as Galleon layer called `microprofile-fault-tolerance`.
+* The extension will *not* be part of default configurations provided by WildFly (standalone and domain mode) – instead a galleon layer `microprofile-fault-tolerance` will be provided.
+* Upstream Eclipse MicroProfile Fault Tolerance TCK test suite will be added to `microprofile-tck` WildFly upstream test suite.
+* Add integration tests above the scope of TCK (e.g. from https://github.com/thorntail/thorntail/tree/master/testsuite/testsuite-microprofile-fault-tolerance[Thorntail])
+* Support for multiple deployments. Only the first deployment processed will however configure the underlying Hystrix library, the subsequent deployment issues a warning message.
+
+== Nice-to-Have Requirements
+
+* Create a MicroProfile Fault Tolerance https://github.com/wildfly/quickstart[quickstart] – delivered via separate RFE above of scope of this one.
+
+Items that are currently only being taken into consideration with next version of this feature:
+
+* The underlying library used by SmallRye FT implementation is Hystrix which is currently in "maintenance" mode and a final
+  release of the project (version 1.5.18) has been released. The discussion/efforts about replacing the library are ongoing.
+* WildFly's standard management model will be configuration-less:
+** all configuration is done through MicroProfile Config specification
+** given the maintenance problem above it is not desirable to expose a management model which will change in near future as concepts are not cleanly mappable to a different underlying library
+
+== Non-Requirements
+
+* N/A
+
+== Implementation Plan
+
+* Add dependencies on `smallrye-fault-tolerance` and `microprofile-fault-tolerance-api` artifacts.
+* Add a new `microprofile-fault-tolerance-smallrye` extension to provide Fault Tolerance APIs support for deployments.
+* Add configuration-less MicroProfile Fault Tolerance subsystem.
+* Support configuration of Hystrix from MicroProfile Config specifications.
+  The configuration is queried for Hystrix properties which are then applied through Archaius configuration mechanism.
+  Since Hystrix configuration is singleton only globally scoped configuration is queried and applied.
+
+== Test Plan
+
+* The `smallrye-fault-tolerance` component is passing the MicroProfile Fault Tolerance TCK during its release process.
+* WildFly integration test suite will be enhanced with tests that deploys Java archives which uses the MicroProfile Fault Tolerance API.
+
+== Community Documentation
+
+The feature will be documented in WildFly Administration Guide in a new MicroProfile Fault Tolerance section.
+Since WildFly integration does not impose any special requirements and subsystem configuration, this section will just contain how to configure Hystrix and link to MP FT specification.
+This section will also describe migration path from Thorntail primarily regarding Hystrix configuration.
