@@ -53,7 +53,7 @@ recent versions of WildFly, we need to expose them as runtime resources.  Exampl
 * Pool statistics
 
 The following lists the existing ejb3 runtime resources that are already supported in WildFly,
-and other deployment information that may be potentially added as new ejb3 management runtime resources.
+and other deployment information from ejb-jar.xml that may be potentially added as new ejb3 management runtime resources.
 The plan is to add important ones as new ejb3 runtime resources, and skip those information that are
 either not commonly used, or intended for legacy features.
 
@@ -111,40 +111,40 @@ either not commonly used, or intended for legacy features.
 
 
 === Potential deployment information to be exposed for stateless, stateful & singleton:
-* jndi bindings
+* jndi-names
 * description (skip)
 * display-name (skip)
 * icon (skip)
 * ejb-name (skip)
-* home (except singleton) (skip)
-* remote (except singleton) (skip)
-* local-home (except singleton) (skip)
-* local (except singleton) (skip)
+* home (applies to stateless and stateful, legacy) (skip)
+* remote (applies to stateless and stateful, legacy) (skip)
+* local-home (applies to stateless and stateful, legacy) (skip)
+* local (applies to stateless and stateful, legacy) (skip)
 * business-local
 * business-remote
-* local-bean
-* service-endpoint (slsb only)
-* ejb-class (skip)
-* stateful-timeout (sfsb only)
-* timeout-method
+* local-bean (included in business-local)
+* service-endpoint (applies to stateless JAX-RPC web service, legacy) (skip)
+* ejb-class (available as component-class-name) (skip)
+* stateful-timeout (stateful only)
+* timeout-method (applies to stateless, singleton and MDB)
 * init-on-startup (singleton only)
-* concurrency-management-type (sfsb & singleton only)
-* concurrent-method (sfsb & singleton only)
+* concurrency-management-type (singleton only)
+* concurrent-method (stateful & singleton only) (skip)
 * depends-on (singleton only)
-* init-method (sfsb only) (skip)
-* remove-method (sfsb only)
-* async-method
+* init-method (stateful only, legacy) (skip)
+* remove-methods (stateful only)
+* async-methods
 * transaction-type
-* after-begin-method (sfsb only)
-* before-completion-method (sfsb only)
-* after-completion-method (sfsb only)
-* around-invoke
-* around-timeout
-* post-activate (sfsb only) (skip)
-* pre-passivate (sfsb only) (skip)
-* security-role-ref (need to check if already exposed with declared-roles)
-* security-identity (need to check if already exposed with run-as-role)
-* passivation-capable (sfsb only)
+* after-begin-method (stateful only)
+* before-completion-method (stateful only)
+* after-completion-method (stateful only)
+* around-invoke (involves interceptors) (skip)
+* around-timeout (involves interceptors) (skip)
+* post-activate (involves interceptors, stateful only) (skip)
+* pre-passivate (involves interceptors, stateful only) (skip)
+* security-role-ref (already available with declared-roles and run-as-role)
+* security-identity (already available with declared-roles and run-as-role)
+* passivation-capable (stateful only)
 
 
 === Message-driven Bean: existing deployment info as runtime resources
@@ -169,22 +169,21 @@ either not commonly used, or intended for legacy features.
 * wait-time: Time spend waiting to obtain an instance.
 
 === Potential deployment information to be exposed for MDB:
-* jndi of message destination
 * description (skip)
 * display-name (skip)
 * icon (skip)
-* ejb-name (skip)
-* ejb-class (skip)
+* ejb-name (already available as the resource name) (skip)
+* ejb-class (already available as component-class-name) (skip)
 * messaging-type
 * timeout-method
 * transaction-type
 * message-destination-type
 * message-destination-link
 * activation-config
-* around-invoke
-* around-timeout
-* security-role-ref
-* security-identity
+* around-invoke (involves interceptors) (skip)
+* around-timeout (involves interceptors) (skip)
+* security-role-ref (already available with declared-roles and run-as-role)
+* security-identity (already available with declared-roles and run-as-role)
 
 === Hard Requirements
 
@@ -197,34 +196,277 @@ either not commonly used, or intended for legacy features.
 * Some deployment information, though not present in either ejb-jar.xml or annotations, are useful and therefore should also be exposed as runtime resources.  For example, jndi bindings, invocation stats, etc.
 
 === Example CLI Operations and resources
-The following is an example CLI command output showing the management resources of a single EJB.
-Note that `jndi-names` is the new resource to be implemented. Other new resources are not shown here.
+The following are CLI command output showing the management resources of stateless, stateful, singleton and MDB.
 [source]
-/deployment=singleton-hello.jar/subsystem=ejb3/singleton-bean=SingletonHello:read-resource(include-runtime, recursive)
+/deployment=ejb-management.jar/subsystem=ejb3/stateless-session-bean=ManagedStatelessBean:read-resource(include-runtime)
 {
     "outcome" => "success",
     "result" => {
-        "component-class-name" => "sample.SingletonHello",
-        "declared-roles" => [],
+        "async-methods" => ["void async(int, int)"],
+        "business-local" => ["sample.ManagedStatelessBean"],
+        "business-remote" => ["sample.BusinessInterface"],
+        "component-class-name" => "sample.ManagedStatelessBean",
+        "declared-roles" => [
+            "Role3",
+            "Role2",
+            "Role1"
+        ],
         "execution-time" => 0L,
         "invocations" => 0L,
         "jndi-names" => [
-            "java:global/singleton-hello/SingletonHello!sample.SingletonHello",
-            "java:module/SingletonHello!sample.SingletonHello",
-            "java:module/SingletonHello",
-            "java:global/singleton-hello/SingletonHello",
-            "java:app/singleton-hello/SingletonHello!sample.SingletonHello",
-            "java:app/singleton-hello/SingletonHello"
+            "java:global/ejb-management/ManagedStatelessBean!sample.ManagedStatelessBean",
+            "java:module/ManagedStatelessBean!sample.ManagedStatelessBean",
+            "java:app/ejb-management/ManagedStatelessBean!sample.ManagedStatelessBean",
+            "java:global/ejb-management/ManagedStatelessBean!sample.BusinessInterface",
+            "java:module/ManagedStatelessBean!sample.BusinessInterface",
+            "java:app/ejb-management/ManagedStatelessBean!sample.BusinessInterface"
         ],
         "methods" => {},
         "peak-concurrent-invocations" => 0L,
-        "run-as-role" => undefined,
+        "pool-available-count" => 64,
+        "pool-create-count" => 0,
+        "pool-current-size" => 0,
+        "pool-max-size" => 64,
+        "pool-name" => "slsb-strict-max-pool",
+        "pool-remove-count" => 0,
+        "run-as-role" => "Role3",
         "security-domain" => "other",
-        "timers" => [],
+        "timeout-method" => "public void sample.ManagedStatelessBean.timeout(javax.ejb.Timer)",
+        "timers" => [{
+            "time-remaining" => 27331577L,
+            "next-timeout" => 1577768415000L,
+            "calendar-timer" => true,
+            "persistent" => false,
+            "info" => "timer1",
+            "schedule" => {
+                "year" => "*",
+                "month" => "*",
+                "day-of-month" => "*",
+                "day-of-week" => "*",
+                "hour" => "0",
+                "minute" => "0",
+                "second" => "15",
+                "timezone" => undefined,
+                "start" => undefined,
+                "end" => undefined
+            }
+        }],
+        "transaction-type" => "CONTAINER",
+        "wait-time" => 0L,
+        "service" => {"timer-service" => undefined}
+    }
+}
+
+[source]
+/deployment=ejb-management.jar/subsystem=ejb3/stateful-session-bean=ManagedStatefulBean2:read-resource(include-runtime)
+{
+    "outcome" => "success",
+    "result" => {
+        "after-begin-method" => "private void sample.ManagedStatefulBean2.afterBegin()",
+        "after-completion-method" => "private void sample.ManagedStatefulBean2.afterCompletion()",
+        "async-methods" => ["void async(int, int)"],
+        "before-completion-method" => "private void sample.ManagedStatefulBean2.beforeCompletion()",
+        "business-local" => ["sample.ManagedStatefulBean2"],
+        "business-remote" => ["sample.BusinessInterface"],
+        "cache-size" => 0,
+        "component-class-name" => "sample.ManagedStatefulBean2",
+        "declared-roles" => [
+            "Role3",
+            "Role2",
+            "Role1"
+        ],
+        "execution-time" => 0L,
+        "invocations" => 0L,
+        "jndi-names" => [
+            "java:app/ejb-management/ManagedStatefulBean2!sample.ManagedStatefulBean2",
+            "java:global/ejb-management/ManagedStatefulBean2!sample.ManagedStatefulBean2",
+            "java:module/ManagedStatefulBean2!sample.ManagedStatefulBean2",
+            "java:app/ejb-management/ManagedStatefulBean2!sample.BusinessInterface",
+            "java:global/ejb-management/ManagedStatefulBean2!sample.BusinessInterface",
+            "java:module/ManagedStatefulBean2!sample.BusinessInterface"
+        ],
+        "methods" => {},
+        "passivated-count" => 0,
+        "passivation-capable" => false,
+        "peak-concurrent-invocations" => 0L,
+        "remove-methods" => [
+            {
+                "bean-method" => "void remove()",
+                "retain-if-exception" => false
+            },
+            {
+                "bean-method" => "void removeTrue()",
+                "retain-if-exception" => true
+            },
+            {
+                "bean-method" => "void removeFalse()",
+                "retain-if-exception" => false
+            }
+        ],
+        "run-as-role" => "Role3",
+        "security-domain" => "other",
+        "stateful-timeout" => "34HOURS",
+        "total-size" => 0,
+        "transaction-type" => "BEAN",
         "wait-time" => 0L,
         "service" => undefined
     }
 }
+
+[source]
+/deployment=ejb-management.jar/subsystem=ejb3/singleton-bean=ManagedSingletonBean:read-resource(include-runtime)
+{
+    "outcome" => "success",
+    "result" => {
+        "async-methods" => ["void async(int, int)"],
+        "business-local" => ["sample.ManagedSingletonBean"],
+        "business-remote" => ["sample.BusinessInterface"],
+        "component-class-name" => "sample.ManagedSingletonBean",
+        "concurrency-management-type" => undefined,
+        "declared-roles" => [
+            "Role3",
+            "Role2",
+            "Role1"
+        ],
+        "depends-on" => undefined,
+        "execution-time" => 0L,
+        "init-on-startup" => false,
+        "invocations" => 0L,
+        "jndi-names" => [
+            "java:app/ejb-management/ManagedSingletonBean!sample.BusinessInterface",
+            "java:global/ejb-management/ManagedSingletonBean!sample.BusinessInterface",
+            "java:module/ManagedSingletonBean!sample.BusinessInterface",
+            "java:module/ManagedSingletonBean!sample.ManagedSingletonBean",
+            "java:global/ejb-management/ManagedSingletonBean!sample.ManagedSingletonBean",
+            "java:app/ejb-management/ManagedSingletonBean!sample.ManagedSingletonBean"
+        ],
+        "methods" => {},
+        "peak-concurrent-invocations" => 0L,
+        "run-as-role" => "Role3",
+        "security-domain" => "other",
+        "timeout-method" => "public void sample.ManagedSingletonBean.timeout(javax.ejb.Timer)",
+        "timers" => [{
+            "time-remaining" => 26734085L,
+            "next-timeout" => 1577768415000L,
+            "calendar-timer" => true,
+            "persistent" => false,
+            "info" => "timer1",
+            "schedule" => {
+                "year" => "*",
+                "month" => "*",
+                "day-of-month" => "*",
+                "day-of-week" => "*",
+                "hour" => "0",
+                "minute" => "0",
+                "second" => "15",
+                "timezone" => undefined,
+                "start" => undefined,
+                "end" => undefined
+            }
+        }],
+        "transaction-type" => "CONTAINER",
+        "wait-time" => 0L,
+        "service" => {"timer-service" => undefined}
+    }
+}
+
+[source]
+/deployment=ejb-management.jar/subsystem=ejb3/message-driven-bean=ManagedMDB:read-resource(include-runtime)
+{
+    "outcome" => "success",
+    "result" => {
+        "activation-config" => [
+            ("destinationType" => "javax.jms.Queue"),
+            ("destination" => "java:/queue/ManagedMDB-queue")
+        ],
+        "component-class-name" => "sample.ManagedMDB",
+        "declared-roles" => [
+            "Role3",
+            "Role2",
+            "Role1"
+        ],
+        "delivery-active" => true,
+        "execution-time" => 0L,
+        "invocations" => 0L,
+        "message-destination-link" => undefined,
+        "message-destination-type" => undefined,
+        "messaging-type" => "javax.jms.MessageListener",
+        "methods" => {},
+        "peak-concurrent-invocations" => 0L,
+        "pool-available-count" => 16,
+        "pool-create-count" => 0,
+        "pool-current-size" => 0,
+        "pool-max-size" => 16,
+        "pool-name" => "mdb-strict-max-pool",
+        "pool-remove-count" => 0,
+        "run-as-role" => "Role3",
+        "security-domain" => "other",
+        "timeout-method" => "public void sample.ManagedMDB.timeout(javax.ejb.Timer)",
+        "timers" => [{
+            "time-remaining" => 26642441L,
+            "next-timeout" => 1577768415000L,
+            "calendar-timer" => true,
+            "persistent" => false,
+            "info" => "timer1",
+            "schedule" => {
+                "year" => "*",
+                "month" => "*",
+                "day-of-month" => "*",
+                "day-of-week" => "*",
+                "hour" => "0",
+                "minute" => "0",
+                "second" => "15",
+                "timezone" => undefined,
+                "start" => undefined,
+                "end" => undefined
+            }
+        }],
+        "transaction-type" => "CONTAINER",
+        "wait-time" => 0L,
+        "service" => {"timer-service" => undefined}
+    }
+}
+
+[source]
+/deployment=ejb-management.jar/subsystem=ejb3/message-driven-bean=NoTimerMDB:read-resource(include-runtime)
+{
+    "outcome" => "success",
+    "result" => {
+        "activation-config" => [
+            ("destination" => "java:/queue/NoTimerMDB-queue"),
+            ("destinationType" => "javax.jms.Queue"),
+            ("acknowledgeMode" => "Auto-acknowledge")
+        ],
+        "component-class-name" => "sample.NoTimerMDB",
+        "declared-roles" => [
+            "Role3",
+            "Role2",
+            "Role1"
+        ],
+        "delivery-active" => true,
+        "execution-time" => 0L,
+        "invocations" => 0L,
+        "message-destination-link" => "queue/NoTimerMDB-queue",
+        "message-destination-type" => "javax.jms.Queue",
+        "messaging-type" => "javax.jms.MessageListener",
+        "methods" => {},
+        "peak-concurrent-invocations" => 0L,
+        "pool-available-count" => 16,
+        "pool-create-count" => 0,
+        "pool-current-size" => 0,
+        "pool-max-size" => 16,
+        "pool-name" => "mdb-strict-max-pool",
+        "pool-remove-count" => 0,
+        "run-as-role" => "Role3",
+        "security-domain" => "other",
+        "timeout-method" => undefined,
+        "timers" => [],
+        "transaction-type" => "CONTAINER",
+        "wait-time" => 0L,
+        "service" => undefined
+    }
+}
+
 === Nice-to-Have Requirements
 
 * ability to read these deployment information from admin console
@@ -245,6 +487,8 @@ New tests will be added to `testsuite/integration/basic/src/test/java/org/jboss/
 ** stateful
 ** singleton
 ** MDB
+* verify that absence of certain optional deployment information will not cause errors (e.g., NullPointerException,
+IllegalArgumentException, etc) when reading this bean's runtime management resources.
 * verify the correctly merged value is exposed as runtime resources via CLI, when some deployment information is specified in both ejb-jar.xml and annotations.
 
 == Community Documentation
