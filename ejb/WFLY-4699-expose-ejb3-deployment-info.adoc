@@ -211,21 +211,25 @@ The following are CLI command output showing the management resources of statele
             "Role2",
             "Role1"
         ],
-        "execution-time" => 0L,
-        "invocations" => 0L,
+        "execution-time" => 160L,
+        "invocations" => 3L,
         "jndi-names" => [
-            "java:global/ejb-management/ManagedStatelessBean!sample.ManagedStatelessBean",
-            "java:module/ManagedStatelessBean!sample.ManagedStatelessBean",
-            "java:app/ejb-management/ManagedStatelessBean!sample.ManagedStatelessBean",
             "java:global/ejb-management/ManagedStatelessBean!sample.BusinessInterface",
             "java:module/ManagedStatelessBean!sample.BusinessInterface",
-            "java:app/ejb-management/ManagedStatelessBean!sample.BusinessInterface"
+            "java:app/ejb-management/ManagedStatelessBean!sample.BusinessInterface",
+            "java:global/ejb-management/ManagedStatelessBean!sample.ManagedStatelessBean",
+            "java:module/ManagedStatelessBean!sample.ManagedStatelessBean",
+            "java:app/ejb-management/ManagedStatelessBean!sample.ManagedStatelessBean"
         ],
-        "methods" => {},
-        "peak-concurrent-invocations" => 0L,
+        "methods" => {"doIt" => {
+            "execution-time" => 160L,
+            "invocations" => 3L,
+            "wait-time" => 10L
+        }},
+        "peak-concurrent-invocations" => 1L,
         "pool-available-count" => 64,
-        "pool-create-count" => 0,
-        "pool-current-size" => 0,
+        "pool-create-count" => 1,
+        "pool-current-size" => 1,
         "pool-max-size" => 64,
         "pool-name" => "slsb-strict-max-pool",
         "pool-remove-count" => 0,
@@ -233,7 +237,7 @@ The following are CLI command output showing the management resources of statele
         "security-domain" => "other",
         "timeout-method" => "public void sample.ManagedStatelessBean.timeout(javax.ejb.Timer)",
         "timers" => [{
-            "time-remaining" => 27331577L,
+            "time-remaining" => 4735224L,
             "next-timeout" => 1577768415000L,
             "calendar-timer" => true,
             "persistent" => false,
@@ -252,7 +256,7 @@ The following are CLI command output showing the management resources of statele
             }
         }],
         "transaction-type" => "CONTAINER",
-        "wait-time" => 0L,
+        "wait-time" => 10L,
         "service" => {"timer-service" => undefined}
     }
 }
@@ -275,20 +279,31 @@ The following are CLI command output showing the management resources of statele
             "Role2",
             "Role1"
         ],
-        "execution-time" => 0L,
-        "invocations" => 0L,
+        "execution-time" => 163L,
+        "invocations" => 4L,
         "jndi-names" => [
-            "java:app/ejb-management/ManagedStatefulBean2!sample.ManagedStatefulBean2",
-            "java:global/ejb-management/ManagedStatefulBean2!sample.ManagedStatefulBean2",
-            "java:module/ManagedStatefulBean2!sample.ManagedStatefulBean2",
             "java:app/ejb-management/ManagedStatefulBean2!sample.BusinessInterface",
             "java:global/ejb-management/ManagedStatefulBean2!sample.BusinessInterface",
-            "java:module/ManagedStatefulBean2!sample.BusinessInterface"
+            "java:module/ManagedStatefulBean2!sample.BusinessInterface",
+            "java:app/ejb-management/ManagedStatefulBean2!sample.ManagedStatefulBean2",
+            "java:global/ejb-management/ManagedStatefulBean2!sample.ManagedStatefulBean2",
+            "java:module/ManagedStatefulBean2!sample.ManagedStatefulBean2"
         ],
-        "methods" => {},
+        "methods" => {
+            "doIt" => {
+                "execution-time" => 163L,
+                "invocations" => 3L,
+                "wait-time" => 3L
+            },
+            "remove" => {
+                "execution-time" => 0L,
+                "invocations" => 1L,
+                "wait-time" => 1L
+            }
+        },
         "passivated-count" => 0,
         "passivation-capable" => false,
-        "peak-concurrent-invocations" => 0L,
+        "peak-concurrent-invocations" => 1L,
         "remove-methods" => [
             {
                 "bean-method" => "void remove()",
@@ -305,10 +320,10 @@ The following are CLI command output showing the management resources of statele
         ],
         "run-as-role" => "Role3",
         "security-domain" => "other",
-        "stateful-timeout" => "34HOURS",
+        "stateful-timeout" => "2 HOURS",
         "total-size" => 0,
         "transaction-type" => "BEAN",
-        "wait-time" => 0L,
+        "wait-time" => 4L,
         "service" => undefined
     }
 }
@@ -329,24 +344,28 @@ The following are CLI command output showing the management resources of statele
             "Role1"
         ],
         "depends-on" => undefined,
-        "execution-time" => 0L,
+        "execution-time" => 156L,
         "init-on-startup" => false,
-        "invocations" => 0L,
+        "invocations" => 3L,
         "jndi-names" => [
-            "java:app/ejb-management/ManagedSingletonBean!sample.BusinessInterface",
-            "java:global/ejb-management/ManagedSingletonBean!sample.BusinessInterface",
-            "java:module/ManagedSingletonBean!sample.BusinessInterface",
             "java:module/ManagedSingletonBean!sample.ManagedSingletonBean",
             "java:global/ejb-management/ManagedSingletonBean!sample.ManagedSingletonBean",
-            "java:app/ejb-management/ManagedSingletonBean!sample.ManagedSingletonBean"
+            "java:app/ejb-management/ManagedSingletonBean!sample.ManagedSingletonBean",
+            "java:app/ejb-management/ManagedSingletonBean!sample.BusinessInterface",
+            "java:global/ejb-management/ManagedSingletonBean!sample.BusinessInterface",
+            "java:module/ManagedSingletonBean!sample.BusinessInterface"
         ],
-        "methods" => {},
-        "peak-concurrent-invocations" => 0L,
+        "methods" => {"doIt" => {
+            "execution-time" => 156L,
+            "invocations" => 3L,
+            "wait-time" => 0L
+        }},
+        "peak-concurrent-invocations" => 1L,
         "run-as-role" => "Role3",
         "security-domain" => "other",
         "timeout-method" => "public void sample.ManagedSingletonBean.timeout(javax.ejb.Timer)",
         "timers" => [{
-            "time-remaining" => 26734085L,
+            "time-remaining" => 4304279L,
             "next-timeout" => 1577768415000L,
             "calendar-timer" => true,
             "persistent" => false,
@@ -403,7 +422,7 @@ The following are CLI command output showing the management resources of statele
         "security-domain" => "other",
         "timeout-method" => "public void sample.ManagedMDB.timeout(javax.ejb.Timer)",
         "timers" => [{
-            "time-remaining" => 26642441L,
+            "time-remaining" => 4213581L,
             "next-timeout" => 1577768415000L,
             "calendar-timer" => true,
             "persistent" => false,
