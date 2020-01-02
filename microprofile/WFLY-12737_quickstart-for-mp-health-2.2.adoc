@@ -1,0 +1,73 @@
+= WFLY-12737 Quickstart for MP Health 2.2
+:author:            Martin Stefanko
+:email:             mstefank@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This RFE provides a new quickstart and guide for
+https://github.com/eclipse/microprofile-health/tree/2.2[MicroProfile Health 2.2] use in WildFly /
+JBoss EAP. The example will cover all basic functionalities of MicroProfile Health 2.2,
+namely: liveness and readiness checks, the basic usage of the `HealthCheckResponseBuilder`,
+and the inclusion of user specific data in the health check responses.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-12737[WFLY-12737]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1368[EAP7-1368] (internal)
+
+=== Dev Contacts
+
+* mailto:mstefank@redhat.com[Martin Stefanko]
+
+=== QE Contacts
+
+* mailto:szhantem@redhat.com[Sultan Zhantemirov]
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* Quickstarts
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* include liveness health check
+* include readiness health check
+* include positive health check response
+* include negative health check response
+* include health check response with user specific data
+
+=== Non-Requirements
+
+* usage of the `HealthCheckResponse` as a concrete class (introduced in Health 2.2)
+
+== Test Plan
+
+* The quickstart will have
+http://arquillian.org/guides/getting_started/?utm_source=cta#write_an_arquillian_test[Arquillian]
+tests verifying the response codes from the
+/health/* endpoints as well as the returned JSON objects. The endpoint will be
+invoked through the JAX-RS client (resteasy-client test dependency).
+
+== Community Documentation
+
+Covered by the quickstart README file in https://github.com/wildfly/quickstart.
