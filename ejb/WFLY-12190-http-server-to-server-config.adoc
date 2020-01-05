@@ -1,0 +1,153 @@
+= EJB over HTTP server-to-server invocation
+:email:             tomasz.adamski@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+=== Issue
+* https://issues.jboss.org/browse/WFLY-12190
+
+=== Dev Contacts
+
+* mailto:tadamski@redhat.com
+
+=== QE Contacts
+
+=== Testing By
+[ ] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+EJBs
+
+== Introduction
+
+WFLY-328 (https://issues.redhat.com/browse/WFLY-328) added the ability to configure EJB invocations over HTTP protocol. Customers would like to use this feature in server-to-server configurations.
+
+== Proposed configuration
+
+ It was requested to modify server configuration so that http protocol can be used from within remote outbound connections. Sample configuration would be as follows:
+[source]
+----
+<remote-outbound-connection name="http-connection" outbound-socket-binding-ref="binding-remote-ejb-connection" protocol="http"/>
+----
+
+Such connection can be then used from within jboss-ejb-client.xml configuration file. The following issues have to be taken into consideration regarding such configuration:
+
+=== Http config in remoting subystem
+
+Remoting subsystem is responsible for the configuration of connection based on jboss-remoting protocol. The attributes and properties of remote-outbound-connections are used to configure remoting connections and make no sense in for http protocol. Simply adding another protocol to remote-outbound-connection may seem like a simplest solution from the customer point of view, but it introduces incoherent subsystem configuration and in my opinion it is unnaceptable.
+
+=== The need for dynamic discovery
+
+Remoting connections can be configured without any additional deployment information because they rely on dynamic discovery algorithms provided by the EJB client protocol. There is no implementation of http discovery and it has to be designed. I would describe possible discovery algorithms in further part of this analysis.
+
+== Static discovery
+Currently there already is a possiblity to configure server-to-server EJB invocations over HTTP protocol. In order to do this, static discovery has to be used.
+Example of such configuration is as follows:
+
+
+[source]
+----
+<subsystem xmlns="urn:jboss:domain:ejb3:6.0">
+        (...)
+        <remote connector-ref="http-remoting-connector" thread-pool-name="default">
+            <channel-creation-options>
+                <option name="MAX_OUTBOUND_MESSAGES" value="1234" type="remoting"/>
+            </channel-creation-options>
+            <profiles>
+                <profile name="test-profile">
+                    <static-ejb-discovery>
+                        <module uri="http://${server.ip.address}:8180/wildfly-services" module-name="foo"/>
+                    </static-ejb-discovery>
+                </profile>
+            </profiles>
+            </remote>
+            (...)
+</subsystem>
+----
+
+The main disadvantage of this solution is the fact that user has to specify where given modules are located. On the other, hand every discovery algorithm adds additional performance penalty (f.e. discovery invocations) so static configuration will be the most efficient one.
+
+
+== Dynamic discovery
+
+Remoting discovery takes advantage of opened remoting connections to provide update client on current state of the clusters and available modules. It is infeasible to implement subscribe/notify algorithm in http protocol. Furthermore, ejb-over-http protocol is cluster agnostic, so discovery should only obtain information about modules.
+
+Proposed discovery algorithm are as follows:
+
+=== Polling algorithm
+
+Before each invocation client polls available connections for the available modules and chooses the first server that has the module deployed. This simple algorithm has big overhead as it requires performing discovery call during each invocations.
+
+=== Polling algorithm with caching and invalidation
+
+In this algorithm http discovery provider keeps information about modules available for all connections. If the cache is empty, the provider performs the initial discovery and fills the cache with obtained data. In further invocations, cached data is used to find a given module. Discovery call is repeated in the following cases:
+* module not found in cache - discovery is repeated as the module may have been deployed in the meantime
+* NoSuchEjbException - if the invocation is performed and fails with NoSuchEjbException it means that some applications were undeployed and discovery has to be reattempted
+
+== Suggested config changes
+As described above, because connections that are not using the remoting protocol should not be configured in remoting subsystem, I have added them to the ejb3 remote profile.
+
+Sample profile configuration would be:
+
+[source]
+----
+<remote connector-ref="http-remoting-connector" thread-pool-name="default">
+    <channel-creation-options>
+        <option name="MAX_OUTBOUND_MESSAGES" value="1234" type="remoting"/>
+    </channel-creation-options>
+    <profiles>
+        <profile name="test-profile">
+            <remote-http-connection name="test-connection" uri="http://127.0.0.1:8180/wildfly-services"/>
+        </profile>
+    </profiles>
+</remote>
+----
+
+== Draft implementation
+
+Draft implementation (with polling algorithm without cache):
+https://github.com/tadamski/wildfly-http-client/commits/WEJBHTTP-34
+https://github.com/tadamski/wildfly/tree/WFLY-12190
+
+== Further work
+
+=== Extend discovery algorithm
+
+Discovery algorithm has to be updated to with the cache and invalidation as described above.
+
+=== Possible ejb3 subsystem refactor
+
+_remote_ tag of ejb3 subystem was also designed with remoting profile in mind. Furthermore, remoting profile naming doesn't emphasize the nature of used discovery. I believe it would be better if the names were indicating the algorithms used. OTOH I'm aware that such refactor may be infeasible in context of compatibility so this section is mainly a food for thought.
+
+Sketch of refactored remote node may look as follow:
+[source]
+----
+<remote>
+    <remoting-config connector-ref="http-remoting-connector" thread-pool-name="default">
+        <channel-creation-options>
+            <option name="MAX_OUTBOUND_MESSAGES" value="1234" type="remoting"/>
+        </channel-creation-options>
+    </remoting-config>
+    <profiles>
+        <profile name="test-profile">
+            <dynamic-ejb-discovery>
+                 <remote-http-connection name="http-a" uri="http://127.0.0.1:8180/wildfly-services"/>
+                 <remoting-ejb-receiver name="receiver" outbound-connection-ref="connection-ref" connect-timeout="5000"/>
+            </dynamic-ejb-discovery>
+            <static-ejb-discovery>
+                <module uri="http://localhost/widfly-context" module-name="somemodule" />
+                <module uri="remote+http://somehost" app-name="myapp" module-name="mymodule" distinct-name="distict"/>
+            </static-ejb-discovery>
+        </profile>
+    </profiles>
+</remote>
+----
+
+== Test Plan
+
+== Community Documentation
+Part of the PR.
