@@ -1,0 +1,144 @@
+= WFLY-12936 Provide ability to configure HTTP/2 (requires TLSv1.2) in FIPS mode (PKCS11)
+:author:            Diana Vilkolakova
+:email:             dvilkola@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This document will provide steps to configure WildFly to use HTTP/2 in FIPS mode with BouncyCastle provider and SunPKCS11 provider.
+This RFE does not require any additional engineering work.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-12936[WFLY-12936]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-727[EAP7-727]
+* https://issues.jboss.org/browse/WFLY-12936[WFLY-12936]
+
+=== Dev Contacts
+
+* mailto:dvilkola@redhat.com[Diana Vilkolakova]
+
+=== QE Contacts
+
+* TODO
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+[ ] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+
+* WildFly, Security
+
+== Requirements
+
+Provide steps to configure HTTP/2 in FIPS mode.
+
+=== SunPKCS11 provider
+
+==== Requirements
+jvm that supports PKCS11 v2.40 with AES/GCM/NoPadding cipher: https://bugs.java.com/bugdatabase/view_bug.do?bug_id=8221441.
+(this is necessary to avoid java.security.NoSuchAlgorithmException: No such algorithm: AES/GCM/NoPadding error)
+
+===== Steps
+
+ *  Initialize NSS DB and add new PKCS11 certificate:
+
+```
+$ modutil -force -dbdir dbm:fipsdb -create
+$ modutil -force -dbdir fipsdb -fips true
+$ modutil -force -dbdir fipsdb -changepw "NSS FIPS 140-2 Certificate DB"
+$ cd fipsdb
+$ certutil -S -k rsa -n undertow -t "u,u,u" -x -s "CN=localhost, OU=MYOU, O=MYORG, L=MYCITY, ST=MYSTATE, C=MY" -d /full/path/to/fipsdb
+```
+
+* Enable FIPS mode with PKCS11 provider:
+
+Modify java.security file (located in in `$JAVA_HOME/jre/lib/security/java.security` or `$JAVA_HOME/conf/security/java.security`) to have the provider on the first position:
+`security.provider.1=sun.security.pkcs11.SunPKCS11 /path/to/nss.cfg` Also re-number all other providers accordingly.
+Modify provider called com.sun.net.ssl.internal.ssl.Provider to use the PKCS#11 key store we are configuring right now.
+Resulting row should look like:
+`security.provider.5=com.sun.net.ssl.internal.ssl.Provider SunPKCS11-testPkcs`
+
+Content of `nss.cfg` file is following:
+
+```
+name = testPkcs
+nssLibraryDirectory = /usr/lib64
+nssSecmodDirectory = /path/to/fipsdb
+nssDbMode = readWrite
+nssModule = fips
+```
+
+Note the nssSecmodDirectory option which points to nssDb directory. Note the name option too.
+
+ * Configure Undertow to use PKCS11 keystore:
+
+```
+/subsystem=elytron/key-store=fipsKS:add(type=PKCS11,provider-name="SunPKCS11-testPkcs",credential-reference={clear-text="pass123+"})
+/subsystem=elytron/key-manager=fipsKM:add(key-store=fipsKS,algorithm="SunX509",provider-name=SunPKCS11-testPkcs,credential-reference={clear-text="pass123+"})
+/subsystem=elytron/server-ssl-context=fipsSSC:add(key-manager=fipsKM,protocols=["TLSv1.2"])
+batch
+/subsystem=undertow/server=default-server/https-listener=https:undefine-attribute(name=security-realm)
+/subsystem=undertow/server=default-server/https-listener=https:write-attribute(name=ssl-context,value=fipsSSC)
+run-batch
+```
+
+Access https://localhost:8443/ and accept the certificate.
+You can check that HTTP/2 protocol has been used in the Network tab of your browser.
+You can view the certificate from your browser on the left side of the web page bar.
+(cipher suite used is TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 )
+
+=== Bouncy Castle FIPS provider
+
+==== Requirements
+You need latest releases of Bouncy castle FIPS provider: bc-fips-1.0.2 and bctls-fips-1.0.9.
+
+===== Steps
+ * cp <PATH_TO_FIPS_JAR>/bc-fips-1.0.2.jar $JAVA_HOME/jre/lib/ext
+ * cp <PATH_TO_JAR>/bctls-fips-1.0.9.jar $JAVA_HOME/jre/lib/ext
+ * Add the following to java.security (located in $JAVA_HOME/jre/lib/security/java.security or $JAVA_HOME/conf/security/java.security):
+security.provider.1=org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider and move all other providers down 1 position.
+ * Add BCFIPS to the end of whichever provider line contains com.sun.net.ssl.internal.ssl.Provider. For example:
+security.provider.5=com.sun.net.ssl.internal.ssl.Provider BCFIPS
+ * cd $WILDFLY_HOME/standalone/configuration
+ * Create secret key to be used: keytool -genkeypair -alias appserver -keyalg RSA -keysize 2048 -keypass password -keystore "keystore.bcfks" -provider org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider -providerpath bc-fips-1.0.2.jar -storetype BCFKS -storepass password -dname "CN=testserver,OU=TESTOU,O=TESTO,L=TESTL,ST=TESTCZ,C=TESTCZ" -validity 730 -v
+ * Run server and configure Undertow:
+
+```
+/subsystem=elytron/provider-loader=bc:add(module=org.bouncycastle)
+/subsystem=elytron/key-store=bcfks_keystore:add(path=keystore.bcfks,relative-to=jboss.server.config.dir, type="BCFKS", credential-reference={clear-text=password})
+/subsystem=elytron/key-manager=bcfks_keymanager:add(key-store=bcfks_keystore,credential-reference={clear-text=password}, algorithm=SunX509)
+/subsystem=elytron/server-ssl-context=bcfks_ssl_context:add(key-manager=bcfks_keymanager, protocols=[TLSv1.2])
+batch
+ /subsystem=undertow/server=default-server/https-listener=https:undefine-attribute(name=security-realm)
+ /subsystem=undertow/server=default-server/https-listener=https:write-attribute(name=ssl-context, value=bcfks_ssl_context)
+run-batch
+reload
+```
+
+ * Access https://127.0.0.1:8443/ or https://localhost:8443/ and accept the certificate.
+ You can check that HTTP/2 protocol has been used in the Network tab of your browser.
+ You can view the certificate from your browser on the left side of the web page bar.
+(cipher suite used is TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 )
+
+=== Nice-to-Have Requirements
+
+== Implementation Plan
+
+It is possible to configure this without additional work.
+
+== Test Plan
+
+* Manual test.
