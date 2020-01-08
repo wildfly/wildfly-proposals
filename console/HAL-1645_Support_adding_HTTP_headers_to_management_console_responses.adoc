@@ -1,0 +1,55 @@
+= Support adding of HTTP headers to management console responses
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+Pending
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1645[HAL-1645]
+* {issue-base-url}/EAP7-1411[EAP7-1411]
+
+=== Related Issues
+
+* {issue-base-url}/WFCORE-1110[WFCORE-1110]
+* {issue-base-url}/EAP7-1335[EAP7-1335]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:jkasik@redhat.com[Jan Kasik]
+
+=== Testing By
+    
+[x] Engineering
+    
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+Pending
+
+== Test Plan
+
+Pending
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
