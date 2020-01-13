@@ -1,0 +1,115 @@
+= Integrate Microprofile OpenTracing 1.3
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          microprofile,opentracing,observability,tracing,openshift
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently the integration of Microprofile Opentracing is minimal as you can't configure the tracer using the WildFly Management Model.
+So we will implement a way to define several tracer configurations (Jaeger) to be used in deployments.
+One of those configuration will become a default one so that deployments that don't define which configuration to use will use this one.
+In this proposal we will only support Jaeger as Tracer implementation but it should be able to be easily extendable to support other Tracers implementations:
+
+* Support https://github.com/eclipse/microprofile-opentracing/blob/1.3/spec/src/main/asciidoc/microprofile-opentracing.asciidoc[Eclipse MicroProfile OpenTracing 1.3] for applications deployed in WildFly, including JAX-RS and CDI integration. Passing the TCK is required.
+* Support a concrete tracer, such as Jaeger's.
+* Allow applications to supply their own tracer implementations via `TracerResolver`. The configuration is up to the user and the tracerResolver mechanism.
+* Each individual application deployed (WAR) should have its own `Tracer` instance.
+* Each WAR within an EAR should be treated as an individual WAR, having their own `Tracer` instance.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-12758[WFLY-12758]
+
+=== Related Issues
+
+* https://issues.apache.org/jira/browse/EAP7-1351
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:szhantem@redhat.com[Sultan Zhantemirov]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[] Engineering
+
+[X] QE
+
+=== Affected Projects or Components
+The primary integration will be happening by the updating the subsystem `microprofile-opentracing-smallrye` within https://github.com/wildfly/wildfly[WildFly].
+
+=== Other Interested Projects
+
+== Requirements
+
+* Upgrade MicroProfile Opentracing 1.3.0
+* Run any OpenTracing test in WildFly integration test suite
+** tests may require changes as this major version has breaking changes.
+* Run the Eclipse MicroProfile OpenTracing TCK without failures
+
+=== Hard Requirements
+
+Adding a new opentracing subsystem management API to create Jaeger configuration so that Jaeger tracers can be injected into deployments.
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+Other tracer implementations will not be configureable from the subsystem management API.
+
+== Implementation Plan
+
+We will only cover the creation of a Jaeger tracer configuration. Other tracer implementations may come afterwards but are not currently 
+
+* Create a `jaeger-tracer` resource that define the configuration of a Jaeger tracer. This resource will expose all Jaeger Tracer configuration attributes:
+    ** `propagation`: The supported trace context propagation formats:
+        *** JAEGER: The default Jaeger trace context propagation format.
+        *** B3: The Zipkin B3 trace context propagation format.
+    ** `sampler-type`: The type of sampler to use in the tracer. Optional. Valid values: remote (default),ratelimiting, probabilistic, const.
+    ** `sampler-param`: The floating point value that makes sense for the correct samplerType.
+    ** `sampler-manager-host-port`: the port of the sampling manager that can provide sampling strategy to this service.
+    ** `sender-binding`: The outbound socket binding to connecto the Agent.
+    ** `sender-endpoint`: The endpoint, like https://jaeger-collector:14268/api/traces
+    ** `sender-user`: The Basic Auth username to be added on Authorization headers for requests sent to the endpoint.
+    ** `sender-auth-password`: The Basic Auth password to be added on Authorization headers for requests sent to the endpoint.
+    ** `sender-auth-token`: The Auth Token to be added as "Bearer" on Authorization headers for requests sent to the endpoint.
+    ** `reporter-log-spans`: Boolean to indicates whether the reporter should log the spans.
+    ** `reporter-flush-interval`: The flush interval when reporting spans remotely in milliseconds.
+    ** `reporter-max-queue-size`: The reporter's maximum queue size.
+    ** `tracer_id_128bit`: Opt-in to use 128 bit traceIds. By default, uses 64 bits.
+    ** `tracer-tags`: A comma separated list of name = value tracer level tags, which get added to all reported spans. The value can also refer to an environment variable using the format ${envVarName:default}, where the :default is optional, and identifies a value to be used if the environment variable cannot be found.
+Those attributes will be 'reload-required' and the configuration will be only updated once the server is reloaded. A deployment would use the configuration that was set when it deployed.
+
+* Create a `default-tracer` attribute on the `microprofile-opentracing-smallrye` resource to define which tracer configuration is the default one to inject if none is specified in the deployment. Note that the default tracer configuration must exist, so you can't delete a tracer configuration that is referenced as default tracer configuration until that attribute is unset.
+
+* During the processing of the deployment, the module required for the tracer implementations will be added to the classloader as optional dependencies. Then the web.xml will be parsed and if an initial context parameter `smallrye.opentracing.tracer.configuration` is found then the configuration of the matching name will be used to create the tracer, otherwise the default configuration will be set as `smallrye.opentracing.tracer.configuration` value.
+
+* During the initialization of the deployment, the TracerResolver will be used to check for an internal defined tracer implementation at the deployment level. Otherwise the initial context parameter `smallrye.opentracing.tracer.configuration` will be used to obtain a Tracer that will be injected in the application. If this context parameter is not set by the user then it will use the default tracer if one exists, otherwise it should use the NoopTracer.
+If the value set is incorrect then the deployment will fail.
+
+Updating the configuration won't update the tracers already in use so it is required to redeploy the applications that will use the new tracer configuration.
+
+Since we need to be able to know what configuration is used by a deployment even if the model might have changed afterwards we will register a DeploymentModel for the `microprofile-opentracing-smallrye` subsystem with the `tracer-configuration-name` containing the name of the tracer configuration or the class found by the TracerResolver and a `tracer-configuration` (if one is found) corresponding to the configuration used at the time the tracer was instantiated.
+
+== Test Plan
+
+* Run the (updated) WildFly integration basic test suite and checks there are no failures related to opentracing tests.
+* Run the `microprofile-tck/opentracing` module from WildFly integration test suite and checks that there are no failures.
+* Add tests covering the injection from the subsystem.
+
+== Community Documentation
+
+* Community documentation for the `microprofile-opentracing-smallrye` subsystem in the admin guide needs to be updated to version 1.3.
+* Some community documentation is required to setup and run the MicroProfile OpenTracing TCK in WildFly.
