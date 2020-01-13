@@ -1,0 +1,105 @@
+= Managed Executors Runtime Stats
+:author:            Eduardo Martins
+:email:             emartins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The managed executors / thread pools in the EE subsytem currently do not show any runtime information stats when invoked with include-runtime=true, and such would be useful to check the performance and tuning.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-11255[WFLY-11255]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1175[EAP7-1175]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+
+=== Other Interested Projects
+
+* NONE
+
+== Requirements
+
+* Add the following runtime read-only attributes to the https://wildscribe.github.io/WildFly/17.0/subsystem/ee/managed-executor-service/[/subsystem=ee/managed-executor-service resource], to obtain runtime stats:
+* *active-thread-count*: the approximate number of threads that are actively executing tasks.
+* *completed-task-count*: the approximate total number of tasks that have completed execution.
+* *current-queue-size*: the current size of the executor's task queue.
+* *hung-thread-count*: the number of executor threads that are hung.
+* *max-thread-count*: the largest number of executor threads.
+* *task-count*: the approximate total number of tasks that have ever been submitted for execution.
+* *thread-count*: the current number of executor threads.
+
+CLI to read the attributes from the Managed Executor Service resource named *default*:
+----
+/subsystem=ee/managed-executor-service=default:read-attribute(name=active-thread-count)
+/subsystem=ee/managed-executor-service=default:read-attribute(name=completed-task-count)
+/subsystem=ee/managed-executor-service=default:read-attribute(name=current-queue-size)
+/subsystem=ee/managed-executor-service=default:read-attribute(name=hung-thread-count)
+/subsystem=ee/managed-executor-service=default:read-attribute(name=max-thread-count)
+/subsystem=ee/managed-executor-service=default:read-attribute(name=task-count)
+/subsystem=ee/managed-executor-service=default:read-attribute(name=thread-count)
+----
+
+* Add the following runtime read-only attributes to the https://wildscribe.github.io/WildFly/17.0/subsystem/ee/managed-scheduled-executor-service/[/subsystem=ee/managed-scheduled-executor-service resource] to obtain runtime stats:
+* *active-thread-count*: the approximate number of threads that are actively executing tasks.
+* *completed-task-count*: the approximate total number of tasks that have completed execution.
+* *current-queue-size*: the current size of the executor's task queue.
+* *hung-thread-count*: the number of executor threads that are hung.
+* *max-thread-count*: the largest number of executor threads.
+* *task-count*: the approximate total number of tasks that have ever been submitted for execution.
+* *thread-count*: the current number of executor threads.
+
+CLI to read the attributes from the Managed Scheduled Executor Service resource named *default*:
+----
+/subsystem=ee/managed-scheduled-executor-service=default:read-attribute(name=active-thread-count)
+/subsystem=ee/managed-scheduled-executor-service=default:read-attribute(name=completed-task-count)
+/subsystem=ee/managed-scheduled-executor-service=default:read-attribute(name=current-queue-size)
+/subsystem=ee/managed-scheduled-executor-service=default:read-attribute(name=hung-thread-count)
+/subsystem=ee/managed-scheduled-executor-service=default:read-attribute(name=max-thread-count)
+/subsystem=ee/managed-scheduled-executor-service=default:read-attribute(name=task-count)
+/subsystem=ee/managed-scheduled-executor-service=default:read-attribute(name=thread-count)
+----
+
+=== Hard Requirements
+
+* NONE
+
+=== Nice-to-Have Requirements
+
+A Performance and Tuning Guide section, with respect to usage of managed executor runtime stats, would be helpful for users.
+
+=== Non-Requirements
+
+* Domain mode: the new attributes discussed in this proposal will be provided on the servers in a managed domain, but will not be registered with the /profile=*/subsystem=ee resources.
+
+== Test Plan
+
+* Changes in Wildfly management model will be covered in WFLY testsuite.
+* Checking the new featured functionality work as expected will be covered in WFLY testsuite.
+
+== Community Documentation
+
+* Covered by attribute description in management model.
