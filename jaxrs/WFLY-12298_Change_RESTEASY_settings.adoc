@@ -1,0 +1,84 @@
+= WFLY-12298 Support configuring RESTEasy through Wildfly management model
+:author:            Ron Sigal
+:email:             rsigal@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          Wildfly, RESTEasy, management model, web context parameters
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+This proposal calls for exposing RESTEasy configuration parameters through the Wildfly management model. The initial facility, subject to later elaboration, is meant to allow operators
+to configure RESTEasy context parameters and providers.
+
+For example,
+
+[source,java]
+----
+/subsystem=jaxrs:write-attribute(name=resteasy.document.secure.processing.feature,value="false")
+----
+
+would allow an operator to turn off XML security features.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/EAP7-634 [EAP7-634]
+* {issue-base-url}/WFLY-12298 [WFLY-12298]
+
+=== Related Issues:
+
+* {issue-base-url}/RESTEASY-1510 [RESTEASY-1510]
+
+=== Dev Contacts:
+
+* mailto:rsigal@redhat.com[Ron Sigal]
+* mailto:asoldano@redhat.com[Alessio Soldano]
+* mailto:ema@redhat.com[Jim Ma]
+* mailto:rsearls@redhat.com[Rebecca Searls]
+* mailto:weli@redhat.com[Wei Nan Li]
+
+=== QE Contacts:
+
+* mailto:fmarchio@redhat.com[Francesco Marchioni]
+
+=== Affected Projects or Components:
+
+* RESTEasy, Wildfly
+
+== Requirements
+
+All changes gathered through the management model will be passed to RESTEasy through
+web context parameters. These parameters are:
+
+1. Existing configuration parameters as described in Section 3.4 "Configuration switches" of the RESTeasy
+User Guide (https://docs.jboss.org/resteasy/docs/3.8.1.Final/userguide/html/Installation_Configuration.html#configuration_switches).
+These include "resteasy.providers" which allows adding provider classes.
+
+2. One new parameter, "resteasy.disable.providers" which allows disabling provider classes.
+
+3. Note that some of the RESTEasy configuration parameters are not appropriate in this context:
+
+   * Some are too specific to be applied to all deployments: resteasy.servlet.mapping.prefix, javax.ws.rs.Application 
+   * Some are deprecated: resteasy.scan, resteasy.scan.providers, resteasy.scan.resources.
+
+== Non Requirements
+
+Limitations for current implementation:
+
+* The intention, for now, is for any changes to affect only future deployments, so that no restarts or reloads are necessary. No
+  current deployments would be affected unless they are re-deployed.
+* The configurable parameters will be global to the RESTEasy subsystem, and will passed to each deployment as context parameters.
+  For now, there will be no per deployment configuration.
+
+=== Test Plan
+
+Tests will be needed in the Wildfly testsuite.
+
+=== Community Documentation
+
+A subsection of Chapter 9 "Subsystem configuration" of the WildFly Admin Guide
+(https://docs.wildfly.org/17/Admin_Guide.html) will be needed.
