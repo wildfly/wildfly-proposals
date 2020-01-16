@@ -1,0 +1,151 @@
+= Provide ability to easily apply certain JBoss module libraries to all deployments running in a server
+:author:            Yeray Borges
+:email:             yborgess@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+Wildfly users can share libraries across all deployed applications without having to modify the packaging of their applications creating a custom module and making it global using the EE subsystem:
+
+  [standalone@localhost:9990 /] module add --name=com.test --absolute-resources=/Users/me/libs:/Users/me/libs/my-utils1.jar:/Users/me/libs/my-utils2.jar
+  [standalone@localhost:9990 /] /subsystem=ee:list-add(name=global-modules,value={name=com.test})
+
+This configuration implies the following:
+
+  * Users have to specify all required resource roots using --absolute-resources argument.
+  * It is necessary to modify the generated module.xml, or at least re-create the global module if we want to add/remove any additional resource-root for this global module.
+  * This configuration allows any customization of the generated module.xml, making it very flexible to cover broader cases, for example, it is possible to declare module dependencies, mark them as exported, declare the main class and so on.
+  * This command is not appropriate for use in a managed domain or when connecting to the management CLI remotely. Modules should be added and removed manually in a production environment.
+
+This RFE is opened to have an alternative new operation to address simpler cases, where it is not required any additional configuration beyond on the default module.xml configurations, and supported in production environments and domain mode.
+
+The simplest way to accomplished this is to use the EE subsystem to configure a path to the designated directory that will contain the libraries we want to be shared across all deployed applications. A new resource named `global-directory` will be added to the EE subsystem. This resource will use two attributes path and relative-to to configure a global directory:
+
+  [standalone@localhost:9990 /] /subsystem=ee/global-directory=my-common-libs:add(path=lib, relative-to=jboss.home.dir)
+
+  [domain@localhost:9990 /] /profile=default/subsystem=ee/global-directory=my-common-libs:add(path=lib, relative-to=jboss.server.data.dir)
+
+The following attributes will be available on the global-directory resource:
+
+* path: The path of the directory to scan. (Mandatory)
+* relative-to: The name of another previously named path, or of one of the standard paths provided by the system. (Optional)
+
+When a new `global-directory` is created, the server will create a module that will have a https://jboss-modules.github.io/jboss-modules/manual/#path-resource-loader[Path Resource Loader] using 'path' and 'relative-to' attributes and one https://jboss-modules.github.io/jboss-modules/manual/#jar-resource-loader[Jar Resource loader] for each jar file included in this directory and subdirectories.
+
+The 'Path Resource Loader' will make available any file as a resource to the applications.
+The 'Jar Resource loader' will make available any class inside of the jar file to the applications.
+
+The jar resources of this module will be created iterating over all jar files found in the directory tree. Each directory level is scanned alphabetically starting from the root, and on each level each subdirectory is also explored alphabetically until visiting all the branch. Files found on each level are also added in alphabetical order. The resource root order declaration will govern the class loading order for the classes available from the jar resources of this module.
+
+To illustrate how the server will load the jar files, suppose you have the following directory tree:
+
+    /lib/Z/a-lib.jar
+    /lib/A/A/z-lib.jar
+    /lib/A/a-lib.jar
+    /lib/A/b-lib.jar
+    /lib/a-lib.jar
+    /lib/A/B/a-lib.jar
+
+The module generated internally by the global-directory operation will be equivalent to declare a module.xml with the following resources:
+
+  <resources>
+    <resource-root path="/lib"/>
+    <resource-root path="/lib/a-lib.jar"/>
+    <resource-root path="/lib/A/a-lib.jar"/>
+    <resource-root path="/lib/A/b-lib.jar"/>
+    <resource-root path="/lib/A/A/z-lib.jar"/>
+    <resource-root path="/lib/A/B/a-lib.jar"/>
+    <resource-root path="/lib/Z/a-lib.jar"/>
+  </resources>
+
+The module created from the shared directory will be loaded as soon as the first application is deployed in the server. That means, if the server is started/restarted and there are no applications deployed, then the shared directory is neither scanned nor the module loaded.
+
+In case of domain mode or distributed environments, it is the user responsibility to make the content of the configured global directory consistent across all the server instances, as well as distribute the jar files that they contain.
+
+Removal of a global-directory could be done using the following operation:
+
+  [standalone@localhost:9990 /] /subsystem=ee/global-directory=my-common-libs:remove()
+
+  [domain@localhost:9990 /] /profile=default/subsystem=ee/global-directory=my-common-libs:remove()
+
+As any other resources, users can read the current configuration of a global-directory using resource-resource operation:
+
+ [standalone@localhost:9990 /] /subsystem=ee/global-directory=my-common-libs:read-resource
+ {
+      "outcome" => "success",
+      "result" => {
+          "path" => "lib",
+          "relative-to" => "jboss.home.dir"
+      }
+ }
+
+ [domain@localhost:9990 /] /subsystem=ee/global-directory=my-common-libs:read-resource
+ {
+      "outcome" => "success",
+      "result" => {
+          "path" => "lib",
+          "relative-to" => "jboss.server.data.dir"
+      }
+ }
+
+This RFE will not cover the availability of hot JBoss modules redeployments, that means, modifications of existing jar files as well as adding a new jar or removal an existing one will require a complete server restart, however, changes in plain resources as property files will be available immediately to the applications.
+
+It will be allowed only one global directory configuration.
+
+== Issue Metadata
+
+=== Issue
+* https://issues.jboss.org/browse/EAP7-1124[EAP7-1124]
+* https://issues.jboss.org/browse/WFLY-1160[WFLY-1160]
+* https://issues.jboss.org/browse/WFCORE-4375[WFCORE-4375]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/MODULES-99[MODULES-99]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:vmarek@redhat.com[Vratislav Marek]
+* mailto:tterem@redhat.com[Tomas Terem]
+
+
+=== Testing By
+[ ] Engineering
+
+[X] QE
+
+=== Affected Projects or Components
+Wildfly
+Wildfly-core
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+- The new module created from the global-directory configuration will get automatically a dependency on `javaee.api` module name.
+- Hot JBoss modules redeployments will require a server restart to make them available to all existing and new applications.
+- New modules created from the content of the shared directory will be added to the deployed applications as a system dependencies.
+- Modifications of existing jar files as well as adding a new jar or removal an existing one will require a complete server restart.
+- It will not allowed the configuration of multiple global directories.
+
+=== Nice-to-Have Requirements
+- We could allow the possibility of adding existing module dependencies to the new module created from the global-directory configuration, and, if there is no dependencies configured, use by default `javaee.api`.
+
+=== Non-Requirements
+- Putting the module content on the filesystem of any machine is not a requirement; it is completely a user responsibility to distribute and make available the jar resources in the target machines.
+- Path validation on stage.MODEL beyond validating the 'relative-to' value references a valid path capability is not a requirement.
+
+== Test Plan
+
+Tests will be added to verify that an application gets in its class path resources from a shared directory.
+
+== Community Documentation
+
+The feature will be documented in WildFly Admin Guide, under Java EE Application Deployment section of EE Subsystem Configuration.
