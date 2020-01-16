@@ -1,0 +1,93 @@
+= WFLY-11989: wildfly-dist should generate and deploy a zipped maven repo for galleon
+:author:            Jean-Francois Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Offer the ability to package all Galleon required artifacts to provision WildFly server.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-11989[WFLY-11989]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-891[EAP7-891]
+
+* https://issues.jboss.org/browse/EAP7-1218[EAP7-1218]
+
+* https://issues.jboss.org/browse/WFGP-132[WFGP-132] (Obsolete, not followed approach)
+
+* https://issues.jboss.org/browse/WFGP-135[WFGP-135]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:mjurc@redhat.com[Michal Jurc]
+* mailto:nziakova@redhat.com[Nikoleta Hlavickova]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[ ] Engineering
+
+[X] QE
+
+=== Affected Projects or Components
+
+* OpenShift
+
+=== Other Interested Projects
+
+* WildFly Galleon
+
+* Offliner: https://github.com/release-engineering/offliner
+
+== Requirements
+
+In order to address this requirement, we are defining a new WildFly Maven plugin (_org.wildfly.galleon-plugins:wildfly-galleon-maven-plugin_)
+goal named _generate-all-artifacts-list_.
+This goal aggregates all offliner files that have been generated when each Wildfly galleon feature-pack is built.
+
+offliner file == list of artifacts == "sha-256 checksum, artifact path inside maven repo" per line.
+
+When building the wildfly-dist module with release profile (-Drelease=true), this plugin is called to 
+generate /target/wildfly-galleon-${project.version}-all-artifacts-list.txt directory.
+
+The file is deployed with other maven artifacts as wildfly-dist-${project.version}-artifact-list.txt
+
+Then the workflow to produce a maven repository to provision WildFly is:
+
+1) Retrieve the org.wildfly:wildfly-dist-${project.version}-artifact-list.txt from maven repository
+
+2) Use offliner runtime (https://github.com/release-engineering/offliner) to download all files to populate a local maven repository.
+
+=== Hard Requirements
+
+* Generate and deploy the file with valid sha-256 checksum and paths for all required artifacts.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Implementation Plan
+
+* Add the goal to WildFly galleon-plugins project.
+* Evolve dist/pom.xml to call the plugin.
+
+== Test Plan
+
+* Use the generated file to populate a maven local repo.
+* Test that wildfly can be provisioned from the resulting repo. 
+
+== Community Documentation
+This file could be treated as an implementation detail and not be documented.
