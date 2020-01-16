@@ -1,0 +1,189 @@
+= EAP7-1217: Tooling for end user creation of Galleon feature packs
+:author:            Jean-Francois Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Offer the ability to package WildFly server customization content as Galleon feature-pack. 
+These feature-packs would then be installed on top of WildFly server Galleon installation. 
+One of the main use cases is cloud image building:
+
+* Internally, when building our own image, custom content could have been packaged as feature-packs and installed.
+
+* Externally, user can package content (eg: JDBC drivers) as galleon feature-pack and reference feature-packs from their provisioning file.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-1217[EAP7-1217]
+
+* https://issues.jboss.org/browse/WFGP-130[WFGP-130]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-891[EAP7-891]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[ ] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* OpenShift
+
+=== Other Interested Projects
+
+* WildFly Galleon
+
+== Requirements
+
+In order to address this requirement, we are defining a new WildFly Maven plugin (_org.wildfly.galleon-plugins:wildfly-galleon-maven-plugin_)
+goal named _build-user-feature-pack_.
+This goal handles part of the complexity one would be faced when building a feature-pack for WildFly. 
+With minimal configuration, a user should be able to package his content into a WildFly compliant feature-pack.
+
+=== Possible usages inside an S2I context
+
+* Pre-built and already deployed custom feature-packs would be installed like WildFly (galleon install or provision).
+* The application src project could include a well-known directory (eg: _wildfly-feature-pack_) that would be recognized by WidlFly S2I. This
+directory would contain feature-pack(s) to build and install during application build process. 
+Calling _mvn clean install_ in this directory would build the feature-pack(s) and install it(them) into the local maven repository. 
+Ready to be provisioned by Galleon in a next step.
+
+=== Supported Galleon content
+Content present in user feature-packs is a subset of what Galleon defines. We are reducing the support to:
+
+* Ability to define JBoss Module modules. Modules are recognized by the plugin, 
+translated onto Galleon _packages_ and ready to be installed into 
+the right location. NB: Custom modules are installed directly under <wildfly-home>/modules/ dir.
+Custom modules will benefit from _thin-server_ and _fat-server_ Galleon installation capability. 
+Furthermore, the content of module.xml is traversed
+and guarantee is made that all non optional dependencies are installed with the custom module.
+* Ability to define _package_. Packages contain content to be installed inside a given location. 
+Package will benefit from tasks execution.
+* Ability to define _layer_. Layers are an interesting way to define re-usable content (eg: jdbc driver).
+* Ability to define _configuration_. Configurations are expected to contain piece of 
+configuration (eg: datasource, ...) to be combined with WildFly
+server configuration.
+
+=== Defining the content
+The following layout is expected in the resources dir (dir location configurable):
+
+* _configs_/<model>/<name>/config.xml
+* _layers_/<config model>/<name>/layer-spec.xml
+* _modules_/<module path>/main/module.xml (and any needed resources)
+* _packages_/<name>/package.xml +
+_packages_/<name>/[content/<content> | pm/wildfly/tasks.xml]
+
+=== Feature-pack configuration
+
+==== File based configuration
+If a file named _wildfly-user-feature-pack-build.xml_ is present in the project root dir (file 
+name and dir location configurable), it is used as the source of configuration. This file has the same content
+as _wildfly-feature-pack-build.xml_ (file used to build WildFly feature-pack).
+
+The following items are recognized:
+
+* Built feature-pack FPL (Feature Pack Location).
+* Dependencies on other feature-packs.
+* Default packages.
+
+Because configuration can be seen in some cases as over-complex and error-prone, 
+we propose to generate a default configuration when no configuration file is present.
+
+==== Default configuration
+
+===== Default FPL
+When no configuration file is provided, the fpl can be provided as a plugin configuration item, 
+by default: _${project.groupId}:${project.artifactId}:${project.version}_
+
+===== Default dependencies on WildFly feature-packs
+When no configuration file is provided, the following logic applies.
+
+We expect that WildFly Galleon pack artifact will be present as a dependency of 
+the current project. NB: It could be interesting to have
+WildFly galleon FP as well as this plugin present in BOM file.
+All feature-packs (that have an artifactId that complies with wildfl-*galleon-pack_ naming) 
+that are direct dependencies of the plugin are added as FP dependencies. 
+All feature-packs (that have an artifactId that complies with wildfl-*galleon-pack_ naming) 
+that are transitive dependencies of the project are added as transitive FP dependencies. 
+Transitive dependencies are needed in order to allow to reference any (core, servlet and full) 
+modules in user defined modules.
+
+NB: The WildFly feature-pack _groupId_ is not taken into account when searching for dependencies. 
+This should allow to accept WildFly or EAP feature-packs as dependencies. 
+This doesn't mean that a feature-pack built for WildFly will be compatible with EAP, WildFly and EAP are 2 different feature-packs.
+
+==== User defined modules resources
+
+A user as the ability to package the module resources (eg: jar file) in multiple ways:
+
+* References the resource maven artifact with hard coded version. For example: _artifact name="mysql:mysql-connector-java:78.0"_
+* References the resource maven artifact without version. In this case, the maven artifact must be a dependency of the 
+maven project. Artifact version being retrieved from maven. In this case, use the following syntax: _artifact name="${<groupId>:<artifactId>}"_
+for example _artifact name="${mysql:mysql-connector-java}"_
+* Package the binaries in the feature-pack, adding the jar files as content.
+
+===== Default packages
+Default packages must be explicitly added to the build xml file. 
+
+=== A note on defining custom layers
+When Galleon CLI install layers (or in general when using _passive_ and _passive+_ options), 
+the default packages are not installed. 
+Only the packages referenced directly or indirectly from the configuration are installed.
+A user defined module is not referenced by WildFly features so would be not provisioned. 
+In order to ensure that a package is provisioned
+along with a user-defined layer, it must be referenced from the user-defined layer 
+(eg: similar to what we do for WildFly h2-database layer).
+
+=== Maven installation
+
+This plugin installs the feature-pack(s) into the local maven repository.
+
+=== Plugin configuration items
+A set of values can be provided from the plugin configuration:
+
+* configFile : The feature-pack build configuration file name. Default: _wildfly-user-feature-pack-build.xml_
+* configDir: The feature-pack build configuration file directory. Default: _${basedir}_
+* resourcesDir: The directory containing resource directories (configs, packages, modules, layers). 
+Either an absolute path or a path relative to _configDir_. Default:_src/main/resources_
+* buildName: The directory for the built artifact. Default:_${project.build.directory}_
+* fpLocation: The FPL for the generated feature-pack. Default: _${project.groupId}:${project.artifactId}:${project.version}_
+
+=== Hard Requirements
+
+* Build feature-packs to be installed on top of WildFly installation provisioned with Galleon.
+* Allow users to define JBoss Module modules packages, packages, layers and configs.
+* Install feature-pack zip artifact in local maven repository.
+
+=== Nice-to-Have Requirements
+
+* Feature-spec generation. Although custom subsystem packaged as feature-pack is a topic outside on this RFE,
+this plugin should not forbid such evolution.
+
+=== Non-Requirements
+
+== Implementation Plan
+
+* Refactor WildFly Maven plugin used to build WildFly feature-packs 
+(Extract abstract class and expose util methods).
+* Base the Maven plugin to build user content on top of the refactoring.
+
+== Test Plan
+
+== Community Documentation
+WildFly Galleon maven plugins documentation: https://docs.wildfly.org/galleon-plugins/#_build_user_feature_pack
