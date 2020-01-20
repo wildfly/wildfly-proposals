@@ -1,0 +1,131 @@
+= Integrate MicroProfile OpenAPI 1.1
+:author:            Paul Ferraro
+:email:             paul.ferraro@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This enhancement proposes to add support for https://download.eclipse.org/microprofile/microprofile-open-api-1.1.2/microprofile-openapi-spec.html[Eclipse MicroProfile OpenAPI 1.1] to WildFly by integrating the implementation from https://github.com/smallrye/smallrye-open-api[SmallRye].
+This spec provides a unified Java API for producing documentation that complies with the https://github.com/OAI/OpenAPI-Specification/blob/3.0.2/versions/3.0.2.md[OpenAPI v3 specification].
+
+An MicroProfile OpenAPI subsystem exposes an HTTP GET `/openapi` endpoint that returns an OpenAPI v3 compliant document (in YAML or JSON format) containing documentation of the RESTful services of an application.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-12313
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
+
+=== Testing By
+
+[ ] Engineering
+
+[X] QE
+
+=== Affected Projects or Components
+
+The SmallRye implementation of the MicroProfile OpenAPI specification is already integrated by the following projects:
+
+* https://thorntail.io/[Thorntail] via the https://github.com/thorntail/thorntail/tree/master/fractions/microprofile/microprofile-openapi[microprofile-openapi fraction].
+** General migration documentation from ThornTail is tracked by https://issues.jboss.org/browse/WFLY-12749[WFLY-12749]
+* https://quarkus.io/[Quarkus] via the https://github.com/quarkusio/quarkus/tree/master/extensions/smallrye-openapi[smallrye-openapi extension].
+
+These integrations will heavily inform, though not dictate, the corresponding integration into WildFly.
+
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* Create an MicroProfile OpenAPI galleon layer containing the MP Open API feature encapsulated by a new MicroProfile OpenAPI subsystem.
+** Should depend on MicroProfile Config and JAX-RS (and their dependencies)
+** N.B. New modules to be included in WF:
+*** MicroProfile OpenAPI subsystem module
+*** io.smallrye:smallrye-open-api
+*** org.eclipse.microprofile.openapi:microprofile-openapi-api
+*** com.fasterxml.jackson.dataformat:jackson-dataformat-yaml
+** Subsystem will be included in the default standalone-openshift.xml feature pack.
+* The microprofile-openapi spec module must be exposed to web deployments
+* The `/openapi` endpoint shall be registered relative to the root of the virtual host associated with the deployment.
+** N.B. The `/openapi` endpoint is intended for a public interface, not a management interface, as with the `/health` and `/metrics` endpoints.
+** This places a superficial constraint of a single application per host (see subsequent section re: multiple deployments)
+** In the event a web deployment uses a given host for which another deployment has already registered an `/openapi` endpoint, we will:
+... Log a warning.
+... Skip OpenAPI model generation for that deployment.
+* All WildFly/SmallRye specific configuration will be obtained via MicroProfile Config using the properties prefixed with `mp.openapi.extensions`.
+** Consequently, the microprofile-openapi subsystem should have an empty management model.
+* Support YAML and JSON for both input (static/pre-generated OpenAPI document) and output formats.
+* MicroProfile OpenAPI TCK must pass
+
+=== Nice-to-Have Requirements
+
+* Optional features of the specification:
+** Multiple deployments:
+*** If a container allows multiple deployments, the specification expects the `/openapi` endpoint to return the logical union of the documented services for all applications in the runtime. See: https://download.eclipse.org/microprofile/microprofile-open-api-1.1.2/microprofile-openapi-spec.html#_multiple_applications
+**** Initially, we will limit multiple deployment support to a single deployment per host (for a given endpoint). i.e. each deployment, for which the OpenAPI endpoint is enabled, must either use a distinct host, or a distinct endpoint path (if a given virtual host is associated with multiple deployments).
+**** Merging (and more interestingly, unmerging on undeploy) OpenAPI models for all applications deployed to a given host.
+***** Consider for a future enhancement
+** HTTPS transport for the `/openapi` endpoint.
+*** If the server/host of a given application defines an HTTPS listener, we will allow it, but not require it.
+*** Additionally, if the Undertow server/host associated with the application does not define an HTTP endpoint (as required by the spec), we should log a WARN message.
+** The MicroProfile OpenAPI specification suggests, but does not require, the use of a `format=JSON` or `format=YAML` parameter for the `/openapi` endpoint, used to define content type of the resulting document, in lieu of an `Accept` header.
+*** This is very reasonable, and is simple enough to do.  See: https://download.eclipse.org/microprofile/microprofile-open-api-1.1.2/microprofile-openapi-spec.html#_query_parameters
+* Use a `mp.openapi.extensions.enabled` property to disable OpenAPI documentation globally (via mp-config subsystem) or per-application (e.g. /META-INF/mp-config.properties).
+** Provides a parameterizable means of disabling OpenAPI documentation in specific environments (e.g. prod vs dev)
+** Provides a mechanism to control which application associated with a given virtual host should generate an MicroProfile OpenAPI model.
+* Use a `mp.openapi.extensions.path` property to customize the path of the OpenAPI endpoint.
+** Provides a means for generating OpenAPI documentation for multiple applications associated with the same virtual host.
+** Potentially useful to support legacy OpenAPI tooling (e.g. `/swagger`)
+** Analogous to the `quarkus.smallrye-openapi.path` property in Quarkus.
+* Use a `mp.openapi.extensions.relative` property to configure whether auto-generated Server records should be absolute or relative.  At a minimum, Server records are necessary to ensure, in the presence of a non-root context path, that consumers of an OpenAPI can construct valid URLs to REST services relative to the host of the OpenAPI endpoint.  See: https://download.eclipse.org/microprofile/microprofile-open-api-1.1.2/microprofile-openapi-spec.html#_context_root_behavior
+** When relative (i.e. true), the generated record will contain the context path of the deployment
+** When absolute (i.e. false), generated records will include all hosts/ports at which the given deployment is accessible.
+* Allow optional authentication/authorization constraints for the `/openapi` endpoint.
+** Consider for a future enhancement
+* Add an optional endpoint for browsing OpenAPI documentation via SwaggerUI (e.g. https://quarkus.io/guides/openapi-swaggerui-guide).
+** Consider for a future enhancement
+
+=== Non-Requirements
+
+* The MicroProfile OpenAPI specification does not require support for i18n of the OpenAPI document (e.g. via an Accept-Language header), though this would be a reasonable subsequent enhancement.  See: https://download.eclipse.org/microprofile/microprofile-open-api-1.1.2/microprofile-openapi-spec.html#_internationalization
+* The MicroProfile OpenAPI specification does not require support for validating the generated OpenAPI model, though this is a reasonable subsequent enhancement. A number of third-party validator exist and could be leveraged for such a feature.  See: https://download.eclipse.org/microprofile/microprofile-open-api-1.1.2/microprofile-openapi-spec.html#_validation
+* The MicroProfile OpenAPI specification does not require support for https://www.w3.org/TR/cors/[Cross-Origin Resource Sharing (CORS)].  See: https://download.eclipse.org/microprofile/microprofile-open-api-1.1.2/microprofile-openapi-spec.html#_cross_origin_resource_sharing_cors
+
+== Test Plan
+
+* Basic subsystem unit tests
+* Add the microprofile-tck tests to the MicroProfile TCK testsuite in WildFly.
+* Integration tests should cover vendor specific behavior, not covered by the TCK tests, including:
+** Ensuring that services deployed using a non-root context path are documented with the correct `server` elements.
+** Any multi-deployment or multi-module deployment behavior, e.g. `mp.openapi.extensions.enabled`
+** Alternate OpenAPI endpoint registration according to `mp.openapi.extensions.path`
+** Fetching JSON vs YAML documentation via `format` parameter
+** Loading JSON vs YAML static OpenAPI documentation
+
+== Community Documentation
+
+* Document how to add the microprofile-openapi subsystem to WildFly
+* Document any WildFly specific `mp.openapi.extensions.*` configuration.
+* Summarize how a user would:
+** Provide a custom bootstrap of the OpenApiDocument model
+** Contribute to the OpenApiDocument model via OpenAPI annotations.
+** Register an OASFilter.
+* Add quickstart application to WildFly quickstarts.
+
+== Release Note Content
+
+Add support for standardized documentation of RESTful web services via the MicroProfile OpenAPI 1.1 specification.
+
