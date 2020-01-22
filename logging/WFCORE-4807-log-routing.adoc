@@ -1,0 +1,118 @@
+= Log Routing
+:author:            James R. Perkins
+:email:             jperkins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently, any modules that log generally log onto the system log context. In some cases, for example a deployment using
+a logging profile, the loggers may end up getting created on the wrong `LogContext`. As an example if `a.war` and `b.war`
+both depend on module `org.jboss.custom.module` and at least one deployment uses a logging profile whichever deployment
+initializes the custom module first will have the loggers created on that `LogContext`. If a logging profile is being
+used it would be that profiles log context. This means if `a.war` uses a logging profile and the module is accessed first
+by `a.war`, then static loggers will be created on the logging profiles `LogContext`. Once `b.war` invokes something to
+be logged in the custom module, then `b.war` 's log messages end up in the logging profiles `LogContext` instead of the
+systems `LogContext`.
+
+https://issues.jboss.org/browse/LOGMGR-264[LOGMGR-264] will introduce a way to route log messages based on the log context.
+This would allow messages from modules to be routed to deployment specific log contexts. It would also introduce a
+change in behavior which is the reason for an RFE. A new attribute, `allow-log-routing` will be introduced to disable
+the new routing and allow the old behavior. What this will do is route log messages using the current threads context
+class loader (TCCL). In the above example if the module `org.jboss.custom.module` is accessed from `a.war` the TCCL will
+be set to `a.war` and the logged messages will be routed to the `LogContext` associated with `a.war` 's class loader. In
+turn `b.war` will route to the system log context since its class loader is not associated with a specific `LogContext`.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-4897[WFCORE-4807]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1420[EAP7-1420]
+* https://issues.jboss.org/browse/LOGMGR-264[LOGMGR-264]
+* https://issues.redhat.com/browse/WFCORE-3376[WFCORE-3376]
+* https://issues.redhat.com/browse/LOGTOOL-146[LOGTOOL-146]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:mkopecky@redhat.com[Marek Kopeck&#253;]
+
+=== Testing By
+
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly Core
+* WildFly
+* JBoss Log Manager
+
+=== Other Interested Projects
+
+* Any consumer of WildFly Core that uses the logging subsystem.
+
+== Requirements
+
+=== Hard Requirements
+
+* The attribute, `allow-log-routing`, is a simple boolean attribute on the `/subsystem=logging` resource which
+  determines if the new or old behavior will be used.
+* When the new behavior is disabled the behavior should be the same as it currently works.
+    ** This means that when disabled the bug in https://issues.redhat.com/browse/WFCORE-3376[WFCORE-3376] would
+       still be present.
+* The `LogContext` should be associated with a deployments class loader.
+    ** This means that if the TCCL is set to the deployment class loader log messages will be routed to the deployments
+       log context.
+    ** That may include messages that previously went to the `server.log` could end up in a handler defined on the
+       deployments log context. This is desired behavior IMO.
+* Loggers created on any log context should be routable to another log context based on the TCCL, if enabled.
+* The attribute will be set to `false` by default to ensure there are no behavioral changes out of the box.
+
+=== Nice-to-Have Requirements
+
+* Allow the enabling/disabling of the behavior to not require a restart.
+
+=== Non-Requirements
+
+* This will not guarantee that all logs from modules will be routed to the deployments log context. If the TCCL is not
+  set to a deployments class loader logs will not end up being routed to the deployments log context.
+
+== Implementation Plan
+
+When enabled the default `LogContextSelector` will be `org.jboss.logmanager.ContextClassLoaderLogContextSelector`. This
+allows modules to log to a deployments log context if the TCCL is set to the deployments log context. Otherwise the
+modules should default to the default log context. An implementation of the new `org.jboss.logmanager.LoggerRouter`
+interface will be implemented in the logging subsystem.
+
+When disabled the currently used `LogContextSelector` should be used. No change should happen with how log messages are
+routed.
+
+== Test Plan
+
+If possible there will be some unit tests for the behavior. There will also be tests required in WildFly full as it
+will easily allow for testing with multiple deployments.
+
+The test should verify that:
+
+* When enabled log messages are correctly routed to the deployments log context.
+* When disabled log messages are correctly, in some cases incorrectly, routed to the deployment or default log context.
+  This will depend on the scenario.
+* Tests should be done on all deployment specific logging options:
+    ** Logging profiles
+    ** Log configuration files, e.g. log4j.properties, logging.properties, etc.
+
+== Community Documentation
+
+The logging subsystem documentation will be updated to show the new attribute, `allow-log-routing`. Detailed examples
+will be given on how logging is routed when the new behavior is enabled.
