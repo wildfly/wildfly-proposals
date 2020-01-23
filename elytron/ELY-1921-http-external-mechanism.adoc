@@ -1,0 +1,79 @@
+= HTTP External Mechanism Support in Elytron
+:author:            Ashley Abdel-Sayed
+:email:             aabdelsa@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This proposal is to add support for the External HTTP mechanism with Elytron. This mechanism will perform no verification,
+but will authenticate a user based on credentials established externally. This will be used to accept a principal which
+is passed by the `REMOTE_USER` attribute in the AJP protocol.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/ELY-1921[ELY-1921]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/ELYWEB-99[ELYWEB-99]
+* https://issues.redhat.com/browse/UNDERTOW-1662[UNDERTOW-1662]
+* https://issues.redhat.com/browse/WFCORE-4853[WFCORE-4853]
+* https://issues.redhat.com/browse/WFLY-13125[WFLY-13125]
+* https://issues.redhat.com/browse/EAP7-1323[EAP7-1323]
+
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:mkopecky@redhat.com[Marek Kopecky]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+[ ] Engineering
+
+[X] QE
+
+=== Affected Projects or Components
+* Security
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* New HTTP `ExternalAuthenticationMechanism`, `ExternalMechanismFactory`, and `WildFlyElytronHttpExternalProvider` classes
+* Ability to pass `REMOTE_USER` attribute from undertow to Elytron (via elytron-web)
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+* Note: This RFE does not make changes to the mod_cluster subsystem but will update the documentation to describe how to use the External mechanism for authentication with the Elytron subsystem
+
+== Test Plan
+
+* Tests will be added to the https://github.com/wildfly/wildfly/tree/master/testsuite/integration/web[wildfly/testsuite/integration/web testsuite] to test successful HTTP authentication with the External
+mechanism
+* Tests will be added to the https://github.com/wildfly-security/wildfly-elytron/tree/1.x/tests[wildfly-elytron testsuite] to test the new mechanism's functionality
+* Tests will be added to the https://github.com/wildfly-security/elytron-web/tree/1.x/undertow/src/test[elytron-web/undertow testsuite] to test successful HTTP authentication with the External mechanism
+
+== Community Documentation
+
+* Documentation will be added to https://github.com/wildfly/wildfly/blob/master/docs/src/main/asciidoc/_elytron/General_Elytron_Architecture.adoc#http-authentication[General Elytron Architecture]
+to reference the new mechanism being added.
+* Documentation will be added to https://github.com/wildfly/wildfly/blob/master/docs/src/main/asciidoc/_high-availability/subsystem-support/mod_cluster_Subsystem.adoc[mod_cluster Subsystem] describing how to configure
+Elytron to authenticate a `REMOTE_USER` via the External HTTP Mechanism
+
+== Release Note Content
+Users are now able to configure Elytron to use credentials established externally from the server to authenticate the
+client with HTTP. This will allow users to propagate authentication from mod-cluster/ajp to WildFly.
