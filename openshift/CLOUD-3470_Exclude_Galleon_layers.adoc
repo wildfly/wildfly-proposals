@@ -1,0 +1,116 @@
+= CLOUD-3470, Exclude Galleon layers during s2i
+:author:            JF Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          openshift,galleon,layers
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+The intent of this feature is to allow to exclude optional galleon layers when provisioning
+galleon layers using _GALLEON_PROVISION_LAYERS=<comma separated list of layers>_ during s2i.
+
+NB: This feature is already present in latest image but unsupported and undocumented.
+WildFly s2i builder image already supports this feature (see community documentation). 
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}CLOUD-3470[CLOUD-3470]
+* {issue-base-url}EAP7-1378[EAP7-1378]
+
+=== Related Issues:
+
+* {issue-base-url}GAL-306[GAL-306]
+* {issue-base-url}EAP7-1396[EAP7-1396]
+
+=== Dev Contacts:
+
+* mailto:jdenise@redhat.com[Jean-François Denise]
+
+=== QE Contacts:
+
+Testing done by Eng.
+
+* mailto:jdenise@redhat.com[Jean-François Denise]
+
+=== Affected Projects or Components:
+
+* Openshift EAP images
+
+
+== Requirements
+
+=== Hard requirements
+
+Generic mechanism:
+
+* Ability to exclude an optional layer from a provisioned layer.
+
+* Operated from the _GALLEON_PROVISION_LAYERS_ env variable during s2i. Any layer present in the env var value that
+starts with '-' are excluded from the set of provisioned layers.
+
+* Attempt to exclude a required layer leads to an error and s2i phase aborts.
+
+* Attempt to exclude a non provisioned layer leads to an error and s2i phase aborts.
+
+Although the mechanism to exclude layers is generic, we are only supporting a fixed set of layers one can exclude. This fixed set
+is a first step toward more flexibility (more layers to be excluded).
+
+NB: THIS COULD BE IMPACTED BY THE WAY WE EXPOSE MICROPROFILE LAYERS (Aggregation vs no aggregation).
+
+* datasources-web-server: _datasources_ layer can be excluded
+- ```GALLEON_PROVISION_LAYERS=datasources-web-server,-datasources```
+
+* jaxrs-server: _jpa_ and _jpa,datasources_ can be excluded. NB: Excluding _datasources_ alone is not supported, _jpa_ requires it.
+- ```GALLEON_PROVISION_LAYERS=jaxrs-server,-jpa```
+- ```GALLEON_PROVISION_LAYERS=jaxrs-server,-jpa,-datasources```
+
+* cloud-server:  Supports the exclusions of _jaxrs-server_. In addition _observability_ and _open-tracing_ layers can be excluded
+- ```GALLEON_PROVISION_LAYERS=cloud-server,-observability,[jaxrs-server exclusions]```
+- ```GALLEON_PROVISION_LAYERS=cloud-server,-open-tracing,[jaxrs-server exclusions]```
+- ```GALLEON_PROVISION_LAYERS=cloud-server,-observability,-open-tracing,[jaxrs-server exclusions]``` 
+NB: This leads to an error, _open-tracing_ being already excluded when excluding _observability_.
+
+* observability: _open-tracing_ can be excluded
+- ```GALLEON_PROVISION_LAYERS=<core layer>,observability,-open-tracing```
+
+* microprofile: _microprofile-config_,_microprofile-fault-tolerance_,_microprofile-jwt_,_microprofile-metrics_,_microprofile-openapi_,_open-tracing_ can be excluded
+- ```GALLEON_PROVISION_LAYERS=<core layer>,microprofile,-microprofile-config,-microprofile-fault-tolerance,-microprofile-jwt,-microprofile-metrics,-microprofile-openapi,-open-tracing```
+* web-clustering: no exclusion
+
+* sso: no exclusion
+
+* All _microprofile-*_ and _open-tracing_, no exclusions.
+
+We have 3 new layers that are now being exposed and need documentation:
+
+* _jpa_: Support for JPA (using the latest supported Hibernate release)
+* _datasources_: Support for datasources.
+* _open-tracing_: Support for MicroProfile OpenTracing. This one will be documented as part of Microprofile galleon layers RFE.
+
+NB: _datasources_ and _jpa_ are not new decorator layers defined by this RFE. They could become decorators in future RFE.
+
+=== Nice to have requirements
+
+* NONE.
+
+== Test Plan
+
+* New behave tests to cover:
+- optional layers can be excluded 
+- required layers can't be excluded and leads to error
+- not provisioned layer leads to an error.
+
+* Evolve Openshift quickstart tests with galleon layers exclusion.
+
+== Community Documentation
+
+WildFly s2i documentation for the  _GALLEON_PROVISION_LAYERS_ env variable specifies how optional layers
+can be excluded.
+https://github.com/wildfly/wildfly-s2i[WildFly s2i image]
+
