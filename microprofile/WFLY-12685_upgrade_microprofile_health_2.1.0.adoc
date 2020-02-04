@@ -1,0 +1,63 @@
+= Upgrade MicroProfile Health to 2.1
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          microprofile,health,observability
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+
+MicroProfile 3.1 provides a minor upgrade for https://github.com/eclipse/microprofile-health/releases/tag/2.1[MicroProfile Health 2.1].
+
+This component upgrade also covers the upgrade of smallrye-health 2.1.0 that implements MicroProfile Health 2.1.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-12685[WFLY-12685]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-12734[WFLY-12734] - Upgrade smallrye-health to 2.1.0
+* https://issues.jboss.org/browse/EAP7-1348[EAP7-1348]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:istraka@redhat.com[Ivan Straka]
+
+=== Testing By
+
+[X] QE
+
+== Requirements
+
+* Upgrade MicroProfile Health to 2.1
+* Upgrade smallrye-health to 2.1.0
+* Run any MicroProfile Health test in WildFly integration test suite
+* Run the Eclipse MicroProfile Health TCK without failures
+
+=== Non-Requirements
+
+* Support of the `mp.health.disable-default-procedures` config property is postponed to https://issues.jboss.org/browse/WFLY-12342[WFLY-12342] that will add default server procedures.
+* Porting of https://github.com/thorntail-examples/health-check/blob/f164faa787d4adb616424116a1ec84a1f28b30eb/src/main/java/io/thorntail/example/HealthChecks.java#L31[test for Thorntail health-check example] is out of scope and will be done in the context of https://issues.jboss.org/browse/WFLY-12342[WFLY-12342] that will adds a proper server probes to check the `server-state` status.
+* Health checks in subdeployments of EAR deployment are not supported.
+
+== Implementation Plan
+
+== Test Plan
+
+* Run the WildFly integration basic test suite and checks there are no failures related to MicroProfle Health tests.
+* Run the `microprofile-tck/health` module from WildFly integration test suite and checks that there are no failures.
+* There is only one test for MicroProfile Health in https://github.com/thorntail/thorntail/tree/master/testsuite[Thorntail test suite] https://github.com/thorntail/thorntail/blob/master/fractions/microprofile/microprofile-health/src/test/java/org/wildfly/swarm/health/ParserTest.java[ParserTest]. The tests in MicroProfile Healh TCK and WildFly integration test suite already covers it and this test will not be brought in WildFly test suite.
+
+== Community Documentation
+
+* No community documentation is required for this upgrade
