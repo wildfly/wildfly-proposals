@@ -1,0 +1,125 @@
+= WFLY-12681 Provide a 'microprofile-platform' Galleon layer
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Historically, we used to have a 'microprofile' layer spec aggregating all MicroProfile (further as MP) specs.
+At that moment it only contained config, health and metrics which got eventually renamed
+to 'observability' by https://issues.redhat.com/browse/WFLY-11774[WFLY-11774] (no RFE there).
+
+With the introduction of new the specs such as MP Fault Tolerance, MP OpenAPI, etc. we want to
+reintroduce the 'microprofile-platform' layer spec which contains all available MP specs in the server.
+
+The following is a configuration example of the WildFly bootable JAR Maven plugin to provision a server with the
+microprofile-platform layer:
+
+[source,xml]
+----
+<plugin>
+    <groupId>org.wildfly.plugins</groupId>
+    <artifactId>wildfly-jar-maven-plugin</artifactId>
+    <configuration>
+        <feature-pack-location>wildfly@maven(org.jboss.universe:community-universe)#${version.wildfly}</feature-pack-location>
+        <layers>
+            <layer>microprofile-platform</layer>
+        </layers>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>package</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+----
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-12681[WFLY-12681 Provide a 'microprofile-platform' Galleon layer]
+* https://issues.redhat.com/browse/EAP7-1396[EAP7-1396 Provide a 'microprofile-platform' Galleon layer]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-11774[WFLY-11774 Rename microprofile layer to be observability]
+
+=== Dev Contacts
+
+* mailto:rhusar@redhat.com[Radoslav Husar]
+
+=== QE Contacts
+
+* mailto:tborgato@redhat.com[Tommasso Borgato]
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
+* mailto:jkasik@redhat.com[Honza Kašík]
+
+=== Testing By
+
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+
+=== Other Interested Projects
+
+* MicroProfile
+* Galleon
+
+== Requirements
+
+=== Hard Requirements
+
+* New 'microprofile-platform' Galleon layer is available for provisioning.
+* Each MP spec is optional to allow for excluding during provisioning (this is a community-only feature).
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+== Implementation Plan
+
+No implementation coordination required.
+
+== Test Plan
+
+The test coverage of the Galleon layer added by this proposal is divided in two main groups:
+
+1. Testing the Galleon layer provisioning.
+This testing is done by https://github.com/wildfly/wildfly/blob/master/testsuite/layers/src/test/java/org/jboss/as/test/layers/LayersTestCase.java[LayersTestCase].
+The testsuite will be modified to add a new server provisioned with this layer in isolation and with this layer combined with all the layers.
+For each kind of provisioning, this test does the following:
+
+.. Verifies the provisioned modules are the expected ones.
+.. Verifies the provisioned server starts successfully.
+
+2. Execution of WildFly tests related to the feature provisioned by this layer.
+Reuse the existing tests available on the WildFly test suite, which are directly testing this layer functionalities,
+and execute them on a server installation provisioned with this layer:
+
+.. by the `testsuite/integration/basic` which provisions this layer and runs subset of MP tests from basic suite with it
+.. by the `testsuite/integration/microprofile` test module which contains MP integration tests
+
+Tests requiring components not provisioned by layers in the test server are excluded, e.g. one requiring EJB or security.
+
+
+== Community Documentation
+
+Description of the layer is added in the documentation as part of the implementation PR.
+
+== Release Note Content
+
+WildFly 21 introduces a new 'microprofile-platform' Galleon layer for provisioning. It provisions all specifications available in WildFly.
