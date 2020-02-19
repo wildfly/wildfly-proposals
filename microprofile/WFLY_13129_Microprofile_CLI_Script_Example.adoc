@@ -1,0 +1,108 @@
+= Example CLI script to evolve standalone configurations with microprofile
+:author:            JF Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+We are proposing here to define a new script in docs/examples/enable-microprofile.cli
+The script is an “example” script to be applied on default standalone configurations. 
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-13129
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TBD
+
+=== Testing By
+
+[ ] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* The script is packaged in the galleon-pack maven module. It is a default package installed when WildFly is installed.
+* Installation path is _<JBOSS_HOME>/docs/examples/enable-microprofile.cli_.
+* To launch the script: _bin/jboss-cli.sh --file=docs/examples/enable-microprofile.cli_
+* When run, the script updates a given standalone configuration. By default it applies to standalone.xml. Use _-Dconfig=<standalone-full.xml|standalone-ha.xml|standalone-full-ha.xml>_
+to select another standalone configuration.
+* The script informs the user with high level information on the modifications it applies to the configuration it is updating.
+* The script is expected to adapt to the differences that exist between various standalone configurations.
+* The script detects that a microprofile subsystem is already present in the config and skips it. 
+* The script secures the configuration using elytron security domain ApplicationDomain, http-authentication-factory and sasl-authentication-factory for items present in default configurations:
+** core-service/management
+*** access=identity security-domain=ManagementDomain
+*** management-interface=http-interface http-upgrade.sasl-authentication-factory=management-sasl-authentication
+*** management-interface=http-interface http-authentication-factory=management-http-authentication
+** http-remoting-connector sasl-authentication-factory=application-sasl-authentication
+** undertow 
+*** application-security-domain=other security-domain=ApplicationDomain
+** ejb3/application-security-domain=other security-domain=ApplicationDomain
+** batch-jberet security-domain=ApplicationDomain
+** messaging-activemq/server=default elytron-domain=ApplicationDomain (full only)
+* The script remove the security subsystem
+* The script remove the management ManagementRealm. NB: the script doesn’t touch the ApplicationRealm (used by http-invoker).
+* Add Microprofile subsystems and extensions (only if the subsystem doesn't already exist)
+** microprofile-openapi-smallrye
+** microprofile-jwt-smallrye
+** microprofile-fault-tolerance-smallrye
+* The script fails if any of its operations can’t be successfully applied (JBOSS CLI behavior).
+
+=== Nice-to-Have Requirements
+
+NONE
+
+=== Non-Requirements
+
+* The script is not supposed to be applied on top of custom standalone configurations.
+* The script doesn't support domain/host configurations.
+
+== Future Works
+
+* Introduce an http-authentication-factory to be used by the http-invoker.
+```
+<http-authentication-factory name="application-http-authentication" http-server-mechanism-factory="global" security-domain="ApplicationDomain">
+  <mechanism-configuration>
+    <mechanism mechanism-name="BASIC">
+      <mechanism-realm realm-name="Application Realm"/>
+    </mechanism>
+ </mechanism-configuration>
+</http-authentication-factory>
+```
+* Reduce the ApplicationRealm to only offer support for SSL.
+
+== Test Plan
+
+* New tests to validate that the script can be applied to 4 standalone configurations: 
+standalone.xml, standalone.ha.xml,standalone-full.xml,standalone-full-ha.xml
+* New test to validate that the script fails if applied twice.
+* Evolve testsuite/microprofile tests with an execution based on patched standalone.xml 
+
+== Community Documentation
+
+* Document how to apply the script to standalone configurations.
+
+== Release Notes Content
+
+New example CLI script to evolve standalone configurations to use microprofile subsystems.
+
