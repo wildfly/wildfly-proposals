@@ -1,0 +1,140 @@
+= WFLY-13003 Support SameSite Cookie Attribute
+:author:            Flavia Rainone
+:email:             frainone@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+When it comes to SameSite cookie attributes, currently Undertow conforms to the
+"Cookies: HTTP State Management Mechanism" draft proposed in
+https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-02[draft-ietf-httpbis-rfc6265bis-02],
+at August 2017.
+
+Since early 2019, three more drafts were submitted and changes in the attribute were made.
+The current version can be viewed in draft https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-05[5],
+valid until August 2020. The main change is that `"None"` was added as a SameSite option, and set
+by default if SameSite attribute contained any value other than `"Strict"` and `"Lax"`.
+
+We also have new changes proposed in https://tools.ietf.org/html/draft-west-cookie-incrementalism-00[Incrementally
+Better Cookies]. Mainly, make any cookie that does not have a `SameSite` attribute to be
+treated as it had a `SameSite=Lax` attribute. This forces developers that do not
+want to have same site cookies to add a `SameSite=None` attribute, currently not
+supported by Undertow. Plus, according to the document, any `SameSite=None` cookie
+must have the `Secure` attribute as well, which is another rule that developers
+must comply with.
+
+Even though "Incrementally Better Cookies" is a draft, browsers are adhering to those changes, with highlight for
+Google Chrome https://www.chromestatus.com/feature/5088147346030592[latest changes].
+
+Undertow needs to be updated accordingly to become compatible with those changes, and
+to make it easy for the developer to add a `SameSite` cookie attribute to their cookies
+without changing application code.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-13003[WFLY-13003]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1422[EAP7-1422]
+* https://issues.redhat.com/browse/UNDERTOW-1600[UNDERTOW-1600]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:jstourac@redhat.com[Jan Stourac]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[X] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+* WildFly
+* Undertow
+
+=== Other Interested Projects
+
+== Requirements
+
+Support the SameSite value `"None"`, that currently is not supported by Undertow.
+
+Also, given that now cookies that lack the `SameSite` attribute are treated as
+`SameSite="Lax"` by default, a predicate handler that adds a `SameSite` attribute to cookies
+is needed so that users can easily conform to the new changes without having to edit
+their application code.
+
+=== Hard Requirements
+
+We have three hard requirements for this:
+
+- `CookieImpl.setSameSiteMode()` must be able to parse and accept `"None"` as a parameter
+- implement a predicate handler `io.undertow.server.handlers.SameSiteCookieHandler`, named `samesite-cookie` that has the parameters:
+* `mode`: the SameSite Cookie mode (should be one of `Strict`, `Lax` or `None`)
+* `cookie-pattern`: optional parameter that accepts a pattern for the cookie name
+* `case-sensitive`: optional parameter that indicates if the pattern is case-sensitive. Defaults to `true`.
+This predicate handler adds the `SameSite=mode` attribute to the cookies that match `cookie-pattern` (or to all cookies if
+`cookie-pattern` is not specified). Notice that the matching will conform to the value of `case-sensitive`, i.e., will be case sensitive
+only is `case-sensitive` is either `true` or left unspecified.
+
+Also, because Cookies with `SameSite=None` that are not Secure are rejected in the new draft, add `Secure` by default when `None` is used.
+This could be disabled via another optional parameter in the handler:
+
+* `add-secure-for-none`: defaults to `true`. Adds `Secure` attribute to the cookie when `mode` is `None`.
+
+
+=== Nice-to-Have Requirements
+
+We can add a check that verifies if the browser is compatible with the new `"None"` value of `SameSite`
+attribute. If the browser is not, it will mistakenly interpret the default value in a different way
+causing applications to malfunction.
+
+The check will be enabled by default, but can be disabled via an optional parameter
+in the handler:
+
+* `enable-client-checker`: enable the client checker that prevents `samesite-cookie`
+handler from setting the `SameSite="None"` attribute when dealing with incompatible agents.
+This parameter is optional and is set to `true` by default.
+
+
+//=== Non-Requirements
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+== Test Plan
+
+== Community Documentation
+Currently, handlers are not listed in the WildFly documentation. We will update the Undertow community
+documentation with that feature.
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
+== Release Note Content
+Added support for `SameSite="None"` cookie attributes and support for a new handler
+that sets `SameSite` attributes on cookies specified by a cookie name pattern. With
+this handler, web developers can remain compliant with latest changes in some browsers
+without editing the application code.
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
