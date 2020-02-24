@@ -1,0 +1,80 @@
+= Enable compression on remoting globally for EJB calls
+:email:             tomasz.adamski@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+=== Issue
+* https://issues.redhat.com/browse/WFLY-13090
+
+=== Dev Contacts
+
+* mailto:tadamski@redhat.com
+
+=== QE Contacts
+
+=== Testing By
+[x] Engineering
+
+[] QE
+
+=== Affected Projects or Components
+EJBs
+
+== Introduction
+
+EJB client protocol already allows for compression of invocation message and open-session message payload. Currently compression is configured inside the application code by annotating classes with org.jboss.ejb.client.annotation.CompressionHint. A sample configuration may be as follows:
+[source]
+----
+public class Foo {
+    @CompressionHint(compressRequest = true, compressResponse = true, compressionLevel = 5)
+    void foo();
+}
+----
+[source]
+
+The configuration above is provided per-bean basis and currently there is no possibility to configure compression globally. Providing such configuration is the goal of this RFE.
+
+== Proposed solution
+
+Users would be allowed to provide default compression on the client side. This compression level would be used for both request and response compression. Default compression can be mixed with @CompressionHint configuration. Per-bean @CompressionHint configuration has the higher priority.
+
+=== Standalone client configuration
+
+Users would be able to specify default compression by providing default.compression property to jboss-ejb-client.properties file. Sample configuration would be as follows:
+[source]
+----
+remote.connections=default
+
+remote.connection.default.host=${node0:localhost}
+remote.connection.default.port=8080
+
+default.compression=5
+----
+[source]
+
+=== Server configuration
+Users would be able to specify default compression by setting default-compression property in jboss-ejb-client.xml descriptor file inside the deployment. Sample file would look as follows:
+[source]
+----
+<jboss-ejb-client xmlns="urn:jboss:ejb-client:1.4">
+    <client-context default-compression="5">
+        <profile name="test-profile" />
+    </client-context>
+</jboss-ejb-client>
+----
+[source]
+
+As a result of the above change we would have to upgrade the version of the schema.
+
+== Draft implementation
+
+The draft implementation is present in the following branches:
+https://github.com/tadamski/jboss-ejb-client/tree/EJBCLIENT-322
+https://github.com/tadamski/wildfly/tree/WFLY-13090
+
+== Test Plan
+
+== Community Documentation
+Part of the PR.
