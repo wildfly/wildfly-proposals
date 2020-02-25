@@ -132,7 +132,7 @@ and make the described calls.
 
 == Community Documentation
 
-No additional community documentation is required as each Quickstart contains it's own relevent documentation.
+No additional community documentation is required as each Quickstart contains it's own relevant documentation.
 
 == Release Note Content
 
