@@ -1,4 +1,4 @@
-= Title
+= Integrate KUBE_PING discovery protocol
 :author:            Radoslav Husar
 :email:             rhusar@redhat.com
 :toc:               left

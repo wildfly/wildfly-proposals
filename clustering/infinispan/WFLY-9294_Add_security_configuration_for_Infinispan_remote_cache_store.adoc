@@ -1,4 +1,4 @@
-= Title
+= Add security configuration for Infinispan remote cache store
 :author:            Radoslav Husar
 :email:             rhusar@redhat.com
 :toc:               left
