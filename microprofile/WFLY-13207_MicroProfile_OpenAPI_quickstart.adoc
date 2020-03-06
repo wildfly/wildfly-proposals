@@ -1,0 +1,64 @@
+= MicroProfile OpenAPI quickstart
+:author:            Paul Ferraro
+:email:             paul.ferraro@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Provide a quickstart demonstrating how to use MicroProfile OpenAPI to document a JAX-RS application.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-13207
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-12313
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+
+[X] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* Demonstrate OpenAPI document generated from annotation processing
+
+=== Nice-to-Have Requirements
+
+* Demonstrate OpenAPI document generated from a static document
+
+=== Non-Requirements
+
+* This quickstart is not intended to duplicate existing documentation.
+* Programmatic document model creation and filters are uncommon, and will not be covered by this quickstart.
+
+== Test Plan
+
+* Manually validate quickstart steps
+
+== Community Documentation
+
+N/A
+
+== Release Note Content
+
+N/A
