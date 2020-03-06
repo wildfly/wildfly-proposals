@@ -1,0 +1,79 @@
+= Allow to mount ConfigMap at arbitrary locations from the operator
+:author:            Yeray Borges
+:email:             yborgess@redhat.com
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+ConfigMaps allow you to decouple configuration artifacts from image content to keep containerized applications portable. The Operator mounts the config maps as a volumes under the following path `/etc/configmaps/<config map name>`. This path currently is not configurable, which makes impossible to use the extension mechanism available in the server images. One of the use case of this extension mechanism is to execute any arbitrary bash script before / after the server configuration at runtime which requires the capability to mount a config map containing the bash scripts under `$JBOSS_HOME/extensions`.
+
+The goal of this feature is to allow the users to configure the mount path where the config map should be mounted.
+
+== Issue Metadata
+
+=== Issue
+
+* https://github.com/wildfly/wildfly-operator/issues/135[wildfly-operator/issues/135]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1457[EAP7-1457] - Allow to mount ConfigMap at arbitrary locations from the operator
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+ * mailto:
+
+=== Testing By
+
+[ ] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+ * https://github.com/wildfly/wildfly-operator[WildFly Operator]
+
+=== Other Interested Projects
+
+== Requirements
+
+
+=== Hard Requirements
+
+Provide the ability to the user to specify not only the ConfigMap name, but also the path on the image filesystem where this config map should be mounted.
+
+* The specification of the mount path should be optional.
+* If a config map does not specify the mount path, the config map will be mounted under `/etc/configmaps/<config map name>`
+* Users should be able to specify absolute or relative paths. If it is a relative path, the path will be treated as relative to `JBOSS_HOME`.
+* The Operator should validate if the path does not contain invalid characters before try to mount it.
+
+
+== Implementation Details
+
+* The structure used to parse the ConfigMap definition will be changed to allow the following configuration:
+
+----
+spec:
+  configMaps:
+    - name: <Name of the config map to mount>
+      mountPath: <Absolute or relative path>
+----
+
+== Test Plan
+
+* The Operator already has a test case to validate the config maps configuration. This test case `TestWildFlyServerWithConfigMap` will be expanded to include the following config maps:
+** A config map without mount path.
+** A config map specifying a relative mount path.
+** A config map specifying an absolute mount path.
+
+
+== Community Documentation
+
+* The https://github.com/wildfly/wildfly-operator/blob/master/doc/apis.adoc[apis.adoc] and https://github.com/wildfly/wildfly-operator/blob/master/doc/user-guide.adoc[user-guide.adoc] files will be modified to include a description of this new feature.
+* An example project using the extension mechanism to configure the server before and after the standard server runtime configuration will be added under the https://github.com/wildfly/wildfly-operator/tree/master/examples[examples] section.
