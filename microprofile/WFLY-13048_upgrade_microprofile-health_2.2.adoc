@@ -1,0 +1,65 @@
+= Upgrade MicroProfile Health to 2.2
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          microprofile,health,observability
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+
+MicroProfile 3.3 provides a minor upgrade for https://github.com/eclipse/microprofile-health/releases/tag/2.2[MicroProfile Health 2.2] whose changes are documented in its https://download.eclipse.org/microprofile/microprofile-health-2.2/microprofile-health-spec.html#release_notes_2_2[release notes].
+
+This component upgrade also covers the upgrade of smallrye-health 2.2.0 that implements MicroProfile Health 2.2.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-13048[WFLY-13048]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1426[EAP7-1426]
+* Support of the `mp.health.disable-default-procedures` config property is handled separately by to https://issues.jboss.org/browse/WFLY-12952[WFLY-12952] that adds such a default server procedure for the readiness check.
+* https://github.com/wildfly/wildfly-proposals/blob/master/microprofile/WFLY-12685_upgrade_microprofile_health_2.1.0.adoc[Dev analysis for the MicroProfile Health 2.1 upgrade]
+* https://github.com/wildfly/wildfly-proposals/blob/master/microprofile/WFLY-10711_health_check_extension.adoc[Dev analysis for initial integration of MicroProfile Health into WildFly]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
+
+=== Testing By
+
+[X] QE
+
+== Requirements
+
+* There is no change in the requirements compared to the integration of MicroProfile Health 2.1.
+
+=== Non-Requirements
+
+* Support of the `mp.health.disable-default-procedures` config property is handled separately by to https://issues.jboss.org/browse/WFLY-12952[WFLY-12952] that adds such a default server procedure for the readiness check.
+* Health checks in subdeployments of EAR deployment are not supported.
+
+== Implementation Plan
+
+* Upgrade MicroProfile Health to 2.2
+* Upgrade smallrye-health 2.2.0
+* Use annotation literals provided by MicroProfile Health 2.2 for the integration
+
+== Test Plan
+
+* Run any MicroProfile Health test in WildFly integration test suite
+** no new tests are required for MicroProfile Health 2.2 in WildFly test suite because the concrete HealthCheck is tested by the TCK and the annotation literals are not meant to be used by users.
+* Run the https://github.com/eclipse/microprofile-health/tree/master/tck[Eclipse MicroProfile Health TCK] from WildFly https://github.com/wildfly/wildfly/tree/master/testsuite/integration/microprofile-tck/health[testsuite/integration/microprofile-tck/health] without failures
+
+== Community Documentation
+
+* No community documentation is required for this upgrade
