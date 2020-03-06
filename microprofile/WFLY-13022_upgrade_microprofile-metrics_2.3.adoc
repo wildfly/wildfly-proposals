@@ -1,0 +1,62 @@
+= Upgrade MicroProfile Metrics to 2.3
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          microprofile,metrics,observability
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+
+MicroProfile 3.3 provides a minor upgrade for https://github.com/eclipse/microprofile-metrics/releases/tag/2.3[MicroProfile Metrics 2.3] whose changes are documented in its https://download.eclipse.org/microprofile/microprofile-metrics-2.3/microprofile-metrics-spec-2.3.html#release_notes_2_3[release notes].
+
+This component upgrade also covers the upgrade of smallrye-metrics 2.4.0 that implements MicroProfile Metrics 2.3.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-13022[WFLY-13022]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1425[EAP7-1425]
+* https://github.com/wildfly/wildfly-proposals/blob/master/microprofile/WFLY-12686_upgrade_microprofile_metrics_2.2.0.adoc[Dev analysis for the MicroProfile Metrics 2.2 Upgrade]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:spriadka@redhat.com[Simon Priadka]
+
+=== Testing By
+
+[X] QE
+
+== Requirements
+
+* Support new optional base metric `ProcessCpuTime` (as defined in https://github.com/eclipse/microprofile-metrics/issues/442[#442])
+
+=== Non-Requirements
+
+* Optional metrics for REST endpoints (defined in https://github.com/eclipse/microprofile-metrics/issues/521[#521]) will not be added as a part of this feature and will be addressed separately.
+* There is no change in the non-requirements compared to the integration of MicroProfile Metrics 2.2.
+
+== Implementation Plan
+
+* Upgrade MicroProfile Metrics to 2.3
+* Upgrade smallrye-metrics to 2.4.0
+
+== Test Plan
+
+* Run any MicroProfile Metrics test in WildFly integration test suite
+** no new tests are required for MicroProfile Metrics 2.3 as they are covered by the MicroProfile Metrics TCK
+* Run the Eclipse MicroProfile Health TCK without failures
+
+== Community Documentation
+
+* No community documentation is required for this upgrade
