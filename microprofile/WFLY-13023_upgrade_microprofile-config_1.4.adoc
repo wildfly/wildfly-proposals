@@ -1,0 +1,62 @@
+= Upgrade MicroProfile Config to 1.4
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          microprofile,config,observability
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+
+MicroProfile 3.3 provides a minor upgrade for https://github.com/eclipse/microprofile-config/releases/tag/1.4[MicroProfile Config 1.4] with changes described in its https://download.eclipse.org/microprofile/microprofile-config-1.4/microprofile-config-spec.html#release_notes_14[Release Notes].
+
+This component upgrade also covers the upgrade of smallrye-config that implements MicroProfile Config 1.4.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-13023[WFLY-13023]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1427[EAP7-1427]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:mkopecky@redhat.com[Marek Kopecky]
+
+=== Testing By
+
+[X] QE
+
+== Requirements
+
+* Upgrade MicroProfile Config to 1.4
+* Upgrade smallrye-config to the release that implements MicroProfile Config 1.4
+* Run any MicroProfile Health test in WildFly integration test suite
+* Run the Eclipse MicroProfile Health TCK without failures
+
+=== Non-Requirements
+
+== Implementation Plan
+
+== Test Plan
+
+This minor upgrade does not introduce any changes that requires new tests in WildFly.
+
+The main changes (https://github.com/eclipse/microprofile-config/issues/383[#383], https://github.com/eclipse/microprofile-config/issues/404[#404] and https://github.com/eclipse/microprofile-config/issues/386[#386]) are tested by the MicroProfile Config TCK.
+
+* Run the WildFly integration basic test suite and checks there are no failures related to MicroProfle Config tests.
+* Run the `microprofile-tck/config` module from WildFly integration test suite and checks that there are no failures.
+  * Some tests that relates to the https://github.com/eclipse/microprofile-config/issues/446[inconsistent behaviour for empty/missing config property (#446)] are excluded as smallrye-config implementation does not pass the TCK tests that are challenged by this issue.
+
+== Community Documentation
+
+* No community documentation is required for this upgrade
