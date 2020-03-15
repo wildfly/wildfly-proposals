@@ -27,9 +27,9 @@
 === Testing By
 // Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
 // Discuss with QE during the Kickoff state to decide this
-[ ] Engineering
+* [ ] Engineering
 
-[ ] QE
+* [ ] QE
 
 === Affected Projects or Components
 
