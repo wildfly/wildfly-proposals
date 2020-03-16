@@ -1,0 +1,84 @@
+= Support for read only server configuration directory
+:author:            Yeray Borges
+:email:             yborgess@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The following settings allow the server to use a read only configuration file:
+
+* Standalone mode:
+** `--read-only-server-config=<server config file name>`
+* Domain mode:
+** `--read-only-server-config=<domain config file name>`
+** `--read-only-host-config=<host config file name>`
+
+The point of these settings is the configuration you want is locked down. Any change will not be saved upon a server restart, however it is possible to apply runtime changes that require a server reload. These settings are useful if the user has an approved configuration that must not be changed but he wants to test a different configuration without worring about the possibility to make the changes permanent.
+
+However, neither of these configurations allow the server to start when the whole configuration directory is read only. During the booting phase the server needs write access to the configuration directory, for example, to store the history backups or temporal files.
+
+History backups are senseless running on a container, and certain cloud use cases could require a non-writable storage mounted as a configuration directory, for example, by default config maps are mounted as https://github.com/kubernetes/kubernetes/pull/58720[read only] volumes and a common pattern is to supply the server the configuration directory by using a ConfigMap. When we are running on a non-containerized environment, we could have very strict security rules that could force us the use of a read only configuration directory.
+
+The goal of this feature is to make `--read-only-server-config=<server config file name>` setting work in standalone mode even if the whole configuration directory pointed by `jboss.server.config` is a read only directory.
+
+Domain mode changes are not initially included on this feature.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-4135[WFCORE-4135]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFCORE-3937[WFCORE-3937]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+
+[X] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+WildFly Core
+
+== Requirements
+
+=== Hard Requirements
+
+* The `--read-only-server-config=<server config file name>` setting will be expanded to allow, not only a read only configuration file, but also a read only configuration directory.
+
+== Implementation details
+
+The server configuration directory is currently used for the following files:
+
+    . Server configuration file.
+    . Initial logger configuration.
+    . Properties files to read the default ApplicationRealm and ManagementRealm users and groups.
+    . Temporal files stored during the server booting phase when the current configuration is flushed on commit to the final configuration file.
+    . Server configuration file Backups.
+
+Under the use of `--read-only-server-config=<server config file name>` setting, the points 1) and 2) are covered for a read only configuration directory; the server configuration file and the initial logger configuration are not overwritten in this case, so they can be in a read only directory.
+
+ApplicationRealm and ManagementRealm user/group property files need to be edited outside the server. There are not booting phase steps or runtime management operations that apply modifications on these properties files. That means, the files outlined in 3) are not affected if we are using a read only server configuration directory.
+
+Usually, the users will use the `add-user.sh` script to edit them. It is the user responsibility to supply the final files in the read only configuration directory. Once the configuration directory is made read only, the uses of `add-user.sh` against the default files will fail. This point also affects to the cloud images. The cloud images can use the `ADMIN_USERNAME` / `ADMIN_PASSWORD` https://github.com/wildfly/wildfly-cekit-modules/blob/master/jboss/container/wildfly/launch/admin/module.yaml[variables] to configure the default ManagementRealm user/group. If we are using a read only server configuration directory, the uses of this environment variables will generate an error.
+
+The remained cases 4) and 5) will be solved as follow:
+
+* Any temporal file required to start the server will be stored in `jboss.server.temp.dir`.
+* The history backups will be stored in `jboss.server.temp.dir`. The history is still necessary to preserve the capability of being able to reload when the server config file cannot be modified. This capability is useful for our server cloud images, where the server is launched in admin-only mode and reloaded to normal mode once the configuration retireved from the environment variables is applied.
+
+== Test Plan
+
+A test for standalone mode will be added to the WildFly test suite. The test will verify that we are able to start the server by using the `--read-only-server-config=<server config file name>` setting and the configuration directory is a read only directory. The test will apply a runtime configuration and will reload the server verifying the runtime configuration we applied.
