@@ -149,5 +149,12 @@ Sketch of refactored remote node may look as follow:
 
 == Test Plan
 
+== Draft implementation
+
+* https://github.com/tadamski/wildfly-discovery/tree/WFDISC-36-api-version - discovery API extension for lazy algorithms
+* https://github.com/tadamski/wildfly-http-client/tree/WEJBHTTP-34-api - HTTP discovery implementation; algorithm with lazy cache refreshing
+* https://github.com/tadamski/jboss-ejb-client/tree/EJBCLIENT-364-api
+* https://github.com/tadamski/wildfly/tree/WFLY-12190
+
 == Community Documentation
 Part of the PR.
