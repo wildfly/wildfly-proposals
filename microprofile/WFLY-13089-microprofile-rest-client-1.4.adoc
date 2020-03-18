@@ -1,0 +1,60 @@
+= EAP7-1429 / WFLY-13089 Microprofile REST Client 1.4 support
+:author:            Alessio Soldano
+:email:             asoldano@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+This is about providing an implementation of the Microprofile REST Client 1.4 spec (https://github.com/eclipse/microprofile-rest-client/releases/tag/1.4.0)
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/WFLY-13089[WFLY-13089]
+* {issue-base-url}/EAP7-1429[EAP7-1429]
+
+=== Related Issues:
+
+* {issue-base-url}/RESTEASY-2481[RESTEASY-2481]
+
+=== Dev Contacts:
+
+* mailto:rsigal@redhat.com[Ron Sigal]
+* mailto:asoldano@redhat.com[Alessio Soldano]
+
+=== QE Contacts:
+
+* mailto:jkasik@redhat.com[Jan Kasik]
+
+=== Affected Projects or Components:
+
+* WildFly
+* RESTEasy
+
+== Requirements
+
+* RESTEasy provides an implementation of Microprofile REST Client 1.4.0 version
+** The only relevant change comparing to version 1.3.x is the requirement to support CDI injection in ClientHeadersFactory class
+** The optional JAXRS injection (@Context) support in ClientHeadersFactory class is not going to be provided
+* Existing RESTEasy functionalities are not affected by the addition (except for MP tests enforcing old MP spec behaviors, if any)
+
+=== Test Plan
+
+Build and run RESTEasy testsuite, which pulls the MP REST Client TCK in a dedicated testsuite submodule.
+
+=== Testing By
+
+[ ] Engineering
+
+[x] QE
+
+== Community Documentation
+
+Documentations is going to be provided as an update of the existing RESTEasy component documentation (https://docs.jboss.org/resteasy/docs/3.10.0.Final/userguide/html_single/index.html#MicroProfile_Rest_Client).
+
