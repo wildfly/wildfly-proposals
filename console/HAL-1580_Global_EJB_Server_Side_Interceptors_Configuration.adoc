@@ -29,13 +29,13 @@ The goal of this issue is to provide support in HAL to configure system-wide ser
 
 === QE Contacts
 
-* mailto:jkasik@redhat.com[Jan Kasik]
+* mailto:msimka@redhat.com[Martin Simka]
 
 === Testing By
     
-[ ] Engineering
+[x] Engineering
     
-[x] QE
+[ ] QE
 
 === Affected Projects or Components
 
