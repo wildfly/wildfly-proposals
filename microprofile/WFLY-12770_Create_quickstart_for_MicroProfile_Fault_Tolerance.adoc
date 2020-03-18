@@ -1,0 +1,80 @@
+= WFLY-12770 Create quickstart for MicroProfile Fault Tolerance
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          quickstarts,microprofile,fault-tolerance
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The goal is to add a new Quickstart demonstrating how to make use of https://microprofile.io/project/eclipse/microprofile-fault-tolerance[Eclipse MicroProfile Fault Tolerance]
+within the WildFly application server.
+The goal is to adapt existing https://quarkus.io/guides/microprofile-fault-tolerance[quickstart] from Quarkus.
+There is no container-specific integration in place, thus this quickstart will be kept minimal.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-12770[WFLY-12770 Create quickstart for MicroProfile Fault Tolerance 2.1]
+* https://issues.redhat.com/browse/EAP7-1370[EAP7-1370 Quickstart for MP Fault Tolerance 2.1]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-13024[WFLY-13024 Integrate MP Fault Tolerance 2.1]
+
+=== Dev Contacts
+
+* mailto:rhusar@redhat.com[Radoslav Husar]
+
+=== QE Contacts
+
+* mailto:tterem@redhat.com[Tomas Terem]
+
+=== Testing By
+
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* quickstarts
+
+=== Other Interested Projects
+
+N/A
+
+== Requirements
+
+=== Hard Requirements
+
+* New `microprofile-fault-tolerance` quickstart is created in the WildFly quickstarts repository demonstrating selected topics
+  from MicroProfile Fault tolerance specification in similar fashion as existing quickstarts.
+  Covered topics include Retries, Timeouts, Fallbacks, and Circuit Breaker.
+* Quickstart code is complete in the repository and can be compiled and deployed to the server.
+
+=== Nice-to-Have Requirements
+
+* Add a test for some of the quickstart classes so we can detect problems in the quickstart quickly.
+
+=== Non-Requirements
+
+* It's not a goal to fully explain the specification and all of its use case.
+The intention is to get users started quickly and get them to start thinking about resiliency.
+
+== Test Plan
+
+QE will verify that the quickstart can be followed to get a working result along the way.
+An automated test might be employed to deploy the quickstart and service a couple of Rest calls mentioned in the document.
+
+== Community Documentation
+
+No community documentation is required as each quickstart contains it's own relevant documentation.
+
+== Release Note Content
+
+A new Quickstart has been added demonstrating how to make use of https://microprofile.io/project/eclipse/microprofile-fault-tolerance[Eclipse MicroProfile Fault Tolerance]
+within the WildFly application server.
