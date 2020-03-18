@@ -1,0 +1,83 @@
+= [WFLY-9513] Support Messaging JDBC HA Shared Store
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Artemis has added support for HA in its JDBC store in https://issues.apache.org/jira/browse/ARTEMIS-1447[ARTEMIS-1447] that has been backported to
+Artemis 1.5.5.jbossorg-012.
+The Artemis feature is described in this https://developer.jboss.org/wiki/DevAnalysisForEAP7-673-ProvideHATolopologySupportForMessagingJDBCPersistence[document analysis].
+
+This proposal deals with the `messaging-activemq` subsystem. It must update its management model to allow users to configure
+Artemis High Availability with its JDBC Store.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-9513[WFLY-9513]
+
+=== Related Issues
+
+* https://issues.apache.org/jira/browse/ARTEMIS-1447[ARTEMIS-1447] - JDBC NodeManager to support JDBC HA Shared Store
+* https://issues.jboss.org/browse/WFLY-10424[WFLY-10424] - Upgrade ActiveMQ Artemis to 1.5.5.jbossorg-012
+* https://issues.jboss.org/browse/WFLY-10580[WFLY-10580] - the SQLProvider implementation provided
+by WildFly has been donated to Artemis and is present in Artemis 1.5.5.jbossorg-012. The `messaging-activemq`
+can now use it from Artemis codebase and removes its own implementation to reduce code duplication
+and bug fixes.
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Affected Projects or Components
+
+* Artemis 1.5.5.jbossorg-012 contains the code to configure Artemis JDBC Store for HA. This feature does
+not need any Artemis upgrade as Artemis 1.5.5.jbossorg-012 is already integrated in WildFly.
+
+=== Other Interested Projects
+
+== Requirements
+
+* Artemis HA JDBC Store can be configured in the `messaging-activemq` subsystem.
+* For backwards compatibility, Artemis-specific system properties must be taken into account when
+determining the configuration values.
+
+== Implementation Plan
+
+The following attributes will be added to the `server` resource in the `messaging-activemq` subsystem:
+
+  * `journal-jdbc-lock-expiration`
+  * `journal-jdbc-lock-renew-period`
+  * `journal-node-manager-store-table`
+
+They will be regular management attributes with a special behaviour to take into account the presence
+of Artemis-specific system properties, respectively:
+
+* `brokerconfig.storeConfiguration.jdbcLockExpirationMillis`
+* `brokerconfig.storeConfiguration.jdbcLockRenewPeriodMillis`
+* `brokerconfig.storeConfiguration.nodeManagerStoreTableName`
+
+The algorithm to determine the value of the property is the following:
+
+1. If the attribute is defined in WildFly management model, use its value
+2. Else if the Artemis-specific System property is defined, use its value
+3. Else, use the attribute default value
+
+== Test Plan
+
+* The actual testing of Artemis HA JDBC Store is handled by Artemis QE.
+* WildFly QE will focus on testing that the correct values is used by Artemis in the presence
+  and/or absence of the management attributes and their corresponding System properties.
+
+== Community Documentation
+
+* The attributes will be documented in https://wildscribe.github.io[WildScribe] as other management attributes.
+* There will be a note in WildFly Admin documentation for the `messaging-activemq` subsystem
+  about the support of Artemis-specific System properties.
