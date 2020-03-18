@@ -1,0 +1,53 @@
+= EAP7-832 Secure Cookie Handling
+:author:            Stuart Douglas
+:email:             sdouglas@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org
+
+== Overview
+
+The goal of this feature is to add an option to mark all cookies that are set on a secure connection with the
+secure attribute. This means that a cookie that is set over a secure connection will never be sent over an unsecure
+connection.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/EAP7-832[EAP7-832]
+
+=== Related Issues:
+
+* {issue-base-url}/UNDERTOW-1182[UNDERTOW-1182]
+
+=== Dev Contacts:
+
+* mailto:{email}[{author}]
+
+=== QE Contacts:
+
+* mailto:jstourac@redhat.com[Jan Stourac]
+
+=== Affected Projects or Components:
+
+* Undertow
+
+== Requirements
+
+This will be implemented in the form of a handler that can be configured as an `expression-handler` in the management
+model, or in `undertow-handlers.conf`. If this handler is present and a connection is marked as secure (either due
+to HTTPS being in use or due to it being marked as secure through configuration) then all cookies will have their
+`secure` attribute overriden to be true.
+
+== Test Plan
+
+The tests for this should reside in the Undertow test suite, and have already been developed as part of the upstream work.
+
+https://github.com/undertow-io/undertow/blob/master/core/src/test/java/io/undertow/server/handlers/SecureCookieHandlerTestCase.java
+
+This test checks what happens when a cookie is set over a HTTP and HTTPS connection, and verifies that the HTTPS
+connection results in a cookie marked as being secure.
