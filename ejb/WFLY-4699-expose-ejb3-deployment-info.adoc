@@ -24,6 +24,7 @@
 
 === QE Contacts
 
+* mailto:tborgato@redhat.com[Tommaso Borgato]
 * mailto:szhantem@redhat.com[Sultan Zhantemirov]
 
 === Testing By
