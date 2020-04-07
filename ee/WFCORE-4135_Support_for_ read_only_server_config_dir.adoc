@@ -30,6 +30,7 @@ Domain mode changes are not initially included on this feature.
 
 === Issue
 
+* https://issues.redhat.com/browse/EAP7-1119[EAP7-1119]
 * https://issues.jboss.org/browse/WFCORE-4135[WFCORE-4135]
 
 === Related Issues
