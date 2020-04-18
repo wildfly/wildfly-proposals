@@ -16,11 +16,8 @@ all standard MicroProfile Config sources. Also, we have added three additional C
 * filter init-params [ordinal 50]
 * servlet context-params [ordinal 40]
 
-In RESTEasy 4.x, all parameters, both RESTEasy parameters and application parameters, are
-available from all ConfigSources to both RESTEasy and application code. In RESTEasy 3.x, we
-propose to add a RESTEasy parameter, "resteasy.config.resteasy.parameters.only", which, when
-set to "true", will limit the three RESTEasy ConfigSources to returning RESTEasy parameters
-only. It will default to "true".
+All parameters, both RESTEasy parameters and application parameters, are
+available from all ConfigSources to both RESTEasy and application code.
 
 == Issue Metadata
 
@@ -44,9 +41,9 @@ only. It will default to "true".
 
 === Testing By
 
-[x] Engineering
+[ ] Engineering
 
-[ ] QE
+[x] QE
 
 === Affected Projects or Components
 
