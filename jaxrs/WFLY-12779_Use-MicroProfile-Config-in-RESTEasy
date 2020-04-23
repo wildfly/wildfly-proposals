@@ -19,6 +19,9 @@ all standard MicroProfile Config sources. Also, we have added three additional C
 All parameters, both RESTEasy parameters and application parameters, are
 available from all ConfigSources to both RESTEasy and application code.
 
+Since this feature will depend on the MicroProfile Config project, it will be 
+included in Wildfly by way of the MicroProfile Extension Pack.
+
 == Issue Metadata
 
 === Issue
@@ -37,7 +40,7 @@ available from all ConfigSources to both RESTEasy and application code.
 
 === QE Contacts
 
-* ??
+* Petr Kremensky
 
 === Testing By
 
@@ -58,10 +61,9 @@ https://github.com/smallrye/smallrye-config
 === Hard Requirements
 
 * Update RESTEasy to retrieve all configuration parameters from MicroProfile ConfigSources.
-* Add to RESTEasy three ConfigSources for servlet context-params, servlet init-params, and filter
-  init-params.
-* Add to RESTEasy a parameter, "resteasy.config.resteasy.parameters.only", which, when set to
-  "true", will restrict RESTEasy specific ConfigSources to returning RESTEasy parameters.
+* Add to RESTEasy a new module, resteasy-microprofile-config, with three ConfigSources for
+  servlet context-params, servlet init-params, and filter init-params.
+* Configure Wildfly with an optional dependency on resteasy-microprofile-config.
 
 == Test Plan
 
