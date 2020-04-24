@@ -32,7 +32,7 @@
 // Discuss with QE during the Kickoff state to decide this
 [x] Engineering
 
-[x] QE
+[ ] QE
 
 === Affected Projects or Components
 
