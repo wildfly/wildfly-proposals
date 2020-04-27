@@ -26,6 +26,14 @@ The goal of this feature is to make `--read-only-server-config=<server config fi
 
 Domain mode changes are not initially included on this feature.
 
+== Required changes for cloud images
+
+The cloud images should be smart enough to detect if the server configuration directory is a read only directory, and in this case, the launch command for the underlying server should incorporate the `--read-only-server-config=<server config file name>` argument to make it possible to start the server under this circumstance.
+
+That means, it is not required to take any action if the cloud image configuration detects a read-only server configuration directory, however, a log info trace will be added to the standard output to inform the user the server is working with a read-only server configuration directory.
+
+Server configuration file marker replacements will not be supported by this feature. That means, users, who are relaying on marker replacements over a user supplied server configuration file stored in a read-only directory, should adapt their configuration to do not use marker replacements. We could adapt the server behaviour for this scenario, but it sounds useless; marker replacements have never been a supported way to configure the server.
+
 == Issue Metadata
 
 === Issue
@@ -52,6 +60,7 @@ Domain mode changes are not initially included on this feature.
 === Affected Projects or Components
 
 WildFly Core
+WildFly Cekit Modules
 
 == Requirements
 
