@@ -1,0 +1,82 @@
+= Use MicroProfile Config in RESTEasy
+:author:            Ron Sigal
+:email:             rsigal@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently, RESTEasy 3.x (targeted to Wildfly) mostly uses servlet context-params and 
+init-params to obtain configuration information. In RESTEasy 4.x, we have updated configuration
+to access all standard MicroProfile Config sources. Also, we have added three additional ConfigSources:
+
+* servlet init-params [ordinal 60]
+* filter init-params [ordinal 50]
+* servlet context-params [ordinal 40]
+
+All parameters, both RESTEasy parameters and application parameters, are
+available from all ConfigSources to both RESTEasy and application code.
+
+In this feature, we propose to port the same use of MicroProfile Config to Resteasy 3.x.
+
+This feature will depend on the MicroProfile Config project, which will be 
+included in Wildfly by way of the MicroProfile Extension Pack. It follows that 
+MicroProfile Config may or may not be available, and therefore Resteasy will have to
+be able to access configuration parameters with or without MicroProfile Config.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/EAP7-1386 [EAP7-1386]
+* {issue-base-url}/WFLY-12779 [WFLY-12779]
+
+=== Related Issues
+
+* {issue-base-url}/RESTEASY-2406 [RESTEASY-2406]
+
+=== Dev Contacts
+
+* mailto:rsigal@redhat.com[Ron Sigal]
+* mailto:asoldano@redhat.com[Alessio Soldano]
+
+=== QE Contacts
+
+* Petr Kremensky
+
+=== Testing By
+
+[ ] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+
+* RESTEasy, Wildfly
+
+=== Other Interested Projects
+
+https://github.com/smallrye/smallrye-config
+
+== Requirements
+
+=== Hard Requirements
+
+* RESTEasy must be able to retrieve configuration parameters whether or not MicroProfile
+  Config is available.
+* If MicroProfile Config is available, RESTEasy will retrieve all configuration parameters
+  from MicroProfile ConfigSources.
+* If MicroProfile Config is not available, RESTEasy will preserve its current behavior.
+
+== Test Plan
+
+Tests already exist in the RESTEasy codebase for RESTEasy 4.x These can be ported to 
+RESTEasy 3.x. Tests to verify that RESTEasy continues to work in the absence of 
+MicroProfile Config will need to be added.
+
+== Community Documentation
+
+The RESTEasy 4.x user guide discusses the use of MicroProfile in JAX-RS applications. That
+material can be adapted.
