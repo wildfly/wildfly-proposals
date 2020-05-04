@@ -28,11 +28,13 @@ Domain mode changes are not initially included on this feature.
 
 == Required changes for cloud images
 
-The cloud images should be smart enough to detect if the server configuration directory is a read only directory, and in this case, the launch command for the underlying server should incorporate the `--read-only-server-config=<server config file name>` argument to make it possible to start the server under this circumstance.
+The cloud images should be smart enough to detect if the server configuration directory is a read only directory, and in this case, the launch command for the underlying server will incorporate the `--read-only-server-config=<server config file name>` argument to make it possible to start the server under this circumstance.
 
-That means, it is not required to take any action if the cloud image configuration detects a read-only server configuration directory, however, a log info trace will be added to the standard output to inform the user the server is working with a read-only server configuration directory.
+That means, it is not required to take any action if the cloud image configuration detects a read-only server configuration directory or file, however, a log info trace will be added to the standard output to inform the user the server is working with a read-only server configuration directory.
 
-Server configuration file marker replacements will not be supported by this feature. That means, users, who are relaying on marker replacements over a user supplied server configuration file stored in a read-only directory, should adapt their configuration to do not use marker replacements. We could adapt the server behaviour for this scenario, but it sounds useless; marker replacements have never been a supported way to configure the server.
+Users will always be able to force the activation/deactivation of the `--read-only-server-config=<server config file name>` setting by using `IS_READ_ONLY_SERVER_CONFIG=<true|false>` environment variable. The use of the environment variable prevails over the automatic detection done by the scripts.
+
+Server configuration file marker replacements on a read only configuration file will not be supported by this feature. That means, users, who are relying on marker replacements over a user-supplied server configuration file stored in a read-only directory, should adapt their configuration to do not use marker replacements. We could adapt the server behavior for this scenario, but it sounds useless; marker replacements have never been a supported way to configure the server.
 
 == Issue Metadata
 
@@ -66,7 +68,12 @@ WildFly Cekit Modules
 
 === Hard Requirements
 
-* The `--read-only-server-config=<server config file name>` setting will be expanded to allow, not only a read only configuration file, but also a read only configuration directory.
+* Standalone Server:
+** The `--read-only-server-config=<server config file name>` setting will be expanded to allow, not only a read only configuration file, but also a read only configuration directory.
+* Server on OpenShift Container Platform:
+** The users can activate/deactivate the `--read-only-server-config=<server config file name>` setting by using the following environment variable `IS_READ_ONLY_SERVER_CONFIG=<true|false>`
+** If the `IS_READ_ONLY_SERVER_CONFIG` is not set and the server configuration directory is a read-only directory, then the server will be launched with `--read-only-server-config=<server config file name>` so it can start successfully. In this case, a log info trace will be shown at the server startup describing this automatic configuration.
+** Marker replacements cannot be done if the server is running on a read-only configuration directory. This feature is not going to adapt the scripts to make the replacements available under this scenario.
 
 == Implementation details
 
