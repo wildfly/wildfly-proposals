@@ -1,0 +1,56 @@
+= Configure enable-amq1-prefix Attribute
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+When connecting to a remote broker the prefixes used for Artemis 1.5.x compatibility might not be required nor used. While this can be set for a pure client, in WildFly you can’t set it for the connection factory you are using. This feature aims to fix that by enabling to configure this at the connection factory level.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1608[HAL-1608]
+* {issue-base-url}/EAP7-1303[EAP7-1303]
+
+=== Related Issues
+
+* {issue-base-url}/WFLY-12038[WFLY-12038]
+* {issue-base-url}/EAP7-1244[EAP7-1244]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:jkasik@redhat.com[Jan Kasik]
+
+=== Testing By
+    
+[x] Engineering
+    
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+Configure attribute `enable-amq1-prefix` for connection and pooled connection factories in "Configuration &rarr; Subsystems / Subsystem &rarr; Messaging / Category &rarr; Connections".
+
+== Test Plan
+
+Add a test which will navigate to the messaging configuration application and make sure the attribute is exposed. 
+Add another test which modifies the attribute and verifies that the changes are persisted in the management model.
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
