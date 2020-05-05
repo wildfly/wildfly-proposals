@@ -489,7 +489,12 @@ The following are CLI command output showing the management resources of statele
 
 === Nice-to-Have Requirements
 
-* ability to read these deployment information from admin console
+* ability to read these deployment information from admin console.
+
+Admin console displays management runtime resources, including those new resources
+that are implemented by this proposal. So users can read these ejb3 management
+runtime resources to the extent they are presented by admin console via automation.
+This proposal does not include plan to modify how they are displayed in admin console.
 
 === Non-Requirements
 
