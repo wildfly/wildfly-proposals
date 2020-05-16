@@ -1,0 +1,137 @@
+= EJB Timers: Forcing refresh timers in a database-data-store in a clustered environment
+:author:            Cheng Fang
+:email:             cfang@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+The EJB Timer has a way to persist timers in a database using datasources.
+The `database-data-store` has an attribute called `refresh-interval` that define a time
+in milliseconds to refresh the timers reading the timers from database. Look this sample of configuration:
+
+[source,xml]
+----
+<data-stores>
+  <file-data-store name="default-file-store" path="timer-service-data"
+                   relative-to="jboss.server.data.dir"/>
+  <database-data-store name="clustered-store" datasource-jndi-name="java:/jdbc/MyDataSource"
+                       partition="timer" refresh-interval="60000" allow-execution="true"/>
+</data-stores>
+----
+
+For some applications, it is not sufficient to count on the scheduled timer refresh. For example, the application
+may need ad hoc, or on-demand, refresh of timers before performing certain tasks. In a clustered deployment,
+multiple node updating timer datastore may cause the in-memory timer state to be temporarily out of sync.
+The proposal is to provide a way to force the refresh programmatically in WildFly.
+
+=== Issue
+* https://issues.redhat.com/browse/WFLY-12733
+
+=== Dev Contacts
+
+* mailto:cfang@redhat.com
+
+=== QE Contacts
+
+* TBD
+
+=== Testing By
+[x] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+EJB
+
+== Requirements
+
+* Users should be able to invoke some known API to programmatically refresh timer. No new WildFly-specific API is to be added.
+* Users should not rely on private WildFly class and methods to programmatically refresh timer.
+
+== Non-requirements
+* This proposal covers database timer store only, and will not provide the same feature to other type of timer stores.
+* No support for management operation for ad hoc refreshing timer.
+
+== Nice-to-have requirements
+* the ability to configure whether to programmatically refresh timer async or not.
+
+== Solution draft
+
+* This proposal allows the application to set a flag `wildfly.ejb.timer.refresh.enabled` via EE interceptor.
+* Application implement such an interceptor (see sample below) and configure it with `@Interceptors` annotation or `ejb-jar.xml` descriptor.
+* WildFly will check for this flag when calling `TimerService.getAllTimers()` method, and if true, first refresh from
+timer database and then return result.
+* To programmatically refresh timer, the application just need to call `TimerService.getAllTimers()` in the context of
+the bean and method enabled in the above step.
+
+=== Subystem XML
+No changes to ejb3 subsystem configuration or management model.
+
+=== EE interceptors
+
+WildFly allows users to implement their own interceptors as a part of the deployment.
+Most important characteristics of those are as follows:
+
+* interceptors are POJO classes marked whose interceptor methods are marked by annotations
+* interceptor provider can specify in the descriptor the rules to match interceptors with specific beans and business methods
+* Interceptor methods are marked by `javax.interceptor.AroundInvoke`, and `javax.interceptor.AroundTimeout` annotations
+(`AroundTimeout` is not needed for this proposal)
+* Interceptor methods must take one argument: object of class `javax.interceptor.InvocationContext` and return object of the same class
+
+Sample interceptor class:
+
+[source:java]
+----
+package org.jboss.as.test.multinode.ejb.timer.database;
+
+import javax.interceptor.AroundInvoke;
+import javax.interceptor.Interceptor;
+import javax.interceptor.InvocationContext;
+
+/**
+ * An interceptor to enable programmatic timer refresh across multiple nodes.
+ */
+@Interceptor
+public class RefreshInterceptor {
+    @AroundInvoke
+    public Object intercept(InvocationContext context) throws Exception {
+        context.getContextData().put("wildfly.ejb.timer.refresh.enabled", Boolean.TRUE);
+        return context.proceed();
+    }
+}
+
+----
+
+To configure the above interceptor on stateless or singleton session bean business methods:
+
+[source:java]
+----
+@Override
+@Interceptors(RefreshInterceptor.class)
+public List<Serializable> getAllTimerInfoWithRefresh() {
+    final Collection<Timer> allTimers = timerService.getAllTimers();
+    return allTimers.stream().map(Timer::getInfo).collect(Collectors.toList());
+}
+
+----
+
+== Test Plan
+
+Add tests to `/testsuite/integration/multinode/src/test/java/org/jboss/as/test/multinode/ejb/timer/database/`
+
+* add a new test app including
+** an interceptor as described in Solution Draft section
+** configure the above interceptor on the target bean and/or business methods.
+** configure the server to have long `refresh-interval` to avoid scheduled refresh.
+** at runtime, create or cancel timers in one of the 2 nodes.
+** calling `TimerService.getAllTimers()` method in the context of a bean not configured to enable programmatic timer refresh,
+and verify the return result is obsolete.
+** add a test method to invoke `TimerService.getAllTimers()` method in the context of the configured bean and method.
+** verify the return result reflect the true state in the timer database.
+** both stateless and singleton beans should be used to verify the above behavior.
+
+== Community Documentation
+As part of the WildFly PR, the document `docs/src/main/asciidoc/_developer-guide/ejb3/EJB3_Clustered_Database_Timers.adoc`
+will be updated to reflect this new feature.
