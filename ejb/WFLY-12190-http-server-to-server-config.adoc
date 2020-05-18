@@ -107,6 +107,28 @@ Sample profile configuration would be:
 </remote>
 ----
 
+== Elytron integration
+
+Dynamic discovery implementation takes advantage of Elytron integration present in `wildfly-http-client` library. `AuthenticationContext` and `SSLContext` are obtained per each discovery invocation in the following way:
+
+[source]
+----
+        AuthenticationContext authenticationContext = AuthenticationContext.captureCurrent();
+
+        final AuthenticationContextConfigurationClient client = AUTH_CONFIGURATION_CLIENT;
+        final SSLContext sslContext;
+        try {
+            sslContext = client.getSSLContext(newUri, authenticationContext);
+        } catch (GeneralSecurityException e) {
+            return;
+        }
+
+        final AuthenticationConfiguration authenticationConfiguration = client.getAuthenticationConfiguration(newUri, authenticationContext, -1, "ejb", "jboss");
+
+----
+
+... and then used to perform an invocation.
+
 == Draft implementation
 
 Draft implementation (with polling algorithm without cache):
