@@ -1,0 +1,59 @@
+= Legacy compatibility option for executing queries in non-JTA threads
+:author:            Scott Marlow
+:email:             smarlow@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+Introduce wildfly.jpa.skipquerydetach extension that allows queries obtained in non-jta thread from container managed entity manager, to not be detached from the entity manager until the entity manager is closed.  
+
+The wildfly.jpa.skipquerydetach extension is disabled by default (false), meaning that query results are detached from persistence context when obtained.  wildfly.jpa.skipquerydetach can be set to true, for JBoss AS 5/6 compatibility, which defers the detaching of query results until the entity manager is actually closed.  This should of been part of https://issues.jboss.org/browse/WFLY-3674[WFLY-3674] but was overlooked. 
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-1365[EAP7-1365]
+* https://issues.jboss.org/browse/WFLY-12674[WFLY-12674]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-3674[WFLY-3674]
+
+=== Dev Contacts
+
+* mailto:{Scott Marlow}[{smarlow@redhat.com}] JPA / WildFly integration lead
+
+=== QE Contacts
+
+mailto:{Martin Simka}[{msimka@redhat.com}]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+No other directly affected components.
+
+== Requirements
+
+The original goal of WFLY-3674 was to introduce compatibility with earlier JBoss application server versions (5.0/6.0), via an extension for non-JTA transaction scoped entity managers that allows the persistence context to last until the entity manager is closed.  However, the WFLY-3674 introduced extension jboss.as.jpa.deferdetach, neglected to update our query execution handling to (if WFLY-3674 introduced extension was enabled) defer detaching of the persistence context.  
+
+WFLY-12674 introduces the wildfly.jpa.skipquerydetach, that if set to true, will defer the detaching (clearing) of the persistence context until the entity manager is closed.  
+
+To enable the extension, applications should now set both jboss.as.jpa.deferdetach + wildfly.jpa.skipquerydetach to true.  Although they may also set one to true but not the other.
+
+== Test Plan
+Add tests to WildFly testsuite, that verifies that expected behaviour is observed when the feature is enabled and disabled.
+
+== Community Documentation
+https://github.com/wildfly/wildfly/pull/12713[pull#12713] already includes documention via docs/src/main/asciidoc/_developer-guide/JPA_Reference_Guide.adoc.
+
+== Release Note Content
+JPA Skipquerydetach extension added for execution of JPA queries in non-JTA threads for legacy compatibility.
