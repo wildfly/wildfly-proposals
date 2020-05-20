@@ -1,0 +1,522 @@
+= Expose EJB3 Deployment Information as Runtime Resources
+:author:            Cheng Fang
+:email:             cfang@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-4699 (Expose EJB3 deployment information at runtime)
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-435 (Expose EJB3 deployment information at runtime)
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:tborgato@redhat.com[Tommaso Borgato]
+* mailto:szhantem@redhat.com[Sultan Zhantemirov]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* ejb3
+
+=== Other Interested Projects
+
+== Requirements
+
+Users should be able to view deployment information for an EJB as runtime resources via CLI or admin console.
+These deployment information comes from ejb-jar.xml and annotation on bean classes.
+With previous versions of WildFly, users could access them via JMX, and since JMX access does not exist in
+recent versions of WildFly, we need to expose them as runtime resources.  Examples of such information:
+
+* Class name
+* JNDI name
+* Security roles
+* Bean statistics
+* Pool statistics
+
+The following lists the existing ejb3 runtime resources that are already supported in WildFly,
+and other deployment information from ejb-jar.xml that may be potentially added as new ejb3 management runtime resources.
+The plan is to add important ones as new ejb3 runtime resources, and skip those information that are
+either not commonly used, or intended for legacy features.
+
+=== Stateless: existing deployment info as runtime resources
+(http://wildscribe.github.io/WildFly/18.0//deployment/subsystem/ejb3/stateless-session-bean/index.html)
+
+* component-class-name: The component's class name.
+* declared-roles: The roles declared (via @DeclareRoles) on this EJB component.
+* execution-time: Time spend within a bean method.
+* invocations: Number of invocations processed.
+* methods: Invocation metrics per method.
+* peak-concurrent-invocations: Peak concurrent invocations.
+* pool-available-count: The number of available (i.e. not in use) instances in the pool.
+* pool-create-count: The number of bean instances that have been created.
+* pool-current-size: The current size of the pool.
+* pool-max-size: The maximum size of the pool.
+* pool-name: The name of the pool.
+* pool-remove-count: The number of bean instances that have been removed.
+* run-as-role: The run-as role (if any) for this EJB component.
+* security-domain: The security domain for this EJB component.
+* timers: EJB timers associated with the component.
+* wait-time: Time spend waiting to obtain an instance.
+
+
+=== Stateful: existing deployment info as runtime resources
+(http://wildscribe.github.io/WildFly/18.0//deployment/subsystem/ejb3/stateful-session-bean/index.html)
+
+* cache-size: Cache size.
+* component-class-name: The component's class name.
+* declared-roles: The roles declared (via @DeclareRoles) on this EJB component.
+* execution-time: Time spend within a bean method.
+* invocations: Number of invocations processed.
+* methods: Invocation metrics per method.
+* passivated-count: Passivated count.
+* peak-concurrent-invocations: Peak concurrent invocations.
+* run-as-role: The run-as role (if any) for this EJB component.
+* security-domain: The security domain for this EJB component.
+* total-size: Total size.
+* wait-time: Time spend waiting to obtain an instance.
+
+
+=== Singleton: existing deployment info as runtime resources
+(http://wildscribe.github.io/WildFly/18.0//deployment/subsystem/ejb3/singleton-bean/index.html)
+
+* component-class-name: The component's class name.
+* declared-roles: The roles declared (via @DeclareRoles) on this EJB component.
+* execution-time: Time spend within a bean method.
+* invocations: Number of invocations processed.
+* methods: Invocation metrics per method.
+* peak-concurrent-invocations: Peak concurrent invocations.
+* run-as-role: The run-as role (if any) for this EJB component.
+* security-domain: The security domain for this EJB component.
+* timers: EJB timers associated with the component.
+* wait-time: Time spend waiting to obtain an instance.
+
+
+=== Potential deployment information to be exposed for stateless, stateful & singleton:
+* jndi-names
+* description (skip)
+* display-name (skip)
+* icon (skip)
+* ejb-name (skip)
+* home (applies to stateless and stateful, legacy) (skip)
+* remote (applies to stateless and stateful, legacy) (skip)
+* local-home (applies to stateless and stateful, legacy) (skip)
+* local (applies to stateless and stateful, legacy) (skip)
+* business-local
+* business-remote
+* local-bean (included in business-local)
+* service-endpoint (applies to stateless JAX-RPC web service, legacy) (skip)
+* ejb-class (available as component-class-name) (skip)
+* stateful-timeout (stateful only)
+* timeout-method (applies to stateless, singleton and MDB)
+* init-on-startup (singleton only)
+* concurrency-management-type (singleton only)
+* concurrent-method (stateful & singleton only) (skip)
+* depends-on (singleton only)
+* init-method (stateful only, legacy) (skip)
+* remove-methods (stateful only)
+* async-methods
+* transaction-type
+* after-begin-method (stateful only)
+* before-completion-method (stateful only)
+* after-completion-method (stateful only)
+* around-invoke (involves interceptors) (skip)
+* around-timeout (involves interceptors) (skip)
+* post-activate (involves interceptors, stateful only) (skip)
+* pre-passivate (involves interceptors, stateful only) (skip)
+* security-role-ref (already available with declared-roles and run-as-role)
+* security-identity (already available with declared-roles and run-as-role)
+* passivation-capable (stateful only)
+
+
+=== Message-driven Bean: existing deployment info as runtime resources
+(http://wildscribe.github.io/WildFly/17.0//deployment/subsystem/ejb3/message-driven-bean/index.html)
+
+* component-class-name: The component's class name.
+* declared-roles: The roles declared (via @DeclareRoles) on this EJB component.
+* delivery-active: Indicates whether messages are delivered to this message-driven bean.
+* execution-time: Time spend within a bean method.
+* invocations: Number of invocations processed.
+* methods: Invocation metrics per method.
+* peak-concurrent-invocations: Peak concurrent invocations.
+* pool-available-count: The number of available (i.e. not in use) instances in the pool.
+* pool-create-count: The number of bean instances that have been created.
+* pool-current-size: The current size of the pool.
+* pool-max-size: The maximum size of the pool.
+* pool-name: The name of the pool.
+* pool-remove-count: The number of bean instances that have been removed.
+* run-as-role: The run-as role (if any) for this EJB component.
+* security-domain: The security domain for this EJB component.
+* timers: EJB timers associated with the component.
+* wait-time: Time spend waiting to obtain an instance.
+
+=== Potential deployment information to be exposed for MDB:
+* description (skip)
+* display-name (skip)
+* icon (skip)
+* ejb-name (already available as the resource name) (skip)
+* ejb-class (already available as component-class-name) (skip)
+* messaging-type
+* timeout-method
+* transaction-type
+* message-destination-type
+* message-destination-link
+* activation-config
+* around-invoke (involves interceptors) (skip)
+* around-timeout (involves interceptors) (skip)
+* security-role-ref (already available with declared-roles and run-as-role)
+* security-identity (already available with declared-roles and run-as-role)
+
+=== Hard Requirements
+
+* Users should be able to view ejb deployment information as runtime resources via CLI for all ejb bean types:
+** stateless
+** stateful
+** singleton
+** MDB
+* EJB deployment information can come from ejb-jar.xml or annotations on bean classes, or both.  Users should be able to view the effective and merged deployment information as runtime resources via CLI.
+* Some deployment information, though not present in either ejb-jar.xml or annotations, are useful and therefore should also be exposed as runtime resources.  For example, jndi bindings, invocation stats, etc.
+
+=== Example CLI Operations and resources
+The following are CLI command output showing the management resources of stateless, stateful, singleton and MDB.
+[source]
+/deployment=ejb-management.jar/subsystem=ejb3/stateless-session-bean=ManagedStatelessBean:read-resource(include-runtime)
+{
+    "outcome" => "success",
+    "result" => {
+        "async-methods" => ["void async(int, int)"],
+        "business-local" => ["sample.ManagedStatelessBean"],
+        "business-remote" => ["sample.BusinessInterface"],
+        "component-class-name" => "sample.ManagedStatelessBean",
+        "declared-roles" => [
+            "Role3",
+            "Role2",
+            "Role1"
+        ],
+        "execution-time" => 160L,
+        "invocations" => 3L,
+        "jndi-names" => [
+            "java:global/ejb-management/ManagedStatelessBean!sample.BusinessInterface",
+            "java:module/ManagedStatelessBean!sample.BusinessInterface",
+            "java:app/ejb-management/ManagedStatelessBean!sample.BusinessInterface",
+            "java:global/ejb-management/ManagedStatelessBean!sample.ManagedStatelessBean",
+            "java:module/ManagedStatelessBean!sample.ManagedStatelessBean",
+            "java:app/ejb-management/ManagedStatelessBean!sample.ManagedStatelessBean"
+        ],
+        "methods" => {"doIt" => {
+            "execution-time" => 160L,
+            "invocations" => 3L,
+            "wait-time" => 10L
+        }},
+        "peak-concurrent-invocations" => 1L,
+        "pool-available-count" => 64,
+        "pool-create-count" => 1,
+        "pool-current-size" => 1,
+        "pool-max-size" => 64,
+        "pool-name" => "slsb-strict-max-pool",
+        "pool-remove-count" => 0,
+        "run-as-role" => "Role3",
+        "security-domain" => "other",
+        "timeout-method" => "public void sample.ManagedStatelessBean.timeout(javax.ejb.Timer)",
+        "timers" => [{
+            "time-remaining" => 4735224L,
+            "next-timeout" => 1577768415000L,
+            "calendar-timer" => true,
+            "persistent" => false,
+            "info" => "timer1",
+            "schedule" => {
+                "year" => "*",
+                "month" => "*",
+                "day-of-month" => "*",
+                "day-of-week" => "*",
+                "hour" => "0",
+                "minute" => "0",
+                "second" => "15",
+                "timezone" => undefined,
+                "start" => undefined,
+                "end" => undefined
+            }
+        }],
+        "transaction-type" => "CONTAINER",
+        "wait-time" => 10L,
+        "service" => {"timer-service" => undefined}
+    }
+}
+
+[source]
+/deployment=ejb-management.jar/subsystem=ejb3/stateful-session-bean=ManagedStatefulBean2:read-resource(include-runtime)
+{
+    "outcome" => "success",
+    "result" => {
+        "after-begin-method" => "private void sample.ManagedStatefulBean2.afterBegin()",
+        "after-completion-method" => "private void sample.ManagedStatefulBean2.afterCompletion()",
+        "async-methods" => ["void async(int, int)"],
+        "before-completion-method" => "private void sample.ManagedStatefulBean2.beforeCompletion()",
+        "business-local" => ["sample.ManagedStatefulBean2"],
+        "business-remote" => ["sample.BusinessInterface"],
+        "cache-size" => 0,
+        "component-class-name" => "sample.ManagedStatefulBean2",
+        "declared-roles" => [
+            "Role3",
+            "Role2",
+            "Role1"
+        ],
+        "execution-time" => 163L,
+        "invocations" => 4L,
+        "jndi-names" => [
+            "java:app/ejb-management/ManagedStatefulBean2!sample.BusinessInterface",
+            "java:global/ejb-management/ManagedStatefulBean2!sample.BusinessInterface",
+            "java:module/ManagedStatefulBean2!sample.BusinessInterface",
+            "java:app/ejb-management/ManagedStatefulBean2!sample.ManagedStatefulBean2",
+            "java:global/ejb-management/ManagedStatefulBean2!sample.ManagedStatefulBean2",
+            "java:module/ManagedStatefulBean2!sample.ManagedStatefulBean2"
+        ],
+        "methods" => {
+            "doIt" => {
+                "execution-time" => 163L,
+                "invocations" => 3L,
+                "wait-time" => 3L
+            },
+            "remove" => {
+                "execution-time" => 0L,
+                "invocations" => 1L,
+                "wait-time" => 1L
+            }
+        },
+        "passivated-count" => 0,
+        "passivation-capable" => false,
+        "peak-concurrent-invocations" => 1L,
+        "remove-methods" => [
+            {
+                "bean-method" => "void remove()",
+                "retain-if-exception" => false
+            },
+            {
+                "bean-method" => "void removeTrue()",
+                "retain-if-exception" => true
+            },
+            {
+                "bean-method" => "void removeFalse()",
+                "retain-if-exception" => false
+            }
+        ],
+        "run-as-role" => "Role3",
+        "security-domain" => "other",
+        "stateful-timeout" => "2 HOURS",
+        "total-size" => 0,
+        "transaction-type" => "BEAN",
+        "wait-time" => 4L,
+        "service" => undefined
+    }
+}
+
+[source]
+/deployment=ejb-management.jar/subsystem=ejb3/singleton-bean=ManagedSingletonBean:read-resource(include-runtime)
+{
+    "outcome" => "success",
+    "result" => {
+        "async-methods" => ["void async(int, int)"],
+        "business-local" => ["sample.ManagedSingletonBean"],
+        "business-remote" => ["sample.BusinessInterface"],
+        "component-class-name" => "sample.ManagedSingletonBean",
+        "concurrency-management-type" => undefined,
+        "declared-roles" => [
+            "Role3",
+            "Role2",
+            "Role1"
+        ],
+        "depends-on" => undefined,
+        "execution-time" => 156L,
+        "init-on-startup" => false,
+        "invocations" => 3L,
+        "jndi-names" => [
+            "java:module/ManagedSingletonBean!sample.ManagedSingletonBean",
+            "java:global/ejb-management/ManagedSingletonBean!sample.ManagedSingletonBean",
+            "java:app/ejb-management/ManagedSingletonBean!sample.ManagedSingletonBean",
+            "java:app/ejb-management/ManagedSingletonBean!sample.BusinessInterface",
+            "java:global/ejb-management/ManagedSingletonBean!sample.BusinessInterface",
+            "java:module/ManagedSingletonBean!sample.BusinessInterface"
+        ],
+        "methods" => {"doIt" => {
+            "execution-time" => 156L,
+            "invocations" => 3L,
+            "wait-time" => 0L
+        }},
+        "peak-concurrent-invocations" => 1L,
+        "run-as-role" => "Role3",
+        "security-domain" => "other",
+        "timeout-method" => "public void sample.ManagedSingletonBean.timeout(javax.ejb.Timer)",
+        "timers" => [{
+            "time-remaining" => 4304279L,
+            "next-timeout" => 1577768415000L,
+            "calendar-timer" => true,
+            "persistent" => false,
+            "info" => "timer1",
+            "schedule" => {
+                "year" => "*",
+                "month" => "*",
+                "day-of-month" => "*",
+                "day-of-week" => "*",
+                "hour" => "0",
+                "minute" => "0",
+                "second" => "15",
+                "timezone" => undefined,
+                "start" => undefined,
+                "end" => undefined
+            }
+        }],
+        "transaction-type" => "CONTAINER",
+        "wait-time" => 0L,
+        "service" => {"timer-service" => undefined}
+    }
+}
+
+[source]
+/deployment=ejb-management.jar/subsystem=ejb3/message-driven-bean=ManagedMDB:read-resource(include-runtime)
+{
+    "outcome" => "success",
+    "result" => {
+        "activation-config" => [
+            ("destinationType" => "javax.jms.Queue"),
+            ("destination" => "java:/queue/ManagedMDB-queue")
+        ],
+        "component-class-name" => "sample.ManagedMDB",
+        "declared-roles" => [
+            "Role3",
+            "Role2",
+            "Role1"
+        ],
+        "delivery-active" => true,
+        "execution-time" => 0L,
+        "invocations" => 0L,
+        "message-destination-link" => undefined,
+        "message-destination-type" => undefined,
+        "messaging-type" => "javax.jms.MessageListener",
+        "methods" => {},
+        "peak-concurrent-invocations" => 0L,
+        "pool-available-count" => 16,
+        "pool-create-count" => 0,
+        "pool-current-size" => 0,
+        "pool-max-size" => 16,
+        "pool-name" => "mdb-strict-max-pool",
+        "pool-remove-count" => 0,
+        "run-as-role" => "Role3",
+        "security-domain" => "other",
+        "timeout-method" => "public void sample.ManagedMDB.timeout(javax.ejb.Timer)",
+        "timers" => [{
+            "time-remaining" => 4213581L,
+            "next-timeout" => 1577768415000L,
+            "calendar-timer" => true,
+            "persistent" => false,
+            "info" => "timer1",
+            "schedule" => {
+                "year" => "*",
+                "month" => "*",
+                "day-of-month" => "*",
+                "day-of-week" => "*",
+                "hour" => "0",
+                "minute" => "0",
+                "second" => "15",
+                "timezone" => undefined,
+                "start" => undefined,
+                "end" => undefined
+            }
+        }],
+        "transaction-type" => "CONTAINER",
+        "wait-time" => 0L,
+        "service" => {"timer-service" => undefined}
+    }
+}
+
+[source]
+/deployment=ejb-management.jar/subsystem=ejb3/message-driven-bean=NoTimerMDB:read-resource(include-runtime)
+{
+    "outcome" => "success",
+    "result" => {
+        "activation-config" => [
+            ("destination" => "java:/queue/NoTimerMDB-queue"),
+            ("destinationType" => "javax.jms.Queue"),
+            ("acknowledgeMode" => "Auto-acknowledge")
+        ],
+        "component-class-name" => "sample.NoTimerMDB",
+        "declared-roles" => [
+            "Role3",
+            "Role2",
+            "Role1"
+        ],
+        "delivery-active" => true,
+        "execution-time" => 0L,
+        "invocations" => 0L,
+        "message-destination-link" => "queue/NoTimerMDB-queue",
+        "message-destination-type" => "javax.jms.Queue",
+        "messaging-type" => "javax.jms.MessageListener",
+        "methods" => {},
+        "peak-concurrent-invocations" => 0L,
+        "pool-available-count" => 16,
+        "pool-create-count" => 0,
+        "pool-current-size" => 0,
+        "pool-max-size" => 16,
+        "pool-name" => "mdb-strict-max-pool",
+        "pool-remove-count" => 0,
+        "run-as-role" => "Role3",
+        "security-domain" => "other",
+        "timeout-method" => undefined,
+        "timers" => [],
+        "transaction-type" => "CONTAINER",
+        "wait-time" => 0L,
+        "service" => undefined
+    }
+}
+
+=== Nice-to-Have Requirements
+
+* ability to read these deployment information from admin console.
+
+Admin console displays management runtime resources, including those new resources
+that are implemented by this proposal. So users can read these ejb3 management
+runtime resources to the extent they are presented by admin console via automation.
+This proposal does not include plan to modify how they are displayed in admin console.
+
+=== Non-Requirements
+
+* ability to modify these deployment information via CLI or admin console;
+* ability to expose deployment information from jboss-specific deployment descriptors;
+* ability to expose ALL deployment information from ejb-jar.xml and annotations for an EJB.
+* ability to expose deployment information from sources other than ejb3.
+
+== Test Plan
+
+New tests will be added to `testsuite/integration/basic/src/test/java/org/jboss/as/test/integration/ejb/management/deployments`.
+
+* verify that deployment information should be available as runtime info for all ejb bean types:
+** stateless
+** stateful
+** singleton
+** MDB
+* verify that absence of certain optional deployment information will not cause errors (e.g., NullPointerException,
+IllegalArgumentException, etc) when reading this bean's runtime management resources.
+* verify the correctly merged value is exposed as runtime resources via CLI, when some deployment information is specified in both ejb-jar.xml and annotations.
+
+== Community Documentation
+
+Enhance WildFly community docs (docs/src/main/asciidoc/_developer-guide/EJB3_Reference_Guide.adoc) to describe
+the new ejb3 management resources derived from deployment information.
