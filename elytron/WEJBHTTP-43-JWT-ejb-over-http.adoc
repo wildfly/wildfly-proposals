@@ -1,0 +1,74 @@
+= [WEJBHTTP-43] Ability to use Bearer/JWT Authentication when using EJB over HTTP
+:author:            Ashley Abdel-Sayed
+:email:             aabdelsa@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+This RFE is to add support for using Bearer/JWT authentication in EJB invocations over HTTP protocol. This requires adding
+the ability for the `PoolAuthenticationContext` in the wildfly-http-client to hold bearer authentication information, as well
+as prepare responses and handle requests for the Bearer mechanism.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WEJBHTTP-43[WEJBHTTP-43]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1359[EAP7-1359]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+* Security
+* EJB HTTP Client
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* Add the ability for the wildfly-http-client to handle HTTP requests and prepare HTTP responses for the BEARER  authentication
+mechanism by adding support for BEARER type in
+https://github.com/wildfly/wildfly-http-client/blob/master/common/src/main/java/org/wildfly/httpclient/common/PoolAuthenticationContext.java[`PoolAuthenticationContext`]
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Implementation Plan
+* Currently the `PoolAuthenticationContext` supports the `BASIC` and `DIGEST` mechanisms. This RFE will bring support for
+the `BEARER` mechanism by allowing users to specify `bearer-token` or `oauth2-bearer-token` credentials when creating their
+elytron `AuthenticationConfiguration`. The `PoolAuthenticationContext` will use this credential to prepare a response to
+the server when configured for `BEARER` authentication mechanism.
+
+== Test Plan
+* In the https://github.com/wildfly/wildfly-http-client/blob/master/common/src/test[wildfly-http-client testsuite], the `HTTPTestServer`
+will be modified to support testing invocations with the BEARER mechanism for authentication
+* Tests will be added to the https://github.com/wildfly/wildfly/tree/master/testsuite/integration/basic/src/test/java/org/jboss/as/test/integration/ejb[WildFly EJB basic integration testsuite] to test successful EJB invocations over HTTP when bearer authentication is used
+
+== Community Documentation
+* Documentation will be added to the https://github.com/wildfly/wildfly/blob/master/docs/src/main/asciidoc/_developer-guide/ejb3/EJB_over_HTTP.adoc[EJB over HTTP]
+section to describe the authentication mechanisms supported by the wildfly-http-client. This will include the existing
+support for BASIC and DIGEST mechanisms and the new support for BEARER mechanism.
+
+== Release Note Content
+The WildFly HTTP client will now support users authenticating via the BEARER mechanism when using EJB over HTTP.
