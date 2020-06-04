@@ -1,0 +1,116 @@
+= Galleon layer for the Web Management Console
+:author:            Yeray Borges
+:email:             yborgess@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The web management console (HAL) is a web-based administration tool for the server management system. HAL connects to the server via a management interface and is served by the internal management web server created by the core-management subsystem. It may be used to deploy and undeploy applications, tune system settings, make persistent modifications to the server configuration, apply patches and in general, perform administrative tasks.
+
+The goal of this feature is to supply a https://docs.wildfly.org/galleon/#_layers[Galleon layer] which will be responsible for providing the HAL web console.
+
+The following is a configuration example of the WildFly bootable JAR Maven plugin to provision a server with the `web-console` layer including a custom `mgmt-users.properties` to supply the management users that can access to the console:
+
+[source,xml]
+----
+<plugin>
+    <groupId>org.wildfly.plugins</groupId>
+    <artifactId>wildfly-jar-maven-plugin</artifactId>
+    <configuration>
+        <feature-pack-location>wildfly@maven(org.jboss.universe:community-universe)#${version.wildfly}</feature-pack-location>
+        <extra-server-content-dirs>
+            <extra-content>extra-content</extra-content>
+        </extra-server-content-dirs>
+        <layers>
+            <layer>web-console</layer>
+        </layers>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>package</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+----
+
+The `extra-content` value under `extra-server-content-dirs` plugin configuration is used to add additional content to the server. In this case it supplies the `mgmt-users.properties` file previously generated via `$WFLY_HOME/bin/add-user.sh`. The structure of the `extra-content` in our project could be the following:
+
+[source,bash]
+----
+.
+├── extra-content
+│   └── standalone
+│       └── configuration
+│           └── mgmt-users.properties
+├── pom.xml
+├── src
+    ├── main
+        ├── java
+----
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-13490[WFLY-13490 Galleon layer for web console]
+* https://issues.redhat.com/browse/EAP7-1530[EAP7-1530 Add a Galleon layer for web console]
+
+=== Dev Contacts
+
+* mailto:brian.stansberry@redhat.com[Brian Stansberry]
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
+* mailto:jkasik@redhat.com[Jan Kasik]
+
+=== Testing By
+
+* [X] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+WildFly
+
+== Requirements
+
+=== Hard Requirements
+
+* The Galleon layer must provide support for the management web console.
+* The Galleon layer must supply a secure management interface. The security of this interface will be handled by Elytron subsystem.
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+== Test Plan
+
+The test coverage of the Galleon layer added by this proposal is divided in two main groups:
+
+. Testing the Galleon layer provisioning. This testing is done by https://github.com/wildfly/wildfly/blob/master/testsuite/layers/src/test/java/org/jboss/as/test/layers/LayersTestCase.java[LayersTestCase]. The testsuite will be modified to add a new server provisioned with this layer in isolation and with this layer combined with all the layers. For each kind of provisioning, this test does the following:
+
+.. Verifies the provisioned modules are the expected ones.
+.. Verifies the provisioned server starts successfully.
+
+. Execution of WildFly tests related to the feature provisioned by this layer. Reuse the existing tests available on the WildFly test suite, which are directly testing this layer functionalities, and execute them on a server installation provisioned with this layer.
+
+== Community Documentation
+
+Community documentation plan is adding the layer to https://docs.wildfly.org/19/Admin_Guide.html#wildfly-galleon-layers[WildFly Galleon layers] in the section it belongs to.
+
+== Release Note Content
+
+A Galleon layer to supply the web management console (HAL).
