@@ -1,0 +1,101 @@
+= Galleon layer for SAR subsystem
+:author:            Yeray Borges
+:email:             yborgess@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The SAR subsystem allows to deploy .sar archives containing MBeans configured by META-INF/jboss-service.xml.
+
+The goal of this feature is to supply a https://docs.wildfly.org/galleon/#_layers[Galleon layer] which will be responsible for providing the SAR subsystem.
+
+The following is a configuration example of the WildFly bootable JAR Maven plugin to provision a server with the `sar` layer:
+
+[source,xml]
+----
+<plugin>
+    <groupId>org.wildfly.plugins</groupId>
+    <artifactId>wildfly-jar-maven-plugin</artifactId>
+    <configuration>
+        <feature-pack-location>wildfly@maven(org.jboss.universe:community-universe)#${version.wildfly}</feature-pack-location>
+        <layers>
+            <layer>sar</layer>
+        </layers>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>package</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+----
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-13352[WFLY-13352 Add a Galleon layer for the SAR subsystem]
+* https://issues.redhat.com/browse/EAP7-1483[EAP7-1483 Add Galleon layers for remaining non-deprecated subsystems]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
+
+=== Testing By
+
+* [X] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+WildFly
+
+=== Other Interested Projects
+
+N/A
+
+== Requirements
+
+* The Galleon layer must provide the sar subsystem.
+* Since the sar subsystem uses services configured by the JMX subsystem, we need to depend on JMX Galleon layer which supplies the JMX subsystem.
+
+=== Hard Requirements
+
+N/A
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+== Test Plan
+
+The test coverage of the Galleon layer added by this proposal is divided in two main groups:
+
+. Testing the Galleon layer provisioning. This testing is done by https://github.com/wildfly/wildfly/blob/master/testsuite/layers/src/test/java/org/jboss/as/test/layers/LayersTestCase.java[LayersTestCase]. The testsuite will be modified to add a new server provisioned with this layer in isolation and with this layer combined with all the layers. For each kind of provisioning, this test does the following:
+
+.. Verifies the provisioned modules are the expected ones.
+.. Verifies the provisioned server starts successfully.
+
+. Execution of WildFly tests related to the feature provisioned by this layer. Reuse the existing tests available on the WildFly test suite, which are directly testing this layer functionalities, and execute them on a server installation provisioned with this layer.
+
+== Community Documentation
+
+Community documentation plan is adding the layer to https://docs.wildfly.org/20/Admin_Guide.html#wildfly-galleon-layers[WildFly Galleon layers] in the section it belongs to.
+
+== Release Note Content
+
+A Galleon layer to give support to JMX Service Archive (SAR) applications.
