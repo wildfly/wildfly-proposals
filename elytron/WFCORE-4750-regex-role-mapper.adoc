@@ -1,0 +1,159 @@
+= WFCORE-4750 Introduce regex mapper for security roles in Elytron
+:author:            Diana Vilkolakova
+:email:             dvilkola@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This feature is about enhancing Elytron subsystem configuration to allow possibility to define a regex based security roles mapping mechanism. With this functionality it will be possible for customers to easily translate list of roles (eg. *-admin, *-user) to simpler roles (eg. admin, user) without having to implement their own custom components to achieve this.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-4750[WFCORE-4750]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1344[EAP7-1344] - EAP issue tracker
+* https://issues.jboss.org/browse/ELY-1909[ELY-1909] - Elytron project issue tracker
+* https://issues.jboss.org/browse/WFLY-12810[WFLY-12810] - Wildfly community documentation issue tracker
+
+=== Dev Contacts
+
+* mailto:dvilkola@redhat.com[Diana Vilkolakova]
+
+=== QE Contacts
+
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly-core[WildFly Core project]
+* https://github.com/wildfly-security/wildfly-elytron[WildFly Elytron project]
+* Wildfly Security component will be consequently affected by the improvements introduced by this new feature
+
+== Requirements
+
+=== Hard Requirements
+
+* It must be possible to configure the Elytron subsystem in order to achieve a regex based mapping of security roles. This means that the user must be able to configure the Elytron subsystem by defining:
+
+ ** a pattern that will be tested by a regex in order to identify which of the input roles are actually matching. Matching are all inputs in which the pattern can be found as a substring. If pattern should match whole text, it can be prefixed by `^` and ended by `$`.
+                                                                        ** a string that the resulting security roles should be mapped to
+
+
+The new role mapper can be used to map for instance `123-user` and `345-admin` to `user`, `admin` or to `app-user`,`app-admin`. Both taking of the substring and taking and altering it should be possible.
+
+ * There should be an option that enables users to define whether to keep/not to keep the original roles that don't match the provided pattern and therefore will not be mapped. The default behavior will be to keep these as resulting security roles.
+
+ * There should be an option that allows the user to define whether to replace all of the occurrences or only the first occurrence of the pattern in the resulting security role. Through this parameter all of the occurrences of the substring matching the pattern will be replaced with the provided replacement string. The default behavior will be to replace only the first occurrence.
+
+ * User will be notified with an exception if provided pattern is not valid regular expression.
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+== Implementation Plan
+
+The task will be achieved by implementing a new `regex-role-mapper` component in the subsystem (there are already other provided role mappers in the Elytron subsystem, eg. `add-prefix-role-mapper`, `logical-role-mapper` etc.). Below is the proposed format of the mapper with examples of use.
+
+* In the following example, the original roles:
+
+  - `app-admin`
+  - `batch-admin`
+  - `application-admin`
+  +
+ would be translated into a single `admin` security role, while:
+
+ - `app-operator`
+ - `batch-operator`
+ - `application-operator`
+
+would be translated into a single `operator` security role.
+Roles that don't match the regex won't be preserved.
+
+[source,xml]
+----
+<mappers>
+...
+	<regex-role-mapper name="my-regex-role-mapper" pattern=".*-([a-z]*)$" replacement="$1" keep-non-mapped="false"/>
+...
+</mappers>
+
+----
+
+* The following example demonstrates a use case in which original roles are loaded from a LDAP source in the following format:
+
+ - `APP-123_XY_ZX_ABCD-Batch_Admin`
+ - `APP-ABC_EF_GH_IJKL-Batch_Operator`
+ +
+The mapper below can be used to translate these roles to
+ - `Admin`
+ - `Operator`
+
+[source,xml]
+----
+<regex-role-mapper name="my-rrm" regex=".*_([a-zA-Z]*)$" replacement="$1" />
+----
+
+Note: In order to translate the original roles `Admin` and `Operator` into `admin` and `operator` security roles, with lower case initials, `mapping-role-mapper` can be used and chained on top of this one.
+
+ * In the example below, actual security roles are obtained by extracting the part of the input string preceding the first '_' character and then by converting it to a new format, namely `APP-{extracted_role}`.
+E.g.: the input `USER_ABC_DEF`, `ADMIN_123` roles would be translated into `APP-USER` and `APP-ADMIN` security roles).
+
+
+[source,xml]
+----
+<regex-role-mapper name="my-rrm" regex="^([a-z]*)_.*" replacement="APP-$1" />
+----
+
+
+ * In the example below the domain part is extracted from input roles that are in form of an email address in order to convert them to the `{extracted_domain}-role` format.
+E.g.: `user@gmail.com` and `user@customApp.com` input roles would result in `gmail-role` and `customerApp-role` security roles.
+`keep-non-mapped="true"` will allow to keep the roles that do not match the regex (those that were not in form of an email).
+
+[source,xml]
+----
+<regex-role-mapper name="my-rrm" pattern=".*@([a-z]*)\..*" replacement="$1-role" keep-non-mapped="true"/>
+----
+
+ * The following role mapper can be used to replace all instances of the `guest` substring with the `user` substring.
+E.g. the `abc-guest-abc-guest` input role would be mapped to the `abc-user-abc-user` security role.
+
+[source,xml]
+----
+<regex-role-mapper name="my-rrm" pattern="guest" replacement="user" replace-all="true"/>
+----
+
+Both the pattern and replacement will be in the form of STRING in the model.
+
+
+== Test Plan
+
+* WildFly Elytron test suite: Functional tests  - tests for regex role mapper functionality
+* WildFly Core test suite: Functional tests - testing of regex role mapper functionality when it is defined in the subsystem
+
+== Community Documentation
+
+WildFly - community documentation will be delivered in form of a PR to master branch as detailed in the *Related Issues* section.
+
+== Release Note Content
+
+Elytron subsystem configuration was enhanced to allow possibility to define a regex based security roles mapping mechanism. With this functionality it is possible for customers to easily translate list of roles (eg. *-admin, *-user) to simpler roles (eg. admin, user) without having to implement their own custom components to achieve this.
+
