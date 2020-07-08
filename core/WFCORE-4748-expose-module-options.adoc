@@ -1,0 +1,99 @@
+= Expose Module Options
+:author:            James R. Perkins
+:email:             jperkins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+JBoss Modules added the ability to pass Java agents as JBoss Modules arguments in
+https://issues.jboss.org/browse/MODULES-393[MODULES-393]. This allows things like the log manager to be configured
+before the agent is loaded. It also resolves issues as described in
+https://issues.jboss.org/browse/WFCORE-4674[WFCORE-4674].
+
+What this feature request will do is expose the ability to pass JBoss Modules parameters. Previously arguments were not
+allowed to be passed unless the script itself was edited. Allowing parameters to be passed directly to JBoss Modules
+future proofs new features in JBoss Modules as well.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-4748[WFCORE-4748]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1481[EAP7-1481]
+* https://issues.jboss.org/browse/WFCORE-4674[WFCORE-4674]
+* https://issues.jboss.org/browse/MODULES-393[MODULES-393]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:msvehla@redhat.com[Martin Svehla]
+
+=== Testing By
+
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly Core
+* WildFly
+
+=== Other Interested Projects
+
+* Any consumer of WildFly Core that uses the scripts, the launcher API or domain servers.
+
+== Requirements
+
+=== Hard Requirements
+
+* The `-javaagent:` parameter must be allowed to be processed by JBoss Modules
+* The script `standalone.conf(.bat|.ps1)` files must be updated with examples.
+* Domain servers will require a new attribute added to the JVM resource to store the options for managed servers.
+  ** The JVM resource can be at the host level, server group level and/or server level allowing the module options to
+     be set at these levels.
+
+=== Nice-to-Have Requirements
+
+* The JBoss Modules library will be added automatically as a JVM agent if an agent is found in the `MODULE_OPTS`
+  environment variable.
+* If it ends up making sense also expose these options to the host controller and process controller. However, I don't
+  feel strongly this will be required. If it's simple enough it could be supported though.
+
+=== Non-Requirements
+
+== Implementation Plan
+
+The `standalone.sh`, `standalone.bat` and `standalone.ps1` scripts will be update to support setting the `MODULE_OPTS`
+environment variable. These will be options passed to JBoss Modules. If these options include a `-javaagent:` parameter
+JBoss Modules will be added as an agent to the JVM.
+
+The `StandaloneCommandBuilder` in the launcher API will also need to be updated.
+
+Domain servers will need a new attribute, `module-options` added to the already existing JVM resource.
+
+== Test Plan
+
+Tests to launch the standalone server with an agent will be added to the script tests. A new test will be added to test
+launching a standalone server with an agent using the launcher API.
+
+For servers in a domain a unit test will be added which tests the output of the launch command for servers.
+
+== Community Documentation
+
+There is currently no documentation about the options allowed to be passed to the script files. These are generally
+documented in the `*.conf(.bat|.ps1)` files.
+
+== Release Note Content
+
+In the `standalone.conf(.bat|.ps1)` script configuration file you can now add a `MODULE_OPTS=-javaagent:my-agent.jar`
+environment variable. This is useful for occasions when previously the log manager was required on the boot class path.
