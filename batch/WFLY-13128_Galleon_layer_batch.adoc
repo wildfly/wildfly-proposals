@@ -1,0 +1,109 @@
+= Galleon layer for Batch subsystem
+:author:            Yeray Borges
+:email:             yborgess@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The Batch subsystem allows the users the execution of Batch jobs. It is based in the JBeret open source implementation of JSR 352: Batch applications. Some features provided by JBeret are:
+
+* Components to read and write common file formats (CSV, XML, JSON)
+* Components to access external resources such as databases and message queues
+* Annotations to inject custom scopes (@JobScoped, @StepScoped, @PartitionScoped)
+* Support to store statistics in multiple places such as databases (both relational and document-oriented), in-memory and Infinispan
+
+The goal of this feature is to supply a https://docs.wildfly.org/galleon/#_layers[Galleon layer] which will be responsible for providing the batch subsystem.
+
+The Galleon layer will be decorator layer that can be complemented with other layers, for example, adding logging capabilities or datasources to configure persistent jobs.
+
+The following is a configuration example of the WildFly bootable JAR Maven plugin to provision a server with batch applications support using an in-memory Job repository:
+
+[source,xml]
+----
+<plugin>
+    <groupId>org.wildfly.plugins</groupId>
+    <artifactId>wildfly-jar-maven-plugin</artifactId>
+    <configuration>
+        <feature-pack-location>wildfly@maven(org.jboss.universe:community-universe)#${version.wildfly}</feature-pack-location>
+        <layers>
+            <layer>batch-jberet</layer>
+        </layers>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>package</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+----
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-13128[WFLY-13128 Add a Galleon layer for batch-jberet]
+* https://issues.redhat.com/browse/EAP7-1483[EAP7-1483 Add Galleon layers for remaining non-deprecated subsystems]
+
+=== Dev Contacts
+
+* mailto:brian.stansberry@redhat.com[Brian Stansberry]
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
+* mailto:jkasik@redhat.com[Jan Kasik]
+
+=== Testing By
+
+* [X] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+WildFly
+
+=== Other Interested Projects
+
+N/A
+
+== Requirements
+
+=== Hard Requirements
+
+* The Galleon layer must provide the basic configuration for batch subsystem.
+* The Galleon layer will be considered as a decorator layer that can be used isolated, for example it will allow in-memory Job repository but would need to combine with datasources Galleon layer to supply persistent job repository.
+* Batch subsystem security configuration will be done by Elytron without requiring the legacy security subsystem.
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+== Test Plan
+
+The test coverage of the Galleon layer added by this proposal is divided in two main groups:
+
+. Testing the Galleon layer provisioning. This testing is done by https://github.com/wildfly/wildfly/blob/master/testsuite/layers/src/test/java/org/jboss/as/test/layers/LayersTestCase.java[LayersTestCase]. The testsuite will be modified to add a new server provisioned with this layer in isolation and with this layer combined with all the layers. For each kind of provisioning, this test does the following:
+
+.. Verifies the provisioned modules are the expected ones.
+.. Verifies the provisioned server starts successfully.
+
+. Execution of WildFly tests related to the feature provisioned by this layer. Reuse the existing tests available on the WildFly test suite, which are directly testing this layer functionalities, and execute them on a server installation provisioned with this layer.
+
+== Community Documentation
+
+Community documentation plan is adding the layer to https://docs.wildfly.org/20/Admin_Guide.html#wildfly-galleon-layers[WildFly Galleon layers] in the section it belongs to.
+
+== Release Note Content
+
+A Galleon layer to give support to Batch applications.
