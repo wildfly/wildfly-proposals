@@ -1,0 +1,223 @@
+= Expose Jakarta RESTful Web Services Resources to gRPC clients
+:author:        Ron Sigal
+:email:         rsigal@redhat.com
+:toc:          left
+:icons:         font
+:idprefix:
+:idseparator:     -
+:issue-base-url:   https://issues.jboss.org/browse
+
+== Overview
+
+In the five years since gRPC was introduced, it has become a popular invocation
+and streaming framework, used by major corporations. Among its benefits are
+
+* speed
+* language independence
+
+With this feature request we propose to expose Jakarta RESTful Web Services services as gRPC services,
+accessible by gRPC clients.  All of the Jakarta RESTful Web Services server class features should be supported:
+
+* entity parameters
+* parameters annotated with @CookieParam, @FormParam, @HeaderParam, @MatrixParam, @PathParam,
+  or @QueryParam
+* parameters annotated with @Suspended
+* resource methods that return CompletionStages
+* SSE
+
+== Stages
+There will be two aspects of the project: 1) Generator Phase, and 2) Runtime Phase.
+
+=== Generator Phase
+The goal is to take an existing set of Jakarta RESTful Web Services resource classes and create a WAR that
+supports translating a gRPC request to a Jakarta RESTful Web Services request and then translating the ensuing Jakarta RESTful Web Services response to a
+gRPC response.
+ 
+The project will parse the source code of the resource classes and generate a number of
+specific support files. Assume that there is one Jakarta RESTful Web Services resource class named Hello.java:
+
+----
+@Path("")
+public class Hello {
+
+   public class HelloRequest {
+      String s;
+
+      public HelloRequest(String s) {
+         this.s = s;      }
+   }
+
+   public class HelloResponse {
+      String s;
+      
+      public HelloResponse(String s) {
+         this.s = s;
+      }
+   }
+  
+   @Path("hello")
+   @POST
+   public HelloResponse hello(HelloRequest request) {
+      return new HelloResponse("hello" + request.s);
+   }
+}
+----
+
+The following will be generated:
+
+* Hello.proto [a protobuf / gRPC service definition]
+* Hello_proto.java [generated from Hello.proto by the protobuf protoc compiler]
+* HelloServiceGrpc.java [generated from Hello.proto by the gRPC plugin to the protoc compiler]
+* HelloServiceGrpcImpl.java [has the implementation methods overriding the stubs in HelloServiceGrpc.java]
+* Hello_JavabufTranslator [has code to translate back and forth between java
+  data classes (e.g., HelloRequest and HelloReply) and their protobuf representations in java]
+* HelloMessageBodyReaderWriter [a Jakarta RESTful Web Services MessageBodyReader/Writer that depends on
+  Hello_JavabufTranslator]
+
+Hello.proto will look like
+
+----
+message Hello___HelloRequest {
+  string s = 6;
+}
+
+message Hello___HelloResponse {
+  string s = 7;
+}
+
+message GeneralEntityMessage {
+   ...
+   oneof messageType {
+      ...
+      Hello___HelloRequest Hello___HelloRequest_field = 45;
+      ...
+   }
+}
+
+message GeneralReturnMessage {
+   ...
+   oneof messageType {
+      Hello___HelloResponse Hello___HelloResponse_field = 54;
+   }
+}
+
+service HelloService {
+  rpc hello (GeneralEntityMessage) returns (GeneralReturnMessage);
+}
+----
+
+HelloServiceGrpcImpl.java will have methods that look like
+
+----
+   private static Hello_proto.gString.Builder builder = Hello_proto.gString.newBuilder();
+   private static FieldDescriptor fd = builder.getDescriptorForType().getFields().iterator().next();
+   private HttpServletDispatcher servlet;
+   private HttpRequestContext cdiContext;
+
+   @java.lang.Override
+   public void hello(Hello_proto.GeneralEntityMessage param, StreamObserver<Hello_proto.GeneralReturnMessage> responseObserver) {
+      HttpServletRequest request = null;
+      try {
+         HttpServletResponseImpl response = new HttpServletResponseImpl("Hello___HelloResponse", "sync", Hello_Server.getContext(), builder, fd);
+         GeneratedMessageV3 actualParam = param.getHelloRequestField();
+         request = getHttpServletRequest(param, actualParam, "p/hello", response, "GET", "Hello_proto.GeneralReturnMessage");
+         associateCdiContext(request);
+         HttpServletDispatcher servlet = getServlet();
+         servlet.service("GET", request, response);
+         MockServletOutputStream msos = (MockServletOutputStream) response.getOutputStream();
+         ByteArrayOutputStream baos = msos.getDelegate();
+         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+         Hello___HelloResponse reply = Hello___HelloResponse.parseFrom(bais);
+         Hello_proto.GeneralReturnMessage.Builder grmb = createGeneralReturnMessageBuilder(response);
+         grmb.setHelloResponseField(reply);
+         responseObserver.onNext(grmb.build());
+      } catch (Exception e) {
+         responseObserver.onError(e);
+      } finally {
+         responseObserver.onCompleted();
+         cdiContext.dissociate(request);
+      }
+   }
+
+----
+
+The execution sequence that generates Hello.proto and the subsequent classes and then packages
+them into a WAR is captured in a maven archetype found in RESTEasy project https://github.com/resteasy/gRPCtoJAXRS-archetype.
+
+=== Runtime Phase
+
+At runtime the WAR generated in the Generator Phase is deployed to WildFly, where it 
+will be detected and engaged by the gRPC subsystem. The methods in HelloServiceGrpcImpl
+mediate between the gRPC world and the Jakarta RESTful Web Services world. In particular, gRPC client invocations
+will be directed to the appropriate methods in HelloServiceGrpcImpl, where a servlet environment is
+created and the RESTEasy HttpServlet30Dispatcher servlet is invoked. When
+HttpServlet30Dispatcher returns, any Jakarta RESTful Web Services response will have been translated into its
+gRPC equivalent by HelloMessageBodyReaderWriter.
+
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/EAP7-1536 [EAP7-1536]
+* {issue-base-url}/WFLY-13530 [WFLY-13530]
+
+
+=== Related Issues
+
+* {issue-base-url}/PRODMGT-1811 [PRODMGT-1811]
+* {issue-base-url}/WFLY-11034 [WFLY-11034]
+* {issue-base-url}/RESTEASY-2656 [RESTEASY-2656]
+
+=== Dev Contacts
+
+* mailto:rsigal@redhat.com[Ron Sigal]
+* mailto:jperkins@redhat.com[James Perkins]
+* mailto:ema@redhat.com[Jim Ma]
+* mailto:rsearls@redhat.com[Rebecca Searls]
+* mailto:weli@redhat.com[Wei Nan Li]
+
+=== QE Contacts
+
+* Martin Svehla
+
+=== Testing By
+
+* [X] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* RESTEasy
+* Wildfly
+
+=== Other Interested Projects
+
+* Elytron. "[A]ny security requirements will be handled with Elytron exclusively." -Darren Lofthouse
+
+== Requirements
+
+=== Hard Requirements
+
+The mechanisms described above will all be implemented.
+
+== Test Plan
+
+* We would want to include tests in the RESTEasy testsuite. These would test a variety of gRPC
+  services which implement both discrete requests and responses and also SSE streaming responses.
+  They should exercise all of the Jakarta RESTful Web Services features listed above (@HeaderParam, etc., asynchronous
+  invocations, SSE).
+  
+* The desired tests are now implemented in RESTEasy's integrated-tests class org.jboss.resteasy.test.grpc.GrpcToJaxrsTest.
+
+* GrpcToJaxrsTest incorporates a WAR generated by the archetype in https://github.com/resteasy/gRPCtoJAXRS-archetype.
+  It thereby tests the proper behavior of the Generator phase.
+
+== Community Documentation
+
+We will write a chapter in the RESTEasy User Guide.
+
+== Release Note Content
+
+Jakarta RESTful Web Services resources can now be accessed by gRPC clients.
