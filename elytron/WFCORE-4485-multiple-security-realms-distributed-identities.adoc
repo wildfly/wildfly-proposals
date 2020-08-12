@@ -1,0 +1,70 @@
+= Support for multiple security realms - Distributed Identities
+:author:            Martin Mazanek
+:email:             mmazanek@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+By stacking LoginModules it was possible using PicketBox to attempt to authenticate using one remote store and if that failed try the next store in the list.
+
+This RFE will implement distributed security realm, which will allow to use multiple security realms for authentication by sequentially invoking list of configured realms until a realm with existing realm identity is found.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-4485[WFCORE-4485]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/ELY-1932[ELY-1932]
+
+=== Dev Contacts
+
+* mailto:mmazanek@redhat.com[Martin Mazanek]
+
+=== QE Contacts
+
+* mailto:okotek@redhat.com[Ondrej Kotek]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+[ ] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+
+* Wildfly (documentation)
+* Wildfly Core
+* Elytron
+
+== Requirements
+
+=== Hard Requirements
+
+Add DistributedRealm to Elytron, which will be a SecurityRealm wrapper containing a list of SecurityRealms allowing to sequentially invoke them until one succeeds.
+
+```
+<security-realms>
+    ...
+    <distributed-realm name="TheRealm" realms="realm1 realm2 realm3" />
+</security-realms>
+```
+
+If any of the queried realms is unavailable (throws RealmUnavailableException), the exception will be propagated - the query will fail. Eg. Authentication information for
+user `user` is stored in `realm2`. The realm `realm1` is unavailable, so querying `distributed-realm` for `user` will result in an exception, as the realms are queried sequentially.
+
+== Test Plan
+
+Unit tests will be added to Wildfly Elytron
+Subsystem model tests (parsing, persisting, transformers) will be added to Wildfly Core
+
+== Community Documentation
+
+`distributed-realm` documentation will be added to Wildfly documentation
