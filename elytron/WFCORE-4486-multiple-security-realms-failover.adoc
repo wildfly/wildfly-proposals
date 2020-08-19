@@ -1,0 +1,76 @@
+= Support for multiple security realms - Failover
+:author:            Martin Mazanek
+:email:             mmazanek@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+
+Our security realms are able to indicate unavailability by throwing a RealmUnavailableException
+
+We should support fail over to an alternative realm.
+
+A common request is fail over to a local file based realm if an LDAP or database server has gone down allowing administrators to retain access to the server.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-4486[WFCORE-4486]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/ELY-1902[ELY-1902]
+
+=== Dev Contacts
+
+* mailto:mmazanek@redhat.com[Martin Mazanek]
+
+=== QE Contacts
+
+* mailto:okotek@redhat.com[Ondrej Kotek]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[ ] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+
+* Wildfly (documentation)
+* Wildfly Core
+* Elytron
+
+== Requirements
+
+=== Hard Requirements
+
+Add FailoverRealm to Elytron, which will be a SecurityRealm wrapper containing delegate and failover realm. If the delegate throws a RealmUnavailableException during RealmIdentity lookup, it will be caught and failover realm will be used instead. Configuration in WFCore will look like following:
+
+```
+<security-realms>
+    ...
+    <failover-realm name="TheRealm" delegate-realm="LdapRealm" failover-realm="LocalRealm" />
+    ...
+</security-realms>
+```
+
+`failover-realm` will emit SecurityRealmUnavailableEvent to the corresponding SecurityDomain whenever it fails over. This can be turned off by adding `emit-events` attribute and setting it to `false`.
+
+
+
+== Test Plan
+
+Tests will be added to Wildfly Elytron
+Subsystem test added to Wildfly Core (parsing, persisting, transformer)
+
+
+== Community Documentation
+
+`failover-realm` documentation will be added to Wildfly documentation
