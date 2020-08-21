@@ -75,6 +75,9 @@ Conceptually this includes the following steps:
 
 The scripts that would have been added via the manual installation steps are not added to the resulting installation as the configuration is already added.
 
+*TODO?* Do we add the Keycloak feature pack to the `org.jboss.universe.community-universe`?  This may simplify using the Galleon CLI but it potentially
+needs to be maintained independently of the Keycloak project.
+
 The Keycloak release cadences differ from the WildFly release cadences, this means anyone using Galleon to keep their WildFly
 installation up to date may receive updates to the core WildFly installation independently of the Keycloak feature pack.
 
