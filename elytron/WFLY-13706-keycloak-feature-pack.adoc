@@ -81,6 +81,10 @@ needs to be maintained independently of the Keycloak project.
 The Keycloak release cadences differ from the WildFly release cadences, this means anyone using Galleon to keep their WildFly
 installation up to date may receive updates to the core WildFly installation independently of the Keycloak feature pack.
 
+*TODO?* Clarifying the interaction of versioning across the feature packs is going to be important, the installation of the Keycloak feature pack
+should not prevent the server being updates once later versions become available, additionally the release of WildFly should not trigger the need for
+an update to Keycloak.
+
 === Nice-to-Have Requirements
 
 It is preferable for this new feature pack to just have dependencies on WildFly Core keeping it independent of WildFly, this needs to be
@@ -114,7 +118,25 @@ This section contains examples of how the new feature pack will be installed usi
 
 === Provisioned using the Galleon CLI
 
-TODO
+A server installation can be provisioned using the Galleon CLI which would need to be downloaded and installed first.
+
+Start the CLI:
+
+----
+java -jar galleon-cli-4.2.6.Final-SNAPSHOT.jar
+----
+
+First provision a WildFly server with the `web-server` later:
+
+----
+install wildfly:20.0#20.0.0.Final --layers=web-server --dir=/home/darranl/tmp/galleon/wildfly
+----
+
+Then install the Keycloak adapters:
+
+----
+install org.keycloak:keycloak-adapter-galleon-pack:12.0.0-SNAPSHOT --layers=keycloak-elytron-oidc --dir=/home/darranl/tmp/galleon/wildfly
+----
 
 === Provisioned using org.jboss.galleon:galleon-maven-plugin.
 
