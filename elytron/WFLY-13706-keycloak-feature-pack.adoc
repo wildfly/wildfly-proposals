@@ -118,7 +118,64 @@ TODO
 
 === Provisioned using org.jboss.galleon:galleon-maven-plugin.
 
-TODO
+The following is an example of using the `galleon-maven-plugin` to provision a server containing the Keycloak
+adapter subsystem.
+
+[source,xml]
+----
+<plugin>
+    <groupId>org.jboss.galleon</groupId>
+    <artifactId>galleon-maven-plugin</artifactId>
+    <version>4.2.5.Final</version>
+    <executions>
+        <execution>
+            <goals>
+                <goal>provision</goal>
+            </goals>
+            <configuration>
+                <install-dir>${project.build.directory}/wildfly</install-dir>
+                <feature-packs>
+                    <feature-pack>
+                        <groupId>org.wildfly</groupId>
+                        <artifactId>wildfly-galleon-pack</artifactId>
+                        <version>21.0.0.Beta1-SNAPSHOT</version>
+                        <inherit-configs>false</inherit-configs>
+                        <inherit-packages>false</inherit-packages>
+                        <excluded-packages>
+                            <name>product.conf</name>
+                            <name>docs.schema</name>
+                        </excluded-packages>
+                    </feature-pack>
+                    <feature-pack>
+                        <groupId>org.keycloak</groupId>
+                        <artifactId>keycloak-adapter-galleon-pack</artifactId>
+                        <version>12.0.0-SNAPSHOT</version>
+                        <inherit-configs>false</inherit-configs>
+                        <inherit-packages>false</inherit-packages>
+                   </feature-pack>
+                 </feature-packs> 
+                <configs>
+                    <config>
+                        <name>standalone.xml</name>
+                        <model>standalone</model>
+                        <layers>
+                            <layer>undertow</layer>
+                            <layer>keycloak-client-oidc</layer>
+                        </layers>
+                    </config>
+                </configs>
+           </configuration>
+        </execution>
+    </executions>
+</plugin>
+----
+
+*TODO?* Should it be possible to only define the `keycloak-adapter-galleon-pack` and the minimum required WildFly be
+automatically provisioned?
+
+*TODO?* Should it be possible to omit the layer listing?
+
+*TODO?* Should we eliminate the need to specify the `undertow` layer?
 
 === Provisioned using org.wildfly.plugins:wildfly-jar-maven-plugin
 
