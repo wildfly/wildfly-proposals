@@ -159,7 +159,7 @@ adapter subsystem.
                         <name>standalone.xml</name>
                         <model>standalone</model>
                         <layers>
-                            <layer>undertow</layer>
+                            <layer>web-server</layer>
                             <layer>keycloak-client-oidc</layer>
                         </layers>
                     </config>
@@ -175,11 +175,71 @@ automatically provisioned?
 
 *TODO?* Should it be possible to omit the layer listing?
 
-*TODO?* Should we eliminate the need to specify the `undertow` layer?
+*TODO?* Should we eliminate the need to specify the `web-server` layer?  Related to this some further debugging of what
+Keycloak really requires is needed,
 
 === Provisioned using org.wildfly.plugins:wildfly-jar-maven-plugin
 
-TODO
+The `wildfly-jar-maven-plugin` only allows a single feature pack location to be specified, for this reason the configuration
+needs to be specified within a `provisioning.xml` descriptor instead.
+
+An example configuration adding the Keycloak client adapters to an installation can be seen here.
+
+.provisioning.xml
+[source,xml]
+----
+<installation xmlns="urn:jboss:galleon:provisioning:3.0">
+    <feature-pack location="wildfly@maven(org.jboss.universe:community-universe):current#21.0.0.Beta1-SNAPSHOT">
+        <default-configs inherit="false"/>
+        <packages inherit="false">
+            <exclude name="product.conf"/>
+            <exclude name="docs.schema"/>
+        </packages>
+    </feature-pack>
+    <feature-pack location="org.keycloak:keycloak-adapter-galleon-pack:12.0.0-SNAPSHOT">
+        <default-configs inherit="false"/>
+        <packages inherit="false"/>
+    </feature-pack>
+    <config model="standalone" name="standalone.xml">
+        <layers>
+            <include name="web-server"/>
+            <include name="keycloak-elytron-oidc"/>
+        </layers>
+    </config>
+    <options>
+        <option name="optional-packages" value="passive+"/>
+    </options>
+</installation>
+----
+
+The `wildfly-jar-maven-plugin` can then be defined as:
+
+[source,xml]
+----
+<plugin>
+    <groupId>org.wildfly.plugins</groupId>
+    <artifactId>wildfly-jar-maven-plugin</artifactId>
+    <version>${version.wildfly.jar.maven.plugin}</version>
+    <configuration>
+        <root-url-path>simple-webapp</root-url-path>
+        <provisioning-file>provisioning.xml</provisioning-file>
+        <cli-sessions>
+            <cli-session>
+                <script-files>
+                    <script>configure-oidc.cli</script>
+                </script-files>
+            </cli-session>
+        </cli-sessions>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>package</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+----
 
 == Implementation Plan
 
