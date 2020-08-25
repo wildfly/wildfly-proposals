@@ -135,7 +135,7 @@ install wildfly:20.0#20.0.0.Final --layers=web-server --dir=/home/darranl/tmp/ga
 Then install the Keycloak adapters:
 
 ----
-install org.keycloak:keycloak-adapter-galleon-pack:12.0.0-SNAPSHOT --layers=keycloak-elytron-oidc --dir=/home/darranl/tmp/galleon/wildfly
+install org.keycloak:keycloak-adapter-galleon-pack:12.0.0-SNAPSHOT --layers=keycloak-client-oidc --dir=/home/darranl/tmp/galleon/wildfly
 ----
 
 === Provisioned using org.jboss.galleon:galleon-maven-plugin.
@@ -232,7 +232,7 @@ The following is an example defining the complete configuration within the pom.x
         </feature-packs>
         <layers>
             <layer>web-server</layer>
-            <layer>keycloak-elytron-oidc</layer>
+            <layer>keycloak-client-oidc</layer>
         </layers>
         <context-root>simple-webapp</context-root>
         <cli-sessions>
@@ -271,7 +271,7 @@ An example configuration adding the Keycloak client adapters to an installation 
     <config model="standalone" name="standalone.xml">
         <layers>
             <include name="web-server"/>
-            <include name="keycloak-elytron-oidc"/>
+            <include name="keycloak-client-oidc"/>
         </layers>
     </config>
     <options>
