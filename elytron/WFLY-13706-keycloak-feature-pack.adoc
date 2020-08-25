@@ -202,8 +202,54 @@ Keycloak really requires is needed,
 
 === Provisioned using org.wildfly.plugins:wildfly-jar-maven-plugin
 
-The `wildfly-jar-maven-plugin` only allows a single feature pack location to be specified, for this reason the configuration
-needs to be specified within a `provisioning.xml` descriptor instead.
+There are two different approaches available to configure the `wildfly-jar-maven-plugin`, we can either define both feature packs within
+the pom.xml or we can use a `provisioning.xml` descriptor to describe the desired server.
+
+==== Inline Configuration
+
+The following is an example defining the complete configuration within the pom.xml of the project.
+
+[source,xml]
+----
+<plugin>
+    <groupId>org.wildfly.plugins</groupId>
+    <artifactId>wildfly-jar-maven-plugin</artifactId>
+    <version>${version.wildfly.jar.maven.plugin}</version>
+    <configuration>
+        <feature-packs>
+            <feature-pack>
+                <location>wildfly@maven(org.jboss.universe:community-universe):current#21.0.0.Beta1-SNAPSHOT</location>
+                <inherit-configs>false</inherit-configs>
+                <inherit-packages>false</inherit-packages>
+            </feature-pack>
+            <feature-pack>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-adapter-galleon-pack</artifactId>
+                <version>12.0.0-SNAPSHOT</version>
+                <inherit-configs>false</inherit-configs>
+                <inherit-packages>false</inherit-packages>
+            </feature-pack>
+        </feature-packs>
+        <layers>
+            <layer>web-server</layer>
+            <layer>keycloak-elytron-oidc</layer>
+        </layers>
+        <context-root>simple-webapp</context-root>
+        <cli-sessions>
+            <cli-session>
+                <script-files>
+                    <script>configure-oidc.cli</script>
+                </script-files>
+            </cli-session>
+        </cli-sessions>
+    </configuration>
+    ....
+</plugin>
+----
+
+==== provisioning.xml Configuration
+
+The server to be provisioned can also be defined within a `provisioning.xml` descriptor.
 
 An example configuration adding the Keycloak client adapters to an installation can be seen here.
 
@@ -262,6 +308,10 @@ The `wildfly-jar-maven-plugin` can then be defined as:
     </executions>
 </plugin>
 ----
+
+NOTE: The use of a `provisioning.xml` descriptor is also usable with the other provisioning mechanisms, however
+this enhancement is considering the feature pack added for Keycloak so will not repeat the `provisioning.xml`
+example further.
 
 == Implementation Plan
 
