@@ -63,13 +63,14 @@ The `extra-content` value under `extra-server-content-dirs` plugin configuration
 
 === Dev Contacts
 
+* mailto:yborgess@redhat.com[Yeray Borges Santana]
 * mailto:brian.stansberry@redhat.com[Brian Stansberry]
-* mailto:{email}[{author}]
 
 === QE Contacts
 
 * mailto:fburzigo@redhat.com[Fabio Burzigotti]
 * mailto:jkasik@redhat.com[Jan Kasik]
+* mailto:tborgato@redhat.com[Tommaso Borgato]
 
 === Testing By
 
