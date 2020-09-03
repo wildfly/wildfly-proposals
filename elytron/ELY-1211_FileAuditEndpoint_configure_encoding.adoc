@@ -1,0 +1,74 @@
+= Add ability to FileAuditEndpoint to allow file encoding to be overridden.
+:author:            Ilia Vassilev
+:email:             ivassile@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The FileAuditEndpoint doesn't allow file encoding to be overridden. It should allow the encoding to be overridden and specify UTF-8 as the default.
+
+Add "encoding" attribute to "file-audit-log", "periodic-rotating-file-audit-log" and "size-rotating-file-audit-log" elements in Elytron subsystem.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/ELY-1211
+* https://issues.redhat.com/browse/WFCORE-5106
+* https://issues.redhat.com/browse/WFLY-13834
+* https://issues.redhat.com/browse/WFLY-18048
+
+=== Related Issues
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+* mailto:darran.lofthouse@redhat.com[Darran Lofthouse]
+* mailto:fjuma@redhat.com[Farah Juma]
+
+=== QE Contacts
+
+=== Testing By
+
+[X] Engineering IIUC
+
+[] QE
+
+=== Affected Projects or Components
+
+ * wildfly-elytron
+ * wildfly-core
+ * wildfly
+ 
+=== Other Interested Projects
+
+== Requirements
+Modify FileAuditEndpoint implementation to allow file encoding to be modified. Set UTF-8 as default value to ensure backward compatibility with current implementation.
+Add "encoding" attribute to "file-audit-log", "periodic-rotating-file-audit-log" and "size-rotating-file-audit-log" elements in Elytron subsystem to utilize the new feature.
+
+=== Hard Requirements
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+* WildFly test "testAuditLogFileEncoding" in testsuite/integration/elytron/src/test/java/org/wildfly/test/integration/elytron/audit/FileAuditLogTestCase.java
+This test creates Audit log file using UTF_16BE encoding and tries to read the logged event using the same encoding UTF_16BE and a different one - UTF_8.
+
+* WildFly Core test "testRejectingTransformersEAP740" (modified) in elytron/src/test/java/org/wildfly/extension/elytron/SubsystemTransformerTestCase.java
+Modified the test to include the new encoding option. 
+
+* Elytron test "testFileEncoding" in tests/base/src/test/java/org/wildfly/security/audit/FileAuditEndpointTest.java
+Creates Audit log file using UTF_16 encoding and tries to read the contents. 
+
+
+== Community Documentation
+
+== Release Note Content
+
+New "encoding" attribute has been added to "file-audit-log", "periodic-rotating-file-audit-log" and "size-rotating-file-audit-log" elements in Elytron subsystem which can be used to override the default `UTF-8` encoding. Possible values: `UTF-8`, `UTF-16BE`, `UTF-16LE`, `UTF-16`, `US-ASCII` or `ISO-8859-1`.
