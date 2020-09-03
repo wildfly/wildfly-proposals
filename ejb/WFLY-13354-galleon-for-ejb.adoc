@@ -29,6 +29,7 @@ for the EJB subsystem to support common predefined EJB feature sets.
 === QE Contacts
 
 * mailto:fburzigo@redhat.com[Fabio Burzigotti]
+* mailto:tborgato@redhat.com[Tommaso Borgato]
 
 === Testing By
 
@@ -68,7 +69,11 @@ This looks what we provide in standalone-full.xml, except no IIOP integration.
 This *could* depend on *ejb3* instead, but that means EJB is unnecessarily exposed over the HTTP interface and a lot of
 dependencies are brought in for messaging integration.
 
-A user could provision ejb3 + ejb3-iiop and get the equivalent to what's in standalone-full.xml.
+All ejb layers should be preferring elytron as security provider, with an option to select legacy security.
+We should also make sure not to accidentally leave anything unsecured by default.
+
+Provisioning ejb3 + ejb3-iiop is similar to what's in standalone-full.xml, except that ejb3 subsystem in standard distribution
+uses legacy security domain.
 
 There'd be a couple ancillary layers as well:
 
@@ -77,7 +82,7 @@ There'd be a couple ancillary layers as well:
 It's an optional dependency because the user when provisioning can *exclude* this layer and instead provision...
 
 2. ejb-dist-cache. This provides the infinispan subsystem resources related to distributed ejb caching
-(i.e. the ones in standalone0ha.xml and standalone-full-ha.xml.)
+(i.e. the ones in standalone-ha.xml and standalone-full-ha.xml.)
 
 This pattern of "exclude an optional local caching layer and add a distributed variant" is how web session
 and jpa caching are handled in the layers for those features.
