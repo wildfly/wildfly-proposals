@@ -1,0 +1,51 @@
+= WFLY-13356/ EAP7-1525 Add WebServices Galloen layer
+:author:            Jim Ma
+:email:             ema@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/EAP7-1525[EAP7-1525]
+* {issue-base-url}/WFLY-13356[WFLY-13356]
+
+=== Related Issues:
+
+* {issue-base-url}/WFLY-13354[WFLY-13354]
+* {issue-base-url}/WFLY-13771[WFLY-13771]
+
+=== Dev Contacts:
+
+* mailto:ema@redhat.com[Jim Ma]
+
+=== QE Contacts:
+
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
+
+=== Affected Projects or Components:
+
+* WildFly
+
+== Requirements
+
+WildFly Galleon is the tool to slim the WidlFly server installation. To better support this tool and provide user with wide variety of server provisioning selection, webservices layer should be created to provide Jakarta xml web service support.
+The *webserviecs* galloen layer spec should be created, and it should depend on *ejb3* layer to support EJB(type) WebSevice and *messaging-activemq* layer to support jms transport.
+
+=== Test Plan
+
+Reuse the existing ws tests in WildFly test suite to test againt in a provisioned server installation with webservices and other requried layers.
+
+=== Community Documentation
+
+Community documentation will be added to sections about WildFly Galleon layers.
+
