@@ -111,5 +111,5 @@ which are directly testing features added by these layers, and execute them on a
 
 == Community Documentation
 
-Community documentation plan is adding the layer to https://docs.wildfly.org/19/Admin_Guide.html#wildfly-galleon-layers[WildFly Galleon layers]
+Community documentation plan is adding the layer to https://docs.wildfly.org/20/Admin_Guide.html#wildfly-galleon-layers[WildFly Galleon layers]
 in the section it belongs to.
