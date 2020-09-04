@@ -59,26 +59,19 @@ If a user is trying to slim their server I think of four key things they want to
 
 Based on the above factors, the following layers are to be supported:
 
-1. ejb3-lite. This is like what we provide in standalone.xml, but without the MDB instance pool or the remote connector resource.
+1. ejb-lite. This is like what we provide in standalone.xml, but without the MDB instance pool or the remote connector resource.
 (A webservices layer would depend on this.)
 
-2. ejb3. Builds (i.e. depends) on ejb3-lite and adds the discovery subsystem, the MDB pool and the remote connector resource.
+2. ejb. Builds (i.e. depends) on ejb-lite and adds the discovery subsystem, the MDB pool and the remote connector resource.
 This looks what we provide in standalone-full.xml, except no IIOP integration.
-
-3. ejb3-iiop. Builds (i.e. depends) on *ejb3-lite* and adds the iiop subsystem plus the integration resource in the EJB3 subsystem.
-This *could* depend on *ejb3* instead, but that means EJB is unnecessarily exposed over the HTTP interface and a lot of
-dependencies are brought in for messaging integration.
 
 All ejb layers should be preferring elytron as security provider, with an option to select legacy security.
 We should also make sure not to accidentally leave anything unsecured by default.
 
-Provisioning ejb3 + ejb3-iiop is similar to what's in standalone-full.xml, except that ejb3 subsystem in standard distribution
-uses legacy security domain.
-
 There'd be a couple ancillary layers as well:
 
 1. ejb-local-cache. This provides the infinispan subsystem resources related to local ejb caching
-(i.e. the ones in standalone.xml and standalone-full.xml.) The ejb3-lite layer *optionally* depends on this.
+(i.e. the ones in standalone.xml and standalone-full.xml.) The ejb-lite layer *optionally* depends on this.
 It's an optional dependency because the user when provisioning can *exclude* this layer and instead provision...
 
 2. ejb-dist-cache. This provides the infinispan subsystem resources related to distributed ejb caching
@@ -90,10 +83,10 @@ and jpa caching are handled in the layers for those features.
 TBH I don't see big FS footprint improvements coming out of these permutations. Big EJB dependencies include (in no particular order.)
 
 * IIOP. But the TM uses IIOP libs so they will be there regardless.
-* Remoting. It would be nice to be able to eliminate the need for remoting, e.g. for ejb3-lite if the user app isn't a remote ejb client. But that doesn't seem trivial and if a server is manageable remoting will be there anyway to support the CLI.
+* Remoting. It would be nice to be able to eliminate the need for remoting, e.g. for ejb-lite if the user app isn't a remote ejb client. But that doesn't seem trivial and if a server is manageable remoting will be there anyway to support the CLI.
 * JCA stuff. But if there's a datasource it's there anyway.
 * Infinispan. A benefit of a future SLSB-only layer would be this dep could be eliminated. (But it might be used for web caching etc anyway.)
-* Remote artemis integration.  This we do save if ejb3-lite is used.
+* Remote artemis integration.  This we do save if ejb-lite is used.
 
 
 == Test Plan
