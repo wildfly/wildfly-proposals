@@ -1,0 +1,125 @@
+= Galleon layer for remote ActiveMQ Artemis broker integration support
+:author:            Brian Stansberry
+:email:             brian.stansberry@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The Jakarta Messaging Service (JMS) provides an API for sending messages between two or more clients and a programming model to handle the producer-consumer messaging problem.
+Users wishing to use JMS in their applications need a mechanism to connect to a message broker which is responsible for accepting messages from producers and making them available
+to consumers. The WildFly server is responsible for providing that mechanism to applications in accordance with the JMS specification. There are a number of ways the server
+can be configured to provide the necessary facilities. A good practice is use an external-to-the-appserver broker (aka a remote broker), allowing a separation of administrative concerns between
+managing the broker and managing the application. An ActiveMQ Artemis server is a good choice for a remote broker, particularly for WildFly users who may be familiar with
+ActiveMQ Artemis due to WildFly's own use of it as it's embedded broker. So, WildFly should make it easy for users to provision a server that can integrate with a remote ActiveMQ broker.
+
+The goal of this feature is to supply a https://docs.wildfly.org/galleon/#_layers[Galleon layer] which will be responsible for providing the necessary remote ActiveMQ broker integration.
+
+The following is a configuration example of the WildFly bootable JAR Maven plugin to provision a server with the `remote-activemq` layer:
+
+[source,xml]
+----
+<plugin>
+    <groupId>org.wildfly.plugins</groupId>
+    <artifactId>wildfly-jar-maven-plugin</artifactId>
+    <configuration>
+        <feature-pack-location>wildfly@maven(org.jboss.universe:community-universe)#${version.wildfly}</feature-pack-location>
+        <layers>
+            <layer>remote-activemq</layer>
+        </layers>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>package</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+----
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-13797[WFLY-13797 Add a Galleon layer for messaging integration with a remote ActiveMQ broker]
+* https://issues.jboss.org/browse/WFLY-13771[WFLY-13797 Add a Galleon layer for messaging integration with a remote ActiveMQ broker]
+* https://issues.redhat.com/browse/EAP7-1549[EAP7-1549 Add a Galleon layer for messaging integration with a remote ActiveMQ broker]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-13354[WFLY-13354]
+* https://issues.jboss.org/browse/WFLY-13798[WFLY-13798]
+
+=== Dev Contacts
+
+* mailto:ehugonne@redhat.com[Emmanuel Hugonnet]
+
+=== QE Contacts
+
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
+* mailto:jkasik@redhat.com[Jan Kasik]
+* mailto:tborgato@redhat.com[Tommaso Borgato] 
+
+=== Testing By
+
+* [X] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+WildFly
+
+=== Other Interested Projects
+
+ActiveMQ Artemis
+
+== Requirements
+
+=== Hard Requirements
+
+* The Galleon layer must provide a messaging-activemq subsystem that provides the following resources:
+** /subsystem=messaging-activemq/remote-connector=artemis
+** /subsystem=messaging-activemq/pooled-connection-factory=activemq-ra
+*** The PCF resource will declare 'user' and 'password' attributes with 'guest' as their value. The expectation is users will use the CLI to set the values required by the actual remote broker.
+* The Galleon layer must provide a remote-destination-outbound-socket-binding resource to allow configuration of the hostname and port of the remote broker.
+** The value of the 'host' attribute must be an expression, '${jboss.messaging.connector.host:localhost}', to allow externalization of its value. 
+** The value of the 'port' attribute must be an expression, '${jboss.messaging.connector.port:61616}', to allow externalization of its value. The default of 61616 is the default port used by an ActiveMQ Artemis server.
+* The Galleon layer must NOT provide a server resource in the messaging-activemq subsystem.
+* The Galleon layer must depend on the 'resource-adapters' layer in order to ensure that the necessary resource adapter support is provided.
+* The Galleon layer must configure the 'jms-connection-factory' attribute of the '/subsystem=ee/service=default-bindings' resource to use the 'java:jboss/DefaultJMSConnectionFactory' JNDI binding provided by the pooled-connection-factory=activemq-ra resource.
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+* The remote-activemq layer does not expose a management interface nor does it accept incoming connections. That means it doesn't need to depend on any security subsystems.
+* The messaging-activemq subsystem depends on modules that provide libraries needed to run ActiveMQ Artemis as an embedded broker. These same libraries are used to handle connecting to a remote broker. It is not a requirement of this issue to eliminate dependencies on libraries unrelated to the remote-broker use case, although it is acceptable to do so if possible.
+
+== Test Plan
+
+The test coverage of the Galleon layer added by this proposal is divided in three main groups:
+
+. Testing the Galleon layer provisioning. This testing is done by https://github.com/wildfly/wildfly/blob/master/testsuite/layers/src/test/java/org/jboss/as/test/layers/LayersTestCase.java[LayersTestCase]. The testsuite will be modified to add a new server provisioned with this layer in isolation and with this layer combined with all the layers. For each kind of provisioning, this test does the following:
+
+.. Verifies the provisioned modules are the expected ones.
+.. Verifies the provisioned server starts successfully.
+
+. Execution of existing WildFly tests related to interaction with a remote broker. Reuse the existing tests available in the WildFly test suite, which are directly testing this layer's functionalities, and execute them on a server installation provisioned with this layer.
+
+. Execution of existing WildFly tests related to interaction with a messaging broker, where the purpose of the test is not to test embedded broker functionality. Most such tests do assume an embedded broker, as WildFly's standard configuration historical includes one. For these we will reuse the existing tests available in the WildFly test suite, but adapted to run with a remote broker configuration, and execute them on a server installation provisioned with this layer.
+
+Note that some of the coverage in the 3rd category of tests will be delivered as part of this feature but will require other features, e.g. Galleon layers for EJB (WFLY-13354). Tests of EJB interaction with a broker require both an EJB layer and a broker layer.
+
+== Community Documentation
+
+Community documentation plan is adding the layer to https://docs.wildfly.org/20/Admin_Guide.html#wildfly-galleon-layers[WildFly Galleon layers] in the section it belongs to.
+
+== Release Note Content
+
+A Galleon layer to provide support for Jakarta Messaging Service (JMS) integration with a remote ActiveMQ Artemis broker.
