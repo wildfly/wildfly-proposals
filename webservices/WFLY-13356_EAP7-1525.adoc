@@ -9,8 +9,31 @@
 :issue-base-url:    https://issues.jboss.org/browse
 
 == Overview
+The goal of this feature is to supply a https://docs.wildfly.org/galleon/#_layers[Galleon layer] which will be responsible for providing the webservices subsystem.
 
+The following is a configuration example of the WildFly bootable JAR Maven plugin to provision a server with the `webserviecs` layer and the `cloud-server` layer, which brings the webseviecs functionatily to support Jakarta xml web service deployment.
 
+[source,xml]
+----
+<plugin>
+    <groupId>org.wildfly.plugins</groupId>
+    <artifactId>wildfly-jar-maven-plugin</artifactId>
+    <configuration>
+        <feature-pack-location>wildfly@maven(org.jboss.universe:community-universe)#${version.wildfly}</feature-pack-location>
+        <layers>
+            <layer>cloud-server</layer>
+            <layer>webservices</layer>
+        </layers>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>package</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+----
 
 == Issue Metadata
 
@@ -31,6 +54,13 @@
 === QE Contacts:
 
 * mailto:fburzigo@redhat.com[Fabio Burzigotti]
+* mailto:tborgato@redhat.com[Tommaso Borgato]
+
+=== Testing By
+
+* [X] Engineering
+
+* [ ] QE
 
 === Affected Projects or Components:
 
@@ -41,9 +71,33 @@
 WildFly Galleon is the tool to slim the WidlFly server installation. To better support this tool and provide user with wide variety of server provisioning selection, webservices layer should be created to provide Jakarta xml web service support.
 The *webserviecs* galloen layer spec should be created, and it should depend on *ejb3* layer to support EJB(type) WebSevice and *messaging-activemq* layer to support jms transport.
 
+=== Hard Requirements
+
+* The Galleon layer must provide a webservice subsystem
+* The Galleon layer must work with other base layer 
+* The Galleon layer must support Jakarta xml web service deployment propertly
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+
+N/A
+
+
 === Test Plan
 
-Reuse the existing ws tests in WildFly test suite to test againt in a provisioned server installation with webservices and other requried layers.
+The test coverage of the Galleon layer added by this proposal is divided into two groups:
+
+. Testing the Galleon layer provisioning. This testing is done by https://github.com/wildfly/wildfly/blob/master/testsuite/layers/src/test/java/org/jboss/as/test/layers/LayersTestCase.java[LayersTestCase]. The testsuite will be modified to add a new server provisioned with this layer in isolation and with this layer combined with all the layers. For each kind of provisioning, this test does the following:
+
+.. Verifies the provisioned modules are the expected ones.
+.. Verifies the provisioned server starts successfully.
+
+. Execution of existing WildFly tests related to websevice. For these we will reuse the existing tests available in the WildFly test suite and execute them on a server installation provisioned with this layer. A new profile and surefire execution will be added to the WildFly testsuite/integration/ws package. This new surefire execution will run the existing tests available on the WildFly test suite against a server installation created from the combination of the `webservices` with `cloud-server` , `legacy-security` and `ejb` Galleon layer
+
 
 === Community Documentation
 
