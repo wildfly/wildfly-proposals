@@ -1,0 +1,108 @@
+= Galleon layers for the EJB subsystem
+:author:            Brian Stansberry; Yeray Borges; Cheng Fang
+:email:             cfang@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The goal of this feature is to supply a list of https://docs.wildfly.org/galleon/#_layers[Galleon layers]
+for the EJB subsystem to support common predefined EJB feature sets.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-13354[WFLY-13354 Add Galleon layers for the EJB subsystem]
+* https://issues.redhat.com/browse/EAP7-1444[EAP7-1444 Galleon Layers in EAP XP 2]
+
+=== Related Issues
+* https://issues.redhat.com/browse/WFLY-13433[Improve capability support in EJB3 subsystem]
+* https://issues.redhat.com/browse/WFLY-13356[Add a Galleon layer for Webservices]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
+* mailto:tborgato@redhat.com[Tommaso Borgato]
+
+=== Testing By
+
+* [X] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+WildFly
+
+=== Other Interested Projects
+
+== Requirements
+
+These analysis and requirements are based on https://github.com/bstansberry/wildfly/commits/ejb-layers2[Brian's proposal].
+
+If a user is trying to slim their server I think of four key things they want to do in descending order of importance:
+
+1. Eliminate unnecessary open ports.
+
+2. Eliminate unnecessary exposure.
+
+3. Eliminate jars, both to save filesystem footprint and to reduce any theoretical attack surface.
+
+4. Reduce configuration clutter and unnecessary services.
+
+Based on the above factors, the following layers are to be supported:
+
+1. ejb-lite. This is like what we provide in standalone.xml, but without the MDB instance pool or the remote connector resource.
+(A webservices layer would depend on this.)
+
+2. ejb. Builds (i.e. depends) on ejb-lite and adds the discovery subsystem, the MDB pool and the remote connector resource.
+This looks what we provide in standalone-full.xml, except no IIOP integration.
+
+All ejb layers should be preferring elytron as security provider, with an option to select legacy security.
+We should also make sure not to accidentally leave anything unsecured by default.
+
+There'd be a couple ancillary layers as well:
+
+1. ejb-local-cache. This provides the infinispan subsystem resources related to local ejb caching
+(i.e. the ones in standalone.xml and standalone-full.xml.) The ejb-lite layer *optionally* depends on this.
+It's an optional dependency because the user when provisioning can *exclude* this layer and instead provision...
+
+2. ejb-dist-cache. This provides the infinispan subsystem resources related to distributed ejb caching
+(i.e. the ones in standalone-ha.xml and standalone-full-ha.xml.)
+
+This pattern of "exclude an optional local caching layer and add a distributed variant" is how web session
+and jpa caching are handled in the layers for those features.
+
+TBH I don't see big FS footprint improvements coming out of these permutations. Big EJB dependencies include (in no particular order.)
+
+* IIOP. But the TM uses IIOP libs so they will be there regardless.
+* Remoting. It would be nice to be able to eliminate the need for remoting, e.g. for ejb-lite if the user app isn't a remote ejb client. But that doesn't seem trivial and if a server is manageable remoting will be there anyway to support the CLI.
+* JCA stuff. But if there's a datasource it's there anyway.
+* Infinispan. A benefit of a future SLSB-only layer would be this dep could be eliminated. (But it might be used for web caching etc anyway.)
+* Remote artemis integration.  This we do save if ejb-lite is used.
+
+
+== Test Plan
+
+The test coverage of the Galleon layers added by this proposal is divided in two main groups:
+
+. Test the Galleon layer provision.
+https://github.com/wildfly/wildfly/blob/master/testsuite/layers/src/test/java/org/jboss/as/test/layers/LayersTestCase.java[LayersTestCase]
+will be expanded to test the provision of the added layers when it is used isolated and with other layers.
+For each sort of provision, this test does the following:
+.. Verifies the provisioned modules are the expected ones.
+.. Verifies the provisioned server starts successfully.
+. Execution of existing tests on a minimum set of layers. Reuse the existing tests available on the WildFly test suite,
+which are directly testing features added by these layers, and execute them on a server installation provisioned with this layer.
+
+== Community Documentation
+
+Community documentation plan is adding the layer to https://docs.wildfly.org/20/Admin_Guide.html#wildfly-galleon-layers[WildFly Galleon layers]
+in the section it belongs to.
