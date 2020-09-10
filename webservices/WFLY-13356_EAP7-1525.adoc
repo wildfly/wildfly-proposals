@@ -69,7 +69,7 @@ The following is a configuration example of the WildFly bootable JAR Maven plugi
 == Requirements
 
 WildFly Galleon is the tool to slim the WidlFly server installation. To better support this tool and provide user with wide variety of server provisioning selection, webservices layer should be created to provide Jakarta xml web service support.
-The *webserviecs* galloen layer spec should be created, and it should depend on *ejb3* layer to support EJB(type) WebSevice and *messaging-activemq* layer to support jms transport.
+The *webserviecs* galloen layer spec should be created, and it should depend on *ejb3* layer to support EJB(type) WebService and *messaging-activemq* layer to support jms transport.
 
 === Hard Requirements
 
@@ -96,10 +96,15 @@ The test coverage of the Galleon layer added by this proposal is divided into tw
 .. Verifies the provisioned modules are the expected ones.
 .. Verifies the provisioned server starts successfully.
 
-. Execution of existing WildFly tests related to websevice. For these we will reuse the existing tests available in the WildFly test suite and execute them on a server installation provisioned with this layer. A new profile and surefire execution will be added to the WildFly testsuite/integration/ws package. This new surefire execution will run the existing tests available on the WildFly test suite against a server installation created from the combination of the `webservices` with `cloud-server` , `legacy-security` and `ejb` Galleon layer
+. Execution of existing WildFly tests related to webservice. For these we will reuse the existing tests available in the WildFly test suite and execute them on a server installation provisioned with this layer. A new profile and surefire execution will be added to the WildFly testsuite/integration/ws package. This new surefire execution will run the existing tests available on the WildFly test suite against a server installation created from the combination of the `webservices` with `cloud-server` , `legacy-security` and `ejb` Galleon layer
 
 
 === Community Documentation
 
 Community documentation will be added to sections about WildFly Galleon layers.
+
+== Release Note Content
+
+This will be included in JIAR release note. 
+
 
