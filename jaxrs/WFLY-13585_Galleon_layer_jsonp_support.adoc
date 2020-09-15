@@ -1,0 +1,113 @@
+= Galleon layer for JSON-P support
+:author:            Yeray Borges
+:email:             yborgess@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Jakarta JSON Processing (JSON-P) is a Java API to process (e.g. parse, generate, transform and query) JSON documents. It produces and consumes JSON in a streaming fashion (similar to StAX API for XML) and allows to build a Java object model for JSON using API classes (similar to DOM API for XML).
+
+The goal of this feature is to supply a https://docs.wildfly.org/galleon/#_layers[Galleon layer] which will be responsible for providing the JSON-P API and Implementation.
+
+The Galleon packages that provision JSON-P are:
+
+ * `javax.json.api`: It provisions the JBoss Modules module for JSON-P API
+ * `org.glassfish.jakarta.json`: It provisions the JBoss Modules module for JSON-P implementation
+
+Since the JSON-P API Jboss Modules module depends on JSON-P Impl module, the implementation is always provisioned as soon as the API is present. The JSON-P API module is provisioned always by the `base-server` Galleon layer; there are modules provisioned by the `base-server` that have a hard dependency on the JSON-P modules, e.g. `org.jboss.logmanager` and `org.wildfly.security.elytron-private`.
+
+This means we create a JSON-P layer to ensure that JSON-P modules will be always provisioned for any layer that wants to depend on JSON-P layer explicitly, making them more robust to possible `base-server` changes.
+
+The most relevant layer for this use case is the `jaxrs` Galleon layer, however, this layer does not need to depend directly on JSON-P layer because the JSON-P API module is among its own dependencies.
+
+The following is a configuration example of the WildFly bootable JAR Maven plugin that provisions the `jaxrs-server` Galleon layer which already includes the JSON-P API and Implementation:
+
+[source,xml]
+----
+<plugin>
+    <groupId>org.wildfly.plugins</groupId>
+    <artifactId>wildfly-jar-maven-plugin</artifactId>
+    <configuration>
+        <feature-pack-location>wildfly@maven(org.jboss.universe:community-universe)#${version.wildfly}</feature-pack-location>
+        <layers>
+            <layer>jaxrs-server</layer>
+        </layers>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>package</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+----
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-13585[WFLY-13350 Add a Galleon layer for JSON-P]
+* https://issues.redhat.com/browse/EAP7-1483[EAP7-1483 Add Galleon layers for remaining non-deprecated subsystems]
+
+=== Related Issues
+
+=== Dev Contacts
+
+* mailto:brian.stansberry@redhat.com[Brian Stansberry]
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
+* mailto:jkasik@redhat.com[Jan Kasik]
+
+=== Testing By
+
+* [X] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+WildFly
+
+=== Other Interested Projects
+
+N/A
+
+== Requirements
+
+=== Hard Requirements
+
+* The Galleon layer must provide the JSON-P API and Impl Galleon packages.
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+== Test Plan
+
+The test coverage of the Galleon layer added by this proposal is divided in two main groups:
+
+. Testing the Galleon layer provisioning. This testing is done by https://github.com/wildfly/wildfly/blob/master/testsuite/layers/src/test/java/org/jboss/as/test/layers/LayersTestCase.java[LayersTestCase]. The testsuite will be modified to add a new server provisioned with this layer in isolation and with this layer combined with all the layers. For each kind of provisioning, this test does the following:
+
+.. Verifies the provisioned modules are the expected ones.
+.. Verifies the provisioned server starts successfully.
+
+. Execution of WildFly tests related to the feature provisioned by this layer. Reuse the existing tests available on the WildFly test suite, which are directly testing this layer functionalities, and execute them on a server installation provisioned with this layer.
+
+== Community Documentation
+
+Community documentation plan is adding the layer to https://docs.wildfly.org/20/Admin_Guide.html#wildfly-galleon-layers[WildFly Galleon layers] in the section it belongs to.
+
+== Release Note Content
+
+* A Galleon layer to ensure the provisioning of Jakarta JSON Processing (JSON-P) API and Impl.
