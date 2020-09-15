@@ -1,0 +1,122 @@
+= Galleon layer for JSON Binding support
+:author:            Yeray Borges
+:email:             yborgess@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Jakarta JSON Binding (JSON-B) is a standard binding layer for converting Java objects to/from JSON messages. It defines a default mapping algorithm for converting existing Java classes to JSON, while enabling developers to customize the mapping process through the use of Java annotations.
+
+The goal of this feature is to supply a https://docs.wildfly.org/galleon/#_layers[Galleon layer] which will be responsible for providing the JSON-B API and Implementation.
+
+The Galleon packages that provision JSON-B are:
+
+* `javax.json.bind.api`: It provisions the JBoss Modules module for JSON-B API.
+* `org.eclipse.yasson`: It provisions the JBoss Modules module for JSON-B implementation.
+
+Currently, there are two subsystems that declare runtime package dependencies that make possible the provision of the JSON-B modules:
+
+* The EE subsystem, which declares JSON-B API and Impl. as optional runtime package dependencies.
+* The JAXRS subsystem, in this case via the registration of `org.jboss.resteasy.resteasy-json-binding-provider` package as an optional runtime package dependency, which depends on JSON-B API and Impl. modules.
+
+We want to make JSON-B an optional layer for JAXRS so users can exclude it if they want. To make it possible, we need to remove the runtime package registration done by the EE subsystem and make EE layer depend optionally on JSON-B. For the JAXRS subsystem counterpart, we will make the `org.jboss.resteasy.resteasy-json-binding-provider` package registration done by JAXRS subsystem passive, so it will be registered only if the JSON-B package dependencies are satisfied by the presence of JSON-B layer. JAXRS layer will depend optionally on JSON-B via EE layer.
+
+The default provisioning, which is done when we are not using Galleon Layers, includes always the `modules.all` package, so we do not need to worry whether this sort of provision can remove JSON-B modules after applying the above strategy. The removal of `modules.all` from the default provisioning as default packages are not contemplated as a use case by this feature.
+
+The following is a configuration example of the WildFly bootable JAR Maven plugin to exclude the JSON-B modules from the jaxrs-server layer:
+
+[source,xml]
+----
+<plugin>
+    <groupId>org.wildfly.plugins</groupId>
+    <artifactId>wildfly-jar-maven-plugin</artifactId>
+    <configuration>
+        <feature-pack-location>wildfly@maven(org.jboss.universe:community-universe)#${version.wildfly}</feature-pack-location>
+        <layers>
+            <layer>jaxrs-server</layer>
+        </layers>
+        <excluded-layers>
+            <layer>jsonb</layer>
+        </excluded-layers>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>package</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+----
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-13586[WFLY-13350 Add a Galleon layer for JSON-B]
+* https://issues.redhat.com/browse/EAP7-1483[EAP7-1483 Add Galleon layers for remaining non-deprecated subsystems]
+
+=== Related Issues
+
+=== Dev Contacts
+
+* mailto:brian.stansberry@redhat.com[Brian Stansberry]
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
+* mailto:jkasik@redhat.com[Jan Kasik]
+
+=== Testing By
+
+* [X] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+WildFly
+
+=== Other Interested Projects
+
+N/A
+
+== Requirements
+
+=== Hard Requirements
+
+* The Galleon layer must provide the JSON-B API and Impl Galleon packages.
+* The user should be able to exclude JSON-B layer.
+* The JSON-B layer needs to be declared as optional dependency of EE layer.
+* The JSON-B packages will not be provisioned automatically by the default provisioning if a user removes `modules.all` as a default package.
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+== Test Plan
+
+The test coverage of the Galleon layer added by this proposal is divided in two main groups:
+
+. Testing the Galleon layer provisioning. This testing is done by https://github.com/wildfly/wildfly/blob/master/testsuite/layers/src/test/java/org/jboss/as/test/layers/LayersTestCase.java[LayersTestCase]. The testsuite will be modified to add a new server provisioned with this layer in isolation and with this layer combined with all the layers. For each kind of provisioning, this test does the following:
+
+.. Verifies the provisioned modules are the expected ones.
+.. Verifies the provisioned server starts successfully.
+
+. Execution of WildFly tests related to the feature provisioned by this layer. Reuse the existing tests available on the WildFly test suite, which are directly testing this layer functionalities, and execute them on a server installation provisioned with this layer.
+
+== Community Documentation
+
+Community documentation plan is adding the layer to https://docs.wildfly.org/19/Admin_Guide.html#wildfly-galleon-layers[WildFly Galleon layers] in the section it belongs to.
+
+== Release Note Content
+
+* A Galleon layer to ensure the provisioning of Jakarta JSON Binding (JSON-B) API and Impl.
