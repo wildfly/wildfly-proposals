@@ -1,0 +1,65 @@
+= WFCORE-5120 Automatic registration of client side / JVM wide default SSLContext
+:author:            Diana Vilkolakova
+:email:             dvilkola@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This issue is about providing ability to register a client side JVM wide default SSLContext for the use of any libraries that support the use of the default context.
+The loading of elytron client configuration should happen with minimal configuration from the user in cases where API is not used directly.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-5120[WFCORE-5120]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1096[EAP7-1096]
+* https://issues.redhat.com/browse/EAP7-1121[EAP7-1121]
+
+=== Dev Contacts
+
+* mailto:dvilkola@redhat.com[Diana Krepinska Vilkolakova]
+
+=== QE Contacts
+
+* TODO
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+WildFly Core, WildFly Elytron
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+The automatic registration will be done by implementation of new java security provider that will be added. It will provide protocol named "Default" that will load elytron client configuration and will provide initialized ssl context for clients requesting SSL context by using `SSLContext.getDefault()`.
+
+The provider will load the ssl context from either current authentication context obtained from classpath, or from authentication context obtained from file that is passed into the security provider (either programmatically or as an argument in java.security). The SSL context configured to match ALL rules is the one that will be initialized and returned by this provider.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+Automatic smoke tests will be placed in wildfly-elytron repository. Each test must run in separate JVM in order to set the default SSL Context, which slows the testsuite. Because of this, only smoke tests should be put in the testsuite and other testing should be done manually.
+
+
+== Community Documentation
+
+Community documentation will be placed in WildFly repository.
