@@ -1,0 +1,99 @@
+= [WFLY-12342] Integrate server probes in MP Health readiness check
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:keywords:          observability,microprofile,health,openshift
+
+== Overview
+
+MicroProfile Health 2.0 introduced a readiness health check.
+WFLY-12228 added support for MicroProfile Health 2.0 without enhancing the readiness health check.
+
+This means that the readiness probe always return UP by default (as long as the microprofile-health-smallrye is installed).
+
+This RFE enhances it with 3 probes (that are part of the https://github.com/jboss-container-images/jboss-eap-modules/blob/251f422c97e1bcd3625f57295bc79973193482a6/os-eap-probes/2.0/added/probes/probe/eap/dmr.py#L23[EAP readiness probe script]):
+
+* `server-status` - returns UP when the server-state is `running`
+* `boot-errors` - return UP if there are no boot-errors
+* `deployment-status` - returns UP if status for all deployments is OK
+
+Once this RFE is done, we could simplify the EAP readiness probe script by replacing its various DMR checks by a single check to `/subsystem=microprofile-health-smallrye:check-ready` (or a HTTP call to `http://:9990/health/ready`).
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-12342[WFLY-12342]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1322[EAP7-1322]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TBD
+
+=== Testing By
+
+[X] QE
+
+=== Affected Projects or Components
+
+* This RFE impacts the `microprofile-health-smallrye` extension provided by WildFly
+* Once done, it can be used by Kubernetes/Openshift to configure their readiness probe
+
+== Requirements
+
+* Add 3 readiness health checks to MicroProfile readiness probe:
+** `server-status` - returns UP when the server-state is `running`
+** `boot-errors` - return UP when there are no boot-errors
+** `deployment-status` - returns UP when status for all deployments is OK
+
+== Non-Requirements
+
+* The MicroProfile Health subsystem is not supported in domain mode.
+
+== Implementation Plan
+
+* Update `org.wildfly.extension.microprofile.health.HealthReporterService` to add these 3 `HealthCheck` probes to the HealthReporter's `readinessChecks`.
+* These 3 checks will execute a local DMR operation to determine their status.
+
+A call to `/subsystem=microprofile-health-smallrye:check-ready` would aggregates results from these 3 probes:
+
+[source]
+----
+[standalone@localhost:9990 /] /subsystem=microprofile-health-smallrye:check-ready
+{
+    "outcome" => "success",
+    "result" => {
+        "status" => "UP",
+        "checks" => [
+            {
+                "name" => "server-state",
+                "status" => "UP",
+                "data" => {"value" => "running"}
+            },
+            {
+                "name" => "boot-errors",
+                "status" => "UP"
+            },
+            {
+                "name" => "deployments-status",
+                "status" => "UP",
+                "data" => {"helloworld-rs.war" => "OK"}
+            }
+        ]
+    }
+}
+----
+
+== Community Documentation
+
+The feature will be documented in WildFly Admin Guide (in its MicroProfile Health section) to specify that server readiness incorporates these 3 checks (in addition to any readiness check contributed by the deployments)
