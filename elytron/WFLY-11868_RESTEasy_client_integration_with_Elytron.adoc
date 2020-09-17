@@ -1,0 +1,102 @@
+= WFLY-11868 REST integration with WildFly Elytron - AuthenticationClient for Authentication / SSL
+:author:            Diana Vilkolakova
+:email:             dvilkola@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          elytron, client, resteasy
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WildFly Elytron uses the Elytron Client project to enable remote clients to authenticate using Elytron.
+Elytron client is already used by other WildFly clients allowing for both use of an Elytron API and pre-defined configurations in the xml file (https://docs.jboss.org/author/display/WFLY/WildFly+Client+Configuration#WildFlyClientConfiguration-wildflyconfig.xmlDiscovery[wildfly-config.xml]).
+
+This requested feature is about making use of Elytron's configuration on the client side of REST deployment so that the RESTEasy client supports the common framework available within the application server.
+
+The implementation will involve loading of configuration from Elytron client, specifically `credentials`, `bearer token` and `SSL context`, and making those available to the RESTEasy client. Credentials will be used for `HTTP Basic authentication` and bearer token for `Bearer Authentication`.
+
+Elytron configuration should be ignored if different configuration was already set. So if there was already Bearer token or credentials available this implementation will not overwrite it.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-11868[WFLY-11868]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1219[EAP7-1219] - EAP issue tracker
+* https://issues.redhat.com/browse/ELY-1891[EAP7-1891] - Elytron project issue tracker
+* https://issues.redhat.com/browse/RESTEASY-2366[RESTEASY-2366]  - RESTEasy project issue tracker
+* https://issues.redhat.com/browse/WFLY-11868[WFLY-11868]  - Community documentation issue tracker
+
+=== Dev Contacts
+
+* mailto:dvilkola@redhat.com[Diana Vilkolakova]
+
+=== QE Contacts
+
+* TODO
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly-security/wildfly-elytron[WildFly Elytron project]
+* https://github.com/resteasy/Resteasy[RESTEasy project]
+
+=== Other Interested Projects
+
+https://github.com/wildfly/wildfly[WildFly] project will contain integration tests.
+
+== Requirements
+
+=== Hard Requirements
+
+This RFE seeks to make use of `credentials`, `bearer token` and `SSL context` from the Elytron client in the RESTEasy client.
+
+ * RESTEasy client will load Elytron config by default if this configuration is present in `wildfly-config.xml` (or is provided in the client's code by using Elytron API).
+ * Credentials (if present in form of username and password) will be used for `HTTP Basic authentication` (this authentication will be preemptive).
+ * If Bearer token is present in Elytron client config, RESTEasy client will load it and use it in Authorization header for outgoing requests.
+ * If both credentials and bearer token are present in Elytron client, only Bearer token will be used for RESTEasy client's outgoing requests.
+ * If SSLContext is configured in Elytron client for URI that the RESTEasy client is attempting to connect to, it will be automatically loaded and used
+ * Any existing configuration the client already had configured should not be re-written.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+ * This RFE does not deal with renewing or requesting of bearer token, only with propagating of token Elytron client already has configured.
+ 
+== Implementation Plan
+
+Because we do not want RESTEasy to have Elytron dependency, new SPI for client configuration will be added to RESTEasy that Elytron will implement. This SPI will be used during configuration of client - in builder method in RESTEasyClientBuilder class.
+
+To invoke requests, the RESTEasy client uses single instance of ClientHttpEngine interface implementation, which can have only one SSLContext defined. However, Elytron client configuration can have multiple credentials and SSL contexts specified and these are chosen based on rules, eg. URI. It will be necessary to intercept/filter the requests and choose credentials, bearer token or SSLContext based on the destination of the requests.
+
+#### Different credentials / Bearer token for different URIs
+
+New RequestClientFilter will be registered for client if Elytron is on classpath. This RequestClientFilter will be used to set Authorization header if it is missing - with either HTTP Basic authentication or Bearer token. If both Bearer token and credentials are obtained from Elytron, only the Bearer token will be applied to outgoing request.
+
+#### Different SSLContexts for different URIs
+
+Creation of SSLSocket will be delegated to SSLContext obtained from Elytron client if it is present on classpath.
+
+== Test Plan
+
+Tests in the RESTEasy testsuite will use mocked SPI implementation to avoid circular dependency with Elytron client.
+Integration tests that test Elytron client together with RESTEasy client will be added to WildFly integration testsuite.
+
+== Community Documentation
+
+Community documentation will be delivered in form of a PR to WildFly repository's master branch.
+
+== Release Note Content
+
+RESTEasy client can now automatically use credentials, Bearer token and SSLContext configured for Elytron client. For this to happen, Elytron client must be present on the classpath during building of RESTEasy client.
