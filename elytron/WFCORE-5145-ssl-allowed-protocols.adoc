@@ -1,0 +1,109 @@
+= [WFCORE-5145] Elytron server-ssl-context allowed protocols
+:author:            Sonia Zaldana Calles
+:email:             szaldana@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Elytron currently supports 6 SSL/TLS protocols. Namely, SSLv2, SSLv3, TLSv1, TLSv1.1, TLSv1.2, and
+TLSv1.3. However, older JDK versions use ``SSLv2Hello`` during the initial
+SSL handshake message where the SSL version that will be used for the rest of the handshake is negotiated.
+Newer JDK versions disable this protocol by default, but do provide the ability to
+re-enable it if needed. This task is to ensure Elytron can make use of the ``SSLv2Hello`` protocol to ensure feature parity with legacy security.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-5145[WFCORE-5145]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-13916[WFLY-13916]
+* https://issues.redhat.com/browse/ELY-2024[ELY-2024]
+* https://issues.jboss.org/browse/EAP7-1542[EAP7-1542]
+
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+N/A
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [ X ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly, WildFly-Core and Elytron
+
+=== Other Interested Projects
+
+N/A
+
+== Requirements
+
+=== Hard Requirements
+
+* It should be possible to configure a ``server-ssl-context`` and ``client-ssl-context`` in the Elytron
+subsystem using the ``SSLv2Hello`` protocol as follows:
+
+** ``server-ssl-context``:
+[source]
+----
+/subsystem=elytron/server-ssl-context=mySslContext:add(key-manager=myKeyManager,protocols=[SSLv2Hello,TLSv1])
+----
+
+** ``client-ssl-context``:
+[source]
+----
+/subsystem=elytron/client-ssl-context=myClientSslContext:add(key-manager=myClientKeyManager,protocols=[SSLv2Hello,TLSv1])
+----
+
+* If the user is using a JDK version where ``SSLv2Hello`` is disabled by default, but they attempt to configure an  ``ssl-context`` with the
+``SSLv2Hello`` protocol, the protocol should be enabled without further user intervention.
+
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+
+== Test Plan
+
+* WildFly Elytron Test Suite: one-way and two-way SSL tests will be added that make use of the ``SSLv2Hello`` protocol.
+* WildFly Core Test Suite: one-way and two-way SSL tests with the ``SSLv2Hello`` protocol when it is
+ configured in the Elytron subsystem, subsystem parsing tests, transformer tests and
+ a test added to the WildFly Core test suite to check usage of ``SSLv2Hello`` provided by OpenSSL provider.
+* WildFly Test Suite: one-way and two-way SSL tests with the ``SSLv2Hello`` protocol.
+
+== Community Documentation
+
+* Documentation will be added in the "Using the Elytron Subsystem" section in the WildFly documentation,
+specifically in under https://docs.wildfly.org/13/WildFly_Elytron_Security.html#configure-ssltls[4.3 Configure SSL/TLS]
+to specify that ``SSLv2Hello`` is supported. A warning should also be added to indicate
+that the use of this protocol is discouraged.
+
+* Documentation will also be added under "Enable Two-way SSL/TLS in WildFly for Applications" to specify that ``SSLv2Hello``
+is also supported for the client ssl context.
+
+== Release Note Content
+
+Older JDK versions use the protocol ``SSLv2Hello`` in the initial handshake message where the SSL version
+that will be used for the rest of the handshake is negotiated. Although the usage of this protocol is discouraged,
+and disabled by default in newer JDK versions, it is now possible to configure a client or server SSL context using the
+``SSLv2Hello`` protocol in the Elytron subsystem
+to ensure feature parity with legacy security configurations.
