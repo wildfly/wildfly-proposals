@@ -75,13 +75,10 @@ Conceptually this includes the following steps:
 
 The scripts that would have been added via the manual installation steps are not added to the resulting installation as the configuration is already added.
 
-*TODO?* Do we add the Keycloak feature pack to the `org.jboss.universe.community-universe`?  This may simplify using the Galleon CLI but it potentially
-needs to be maintained independently of the Keycloak project.
-
 The Keycloak release cadences differ from the WildFly release cadences, this means anyone using Galleon to keep their WildFly
 installation up to date may receive updates to the core WildFly installation independently of the Keycloak feature pack.
 
-*TODO?* Clarifying the interaction of versioning across the feature packs is going to be important, the installation of the Keycloak feature pack
+Testing the interaction of versioning across the feature packs is going to be important, the installation of the Keycloak feature pack
 should not prevent the server being updates once later versions become available, additionally the release of WildFly should not trigger the need for
 an update to Keycloak.
 
@@ -191,14 +188,6 @@ adapter subsystem.
     </executions>
 </plugin>
 ----
-
-*TODO?* Should it be possible to only define the `keycloak-adapter-galleon-pack` and the minimum required WildFly be
-automatically provisioned?
-
-*TODO?* Should it be possible to omit the layer listing?
-
-*TODO?* Should we eliminate the need to specify the `web-server` layer?  Related to this some further debugging of what
-Keycloak really requires is needed,
 
 === Provisioned using org.wildfly.plugins:wildfly-jar-maven-plugin
 
