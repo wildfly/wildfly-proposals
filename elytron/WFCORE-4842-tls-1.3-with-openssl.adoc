@@ -1,0 +1,122 @@
+= WFCORE-4842 Add support for TLS 1.3 using the OpenSSL TLS provider with Elytron
+:author:            Farah Juma
+:email:             fjuma@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+https://issues.jboss.org/browse/WFCORE-4172[WFCORE-4172] added support for TLS 1.3 when using the
+JSSE TLS provider with Elytron. This task is to add support for TLS 1.3 when using the OpenSSL TLS
+provider with Elytron.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-4842[WFCORE-4842]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFSSL-16[WFSSL-16]
+* https://issues.redhat.com/browse/SSLNTV-3[SSLNTV-3]
+* https://issues.redhat.com/browse/WFLY-13085[WFLY-13085]
+* https://issues.jboss.org/browse/EAP7-1414[EAP7-1414]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:jstourac@redhat.com[Jan Stourac]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+
+[ ] Engineering
+
+[x] QE
+
+* TBD
+
+=== Affected Projects or Components
+
+* WildFly OpenSSL
+* WildFly Core
+* WildFly (documentation)
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* When using the OpenSSL TLS provider with Elytron, it should be possible to make use of TLS 1.3
+  by configuring the `cipher-suite-names` attribute in a `server-ssl-context` or in a
+  `client-ssl-context` in the Elytron subsystem.
+  ** Whether or not TLS 1.3 should be used by default when the OpenSSL TLS provider is in
+     use and the `cipher-suite-names` attribute has not been specified will need to be
+     determined using the performance tests that were used for
+     https://issues.jboss.org/browse/WFCORE-4172[WFCORE-4172].
+
+
+** Example configuration:
+
+[source,xml]
+----
+   /subsystem=elytron/server-ssl-context=myTLS13Context:add(cipher-suite-names=TLS_AES_128_CCM_8_SHA256:TLS_AES_256_GCM_SHA384, ...)
+----
+[source,xml]
+----
+   /subsystem=elytron/client-ssl-context=myTLS13ClientContext:add(cipher-suite-names=TLS_AES_128_CCM_8_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256, ...)
+----
+
+* When using the OpenSSL TLS provider with Elytron, it should be possible to make use of TLS 1.3
+  by configuring the `cipher-suite names` attriute in an `ssl-context` using the Elytron
+  authentication client.
+  ** Whether or not TLS 1.3 should be used by default when the OpenSSL TLS provider is in
+     use and the `cipher-suite names` attribute has not been specified will need to be
+     determined using the performance tests that were used for
+     https://issues.jboss.org/browse/WFCORE-4172[WFCORE-4172].
+
+** Example configuration:
+[source,xml]
+----
+   <ssl-context name="myTLS13Context">
+   ...
+     <cipher-suite names="TLS_AES_128_CCM_8_SHA256:TLS_AES_256_GCM_SHA384"/>
+   ...
+   </ssl-context>
+----
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+All testing should be done using the OpenSSL TLS provider. The TLS 1.3 cipher suites that are
+actually available will depend on this provider.
+
+One-way and two-way SSL tests will be added to the WildFly OpenSSL testsuite and to the WildFly
+Core testsuite that make use of the TLS 1.3 protocol and TLS 1.3 cipher suites. The `java.specification.version`
+system property will be used to make sure that these new tests only get run when JDK 11 or higher
+is in use since TLS 1.3 was only introduced in JDK 11.
+
+== Community Documentation
+
+Documentation on how to use the OpenSSL TLS provider with Elytron is being added to the "OpenSSL"
+section in the Elytron documentation (see https://issues.redhat.com/browse/WFLY-13084[WFLY-13084]).
+
+The "OpenSSL" section will then be updated to indicate that the TLS 1.3 protocol can be used with
+the OpenSSL TLS provider by configuring the `cipher-suite-names` attribute.
+
+== Release Note Content
+
+It is now possible to use TLS 1.3 with WildFly when using the OpenSSL TLS provider with Elytron.
+
+
