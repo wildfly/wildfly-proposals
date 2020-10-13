@@ -1,0 +1,518 @@
+= WFLY-13305: WildFly bootable JAR
+:author:            Jean-Francois Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+We are proposing a way to package server and application inside a bootable JAR. The JAR contains everything needed to run the server.
+The packaged server can benefit from Galleon tooling and be trimmed down to user needs (thanks to Galleon layers).
+Such executable JAR can then be run on bare metal and in cloud execution contexts.
+
+A simple example of a https://github.com/wildfly-extras/wildfly-jar-maven-plugin/blob/master/examples/jaxrs/pom.xml[pom file] to create a WildFly bootable JAR.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-13305[WFLY-13305]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1385[EAP7-1385]
+
+* https://issues.redhat.com/browse/EAP7-1538[EAP7-1538]
+
+* https://issues.redhat.com/browse/WFCORE-4895[WFCORE-4895]
+
+* https://issues.redhat.com/browse/WFGP-169[WFGP-169]
+
+* https://issues.redhat.com/browse/EAP7-1444[EAP7-1444]
+
+* https://github.com/eclipse/jkube/issues/283[JKube 283]
+
+* WildFly issue to address Quickstarts impact (Not yet logged).
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
+
+=== Testing By
+
+[ ] Engineering
+
+[X] QE
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly-maven-plugin[WildFly Maven plugins]
+
+* https://github.com/wildfly/quickstart[WildFly Quickstarts]
+
+* https://start.microprofile.io/[Microprofile starter]
+
+* https://thorntail.io/[Thorntail]
+
+* https://github.com/fabric8io/fabric8-maven-plugin[Fabric8 Maven plugin DEPRECATED]
+
+* https://www.eclipse.org/jkube/[JKube Openshift Maven plugin]
+
+* https://github.com/wildfly/wildfly-operator[WildFly OpenShift Operator]
+
+== Requirements
+
+==== Bootable JAR server vs Standalone server
+
+Although the bootable JAR can be seen as a standalone server the following limitations apply:
+
+* CLI management operations that would imply a server restart are not supported.
+* :shutdown operation with restart (e.g.: by sending CLI operation :shutdown(restart=true)) is not supported. 
+  A warning is displayed and the bootable JAR process is terminated.
+* Changes done to the management model (e.g.: using CLI or Web console) at runtime are not persisted between bootable JAR executions. NB: In order to make persistent changes
+to the management model, one can use the WildFly CLI scripts execution feature that the Maven plugin offers.
+
+==== Defining a new WildFly Maven Plugin
+
+Existing Maven plugins related to provision, build, and manage WildFly:
+
+* https://github.com/wildfly/galleon[org.jboss.galleon:galleon-maven-plugin]
+** Maven plugin goals to provision server are defined in the wildfly/galleon project
+* https://github.com/wildfly/galleon-plugins[org.wildfly.galleon-plugins:wildfly-galleon-maven-plugin]
+** Maven plugin goals to build galleon feature-packs for WildFly are defined in wildfly/galleon-plugins project
+* https://github.com/wildfly/wildfly-maven-plugin[org.wildfly.plugins:wildfly-maven-plugin]
+** Maven plugin goals to manage a WildFly server and its deployments are defined in wildfly/wildfly-maven-plugin project
+
+It makes sense to define a new Maven artifact for the plugin and not extend an existing plugin:
+
+* The new plugin depends on galleon-maven-plugin for the provisioning aspects but is WildFly specific. Galleon is only one aspect of it.
+* Adding goals to wildfly-maven-plugin would create confusion (start/run/shutdown are already existing goals that would need to be named differently for the bootable JAR). The deployment model is also different.
+
+The bootable JAR Maven project is currently hosted in https://github.com/wildfly-extras/wildfly-jar-maven-plugin[wildfly-extras/wildfly-jar-maven-plugin]
+
+=== Hard Requirements
+
+For a complete list of plugin options, check the plugin https://github.com/wildfly-extras/wildfly-jar-maven-plugin/releases/download/2.0.0.Beta5/index.html[community documentation].
+
+==== Build the bootable JAR
+
+A new Maven plugin and goal (wildfly-jar:package) is developed to output a bootable JAR during Maven build.
+The bootable JAR is composed of:
+
+* Zipped server provisioned thanks to Galleon (slim or fat server).
+* User application (WAR, JAR, EAR) unless a hollow bootable JAR is created.
+* Runtime to launch server.
+
+The plugin outputs a JAR named <project>-bootable.jar
+
+===== Bootable JAR runtime resolution
+
+The set of classes that implement the boot logic are retrieved at packaging time. 
+The new “org.wildfly.core:wildfly-jar-boot” JAR artifact (implementation located in wildfly-core repository) 
+is resolved thanks to the wildfly-core version of the provisioned server and shaded into the bootable JAR. 
+If the artifact doesn’t exist, the packaging will abort, the server being packaged not supporting bootable 
+JAR packaging. (e.g.: old release not containing new artifacts).
+
+This artifact is in charge to unzip the server and setup a JBOSS_HOME. Once this is done, 
+it setups JBoss module classloader and call into a new JBoss module “org.wildfly.bootable-jar” 
+that is in charge of the actual server run.  This new JBoss module implementation located in wildfly-core, 
+(“org.wildfly.core:wildfly-jar-runtime” artifact), is expected to be automatically provisioned by Galleon in all cases. 
+If the module is not part of the provisioned server (for some un-expected reasons), the server execution aborts.
+
+===== Galleon provisioning
+
+Galleon provisions a server thanks to the WildFly Galleon feature-pack.
+Galleon provisioning is operated inside the Maven plugin. There are 2 configuration ways:
+
+* Galleon configuration as Maven plugin configuration items:
+** A Galleon feature-pack location that identifies the server and version. This is required if no provisioning.xml file is provided nor feature-packs list.
+** A list of feature-packs (if no feature-pack location has been set).
+** Optionally, a list of layers to include.
+** Optionally, a list of layers to exclude.
+* Galleon provisioning.xml file path. By default the plugin checks for the presence of the file <app src>/galleon/provisioning.xml. NB: Maven plugin configuration items (if set) override provisioning.xml file. 
+Using the provisioning.xml file, third-parties feature-packs can be combined during the provisioning phase to provision modules, features, content (e.g.: DB drivers).
+
+If no Galleon layers are specified, then a configuration identical to the default _standalone-microprofile.xml_ is provisioned.
+
+====== Galleon layers inclusion and exclusion
+
+The following invalid configurations are detected during Maven plugin execution:
+
+* Including a non existing layer breaks execution of the plugin.
+* Including a swapping layer along with its base layer without excluding the swapping counter-part (eg: jaxrs + jpa-distributed without excluding jpa) breaks execution of
+the plugin. The plugin attempts to generate the server configuration but fails due to conflicting layers provisioned content.
+* Excluding a layer that is not present in the provisioned configuration breaks execution of the plugin. A layer can be not present because it doesn't exist or is not
+referenced from the set of provisioned layers.
+* Excluding a non optional layer (non optional layers are required layers) breaks execution of the plugin.
+* Including and excluding the same layer breaks execution of the plugin.
+
+NB: Including or excluding multiple time the same existing layer is not considered an error. Galleon manages to deal with duplicates. 
+
+===== CLI script execution
+
+In order to have management model changes persisted in the server configuration, the Maven plugin offers a support for CLI script(s) execution. 
+The changes made to the management model during build are persisted in the bootable JAR 
+(as opposed to changes done to the management model at runtime that are lost after a process restart).
+ 
+When building the bootable JAR, a path to a set of CLI scripts can be provided to update the server configuration packaged in the bootable JAR. The CLI scripts are concatenated and executed once the server is provisioned and deployment copied into it (if any).
+Having multiple CLI scripts provides enough flexibility to reuse scripts in different contexts.
+The plugin can be configured with a CLI properties file to resolve properties present in CLI scripts. 
+This is similar to the _--properties=<properties file>_ option that you can provide to JBoss CLI command line. 
+This http://www.mastertheboss.com/jboss-server/jboss-script/using-properties-in-cli-scripts[article] covers the feature.
+
+====== Configuring CLI scripts execution
+
+CLI script files are text files that contain a sequence of WildFly CLI commands. Commands can be CLI defined commands 
+(some builtin commands allowing to achieve complex sequence of server operations) and generic management operations to be sent to the server. Some examples can
+be found in WildFly administration guide https://docs.wildfly.org/20/Admin_Guide.html#CLI_Recipes[CLI recipes chapter].
+
+In the context of Bootable JAR, the script does not need to contain commands to connect to the server or start an embedded server. 
+The Maven plugin handles that for you by starting an embedded server for each group of scripts.
+
+The plugin allows you to execute multiple groups of scripts with different CLI contexts. 
+A group of scripts and its configuration are defined in a ```cli-session``` composed of:
+
+* ```<script-files>```: the list of paths to script files .
+* ```properties-file```: (optional) a path to a properties file that contains java properties that scripts can reference (using the syntax ```${my.prop}```). 
+For example, a command that sets the public inet-address to the value of ```all.addresses``` system property looks like: ```/interface=public:write-attribute(name=inet-address,value=${all.addresses})```
+* ```resolve-expressions```: (optional) a boolean indicating if system properties or 
+expressions are resolved before sending the operation requests to the server. Value is ```true``` by default.
+
+All scripts present in a ```cli-session``` are executed within a single CLI execution. An embedded server is started for each defined ```cli-session```.
+
+NB: The scripts are executed in the order they are defined in the plugin configuration. 
+
+CLI configuration example:
+```
+<cli-sessions>
+  <cli-session>
+    <script-files>
+        <script>../scripts/script1.cli</script>
+    </script-files>
+    <!-- We want the env variables to be resolved during server execution -->
+    <resolve-expressions>false</resolve-expressions>
+  </cli-session>
+  <cli-session>
+    <script-files>
+        <script>../scripts/script2.cli</script>
+    </script-files>
+    <properties-file>../scripts/cli.properties</properties-file>
+    <!-- We want the properties to be resolved during CLI execution (not actually needed, this is the default behavior) -->
+    <resolve-expressions>true</resolve-expressions>
+  </cli-session>
+</cli-sessions>
+```
+
+===== User application
+
+The WAR or JAR main artifact the Maven project is building is deployed and zipped along with the server. 
+The plugin option context-root=true|false (true by default) allows to rename the war file to ROOT.war 
+(doesn’t apply to other packaging types). 
+
+NB: Application deployment doesn't rely on the deployment scanner. The scanner is not required, it is even suggested to exclude it, useless in a bootable JAR context.
+For an example of how to exclude the _deployment-scanner_ Galleon layer, you can check https://github.com/wildfly-extras/wildfly-jar-maven-plugin/blob/master/examples/jaxrs/pom.xml#L35[this example]
+
+In case the bootable is an “hollow JAR”, no deployment is present in the JAR.
+
+===== Hollow JAR
+
+No WAR/JAR/EAR file is copied into the server deployments. This is controlled by a plugin option.
+The hollow JAR doesn’t require the deployment-scanner to be provisioned in order for the deployment to be taken into account by the runtime.
+At runtime, if the option ```--deployment=<deployment>``` is passed, the deployment artifact is copied to content dir and the xml configuration is updated with the deployment. 
+As an alternative, WildFly CLI can be used to deploy an application inside an hollow jar.
+ 
+==== Logging
+
+===== Log manager
+
+The bootable JAR depends on JBoss log manager. Logging is configured thanks to the logging subsystem.
+
+===== Boot Logging configuration
+
+During packaging the maven plugin generates a logging.properties file that reflects the server logging configuration.
+
+When WildFly server starts, in order to have JBoss logging enabled and configured before 
+the logging subsystem is initialized, WildFly relies on a logging.properties file that configures JBoss logging.
+WildFly distribution contains a default logging.properties. In a bootable JAR context, 
+we could have CLI scripts that tune the logging subsystem. So at boot, if the 
+logging.properties file was the WildFly distribution default one, the logging subsystem changes done by CLI scripts 
+would be not taken into account before the logging subsystem is initialized. 
+By generating a logging.properties from the logging subsystem, we capture the logging subsystem configuration. 
+At boot, JBoss logging uses this file so it is configured in an identical way as the logging subsystem.
+
+NB: The logging subsystem defaults come from the "logging" Galleon layer (that contains a configuration identical to WildFly default xml configurations).
+If no logging subsystem is present in the server configuration (so no Galleon logging layer provisioned), we rely on the default loging.properties file.
+
+IMPORTANT: Using a log4j appender as a `custom-handler` in the logging subsystem is not supported with the bootable JAR.
+           This only applies to custom handlers defined on the root of the logging subsystem. Logging profiles and
+           log4j configuration files located in your deployment will still work as expected.
+
+You can workaround this by supplying your own `logging.properties` and defining the path in the `boot-logging-config` maven plugin's configuration property. The 
+wildfly-jar-maven plugin log4j example contains such a workaround.
+
+==== Execute the bootable JAR
+
+This is done thanks to the command: 
+
+```
+java -jar <JAR name>.jar [arguments]
+```
+
+The detailed execution steps are:
+
+* Unzip the server to a directory
+* Handle arguments
+* Start the server
+* Wait for server end 
+
+Alternatively the Maven plugin can be used to run/shutdown the server from Maven wildfly-jar:run|start|shutdown.
+
+==== Configure the Bootable JAR at runtime
+
+The bootable JAR fully relies on the server configuration capabilities. It is not expected to define a new way to configure the server.
+The arguments passed to the bootable JAR are composed of bootable specific arguments and server arguments.
+
+Calling  java <JVM and system properties> -jar <bootable JAR name>.jar --help dumps the available arguments.
+
+==== SecurityManager
+
+The bootable JAR can activate the WildFlySecurityManager for the running application server if the `-secmgr` command line argument is 
+added when starting the server.
+
+Permissions to be assigned to deployments should either be added to the `security-manager` subsystem or to a `META-INF/permissions.xml` 
+within the deployment with the latter being preferred.  For either of these approaches to be available the server must be provisioned with the 
+`security-manager` layer present.
+
+
+==== Security
+
+Examples and documentation should be using Elytron security where required and not 
+the legacy security subsystem or legacy security realms as both of these are deprecated for removal in a future release.
+
+
+==== Shutting down the Bootable JAR
+
+The bootable JAR process can be shutdown in the following ways:
+
+* Signal handling
+* :shutdown management operation with the following limitations:
+** The restart option is not supported and would be ignored by the server. The process will exit in all cases.
+
+
+==== Read Only standalone.xml
+
+The changes made to the management model are not reflected in the standalone.xml file. 
+Having the configuration file to reflect runtime changes is not needed, as already described, changes done to the management model are lost after a restart.
+To make the configuration file read-only, the server is internally started with --read-only-server-config=standalone.xml. 
+
+==== Arguments handling
+
+Arguments specific to bootable JAR:
+
+|===
+|Option |Description
+|--help
+|Display help then exit
+
+|--deployment=<path to WAR/JAR/EAR file or exploded deployment directory>
+|Application to install in the hollow JAR. Adding a deployment to an bootable JAR already containing a deployment is invalid.
+
+|--display-galleon-config
+|Display the content of the Galleon configuration used to build this bootable JAR.
+
+|--install-dir=<path to directory to install server in>
+|By default a new TEMP directory is created. TEMP directory location is controlled by the Java VM (call to ```Files.createTempDirectory```).
+
+|-secmgr
+|Activate and install the `WildFlySecurityManager`.
+|===
+
+Server arguments:
+
+|===
+|Option |Description
+|-b[interface]=<value>
+|Set system property jboss.bind.address.<interface> to the given value
+
+|-b=<value>
+|Set system property jboss.bind.address to the given value
+
+|-D<name>[=<value>] 
+|Set a system property. The system properties are set by the server. They are not set by the bootable JAR JVM.
+
+|-u=<value>
+|Set system property jboss.default.multicast.address to the given value.
+
+|--version
+|Print version and exit.
+
+|-S<name>[=value]
+|Set a security property
+
+|--properties=<url>
+|Load system properties for the given url
+|===
+
+==== Developer experience
+
+Having to rebuild a server and package a bootable JAR for each code change is not a valid approach. 
+The plugin should offer a development mode allowing to make development using bootable JAR an efficient task. 
+We are defining here a workflow that leverages the hollow JAR packaging and server deployment scanner capabilities.
+
+===== Dev mode
+
+* A dev server is an hollow server scanning the directory target/deployments.
+* A dev app is the primary artifact copied to the target/deployments dir.
+
+The plugin attempts to force the provisioning of the deployment scanner in dev mode:
+
+* If deployment-scanner is excluded, remove it from exclusion. A warning message is displayed advertising that the provisioning of the deployment-scanner is enforced.
+* Add the deployment-scanner layer to the set of layers. An info message is displayed advertising that the deployment-scanner is provisioned.
+* If a provisioning.xml file is set (and no layers override it), a warning is displayed advertising that we can’t enforce the presence of the deployment-scanner.
+* If the deployment-scanner is not in the config, the CLI operation will abort the plugin execution and log an error message.
+
+===== Workflow examples
+
+Description of the 2 workflows (with and without dev mode). These examples could be designed differently according to the content of the pom file.
+
+Nominal mode, full repackaging of the server done for each rebuild, server restarted after each rebuild (not viable):
+
+* mvn package ⇒ full repackaging
+* mvn wildfly-jar:run
+* (kill synchronous execution).
+* User make changes
+* mvn package ⇒ full repackaging
+* ...
+
+Dev mode, server built/started once, app automatically re-deployed.
+
+* mvn wildfly-jar:dev ⇒ hollow server built and started
+* mvn package -Ddev ⇒ Fast, no packaging, app copied to deployments dir. Application automatically deployed.
+* User make changes
+* mvn package -Ddev ⇒ Fast, no packaging, app copied to deployments dir. Application automatically re-deployed.
+* ...
+* mvn wildfly-jar:shutdown
+* User is fine with his changes, he can do the server+app packaging: mvn package
+
+NB: This workflow doesn’t require support in IDE, it is 100% Maven. It could be optimized with IDE plugin (e.g.: netbeans plugin to track static 
+files and avoid to re-package in this case).
+
+
+==== Cloud context
+
+The plugin allows to generate a bootable JAR usable in various Cloud execution contexts: custom container, Google JIB, JKube, Java s2i build.
+
+As an example, s2i binary build of the https://github.com/wildfly-extras/wildfly-jar-maven-plugin/blob/master/examples/microprofile-config/README.adoc[microprofile-config example] is provided. 
+
+
+===== Configuring the Maven plugin for Cloud environment
+
+The Maven plugin configuration item ```<cloud></cloud>``` allows to build a bootable JAR for cloud environment. By default the server is configured to run inside an OpenShift context.
+Set the cloud child element ```<type>openshift|kubernetes</type>``` to select the targeted cloud platform.
+
+The sever configuration is updated in order to properly operate in a cloud environment:
+
+* If no Galleon layers are provisioned, the provisioned configuration is ```standalone-microprofile-ha.xml``` instead of ```standalone-microprofile.xml```.
+* The ```microprofile-health``` and ```core-tools``` (that contains WildFly CLI) galleon layers are provisioned. They are required for the  OpenShift probes and WildFly OpenShift operator to properly operate.
+* The public and private inet addresses are bound to the value of the ```HOSTNAME``` environment variable if defined (defined in OpenShift PODS). If HOSTNAME is not defined, 127.0.0.1 is used.
+* The management inet address is bound to the 0.0.0.0 inet address allowing for local (required by WildFly CLI) and remote access (required by OpenShift readiness and liveness probes).
+* The console is disabled on the management http-interface.
+* The transaction subsystem id is set to the value of ```jboss.node.name```.
+* The ```jboss.node.name``` system propery, if not set, is set to the value of ```HOSTNAME``` environment variable if defined (defined in OpenShift PODS). If HOSTNAME is not set 
+and jboss.node.name is not set, jboss.node.name is not set. The node name value is truncated to a max of 23 characters in order for the transaction subsystem to properly operate. The last 23 characters are kept in order to avoid conflicts.
+* The server logs are printed in the console.
+* jgroups subsystem is configured to use kubernetes.KUBE_PING jgroups protocol for both tcp (default stack) and udp. PING and MPING protocols are removed.
+* It is possible to configure jgroups to use un-encrypted password authentication. Set the ```<cloud>``` child element ```<enable-jgroups-password>true|false</enable-jgroups-password>``` to enable authentication. 
+NB: When authentication is enabled, the environment variable ```JGROUPS_CLUSTER_PASSWORD``` must be set otherwise the server will fail to start (the password expression being un-resolved).
+
+Some examples:
+
+Configure for OpenShift execution:
+
+```
+<cloud/>
+```
+
+Configure for OpenShift execution with jgroups authentication enabled:
+
+```
+<cloud>
+  <enable-jgroups-password>true</enable-jgroups-password>
+</cloud>
+```
+Configure for kubernetes execution:
+
+```
+<cloud>
+  <type>kubernetes</type>
+</cloud>
+```
+
+===== WildFly OpenShift operator
+
+The WildFly OpenShift operator can be used to manage deployments based on image containing a WildFly bootable JAR.
+At boot time, the WildFly bootable JAR dumps in the file ```/opt/jboss/container/wildfly-bootable-jar/install-dir``` its installation path.
+This information is required by the WildFly OpenShift operator to retrieve transaction logs and call into WildFly CLI.
+
+===== JKube Maven plugin
+
+The JKube Maven Plugin (version 1.0.0-rc-1 for now) has been evolved with a generator that recognizes the bootable JAR maven plugin.
+An https://github.com/eclipse/jkube/tree/v1.0.0-rc-1/quickstarts/maven/wildfly-jar[example] of Bootable JAR Maven plugin and JKube Maven Plugin to deploy
+application on OpenShift and Kubernetes. More information on the JKube Maven plugins can be found in JKube https://www.eclipse.org/jkube/docs/[documentation] 
+
+=== Nice-to-Have Requirements
+
+* Add the ability to copy content in the server during build. That is a common requirement (e.g.: auth properties files).
+* Ability to generate a runtime Maven repository in order to resolve the server artifacts from Maven local cache. 
+Huge benefit in term of JAR size and boot time (4/5 time faster, around 160ms to start vs 700 ms). 
+Specifically in a docker/openshift context, relying on slim server + Maven repository speeds up startup without impacting image size.
+Eg: java -Dmaven.repo.local=/maven-repo -jar myapp-bootable.jar
+
+
+=== Non-Requirements
+
+* Offer a new way to configure the server (e.g.: Thorntail yaml file).
+* Package a custom standalone XML file. Standalone XML file is generated during build by the Maven plugin and can't be replaced. 
+* Usage of a different log manager than JBoss log manager is out of scope.
+* No domain support.
+* Auto-detection of Galleon layers based on user application is out of scope.
+
+== Implementation Plan
+
+* Evolve wildfly-core with a runtime to boot the bootable JAR.
+* Develop new Maven plugin.
+
+== Test Plan
+
+* Maven plugin https://github.com/wildfly-extras/wildfly-jar-maven-plugin/tree/master/tests[tests] (in plugin repo)
+* Bootable runtime https://github.com/wildfly/wildfly-core/tree/master/bootable-jar/runtime/src/test/java/org/wildfly/core/jar/runtime[tests] (in wildfly-core repo)
+* Wildfly-core https://github.com/wildfly/wildfly-core/blob/master/testsuite/pom.xml#L425[tests] (in wildfly-core repo). 
+Run existing tests (when applicable) against bootable JAR using the _-Dts.bootable_ maven profile: ```cd <wildfly repo>/testsuite; mvn clean install -Dts.bootable```
+
+== Community Documentation
+
+* https://github.com/wildfly-extras/wildfly-jar-maven-plugin/releases/download/2.0.0.Beta5/index.html[Maven plugin documentation]
+
+In order to build the documentation from the 2.0.0.Beta5 release:
+
+* git clone  https://github.com/wildfly-extras/wildfly-jar-maven-plugin
+* git fetch --tags
+* git checkout 2.0.0.Beta5
+* cd docs
+* mvn clean install
+
+=> docs is generated in target/generated-docs/index.html. This is an aggregation of the intro part and Maven plugin goals.
+
+
+* https://docs.wildfly.org/20/Admin_Guide.html#defined-galleon-layers[Usable Galleon layers]
+
+== Release Note Content
+
+WildFly can now be packaged as a bootable JAR that one can run with a simple command such as "java -jar myapplication-bootable.jar".
+This is operated from the "org.wildfly.plugins:wildfly-jar-maven-plugin" Maven plugin that packages your application along with a WildFly server (trimmed with Galleon).
