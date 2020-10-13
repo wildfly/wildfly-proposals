@@ -1,0 +1,139 @@
+= [WFCORE-4484] Support SSH authentication for Git persistence
+:author:            Ashley Abdel-Sayed
+:email:             aabdelsa@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+When using a Git repository to manage your WildFly configuration file history, it is possible to use an Elytron
+configuration file for authentication. However, it is currently only possible to specify credentials to authenticate
+with HTTP, not SSH, even though Git supports SSH authentication. This proposal is to add support for SSH authentication
+for Git persistence using an Elytron configuration file.
+
+It will be possible for users to specify location, filename (identity) and passphrase to an existing SSH private key to
+be used as credentials for SSH authentication.
+
+It will also be possible for users to specify the keys to be used for authentication as KeyPairCredentials. This will mean
+supporting specifying KeyPairCredentials in an Elytron configuration file as a credential or as a reference to an entry in
+a CredentialStore. This will require modifying the `key-pair` credential to accept the OpenSSH
+https://github.com/openssh/openssh-portable/blob/master/PROTOCOL.key[private key] format. The user should then be able to
+configure their WildFly standalone server to connect to a Git repo and authenticate with SSH to manage their configuration file history.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-4484[WFCORE-4484]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1213[EAP7-1213]
+* https://issues.jboss.org/browse/WFLY-12574[WFLY-12574]
+* https://issues.jboss.org/browse/ELY-1879[ELY-1879]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+TBD
+
+=== Testing By
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+==== JGit/SSHD
+* It will be possible to connect to a remote git repo and authenticate using Elytron with SSH to manage the Git configuration
+file history. This will be done using the Apache Mina SSHD session factory supported by JGit
+
+==== Elytron Tool
+
+The following commands will be added to the Elytron tool for offline CredentialStore manipulation:
+
+* `--generate-key-pair` - this will generate a private and public key pair and store them in a credential store. Its argument
+ will be the alias under which to store the credential. It will have the following options:
+** `--algorithm` - mandatory, indicates the algorithm to be used to generate the keys: RSA, DSA, or ECDSA
+** `--size` - the size of the key, only specified for RSA algorithm, by default is 2048 for RSA, 2048 for DSA and 256 for ECDSA
+** `--passphrase` - an optional passphrase to be used to encode the key
+
+* `--import-key-pair` - this will import a private key and store it in a credential stores. Its argument will be the alias
+under which to store the credential. It will have the following options:
+** `--private-key-string` - the private key to import as a String, mandatory if `--private-key-location` is
+not defined
+** `--private-key-location` - the path to and identity of the key (eg. ~/.ssh/id_rsa),  mandatory if `--private-key-string`
+is not defined
+** `--public-key-string` - the public key to import as a String, mandatory if `--public-key-location` is not defined and the
+private key specified is not in OpenSSH format
+** `--public-key-location` - the path to and identity of the key (eg. ~/.ssh/id_rsa),  mandatory if `--public-key-string`
+is not defined and the private key specified is not in OpenSSH format
+** `--passphrase` - an optional passphrase used to encode the private key
+
+NOTE: The public key can be extracted from the encoded private key in OpenSSH format and a complete KeyPairCredential
+can be created.
+
+* `--export-key-pair-public-key` - this display the public key in it’s OpenSSH encoded form. Its argument will be the alias
+which the credential is stored under.
+
+==== Elytron XML File
+
+* It will be possible to specify SSH credentials to be used for authentication in the Elytron XML configuration file
+** There will be the option to specify an `openssh-private-key` under the existing `key-pair` credential. This will parse
+a private key encoded in OpenSSH format and generate the public and private keys in a KeyPairCredential.
+** There will be the option to reference a KeyPairCredential stored in a CredentialStore
+** It will be possible to specify the location and identity of a private key (eg. ~/.ssh/id_rsa) as a new `ssh-credential`
+credential type. The user will also be able to specify the passphrase used to encode the key as a `clear-password`,
+`masked-password`, or `credential-reference`.
+** It will be possible to specify the location and filename of the known SSH hosts
+
+NOTE: If no credentials are specified, authentication will be attempted with the default location `~/.ssh` and default
+key identities: `id_rsa, id_dsa, id_ecdsa` and the known hosts files: `known_hosts`.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+==== JGit/SSHD
+
+* Tests will be added to the WildFly-Core testsuite to test SSH authentication when connecting to a Git repository
+** Tests will be added to test successful authentication when specifying the location, name, and passphrase to the file
+containing a private key
+** Tests will be added to test successful authentication using a KeyPairCredential with all supported formats
+** Tests will be added to test unsuccessful authentication when no correct credentials are provided
+
+==== Elytron Tool
+
+* Tests will be added to the Elytron testsuite to test generating and importing a KeyPairCredential successfully into
+ a CredentialStore with all supported algorithms
+
+==== Elytron XML File
+* Tests will be added to test parsing of a `key-pair` credential type in the OpenSSH format for all supported algorithms
+
+== Community Documentation
+
+* Documentation will be added to https://github.com/wildfly/wildfly/blob/master/docs/src/main/asciidoc/_admin-guide/management-tasks/Configuration_file_git_history.adoc[Git Configuration File History]
+under a new section SSH Authentication detailing how to configure SSH authentication with the different possible credential
+configurations.
+* Documentation will be added to https://github.com/wildfly/wildfly/blob/master/docs/src/main/asciidoc/_elytron/Credential_Store.adoc[Credential Store]
+to describe the new options to generate and import KeyPairCredentials
+* Documentation will be added to https://github.com/wildfly/wildfly/blob/master/docs/src/main/asciidoc/_client-guide/authentication-client.adoc[Authentication Client]
+to describe the changes to the KeyPairCredential and the new option to specify a private keys location as a credential.
+
+== Release Note Content
+
+Currently, WildFly users can use a Git repository to manage their configuration file history of their standalone server.
+While previously it was only possible to establish a connection with HTTP authentication, it is now possible to establish
+a connection with SSH authentication using an Elytron configuration file to specify the credentials to be used.
