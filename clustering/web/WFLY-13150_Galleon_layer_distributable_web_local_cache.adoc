@@ -1,0 +1,114 @@
+= Add a Galleon layer for the Distributable Web subsystem configured with a local web cache
+:author:            Yeray Borges
+:email:             yborgess@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The Distributable Web subsystem is in charge of configuring how the server manages the session data of a distributable web application.
+The default session management stores web session data within an Infinispan cache.
+
+Currently, we have the following Galleon layers related to the session data handling:
+
+* `web-server` Galleon layer. It provides only in-memory capabilities for session data handling. This Galleon layer does not provide the Distributable Web subsystem.
+* `web-clustering` Galleon layer. Supplies the Distributable Web subsystem to provide replication and shared persistence capabilities for session data handling. This Galleon layer is suitable for clustering environments where the user wants to replicate the session data across all the cluster members.
+
+However, none of these Galleon layers are suitable for environments where you have limited resources, and for example, you cannot have a WildFly cluster but you want to recover your session data if your server is restarted. The `web-server` has only in-memmory capabilities; your session data will be lost if you stop your server. The `web-clustering` supplies the JGroups subsystem and configures a non-local Infinispan container web cache which is unnecessary for non-clustering environments.
+
+The goal of this feature is to supply a third related https://docs.wildfly.org/galleon/#_layers[Galleon layer] which is responsible to provide passivation and persistence capabilities of session data on non-clustering environments.
+
+The following is a configuration example of the WildFly bootable JAR Maven plugin to provision a server with the `web-passivation` layer:
+
+[source,xml]
+----
+<plugin>
+    <groupId>org.wildfly.plugins</groupId>
+    <artifactId>wildfly-jar-maven-plugin</artifactId>
+    <configuration>
+        <feature-pack-location>wildfly@maven(org.jboss.universe:community-universe)#${version.wildfly}</feature-pack-location>
+        <layers>
+            <layer>web-passivation</layer>
+        </layers>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>package</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+----
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-13150[WFLY-13150 Add a Galleon layer for the Distributable Web subsystem configured with a local web cache]
+* https://issues.redhat.com/browse/EAP7-1543[EAP7-1543 Add a Galleon layer for the Distributable Web subsystem configured with a local web cache]
+
+=== Related Issues
+
+* N/A
+
+=== Dev Contacts
+
+* mailto:brian.stansberry@redhat.com[Brian Stansberry]
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
+* mailto:jkasik@redhat.com[Jan Kasik]
+
+=== Testing By
+
+* [X] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+https://github.com/wildfly/wildfly[WildFly]
+
+=== Other Interested Projects
+
+N/A
+
+== Requirements
+
+=== Hard Requirements
+
+* The Galleon layer must provide the provisioning of the Distributable Web subsystem without provisioning the JGroups subsystem and configuring a local Infinispan container web cache.
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+* The web-passivation layer does not expose a management interface. That means, it does not need to depend on any security subsystems.
+
+== Test Plan
+
+The test coverage of the Galleon layer added by this proposal is divided in three groups:
+
+. Testing the Galleon layer provisioning. This testing is done by https://github.com/wildfly/wildfly/blob/master/testsuite/layers/src/test/java/org/jboss/as/test/layers/LayersTestCase.java[LayersTestCase]. The testsuite will be modified to add a new server provisioned with this layer in isolation and with this layer combined with all the layers. For each kind of provisioning, this test does the following:
+
+.. Verifies the provisioned modules are the expected ones.
+.. Verifies the provisioned server starts successfully.
+
+. Execution of WildFly tests related to the feature provisioned by this layer. Reuse the existing tests available on the WildFly test suite, which are directly testing this layer functionalities, and execute them on a server installation provisioned with this layer.
+
+. Execution of WildFly test related to the feature by using the Bootable Jar.
+
+== Community Documentation
+
+Community documentation plan is to add the layer to https://docs.wildfly.org/21/Admin_Guide.html#wildfly-galleon-layers[WildFly Galleon layers] in the section it belongs to.
+
+== Release Note Content
+
+A Galleon layer to supply the Distributable Web subsystem configured with a local web container cache.
