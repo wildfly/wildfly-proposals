@@ -1,0 +1,83 @@
+= CVE-2020-25633: Potential sensitive information leakage in JAX-RS RESTEasy Client's WebApplicationException handling
+:author:            Ron Sigal
+:email:             rsigal@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+If Client 1 contacts a JAX-RS resource, and  if Client 2 running in that resource contacts a third party server
+and gets back a status s, 300 <= s < 600, then Client 2 is required by the JAX-RS spec to throw a javax.ws.rs.WebApplicationException.
+Furthermore, if the WebApplicationException holds a javax.ws.rs.core.Response, the JAX-RS runtime is required to return that Response
+to Client 1. The problem is that information contained in the Response, including headers and the body, might get leaked from the
+third party server to Client 1.
+
+A solution that prevents the leak while conforming to the JAX-RS spec is to create a WebApplicationException subclass,
+ResteasyWebApplicationException, that holds the Response in a new field. Since WebApplicationException.getResponse() returns null,
+the JAX-RS runtime is not required to return the Response. A new method, ResteasyWebApplicationException.getOriginalResponse(),
+returns the Response in case it is needed.
+
+1. In RESTEasy we have created a tree of Exceptions under ResteasyWebApplicationException which is isomorphic to the tree under
+WebApplicationException.
+
+2. We have introduced a new configuration parameter, "resteasy.original.webapplicationexception.behavior", which, when set to
+"true", restores the original behavior. It defaults to "false".
+
+3. This new behavior occurs only for a Client running in a JAX-RS resource. Some code is introduced to make it possible to determine
+if a Client is running in a server context.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/EAP7-??? [EAP7-??]
+* {issue-base-url}/WFLY-14062 [WFLY-14062]
+
+=== Related Issues
+
+* {issue-base-url}/RESTEASY-2728 [RESTEASY-2728]
+
+=== Dev Contacts
+
+* mailto:rsigal@redhat.com[Ron Sigal]
+* mailto:asoldano@redhat.com[Alessio Soldano]
+
+=== QE Contacts
+
+* ??
+
+=== Testing By
+
+[ ] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* RESTEasy, Wildfly
+
+=== Other Interested Projects
+
+https://quarkus.io  [Different version of RESTEasy, though]
+
+== Requirements
+
+* New WebApplicationException subclasses are introduced.
+* Some code is added to make it possible for a Client to determine if it's running in a JAX-RS resource.
+* MicroProfile REST Client class org.jboss.resteasy.microprofile.client.DefaultResponseExceptionMapper
+is slightly modified.
+* WildFly module jaxrs will need to updated to handle the new configuration parameter.
+
+== Test Plan
+
+Tests already exist in RESTEasy pull request https://github.com/resteasy/Resteasy/pull/2563.  They
+verify that the appropriate Exceptions, with the appropriate contents, are returned in a variety
+of cases. Tests are run with the configuration parameter "resteasy.original.webapplicationexception.behavior"
+set to both "true" and "false".
+
+== Community Documentation
+
+The RESTEasy pull request https://github.com/resteasy/Resteasy/pull/2563  contains a new section for the
+RESTEasy User Guide explaining the new behavior.
