@@ -1,0 +1,111 @@
+= WFLY-14074 Normalize principal propagation/injection across elytron and legacy
+:author:            Diana Krepinska Vilkolakova
+:email:             dvilkola@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This issue seeks to provide configuration option for switching between functionality introduced with WFLY-12537 and functionality that was present before.
+
+=== Background
+
+`Secured EJB` refers to EJB that has any security metadata configured at the EJB level. `Unsecured EJB` is EJB without such security metadata.
+
+Incoming run-as identity refers to the security identity that was active for the context before the run-as* annotation was applied. For further information please see https://docs.wildfly.org/19/Developer_Guide.html#run-as[RunAsPrincipal annotation documentation].
+
+If Elytron was used before the issue WFLY-12537 was resolved, then the security identity of an unsecured EJB was always anonymous if there was no incoming run-as identity.
+
+This behaviour was inconsistent with legacy behaviour. The key difference is that Elytron did not differentiate between remote and local EJB. The identity is anonymous in legacy only if mentioned unsecured EJB was called from remote context. For local EJB the identity is the current security identity obtained from security domain.
+
+This behaviour was made consistent after issue WFLY-12537 got resolved, however it would be good to provide possibility for both options and avoid regressions for users, which is what this issue is for.
+
+=== Summary of the two behaviours
+
+ * before WFLY-12537:
+  **  If incoming run-as identity existed then it was the identity of the EJB. Otherwise, if the EJB was secured then the identity was current security identity obtained from a security domain. If the EJB was unsecured then identity was anonymous regardless of whether the EJB was called from remote context or not.
+
+ * after WFLY-12537:
+ If incoming run-as identity exists then it is the identity of the EJB. Otherwise,
+     ** if the EJB is local then the security identity of this EJB is the current security identity obtained from security domain.
+  ** if the EJB is unsecured and called from remote context then its identity is anonymous. If the EJB is secured and called from remote context then its identity is the current security identity obtained from security domain.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-14074[WFLY-14074]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-12537[WFLY-12537]
+* https://issues.jboss.org/browse/EAP7-1581[EAP7-1581] - EAP issue tracker
+
+=== Dev Contacts
+
+* mailto:dvilkola@redhat.com[Diana Krepinska Vilkolakova]
+
+=== QE Contacts
+
+* mailto:okotek@redhat.com[Ondrej Kotek]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* EJB subsystem
+* https://github.com/wildfly/wildfly[WildFly project]
+
+== Requirements
+
+=== Hard Requirements
+
+* Providing possibility to configure which of the described behaviours should be used.
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+== Implementation Plan
+
+The configuration option for the EJB deployments will be added to `application-security-domain` component in the `ejb3` subsystem. The parameter will be called `legacy-compliant-principal-propagation`.
+
+The configuration could be done the following way:
+
+```
+/subsystem=ejb3/application-security-domain=other:add(security-domain=ApplicationDomain,legacy-compliant-principal-propagation=false)
+```
+or
+
+```
+/subsystem=ejb3/application-security-domain=other:write-attribute(name=legacy-compliant-principal-propagation,value=true)
+```
+
+When this attribute's value is true, the principal propagation is legacy compliant. If false, the principal propagation will be consistent with the propagation that was present in the Elytron security before the issue WFLY-12537 was merged.
+
+The attribute will be voluntary with default value true.
+
+== Test Plan
+
+* Tests of functionality will be added to WildFly project's test suite.
+
+== Community Documentation
+
+WildFly - community documentation will be delivered in form of a PR to master branch. Documentation will describe behavior of both options and its configuration.
+
+== Release Note Content
+
+Principal propagation of EJBs was different for legacy security and Elytron security in some cases. To provide a possibility to configure which behaviour should apply, we added a new attribute `legacy-compliant-principal-propagation` to `application-security-domain` component in the `EJB3 subsystem`. This attribute is optional and the principal propagation is legacy compliant by default.
+
