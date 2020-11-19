@@ -83,7 +83,7 @@ It must be possible to:
 
 ** MicroProfile Config will be used to configure the connections to the Kafka streams.
 
-*** It should be possible to override (or supplement?) parts of the MicroProfile Config via system properties or environment variables for integration with the Kafka managed service.
+*** Because MicroProfile Config supports systems properties or environmental variable as default ConfigSources with higher ordinals than is given to a microprofile-config.properties packaged in the application, it is possible for a system that controls the server launch to use system properties or environment variables to configure integration with the Kafka managed service.
 
 * Use RSO to create/deal with streams
 * For Reactive Messaging, only constructs which are part of the MicroProfile Reactive Messaging 1.0 specification may be used by the user. See <<spec-api,Spec API>> below.
