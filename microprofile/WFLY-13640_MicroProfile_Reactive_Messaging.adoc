@@ -78,6 +78,8 @@ In addition for OpenShift we need to make sure that provides out-of-the box inte
 === Hard Requirements
 It must be possible to:
 
+* Provision a server with MicroProfile Reactive Messaging for Kafka (see <<galleon-layers,Galleon Layers>> below for more information of the layers)
+* Add the extensions and subsystems to enable MicroProfile Reactive Messaging and Reactive Streams Operators to the server resulting from downloaded server.zip (they will not be in any of our shipped)
 * Deploy a Reactive Messaging application into WildFly
 * Interact with Kafka streams via the Reactive Messaging 1.0 APIS
 
@@ -97,7 +99,8 @@ SmallRye Reactive Messaging comes with a set of connectors to interact with exte
 === Nice-to-Have Requirements
 
 === Non-Requirements
-For this iteration we will not add a subsystem for managing the connections to Kafka. Instead we will rely on properties in microprofile-config.properties.
+* For this iteration we will not add a subsystem for managing the connections to Kafka. Instead we will rely on properties in microprofile-config.properties.
+* We will not add the Reactive Messaging or Reactive Streams Operators subsystems to any of our shipped configs.
 
 [[spec-api]]
 ==== Spec API
@@ -133,6 +136,7 @@ There is an extension/subsystem implementing each of the two specifications ment
 
 All subsystems are currently 'empty'. In other words they have no configuration. The presence of the subsystem turns on their respective functionality.
 
+[[galleon-layers]]
 === Galleon Layers
 The functionality is split up into layers bringing in modules and subsystems.
 
