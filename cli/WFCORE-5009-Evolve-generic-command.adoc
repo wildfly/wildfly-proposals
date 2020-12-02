@@ -1,0 +1,77 @@
+= WFCORE-5009 Enhance JBoss CLI generic "command" with support for existing resource
+:author:            Jean-Francois Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+The intent of this feature is to introduce a new option to the CLI command _command_ in order
+to create commands for existing resources. 
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}WFCORE-5009[WFCORE-5009]
+
+* {issue-base-url}EAP7-1501[EAP7-1501]
+
+=== Related Issues:
+
+* None
+
+=== Dev Contacts:
+
+* mailto:jdenise@redhat.com[Jean-François Denise]
+
+=== QE Contacts:
+
+* mailto:tborgato@redhat.com[Tommasso Borgato]
+
+=== Testing By
+
+[x] ENG
+
+=== Affected Projects or Components:
+
+* WildFly Core CLI
+
+
+== Requirements
+
+=== Hard requirements
+
+* Introduce new --node-child=<path to existing child resource> to the _command_ command.
+* When --node-child argument is used,the created command is a 
+  command that is assigned to a specific child node instance and which allows 
+  to perform any operation available for that instance and/or modify any of its 
+  properties.
+* The child node must already exist in the management model. It can't
+  be added using the created command.
+
+=== Non-Requirements
+
+* Add new resource using the created command.
+
+== Test Plan
+
+New test cases to cover completion and execution will be added to WFCORE repository.
+
+* Test that completion of the "command" command proposes new "--node-child" option.
+ * Test that completion of the "command" command containing "--node-child" option is aligned with CLI general completion rules.
+ * Test that completion of created commands with the new option "--node-child" contains resource's attribute names and doesn't contain "add" operation.
+ * Test that add and remove actions for existing resources succeeds.
+ * Test that the creation of a command for a non existing child resource fails.
+ * Test that the creation of a command for a resource type fails.
+ * Test that writing multiple resource attributes using a created command succeeds.
+
+== Community Documentation
+
+No community doc exists for the "command" command, CLI help is the documentation.
+
+
