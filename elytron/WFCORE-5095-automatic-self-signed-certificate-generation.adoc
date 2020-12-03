@@ -1,0 +1,154 @@
+= WFCORE-5095 Add the ability to make use of an automatically generated self-signed certificate with Elytron
+:author:            Farah Juma
+:email:             fjuma@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+https://issues.redhat.com/browse/WFCORE-1576[WFCORE-1576] added the ability to lazily generate a
+self-signed certificate on first use for a specified host name when using legacy security. This RFE is
+to provide similar functionality when Elytron is in use. Like with legacy security, it will be important
+to log a warning message so the user knows that a self-signed certificate is being used and to indicate
+that this self-signed certificate should never be used in a production environment.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-5095[WFCORE-5095]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-13782[WFLY-13782]
+* https://issues.redhat.com/browse/EAP7-1545[EAP7-1545]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:msvehla@redhat.com[Martin Svehla]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly Core
+* WildFly (documentation and tests)
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* When configuring a `key-manager` in the Elytron subsystem, it should be possible to specify
+a `generate-self-signed-certificate-host` attribute. When this attribute is specified,
+the key manager will lazily generate a self-signed certificate on first use (i.e., when
+an HTTPS client connects to the server) if the key store associated with the key manager does
+not yet exist. The value of the `generate-self-signed-certificate-host` attribute will be used
+as the Common Name value when generating the self-signed certificate.
+** When the `generate-self-signed-certificate-host` attribute has been specified for a `key-manager`
+and the file that backs the corresponding `key-store` does not exist, a warning message will be logged
+in the server.log file that indicates that a self-signed certificate will be generated on first use.
+** Once generated, a warning message will be logged in the server.log file that indicates that a
+self-signed certificate has been generated and that the self-signed certificate should only be used
+for testing purposes and that it should never be used in a production environment. The message
+will also provide the SHA-1 and SHA-256 fingerprints of the generated public key.
+** Once generated, the self-signed certificate will be persisted to the file that backs the key store.
+(By persisting the self-signed certificate to the key store, this means that a user will only need
+to compare the fingerprint to the one from the server.log file once and accept the certificate once.
+If we don't persist the self-signed certificate to the key store and just generate a new one each time,
+a user would need to compare the fingerprint to the one from the server.log file multiple times
+and may become prone to simply accepting the server's certificate without proper inspection.)
+
+* The default Elytron subsystem configuration should include one-way SSL configuration that specifies
+a `key-manager` with the `generate-self-signed-certificate-host` attribute set to "localhost" as shown
+below.
+
+[source,xml]
+----
+<tls>
+    <key-stores>
+        <key-store name="applicationKS">
+            <credential-reference clear-text="password"/>
+            <implementation type="PKCS12"/>
+            <file path="application.keystore" relative-to="jboss.server.config.dir"/>
+        </key-store>
+    </key-stores>
+    <key-managers>
+        <key-manager name="applicationKM" key-store="applicationKS" generate-self-signed-certificate-host="localhost">
+            <credential-reference clear-text="password"/>
+        </key-manager>
+    </key-managers>
+    <server-ssl-contexts>
+        <server-ssl-context name="applicationSSC" key-manager="applicationKM"/>
+    </server-ssl-contexts>
+</tls>
+----
+
+* It should be possible for a user to easily make use of the above `server-ssl-context` from the
+default Elytron subsystem configuration by updating the `https-listener` configuration in the Undertow
+subsystem configuration as follows:
+
+[source,bash]
+----
+batch
+/subsystem=undertow/server=default-server/https-listener=https:undefine-attribute(name=security-realm)
+/subsystem=undertow/server=default-server/https-listener=https:write-attribute(name=ssl-context,value=applicationSSC)
+run-batch
+reload
+----
+
+* It should be possible for a user to easily disable the self-signed certificate generation by
+removing the `generate-self-signed-certificate-host` attribute from the `key-manager` configuration.
+To make use of HTTPS, the user would then need to add a signed certificate to the `key-store` (e.g.,
+this could be done by obtaining a signed certificate from any certificate authority that
+implements the ACME protocol using WildFly CLI commands) and the user would need to re-initialize
+the `key-manager`.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+* The ability to automatically generate a signed certificate is out of the scope of this RFE but
+would be good to investigate further after this task. WildFly already provides the ability
+to easily obtain signed certificates from any certificate authority that implements the ACME
+protocol.
+
+== Test Plan
+
+Elytron subsystem parsing and transformer tests will be added.
+
+Tests will be added to the WildFly testsuite to verify that a self-signed certificate is
+automatically generated on first use when Undertow is configured to make use of an
+`https-listener` that references an `ssl-context` with a `key-manager` that specifies
+the `generate-self-signed-certificate-host` attribute. Tests will also be added to verify
+that the `generate-self-signed-certificate-host` attribute can be disabled properly.
+
+== Community Documentation
+
+Documentation on the new default TLS configuration and how to make use of the
+`applicationSSC` `server-ssl-context` will be added to the "Default Application Authentication
+Configuration" section in the Elytron documentation. Documentation on the
+`generate-self-signed-certificate-host` attribute will also be added in this section along with
+information on how to disable the self-signed certificate generation. A warning will also be added
+in this section to note that the generated self-signed certificate is only intended for testing
+purposes and that it should never be used in a production environment.
+
+== Release Note Content
+
+WildFly now provides the ability to lazily generate a self-signed certificate on first use
+when using Elytron. This self-signed certificate should only be used for testing purposes.
+It should never be used in a production environment.
+
