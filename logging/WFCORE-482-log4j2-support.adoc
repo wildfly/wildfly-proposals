@@ -1,0 +1,84 @@
+= Add log4j2 Support to WildFly
+:author:            James R. Perkins
+:email:             jperkins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+As log4j2 has risen in popularity and suggested as a replacement for log4j. There have been many requests to have support
+in WildFly for log4j2. With this feature users will be able to use the log4j2 API which will delegate to the JBoss Log
+Manager.
+
+NOTE: | This will be an implementation of the log4j2 API only. The core log manager for log4j2 will *not* be supported.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-482[WFCORE-482]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1352[EAP7-1352]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:tborgato@redhat.com[Tommaso Borgato]
+
+=== Testing By
+
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+* Any consumer of WildFly Core that uses the logging subsystem.
+
+== Requirements
+
+=== Hard Requirements
+
+* A user can use a log4j2 logger, `org.apache.logging.log4j.Logger`, which will pass the log message to the JBoss Log
+  Manager which is the log manager WildFly uses.
+* The log4j-api will be added to all deployments by default.
+* The log4j2 loggers created should honor the JBoss Log Manager's log context associated with the deployment.
+** This means if the deployment includes a logging configuration for a supported log manager the logger created should
+   honor that log context.
+* The `ThreadContext.getContext()` will be copied to `MDC` in for the log record.
+* The `ThreadContext.getImmutableStack()` will be treated as `NDC` and formatted as such for the log record.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+* Usage of any `org.apache.logging.log4j:log4j-core` API's or implementations will not be supported. In other words
+  the log4j2 log manager implementation, including configuration files, will not be supported.
+
+== Implementation Plan
+
+This will be provided by a separate community project which implements the `org.apache.logging.log4j:log4j-api`. It
+should be clear the implementation only implements the API. Calls to the API will delegate to the JBoss Log Manager.
+
+There may be limitations, such as `Marker` support, that will not be implemented. This is due to the fact that the JBoss
+Log Manager itself does not have a marker API.
+
+== Test Plan
+
+Integration tests will be provided in WildFly Core. There may also be need to have some integration tests in WildFly
+if something other than a JAR deployment needs to be tested.
+
+== Community Documentation
+
+By default, the `org.apache.logging.log4j.api` module, and the `org.jboss.logmanager.log4j2-jboss-logmanager` module
+will be added to deployments. These can be excluded via a `jboss-deployment-structure.xml` or by setting the
+`add-logging-api-dependencies` attribute value to `false`. Note though that attribute value will affect all deployments.
