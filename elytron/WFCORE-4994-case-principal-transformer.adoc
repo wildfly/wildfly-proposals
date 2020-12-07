@@ -1,0 +1,120 @@
+= [WFCORE-4994] Add the ability to adjust the case of a user name using an Elytron principal transformer
+:author:            Sonia Zaldana Calles
+:email:             szaldana@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Elytron currently has six principal transformers enabling aggregating principal transformers, chaining them, using regular expressions, etc.
+However, the only way to adjust the case of a principal is by using a custom principal transformer as described
+https://developer.jboss.org/people/fjuma/blog/2019/02/25/implementing-a-custom-elytron-principal-transformer[here].
+
+It would be good to have a principal transformer to adjust a username to upper or lower case without having to go through
+the complicated process of creating a custom one.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-4994[WFCORE-4994]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-13570[WFLY-13570]
+* https://issues.redhat.com/browse/ELY-1987[ELY-1987]
+* https://issues.jboss.org/browse/EAP7-1203[EAP7-1203]
+
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+TBD
+
+=== Affected Projects or Components
+
+* Wildfly, Wildfly-Core and Elytron
+
+=== Other Interested Projects
+
+N/A
+
+== Requirements
+
+=== Hard Requirements
+
+* A new ``case-principal-transformer`` resource needs to be added to the Elytron subsystem, which should be able
+to be configured in the ``mappers`` configuration. In particular, this new resource will have the following
+optional attribute:
+
+** ``upper-case`` - a boolean value outlining whether the principal should be transformed to all uppercase.
+This value will be set to ``true`` by default.
+
+* It must be possible to create a case-principal transformer which adjusts the principal to uppercase
+by default as follows:
+
+[source]
+----
+/subsystem=elytron/case-principal-transformer=my-case-transformer:add()
+----
+
+* It must be possible to adjust to lowercase by setting the attribute ``upper-case`` to false:
+[source]
+----
+/subsystem=elytron/case-principal-transformer=my-case-transformer:add(upper-case=false)
+----
+
+* It must be possible to use our ``case-principal-transformer`` in any place where we can use our other provided
+principal transformers. For example:
+
+[source]
+----
+/subsystem=elytron/security-domain=ManagementDomain:write-attribute(name=pre-realm-principal-transformer,
+value=my-case-transformer)
+----
+
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+
+== Test Plan
+
+* WildFly Elytron test suite: tests for case principal transformer functionality.
+* Wildfly Core test suite: tests for case principal transformer functionality when it is
+configured in the Elytron subsystem, tests for Elytron subsystem parsing and transformer tests.
+* Wildfly test suite: tests to ensure the correct principal is used when ``case-principal-transformer`` is being used.
+
+== Community Documentation
+
+* Documentation will be added to https://github.com/wildfly/wildfly/blob/master/docs/src/main/asciidoc/_elytron/Elytron_Subsystem.adoc[Elytron Subsystem's Provided Components] to
+include ``case-principal-transformer`` as a provided component.
+* Additionally, a new documentation sub-section under https://github.com/wildfly/wildfly/blob/master/docs/src/main/asciidoc/_elytron/Using_the_Elytron_Subsystem.adoc[4.5 Creating Elytron Subsystem Components]
+on how to create the ``case-principal-transformer`` and override its default behaviour.
+
+
+== Release Note Content
+
+It is now possible to configure a ``case-principal-transformer`` in the Elytron subsystem to convert a principal to upper
+or lower case. Previously, a custom transformer was required to adjust a principal's username to
+upper/lower case. Elytron now provides a principal transformer for this use case.
