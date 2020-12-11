@@ -1,0 +1,60 @@
+= WFLY-14148 Remove MicroProfile Opentracing from WildFly EE
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+This is about removing the MicroProfile Opentracing functionalities from WildFly EE
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/WFLY-14156[WFLY-14148]
+
+=== Related Issues:
+
+
+=== Dev Contacts:
+
+* mailto:ehugonne@redhat.com[Emmanuel Hugonnet]
+
+=== QE Contacts:
+
+* TBD
+
+=== Affected Projects or Components:
+
+* WildFly
+
+== Requirements
+
+
+* The MicroProfile Opentracing functionality is provided in the full 'wildfly' feature pack only
+* Adding a new 'microprofile-opentracing' layer in the 'wildfly' feature pack and adding it to 'wildfly' feature pack's 'observability' layer.
+* Removing it from wildfly-ee feature pack 'observability' layer.
+* Adding a feature_group to cover the default configuration with a Jaeger tracer.
+* Test suite modules will not require EclipseMicroProfile OpentTracing to be present to run except for 'testsuite/integration/microprofile' and 'testsuite/integration/microprofile-tck'.
+* All current tests depending on Eclipse MicroProfile Opentracing functionnality will be moved to 'testsuite/integration/microprofile'.
+
+
+=== Test Plan
+
+The application server testsuite against the full feature pack distribution will keep on passing.
+
+=== Testing By
+
+[X] Engineering
+
+[ ] QE
+
+== Community Documentation
+
+Likely a note in the documentation of MicroProfile Opentracing
+
