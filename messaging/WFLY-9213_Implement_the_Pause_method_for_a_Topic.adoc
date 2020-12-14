@@ -1,0 +1,144 @@
+= Implement the Pause method for a Topic via Management APIs
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:          messaging,jms
+:idseparator:       -
+
+== Overview
+
+
+An Artemis Queue can be paused but there is nothing for a Topic. The goal of this feature is to be able to pause a Topic by pausing all its consumers . New subscriptions being registered while the topic is in pause will be paused also.
+This is implemented in Apache Artemis and we need to expose this feature in the WildFly management API.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-9213[WFLY-9213]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/ENTMQBR-1002[ENTMQBR-1002]
+* https://issues.apache.org/jira/browse/ARTEMIS-2401[ARTEMIS-2401]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+*  mailto:jkasik@redhat.com[Jan Kašík]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[X] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* Apache Artemis
+* WildFly
+
+=== Other Interested Projects
+
+== Requirements
+
+Allow the user to pause or resume a topic thus stopping all the subscribers from receiving new messages from a paused topic.
+The user should be able to check the current status of a topic.
+A paused topic won't propagate messages to subscribers but it doesn't refuse messages sent to the topic.
+Using the `persist` parameter we can store the state of the topic to keep it paused on restart of the broker.
+
+== Implementation Plan
+
+
+Adding a `pause` and a `resume` methods on the resource http://wildscribe.github.io/WildFly/18.0/subsystem/messaging-activemq/server/jms-topic/index.html[/subsystem=messaging-activemq/server=default/jms-topic].
+The `pause` method has a boolean `persist` parameter which is optionnal and default to false.
+We need also to add a runtime only boolean `paused`attribute to http://wildscribe.github.io/WildFly/18.0/subsystem/messaging-activemq/server/jms-topic/index.html[/subsystem=messaging-activemq/server=default/jms-topic] to indicate the status of the Topic.
+
+CLI to execute the commands:
+
+----
+/subsystem=messaging-activemq/server=default/jms-topic=topic:pause()
+{
+    "outcome" => "success",
+    "result" => undefined
+}
+
+/subsystem=messaging-activemq/server=default/jms-topic=topic:read-attribute(name=paused)
+{
+    "outcome" => "success",
+    "result" => true
+}
+
+/subsystem=messaging-activemq/server=default/jms-topic=topic:resume()
+{
+    "outcome" => "success",
+    "result" => undefined
+}
+
+/subsystem=messaging-activemq/server=default/jms-topic=topic:read-attribute(name=paused)
+{
+    "outcome" => "success",
+    "result" => false
+}
+----
+
+
+== Test Plan
+
+Add a new method `testPauseAndResume` in `org.jboss.as.test.integration.messaging.mgmt.JMSTopicManagementTestCase` to test the pausing of a Topic:
+
+    - create a topic with a consumer and a producer
+    - pause the topic
+    - send a message
+    - check that the topic is paused and the message is not consumed.
+    - resume the topic
+    - check that the topic is running and the message is consumed.
+
+Add 2 tests in `org.jboss.as.test.manualmode.messaging.RuntimeJMSTopicManagementTestCase`:
+
+ * `testPauseAndResume`: 
+    - start the server
+    - create a topic with a consumer and a producer
+    - pause the topic with persist = false
+    - send a message
+    - check that the topic is paused and the message is not consumed.
+    - restart the server
+    - create a consumer
+    - check that the topic is running and the message is consumed.
+
+* `testPauseAndResumePersisted`:
+    - start the server
+    - create a topic with a consumer and a producer
+    - pause the topic with persist = true
+    - send a message
+    - check that the topic is paused and the message is not consumed.
+    - restart the server
+    - create a consumer
+    - check that the topic is paused and the message is not consumed.
+    - resume the topic
+    - check that the topic is running and the message is consumed.
+
+
+The feature is already tested in Apache Artemis test suite https://github.com/apache/activemq-artemis/blob/master/tests/integration-tests/src/test/java/org/apache/activemq/artemis/tests/integration/client/AddressPauseTest.java[AddressPauseTest.java]
+
+
+== Community Documentation
+
+* Covered by operation description in management model.
+* https://activemq.apache.org/components/artemis/documentation/latest/management.html#address-management[Apache Artemis documentation]
+
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
