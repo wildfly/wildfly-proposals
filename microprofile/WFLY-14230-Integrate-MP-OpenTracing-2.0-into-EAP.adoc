@@ -1,0 +1,67 @@
+= Integrate MP OpenTracing 2.0 into EAP
+:author:            Jason Lee
+:email:             jasondlee@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+MicroProfile 4.0 provides a major upgrade for https://github.com/eclipse/microprofile-opentracing/releases/tag/2.0[MicroProfile OpenTracing 2.0] with changes described in its 
+https://download.eclipse.org/microprofile/staging/microprofile-opentracing-2.0/microprofile-opentracing-spec-2.0.html#_release_2_0[Release Notes].
+
+This component upgrade also covers the upgrade of smallrye-opentracing that implements MicroProfile OpenTracing 2.0.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-14230[WFLY-14230]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1597[EAP7-1597]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+* [X] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+== Requirements
+
+* Upgrade MicroProfile OpenTracing to 2.0
+* Upgrade smallrye-opentracing and jaegertracing to the release that implements MicroProfile OpenTracing 2.0
+* Run any MicroProfile OpenTracing test in WildFly integration test suite
+* Run the Eclipse MicroProfile OpenTracing TCK without failures
+
+=== Hard Requirements
+
+* Artifact versions must be upgraded
+* Existing tests must be updated as needed and run cleanly
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+* Run existing tests 
+** wildfly/testsuite/integration/microprofile 
+** wildfly/testsuite/integration/microprofile-tck/opentracing
+
+== Community Documentation
+
+* Likely none needed
+
+== Release Note Content
+
+* MicroProfile OpenTracing has been upgraded to 2.0, and the implementing Smallrye OpenTracing has been upgraded as well.
