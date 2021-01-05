@@ -1,0 +1,79 @@
+= Upgrade MicroProfile Health to 3.0
+:author:            Martin Stefanko
+:email:             mstefank@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          microprofile,health,observability
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+
+MicroProfile 4.0 provides a major upgrade for https://github.com/eclipse/microprofile-health/releases/tag/3.0[MicroProfile Health 3.0] with changes described in its https://download.eclipse.org/microprofile/microprofile-health-3.0/microprofile-health-spec-3.0.html#release_notes_3_0[Release Notes].
+
+This component upgrade also covers the upgrade of smallrye-health 3.0.0 that implements MicroProfile Health 3.0.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-14261[WFLY-14261]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1593[EAP7-1593]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TODO
+
+=== Testing By
+
+[X] Engineering
+[ ] QE
+
+== Requirements
+
+* Upgrade MicroProfile Health to 3.0
+* Upgrade SmallRye Health to 3.0.0
+* Pass all MicroProfile Health tests in WildFly integration test suite
+* Pass the MicroProfile Health 3.0 TCK without failures
+* Adjust the tests to work as needed
+* Adjust QuickStarts to address backward compatibility issues (tracked in https://issues.redhat.com/browse/WFLY-14398[WFLY-14398])
+
+
+=== Non-Requirements
+
+== Implementation Plan
+MicroProfile Health 3.0 contains https://download.eclipse.org/microprofile/microprofile-health-3.0/microprofile-health-spec-3.0.html#_incompatible_changes[backwards uncompatible changes].
+However, it only removes deprecated @Health qualifier and renames the HealthCheckResponse state attribute to status.
+Because of this, this work will take place in a feature branch containing updates to all subsystems
+that are part of MicroProfile Platform 4.0.
+
+== Test Plan
+
+This upgrade does not introduce any changes that requires new tests in WildFly. Testing is covered by the TCK.
+
+* Existing tests will need updating because of the removal of the @Health qualifier and state/status rename.
+* Run the WildFly integration microprofile test suite and checks there are no failures related to MicroProfile Health tests.
+* Run the `microprofile-tck/health` module from WildFly integration test suite and check that there are no failures.
+
+== Community Documentation
+
+* No community documentation is required for this upgrade
+
+== Breaking changes
+
+The reference can be found at https://download.eclipse.org/microprofile/microprofile-health-3.0/microprofile-health-spec-3.0.html#_incompatible_changes.
+
+The breaking changes are:
+
+* Pruning of deprecated @Health qualifier - no longer supported, replaced with either @Liveness or @Readiness.
+* Rename of `HealthCheckResponse` field `state` to `status`. It is now possible to use
+`HealthCheckResponse` as a deserialization class for instance with the JAX-RS client
+consuming `application/json`.
