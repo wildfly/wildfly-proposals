@@ -25,6 +25,7 @@ this reason it is anticipated this enhancement will be delivered as a set of com
 === Related Issues
 
 * https://issues.redhat.com/browse/EAP7-1596[EAP7-1596]
+* https://issues.redhat.com/browse/ELY-2068[ELY-2068]
 
 === Dev Contacts
 
@@ -88,9 +89,8 @@ testsuite.
 
 == Community Documentation
 
-This RFE will not be changing how MicroProfile JWT is used or implemented within the application server, for this reason minimal
-documentation changes will be required.  At most this should be a case of checking the documentation references version 1.2 of 
-the specification instead of version 1.1.
+No community documentation is required as the exact version supported is not specified in the documentation and the overall behaviour
+of MicroProfile JWT integration remains the same with this upgrade.
 
 == Release Note Content
 
