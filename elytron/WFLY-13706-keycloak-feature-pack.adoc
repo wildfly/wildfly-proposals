@@ -1,0 +1,355 @@
+= WFLY-13706: Keycloak Galleon Feature Pack 
+:author:            Darran Lofthouse
+:email:             darran.lofthouse@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Support to secure deployments using OpenID Connect is presently provided by installing the Keycloak client adapters.
+
+This is documented by the Keycloak project at https://www.keycloak.org/docs/latest/securing_apps/index.html#_jboss_adapter.
+
+The general installation approach is to unzip the Keycloak adapters jar in the root of the WildFly installation, this installs
+a number of modules and provides some CLI scripts to complete the configuration.  Next execute one of the CLI scripts to install
+the Keycloak subsystem and activate the default mapping from the `undertow` subsystem to use a newly installed `http-authentication-factory`
+which supports OpenID Connect.
+
+The following gist approximately shows the changes made by completing the client adapter installation process:
+  https://gist.github.com/darranl/e927436a0cc60d5d87c274f40863d6c4
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-13706[WFLY-13706 - Galleon feature pack to install Keycloak adapters]
+* https://issues.jboss.org/browse/KEYCLOAK-14953[KEYCLOAK-14953 - Galleon feature pack to install Keycloak adapters]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1482[EAP7-1482]
+* https://issues.jboss.org/browse/EAP7-1385[EAP7-1385]
+* https://issues.jboss.org/browse/EAP7-1444[EAP7-1444]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+
+To be discussed.
+
+This feature is being developed across two different projects with engineers and quality engineers from
+both the WildFly and Keycloak projects being involved, we need to agree the division across these four groups.
+
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+ * https://github.com/keycloak/keycloak
+ * https://github.com/wildfly
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+A new Galleon feature pack will be added to the Keycloak project with the group and artifact IDs `org.keycloak:keycloak-adapter-galleon-pack`,
+this new feature pack will contain a single layer `keycloak-client-oidc` - where this feature pack and layer are provisioned to a WildFly installation
+the end result is expected to mostly match the results of manually installing the Keycloak adapter using the instructions linked previously.
+
+Conceptually this includes the following steps:
+
+ # Installing a set of modules under `modules/system/add-ons`
+ # Registering the `org.keycloak.keycloak-adapter-subsystem` extension.
+ # Adding an empty `urn:jboss:domain:keycloak:1.1` subsystem.
+ # Adding the required resources to the `elytron` subsystem to result in an `http-authentication-factory` supporting OpenID Connect being available.
+ # Adding an `application-security-domain` mapping to the `undertow` subsystem to map the default security domain to the new `http-authentication-factory`.
+
+The scripts that would have been added via the manual installation steps are not added to the resulting installation as the configuration is already added.
+
+The Keycloak release cadences differ from the WildFly release cadences, this means anyone using Galleon to keep their WildFly
+installation up to date may receive updates to the core WildFly installation independently of the Keycloak feature pack.
+
+Testing the interaction of versioning across the feature packs is going to be important, the installation of the Keycloak feature pack
+should not prevent the server being updates once later versions become available, additionally the release of WildFly should not trigger the need for
+an update to Keycloak.
+
+=== Nice-to-Have Requirements
+
+It is preferable for this new feature pack to just have dependencies on WildFly Core keeping it independent of WildFly, this needs to be
+explored further but may not be possible.  Firstly the Keycloak adapter brings in modules with dependencies on artifacts only available from
+the WildFly feature packs, secondly the feature pack will be required to add some configuration to the `undertow` subsystem so needs to depend
+on a layer which adds Undertow.
+
+This feature request is bringing the Keycloak client adapters to WildFly via a Galleon feature pack, beyond that no further
+requirements are being considered, long term it is anticipated we will provide our own OpenID Connect support which will allow
+the dependencies across the two projects to be reduced.  At the point we add our own OpenID Connect support we will also
+consider the options to simplify the approach from an end users perspective.
+
+=== Non-Requirements
+
+This is exclusively adding support for the OpenID Connect client adapter support, alternatives such as SAML are out of scope.
+
+Published artifacts will be available from online maven repositories only, no offline maven repository support will be provided.
+
+The feature pack and resulting layer being provisioned are for securing web applications accessed directly via HTTP.
+This feature request does not extend to securing management interfaces, Remoting invocations or EJB over HTTP invocations.
+
+This feature pack will operate exclusively with Elytron based security, support for legacy security integration is outside the scope
+of this enhancement.
+
+The `keycloak-client-oidc` layer has built up numerous dependencies over it's evolution including projects such as PicketBox,
+this enhancement is not reworking the Keycloak adapter integration to minimise these dependencies.
+
+== Examples
+
+This section contains examples of how the new feature pack will be installed using different approaches.
+
+=== Provisioned using the Galleon CLI
+
+A server installation can be provisioned using the Galleon CLI which would need to be downloaded and installed first.
+
+Start the CLI:
+
+----
+java -jar galleon-cli-4.2.6.Final-SNAPSHOT.jar
+----
+
+First provision a WildFly server with the `web-server` later:
+
+----
+install wildfly:20.0#20.0.0.Final --layers=web-server --dir=/home/darranl/tmp/galleon/wildfly
+----
+
+Then install the Keycloak adapters:
+
+----
+install org.keycloak:keycloak-adapter-galleon-pack:12.0.0-SNAPSHOT --layers=keycloak-client-oidc --dir=/home/darranl/tmp/galleon/wildfly
+----
+
+=== Provisioned using org.jboss.galleon:galleon-maven-plugin.
+
+The following is an example of using the `galleon-maven-plugin` to provision a server containing the Keycloak
+adapter subsystem.
+
+[source,xml]
+----
+<plugin>
+    <groupId>org.jboss.galleon</groupId>
+    <artifactId>galleon-maven-plugin</artifactId>
+    <version>4.2.5.Final</version>
+    <executions>
+        <execution>
+            <goals>
+                <goal>provision</goal>
+            </goals>
+            <configuration>
+                <install-dir>${project.build.directory}/wildfly</install-dir>
+                <feature-packs>
+                    <feature-pack>
+                        <groupId>org.wildfly</groupId>
+                        <artifactId>wildfly-galleon-pack</artifactId>
+                        <version>21.0.0.Beta1-SNAPSHOT</version>
+                        <inherit-configs>false</inherit-configs>
+                        <inherit-packages>false</inherit-packages>
+                        <excluded-packages>
+                            <name>product.conf</name>
+                            <name>docs.schema</name>
+                        </excluded-packages>
+                    </feature-pack>
+                    <feature-pack>
+                        <groupId>org.keycloak</groupId>
+                        <artifactId>keycloak-adapter-galleon-pack</artifactId>
+                        <version>12.0.0-SNAPSHOT</version>
+                        <inherit-configs>false</inherit-configs>
+                        <inherit-packages>false</inherit-packages>
+                   </feature-pack>
+                 </feature-packs> 
+                <configs>
+                    <config>
+                        <name>standalone.xml</name>
+                        <model>standalone</model>
+                        <layers>
+                            <layer>web-server</layer>
+                            <layer>keycloak-client-oidc</layer>
+                        </layers>
+                    </config>
+                </configs>
+           </configuration>
+        </execution>
+    </executions>
+</plugin>
+----
+
+=== Provisioned using org.wildfly.plugins:wildfly-jar-maven-plugin
+
+There are two different approaches available to configure the `wildfly-jar-maven-plugin`, we can either define both feature packs within
+the pom.xml or we can use a `provisioning.xml` descriptor to describe the desired server.
+
+==== Inline Configuration
+
+The following is an example defining the complete configuration within the pom.xml of the project.
+
+[source,xml]
+----
+<plugin>
+    <groupId>org.wildfly.plugins</groupId>
+    <artifactId>wildfly-jar-maven-plugin</artifactId>
+    <version>${version.wildfly.jar.maven.plugin}</version>
+    <configuration>
+        <feature-packs>
+            <feature-pack>
+                <location>wildfly@maven(org.jboss.universe:community-universe):current#21.0.0.Beta1-SNAPSHOT</location>
+                <inherit-configs>false</inherit-configs>
+                <inherit-packages>false</inherit-packages>
+            </feature-pack>
+            <feature-pack>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-adapter-galleon-pack</artifactId>
+                <version>12.0.0-SNAPSHOT</version>
+                <inherit-configs>false</inherit-configs>
+                <inherit-packages>false</inherit-packages>
+            </feature-pack>
+        </feature-packs>
+        <layers>
+            <layer>web-server</layer>
+            <layer>keycloak-client-oidc</layer>
+        </layers>
+        <context-root>simple-webapp</context-root>
+        <cli-sessions>
+            <cli-session>
+                <script-files>
+                    <script>configure-oidc.cli</script>
+                </script-files>
+            </cli-session>
+        </cli-sessions>
+    </configuration>
+    ....
+</plugin>
+----
+
+==== provisioning.xml Configuration
+
+The server to be provisioned can also be defined within a `provisioning.xml` descriptor.
+
+An example configuration adding the Keycloak client adapters to an installation can be seen here.
+
+.provisioning.xml
+[source,xml]
+----
+<installation xmlns="urn:jboss:galleon:provisioning:3.0">
+    <feature-pack location="wildfly@maven(org.jboss.universe:community-universe):current#21.0.0.Beta1-SNAPSHOT">
+        <default-configs inherit="false"/>
+        <packages inherit="false">
+            <exclude name="product.conf"/>
+            <exclude name="docs.schema"/>
+        </packages>
+    </feature-pack>
+    <feature-pack location="org.keycloak:keycloak-adapter-galleon-pack:12.0.0-SNAPSHOT">
+        <default-configs inherit="false"/>
+        <packages inherit="false"/>
+    </feature-pack>
+    <config model="standalone" name="standalone.xml">
+        <layers>
+            <include name="web-server"/>
+            <include name="keycloak-client-oidc"/>
+        </layers>
+    </config>
+    <options>
+        <option name="optional-packages" value="passive+"/>
+    </options>
+</installation>
+----
+
+The `wildfly-jar-maven-plugin` can then be defined as:
+
+[source,xml]
+----
+<plugin>
+    <groupId>org.wildfly.plugins</groupId>
+    <artifactId>wildfly-jar-maven-plugin</artifactId>
+    <version>${version.wildfly.jar.maven.plugin}</version>
+    <configuration>
+        <root-url-path>simple-webapp</root-url-path>
+        <provisioning-file>provisioning.xml</provisioning-file>
+        <cli-sessions>
+            <cli-session>
+                <script-files>
+                    <script>configure-oidc.cli</script>
+                </script-files>
+            </cli-session>
+        </cli-sessions>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>package</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+----
+
+NOTE: The use of a `provisioning.xml` descriptor is also usable with the other provisioning mechanisms, however
+this enhancement is considering the feature pack added for Keycloak so will not repeat the `provisioning.xml`
+example further.
+
+== Implementation Plan
+
+The new feature pack will hosted within the Keycloak project, no specific development is required within WildFly.
+Releases of this feature pack will be subject to the Keycloak release cadences.
+
+As described below the WildFly project will contain some community documentation but beyond that the WildFly project
+will have no dependency back to the Keycloak project and feature pack.
+
+== Test Plan
+
+To be discussed.
+
+The adapters already exist and are already in use today, this enhancement is not making changes so in depth testing of
+the adapter is not required.
+
+Generally testing is going to need to be focussed on the provisioning of the feature pack using the supported mechanism,
+this is complicated by the code belonging in the KeyCloak repository whilst being exclusively for use against WildFly.
+
+
+== Community Documentation
+
+Community documentation will be added for WildFly users giving them information on how to provision this feature
+pack, likely via the following three approaches:
+
+ * Galleon command line.
+ * Provisioned via plug-in - galleon-maven-plugin.
+ * Provisioned for bootable jar - wildfly-jar-maven-plugin
+
+The Keycloak adapter allows configuration to be provided either via the subsystem or via a descriptor contained
+within the deployment, the community documentation will provide some minimal examples of using these.
+
+Beyond this end users should refer to the Keycloak documentation for more detailed information.
+
+=== Quickstarts
+
+To be discussed.
+
+The development of traditional quickstarts is difficult as to demonstrate this feature a working Keycloak installation
+is also required.
+
+Alternatively it may be beneficial to publish either blogs or even videos demonstrating the use of this feature in
+different environments.
+
+== Release Note Content
+
+To be discussed.
+
+Other than community documentation this will not actually be included in any WildFly release as it is a
+feature pack to be installed on top of an existing release.  We may want to consider alternative publicity 
+once this is usable.
+
