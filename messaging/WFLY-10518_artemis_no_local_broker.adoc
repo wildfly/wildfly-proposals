@@ -27,12 +27,12 @@ This RFE will improve WildFly so that a connection to a remote Artemis-based
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-10518[WFLY-10518]
+* https://issues.redhat.com/browse/WFLY-10518[WFLY-10518]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1014[EAP7-1014]
-* https://issues.jboss.org/browse/EAP7-1006[EAP7-1006] is a RFE related to Java EE7 JMS resource
+* https://issues.redhat.com/browse/EAP7-1014[EAP7-1014]
+* https://issues.redhat.com/browse/EAP7-1006[EAP7-1006] is a RFE related to Java EE7 JMS resource
 definitions that will benefit from this RFE.
 
 === Dev Contacts

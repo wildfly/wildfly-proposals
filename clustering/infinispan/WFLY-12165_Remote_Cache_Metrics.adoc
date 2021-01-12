@@ -16,7 +16,7 @@ The goal of this feature request is to expose remote cache statistics to the man
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-12165
+* https://issues.redhat.com/browse/WFLY-12165
 
 === Related Issues
 

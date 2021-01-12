@@ -15,13 +15,13 @@ Centralized logging is becoming a more common infrastructure decision and is oft
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-2953[WFCORE-2953]
+* https://issues.redhat.com/browse/WFCORE-2953[WFCORE-2953]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-860[EAP7-860]
-* https://issues.jboss.org/browse/LOGMGR-156[LOGMGR-156]
-* https://issues.jboss.org/browse/LOGMGR-195[LOGMGR-195]
+* https://issues.redhat.com/browse/EAP7-860[EAP7-860]
+* https://issues.redhat.com/browse/LOGMGR-156[LOGMGR-156]
+* https://issues.redhat.com/browse/LOGMGR-195[LOGMGR-195]
 
 === Dev Contacts
 

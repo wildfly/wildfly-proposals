@@ -14,14 +14,14 @@ This enhancement is to implement the Servlet Profile from https://www.jcp.org/en
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-10810[WFLY-10810]
+* https://issues.redhat.com/browse/WFLY-10810[WFLY-10810]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/ELY-1425[ELY-1425] - Core WildFly Elytron Implementation.
-* https://issues.jboss.org/browse/ELYWEB-7[ELYWEB-7] - Integration with Elytron Web.
-* https://issues.jboss.org/browse/WFLY-10777[WFLY-10777] - Test development within WildFly project.
-* https://issues.jboss.org/browse/WFLY-10804[WFLY-10804] - Documentation within WildFly project.
+* https://issues.redhat.com/browse/ELY-1425[ELY-1425] - Core WildFly Elytron Implementation.
+* https://issues.redhat.com/browse/ELYWEB-7[ELYWEB-7] - Integration with Elytron Web.
+* https://issues.redhat.com/browse/WFLY-10777[WFLY-10777] - Test development within WildFly project.
+* https://issues.redhat.com/browse/WFLY-10804[WFLY-10804] - Documentation within WildFly project.
 
 === Dev Contacts
 

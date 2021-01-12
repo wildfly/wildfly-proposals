@@ -15,11 +15,11 @@ Elytron has ability to create custom security event listeners to develop custom 
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-1007[EAP7-1007]
+* https://issues.redhat.com/browse/EAP7-1007[EAP7-1007]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFCORE-3819[WFCORE-3819]
+* https://issues.redhat.com/browse/WFCORE-3819[WFCORE-3819]
 
 === Dev Contacts
 

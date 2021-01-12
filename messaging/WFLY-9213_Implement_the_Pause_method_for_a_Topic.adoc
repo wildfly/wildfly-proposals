@@ -16,11 +16,11 @@ This is implemented in Apache Artemis and we need to expose this feature in the 
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-9213[WFLY-9213]
+* https://issues.redhat.com/browse/WFLY-9213[WFLY-9213]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/ENTMQBR-1002[ENTMQBR-1002]
+* https://issues.redhat.com/browse/ENTMQBR-1002[ENTMQBR-1002]
 * https://issues.apache.org/jira/browse/ARTEMIS-2401[ARTEMIS-2401]
 
 === Dev Contacts

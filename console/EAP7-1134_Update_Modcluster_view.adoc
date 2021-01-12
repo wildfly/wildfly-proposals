@@ -5,7 +5,7 @@
 :icons:             font
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.jboss.org/browse/
+:issue-base-url:    https://issues.redhat.com/browse/
 
 == Overview
 
@@ -21,7 +21,7 @@ The previous dynamic-load-provider=configuration is an alias to load-provider=dy
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-1134[EAP7-1134]
+* https://issues.redhat.com/browse/EAP7-1134[EAP7-1134]
 
 === Dev Contacts
 

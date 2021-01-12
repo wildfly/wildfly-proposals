@@ -12,15 +12,15 @@
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-3999[WFCORE-3999]
+* https://issues.redhat.com/browse/WFCORE-3999[WFCORE-3999]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1079[EAP7-1079]
-* https://issues.jboss.org/browse/WFLY-10711[WFLY-10711] - Implement Health Check so that it can be consumed by OpenShift Console
+* https://issues.redhat.com/browse/EAP7-1079[EAP7-1079]
+* https://issues.redhat.com/browse/WFLY-10711[WFLY-10711] - Implement Health Check so that it can be consumed by OpenShift Console
 ** The HTTP endpoint provided by the MicroProfile Health Check will be exposed by a HTTP handler on
     WildFly HTTP management interface
-* https://issues.jboss.org/browse/WFCORE-1742[WFCORE-1742] - Allow registering a custom handler for management interface
+* https://issues.redhat.com/browse/WFCORE-1742[WFCORE-1742] - Allow registering a custom handler for management interface
 ** This feature allows to add ResourceManager to the WildFly HTTP management interface. It is targeting static resources such
     as files and have limitations that make it not a good fit to provide a HTTP API endpoint.
 
@@ -35,13 +35,13 @@
 === Affected Projects or Components
 
 * WildFly Core (to expose the new API)
-* WildFly and the `microprofile-smallrye-health` extension that will be added in https://issues.jboss.org/browse/WFLY-10711[WFLY-10711]
+* WildFly and the `microprofile-smallrye-health` extension that will be added in https://issues.redhat.com/browse/WFLY-10711[WFLY-10711]
 
 === Other Interested Projects
 
 == Requirements
 
-With https://issues.jboss.org/browse/WFCORE-1742[WFCORE-1742], it is possible to add "resources" to the HTTP management interface through the https://github.com/wildfly/wildfly-core/blob/master/server/src/main/java/org/jboss/as/server/mgmt/domain/ExtensibleHttpManagement.java[`ExtensibleHttpManagement`] interface.
+With https://issues.redhat.com/browse/WFCORE-1742[WFCORE-1742], it is possible to add "resources" to the HTTP management interface through the https://github.com/wildfly/wildfly-core/blob/master/server/src/main/java/org/jboss/as/server/mgmt/domain/ExtensibleHttpManagement.java[`ExtensibleHttpManagement`] interface.
 
 However this requires to provide a https://github.com/undertow-io/undertow/blob/master/core/src/main/java/io/undertow/server/handlers/resource/ResourceManager.java[ResourceManager] (from Undertow API) object that represents the resource.
 This interface is meant to represent static resources (such as file) and does not map well to exposing a "REST" kind of API.

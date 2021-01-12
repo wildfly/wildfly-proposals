@@ -6,7 +6,7 @@
 :keywords:          comma,separated,tags
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.jboss.org/browse/
+:issue-base-url:    https://issues.redhat.com/browse/
 
 == Overview
 

@@ -10,7 +10,7 @@
 
 HAL contains a wizard to enable and disable SSL for Undertow HTTPS (https-listener) and HTTP management interface, it uses the advanced elytron operations to export, import, generate and manage certificates. 
 
-Recently elytron subsystem added support to use LetsEncrypt API (https://issues.jboss.org/browse/WFCORE-3396[WFCORE-3396]) to manage certificates signed by its CA. The commands are to obtain, update, verify certificates from LetsEncrypt provider.
+Recently elytron subsystem added support to use LetsEncrypt API (https://issues.redhat.com/browse/WFCORE-3396[WFCORE-3396]) to manage certificates signed by its CA. The commands are to obtain, update, verify certificates from LetsEncrypt provider.
 
 In the Elytron subsystem in the Monitoring view, the `certificate-authority-account` and `key-store` view already contains all available operations to manage certificates.
 
@@ -20,8 +20,8 @@ This proposal is to enhance the wizard to add an option to obtain a certificate 
 
 === Issue
 
-* https://issues.jboss.org/browse/HAL-1545
-* https://issues.jboss.org/browse/EAP7-1101
+* https://issues.redhat.com/browse/HAL-1545
+* https://issues.redhat.com/browse/EAP7-1101
 
 === Dev Contacts
 

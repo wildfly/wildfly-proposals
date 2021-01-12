@@ -11,12 +11,12 @@ This is about enabling HTTP proxy on the client builder just using JAX-RS API.
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-11737[WFLY-11737]
-* https://issues.jboss.org/browse/EAP7-1200[EAP7-1200]
+* https://issues.redhat.com/browse/WFLY-11737[WFLY-11737]
+* https://issues.redhat.com/browse/EAP7-1200[EAP7-1200]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/RESTEASY-1952[RESTEASY-1952]
+* https://issues.redhat.com/browse/RESTEASY-1952[RESTEASY-1952]
 
 === Dev Contacts
 

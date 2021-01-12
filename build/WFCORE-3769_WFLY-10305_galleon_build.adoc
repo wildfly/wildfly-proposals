@@ -25,8 +25,8 @@ This initial work is not really a feature, it is an internal detail of the build
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-3769
-* https://issues.jboss.org/browse/WFLY-10305
+* https://issues.redhat.com/browse/WFCORE-3769
+* https://issues.redhat.com/browse/WFLY-10305
 
 === Related Issues
 

@@ -18,11 +18,11 @@ A simple example of a https://github.com/wildfly-extras/wildfly-jar-maven-plugin
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-13305[WFLY-13305]
+* https://issues.redhat.com/browse/WFLY-13305[WFLY-13305]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1385[EAP7-1385]
+* https://issues.redhat.com/browse/EAP7-1385[EAP7-1385]
 
 * https://issues.redhat.com/browse/EAP7-1538[EAP7-1538]
 

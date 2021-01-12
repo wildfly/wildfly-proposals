@@ -14,7 +14,7 @@ This is a relatively simple enhancement to ensure that as the server is started 
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-4144[WFCORE-4144]
+* https://issues.redhat.com/browse/WFCORE-4144[WFCORE-4144]
 
 === Related Issues
 

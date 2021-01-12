@@ -16,7 +16,7 @@ is passed by the `REMOTE_USER` attribute in the AJP protocol.
 
 === Issue
 
-* https://issues.jboss.org/browse/ELY-1921[ELY-1921]
+* https://issues.redhat.com/browse/ELY-1921[ELY-1921]
 
 === Related Issues
 

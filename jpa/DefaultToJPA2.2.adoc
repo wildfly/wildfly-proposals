@@ -46,16 +46,16 @@ Compatibility Transformer requirements:
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-999 Switch to JPA 2.2 as default persistence
+* https://issues.redhat.com/browse/EAP7-999 Switch to JPA 2.2 as default persistence
 
 === Related Issues
 
-* https://issues.jboss.org/browse/JBEAP-14854 Migration documentation for upgrading from Hibernate ORM 5.1 to 5.3
-* https://issues.jboss.org/browse/EAP7-905 JPA 2.2 Support
-* https://issues.jboss.org/browse/WFLY-10520 Transformer 
-* https://issues.jboss.org/browse/WFLY-10455 Update JPA documentation, remove references to older Hibernate ORM versions and only reference 5.3.x
+* https://issues.redhat.com/browse/JBEAP-14854 Migration documentation for upgrading from Hibernate ORM 5.1 to 5.3
+* https://issues.redhat.com/browse/EAP7-905 JPA 2.2 Support
+* https://issues.redhat.com/browse/WFLY-10520 Transformer 
+* https://issues.redhat.com/browse/WFLY-10455 Update JPA documentation, remove references to older Hibernate ORM versions and only reference 5.3.x
 * https://hibernate.atlassian.net/browse/HHH-12781 Update Javassist dependency to 3.23.1-GA
-* https://issues.jboss.org/browse/WFLY-10683 Update Javassist dependency to 3.23.1-GA
+* https://issues.redhat.com/browse/WFLY-10683 Update Javassist dependency to 3.23.1-GA
 * https://hibernate.atlassian.net/browse/HHH-12784 Javassist support broken by HHH-12760
 
 === Dev Contacts

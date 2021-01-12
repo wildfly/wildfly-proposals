@@ -14,17 +14,17 @@ Offer the ability to package all Galleon required artifacts to provision WildFly
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-11989[WFLY-11989]
+* https://issues.redhat.com/browse/WFLY-11989[WFLY-11989]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-891[EAP7-891]
+* https://issues.redhat.com/browse/EAP7-891[EAP7-891]
 
-* https://issues.jboss.org/browse/EAP7-1218[EAP7-1218]
+* https://issues.redhat.com/browse/EAP7-1218[EAP7-1218]
 
-* https://issues.jboss.org/browse/WFGP-132[WFGP-132] (Obsolete, not followed approach)
+* https://issues.redhat.com/browse/WFGP-132[WFGP-132] (Obsolete, not followed approach)
 
-* https://issues.jboss.org/browse/WFGP-135[WFGP-135]
+* https://issues.redhat.com/browse/WFGP-135[WFGP-135]
 
 === Dev Contacts
 

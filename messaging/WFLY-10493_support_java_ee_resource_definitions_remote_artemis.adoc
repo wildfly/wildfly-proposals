@@ -12,11 +12,11 @@
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-10493[WFLY-10493]
+* https://issues.redhat.com/browse/WFLY-10493[WFLY-10493]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1006[EAP71006]
+* https://issues.redhat.com/browse/EAP7-1006[EAP71006]
 
 === Dev Contacts
 

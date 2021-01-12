@@ -26,7 +26,7 @@ the complicated process of creating a custom one.
 
 * https://issues.redhat.com/browse/WFLY-13570[WFLY-13570]
 * https://issues.redhat.com/browse/ELY-1987[ELY-1987]
-* https://issues.jboss.org/browse/EAP7-1203[EAP7-1203]
+* https://issues.redhat.com/browse/EAP7-1203[EAP7-1203]
 
 
 === Dev Contacts

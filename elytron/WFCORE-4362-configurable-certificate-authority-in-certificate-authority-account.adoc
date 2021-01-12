@@ -17,12 +17,12 @@ Each certificate authority can be associated with a production url and a staging
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-4362[WFCORE-4362]
+* https://issues.redhat.com/browse/WFCORE-4362[WFCORE-4362]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1150[EAP7-1150]
-* https://issues.jboss.org/browse/ELY-1797[ELY-1797]
+* https://issues.redhat.com/browse/EAP7-1150[EAP7-1150]
+* https://issues.redhat.com/browse/ELY-1797[ELY-1797]
 
 === Dev Contacts
 

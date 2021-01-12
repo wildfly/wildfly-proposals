@@ -5,7 +5,7 @@
 :icons:             font
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.jboss.org/browse
+:issue-base-url:    https://issues.redhat.com/browse
 
 == Overview
 
@@ -15,13 +15,13 @@ Provide a user interface to configure the new subsystem `/subsystem=microprofile
 
 === Issue
 
-* https://issues.jboss.org/browse/HAL-1474[HAL-1474]
-* https://issues.jboss.org/browse/EAP7-1020[EAP7-1020]
+* https://issues.redhat.com/browse/HAL-1474[HAL-1474]
+* https://issues.redhat.com/browse/EAP7-1020[EAP7-1020]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFLY-10522[WFLY-10522]
-* https://issues.jboss.org/browse/EAP7-1016[EAP7-1016]
+* https://issues.redhat.com/browse/WFLY-10522[WFLY-10522]
+* https://issues.redhat.com/browse/EAP7-1016[EAP7-1016]
 
 === Dev Contacts
 

@@ -15,8 +15,8 @@ This proposal is to list all bound ports and the socket-binding name on a previe
 
 === Issue
 
-* https://issues.jboss.org/browse/HAL-532
-* https://issues.jboss.org/browse/EAP7-1156
+* https://issues.redhat.com/browse/HAL-532
+* https://issues.redhat.com/browse/EAP7-1156
 
 === Dev Contacts
 

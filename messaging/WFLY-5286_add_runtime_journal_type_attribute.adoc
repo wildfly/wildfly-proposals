@@ -15,11 +15,11 @@ Adding a new `runtime-journal-type` attribute to read the effective journal type
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-5286[WFLY-5286]
+* https://issues.redhat.com/browse/WFLY-5286[WFLY-5286]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-850[EAP7-850]
+* https://issues.redhat.com/browse/EAP7-850[EAP7-850]
 
 === Dev Contacts
 

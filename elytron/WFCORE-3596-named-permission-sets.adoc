@@ -6,7 +6,7 @@
 :keywords:          comma,separated,tags
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.jboss.org/browse
+:issue-base-url:    https://issues.redhat.com/browse
 
 == Overview
 
@@ -20,11 +20,11 @@ deprecated to discourage further use.
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-3596[WFCORE-3596]
+* https://issues.redhat.com/browse/WFCORE-3596[WFCORE-3596]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-978[EAP7-978]
+* https://issues.redhat.com/browse/EAP7-978[EAP7-978]
 
 === Dev Contacts
 

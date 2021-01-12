@@ -14,11 +14,11 @@ This proposal is in relation to adding support to WildFly for the MicroProfile J
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-12609[WFLY-12609]
+* https://issues.redhat.com/browse/WFLY-12609[WFLY-12609]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1346[EAP7-1346]
+* https://issues.redhat.com/browse/EAP7-1346[EAP7-1346]
 
 === Dev Contacts
 

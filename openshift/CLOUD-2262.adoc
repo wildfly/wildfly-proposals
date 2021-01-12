@@ -183,7 +183,7 @@ If we take the individual issues this setup is about to solve them.
   https://github.com/luksa/statefulset-scaledown-controller[StatefulSet Scale-Down Controller].
   The controller was applied by the project
   https://access.redhat.com/documentation/en-us/red_hat_amq/7.2/html/deploying_amq_broker_on_openshift_container_platform/journal-recovery-broker-ocp[Red Hat AMQ Broker]
-  (see Jira https://issues.jboss.org/browse/ENTMQBR-1859[ENTMQBR-1859])
+  (see Jira https://issues.redhat.com/browse/ENTMQBR-1859[ENTMQBR-1859])
   but the functionality was deprecated and they moved to the
   https://docs.google.com/document/d/1fW-AWLFyyMr8hOUBUuEdOcRsCxza4n1BAkCGeRzN1Mc/edit[AMQ operator].
   We go the same way.
@@ -200,41 +200,41 @@ check it. The pod is reported as being not-terminated and it won't be stopped un
 
 In the current setup, the transaction propagation with recovery works only when
 a remote outbound connection is used. Up to that, there are some issues on transaction propagation
-over EJB which are related to https://issues.jboss.org/browse/JBEAP-13963[JBEAP-13963].
+over EJB which are related to https://issues.redhat.com/browse/JBEAP-13963[JBEAP-13963].
 
 Up to this the programmatic way for defining the EJB remote call (aka. dynamically
 call EJB without the use of remote outbound connection configuration for it)
-should be possible. That's tracked as issue https://issues.jboss.org/browse/JBEAP-16149[JBEAP-16149].
+should be possible. That's tracked as issue https://issues.redhat.com/browse/JBEAP-16149[JBEAP-16149].
 
 For the issues of the subordinate transactions which was fixed recently
-there is https://issues.jboss.org/browse/WFTC-52[WFTC-52] which was causing
+there is https://issues.redhat.com/browse/WFTC-52[WFTC-52] which was causing
 OOM on the remote side when EJB remoting with transactions was used.
 
-The other relate WFTC issue is issue https://issues.jboss.org/browse/WFTC-52[WFTC-63]
+The other relate WFTC issue is issue https://issues.redhat.com/browse/WFTC-52[WFTC-63]
 that should bring a way to store WFTC records in JDBC storage.
 
 Then there are few minor WFTC issues about records storage as
-https://issues.jboss.org/browse/WFLY-12031[WFLY-12031] and
-https://issues.jboss.org/browse/WFTC-64[WFTC-64].
+https://issues.redhat.com/browse/WFLY-12031[WFLY-12031] and
+https://issues.redhat.com/browse/WFTC-64[WFTC-64].
 
 
 == Issue Metadata
 
 === Issue
 
-* https://issues.jboss.org/browse/CLOUD-2262[CLOUD-2262]
-* https://issues.jboss.org/browse/EAP7-1192[EAP7-1192]
+* https://issues.redhat.com/browse/CLOUD-2262[CLOUD-2262]
+* https://issues.redhat.com/browse/EAP7-1192[EAP7-1192]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/JBEAP-13963[JBEAP-13963]
-* https://issues.jboss.org/browse/JBEAP-16149[JBEAP-16149]
-* https://issues.jboss.org/browse/WFTC-52[WFTC-52]
-* https://issues.jboss.org/browse/CLOUD-2261[CLOUD-2261]
-* https://issues.jboss.org/browse/CLOUD-2542[CLOUD-2542]
-* https://issues.jboss.org/browse/WFTC-52[WFTC-63]
-* https://issues.jboss.org/browse/WFLY-12031[WFLY-12031]
-* https://issues.jboss.org/browse/WFTC-64[WFTC-64]
+* https://issues.redhat.com/browse/JBEAP-13963[JBEAP-13963]
+* https://issues.redhat.com/browse/JBEAP-16149[JBEAP-16149]
+* https://issues.redhat.com/browse/WFTC-52[WFTC-52]
+* https://issues.redhat.com/browse/CLOUD-2261[CLOUD-2261]
+* https://issues.redhat.com/browse/CLOUD-2542[CLOUD-2542]
+* https://issues.redhat.com/browse/WFTC-52[WFTC-63]
+* https://issues.redhat.com/browse/WFLY-12031[WFLY-12031]
+* https://issues.redhat.com/browse/WFTC-64[WFTC-64]
 
 === Dev Contacts
 
@@ -275,7 +275,7 @@ https://issues.jboss.org/browse/WFTC-64[WFTC-64].
 * user deploys the WildFly operator which manages the number of replicas and hide the complexity associated with operation in cloud
 * transaction recovery depends on the deployment of the WildFly operator. WildFly operator provides the gurantee for the transaction consistency.
   The safe recovery won't be possible without the use of the WildFly operator.
-* the prior solution for transaction recovery - which was the use of the migration pod implemented by https://issues.jboss.org/browse/CLOUD-2261[CLOUD-2261]
+* the prior solution for transaction recovery - which was the use of the migration pod implemented by https://issues.redhat.com/browse/CLOUD-2261[CLOUD-2261]
   - is not supported by this RFE and is prohibitted to use the migration pod together with the WildFly operator
 
 === Nice-to-Have Requirements

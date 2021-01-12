@@ -12,11 +12,11 @@
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-10326[WFLY-10326]
+* https://issues.redhat.com/browse/WFLY-10326[WFLY-10326]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-830[EAP7-830]
+* https://issues.redhat.com/browse/EAP7-830[EAP7-830]
 * https://issues.apache.org/jira/browse/ARTEMIS-581[ARTEMIS-581]
 
 === Dev Contacts

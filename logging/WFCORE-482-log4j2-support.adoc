@@ -18,11 +18,11 @@ NOTE: | This will be an implementation of the log4j2 API only. The core log mana
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-482[WFCORE-482]
+* https://issues.redhat.com/browse/WFCORE-482[WFCORE-482]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1352[EAP7-1352]
+* https://issues.redhat.com/browse/EAP7-1352[EAP7-1352]
 
 === Dev Contacts
 

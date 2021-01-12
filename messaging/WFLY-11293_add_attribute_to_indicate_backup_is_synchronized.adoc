@@ -19,11 +19,11 @@ Reading server logs to see whether backup is in sync is not convenient and user 
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-11293[WFLY-11293]
+* https://issues.redhat.com/browse/WFLY-11293[WFLY-11293]
 
 === Related Issues
 
- * https://issues.jboss.org/browse/EAP7-884[EAP7-884]
+ * https://issues.redhat.com/browse/EAP7-884[EAP7-884]
 
 === Dev Contacts
 

@@ -9,18 +9,18 @@
 == Overview
 Introduce wildfly.jpa.skipquerydetach extension that allows queries obtained in non-jta thread from container managed entity manager, to not be detached from the entity manager until the entity manager is closed.  
 
-The wildfly.jpa.skipquerydetach extension is disabled by default (false), meaning that query results are detached from persistence context when obtained.  wildfly.jpa.skipquerydetach can be set to true, for JBoss AS 5/6 compatibility, which defers the detaching of query results until the entity manager is actually closed.  This should of been part of https://issues.jboss.org/browse/WFLY-3674[WFLY-3674] but was overlooked. 
+The wildfly.jpa.skipquerydetach extension is disabled by default (false), meaning that query results are detached from persistence context when obtained.  wildfly.jpa.skipquerydetach can be set to true, for JBoss AS 5/6 compatibility, which defers the detaching of query results until the entity manager is actually closed.  This should of been part of https://issues.redhat.com/browse/WFLY-3674[WFLY-3674] but was overlooked. 
 
 == Issue Metadata
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-1365[EAP7-1365]
-* https://issues.jboss.org/browse/WFLY-12674[WFLY-12674]
+* https://issues.redhat.com/browse/EAP7-1365[EAP7-1365]
+* https://issues.redhat.com/browse/WFLY-12674[WFLY-12674]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFLY-3674[WFLY-3674]
+* https://issues.redhat.com/browse/WFLY-3674[WFLY-3674]
 
 === Dev Contacts
 

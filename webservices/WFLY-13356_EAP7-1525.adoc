@@ -6,7 +6,7 @@
 :keywords:          comma,separated,tags
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.jboss.org/browse
+:issue-base-url:    https://issues.redhat.com/browse
 
 == Overview
 The goal of this feature is to supply a https://docs.wildfly.org/galleon/#_layers[Galleon layer] which will be responsible for providing the webservices subsystem.

@@ -20,13 +20,13 @@ One of the main use cases is cloud image building:
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-1217[EAP7-1217]
+* https://issues.redhat.com/browse/EAP7-1217[EAP7-1217]
 
-* https://issues.jboss.org/browse/WFGP-130[WFGP-130]
+* https://issues.redhat.com/browse/WFGP-130[WFGP-130]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-891[EAP7-891]
+* https://issues.redhat.com/browse/EAP7-891[EAP7-891]
 
 === Dev Contacts
 

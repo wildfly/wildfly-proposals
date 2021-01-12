@@ -15,12 +15,12 @@ Using HTTP Basic authentication with Undertow it was possible to set silent mode
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-11479[WFLY-11479]
+* https://issues.redhat.com/browse/WFLY-11479[WFLY-11479]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1154[EAP7-1154]
-* https://issues.jboss.org/browse/ELY-1466[ELY-1466]
+* https://issues.redhat.com/browse/EAP7-1154[EAP7-1154]
+* https://issues.redhat.com/browse/ELY-1466[ELY-1466]
 
 === Dev Contacts
 

@@ -17,7 +17,7 @@ We are here proposing to introduce a new command line option to enable propertie
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-4305[WFCORE-4305]
+* https://issues.redhat.com/browse/WFCORE-4305[WFCORE-4305]
 
 === Related Issues
 

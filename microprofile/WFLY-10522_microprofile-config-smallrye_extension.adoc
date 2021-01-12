@@ -23,12 +23,12 @@ benefit from the MicroProfile Config API.
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-10522[WFLY-10522]
+* https://issues.redhat.com/browse/WFLY-10522[WFLY-10522]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1016[EAP7-1016]
-* https://issues.jboss.org/browse/WFLY-10558[WFLY-10558] - Support Eclipse MicroProfile Config in Web Console
+* https://issues.redhat.com/browse/EAP7-1016[EAP7-1016]
+* https://issues.redhat.com/browse/WFLY-10558[WFLY-10558] - Support Eclipse MicroProfile Config in Web Console
 
 === Dev Contacts
 

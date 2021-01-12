@@ -14,11 +14,11 @@ The managed executors / thread pools in the EE subsytem currently do not show an
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-11255[WFLY-11255]
+* https://issues.redhat.com/browse/WFLY-11255[WFLY-11255]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1175[EAP7-1175]
+* https://issues.redhat.com/browse/EAP7-1175[EAP7-1175]
 
 === Dev Contacts
 

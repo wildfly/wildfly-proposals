@@ -12,12 +12,12 @@
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-10057 (EJB subsystem configure max threads and core threads independently)
+* https://issues.redhat.com/browse/WFLY-10057 (EJB subsystem configure max threads and core threads independently)
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-488 (Fine-grained control on ejb3 thread-pool and reuse idle threads in pool before creating new)
-* https://issues.jboss.org/browse/WFCORE-1446 (EJB thread pool keepalive not honored and is not reusing inactive threads)
+* https://issues.redhat.com/browse/EAP7-488 (Fine-grained control on ejb3 thread-pool and reuse idle threads in pool before creating new)
+* https://issues.redhat.com/browse/WFCORE-1446 (EJB thread pool keepalive not honored and is not reusing inactive threads)
 
 
 === Dev Contacts

@@ -25,7 +25,7 @@ Given that this is a temporary feature and not one we intend to advertise, eager
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-11597
+* https://issues.redhat.com/browse/WFLY-11597
 
 === Dev Contacts
 

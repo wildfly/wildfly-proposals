@@ -8,7 +8,7 @@
 
 == Overview
 
-https://issues.jboss.org/browse/WFCORE-4172[WFCORE-4172] added support for TLS 1.3 when using the
+https://issues.redhat.com/browse/WFCORE-4172[WFCORE-4172] added support for TLS 1.3 when using the
 JSSE TLS provider with Elytron. This task is to add support for TLS 1.3 when using the OpenSSL TLS
 provider with Elytron.
 
@@ -20,10 +20,10 @@ provider with Elytron.
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFSSL-16[WFSSL-16]
+* https://issues.redhat.com/browse/WFSSL-16[WFSSL-16]
 * https://issues.redhat.com/browse/SSLNTV-3[SSLNTV-3]
 * https://issues.redhat.com/browse/WFLY-13085[WFLY-13085]
-* https://issues.jboss.org/browse/EAP7-1414[EAP7-1414]
+* https://issues.redhat.com/browse/EAP7-1414[EAP7-1414]
 
 === Dev Contacts
 
@@ -61,7 +61,7 @@ provider with Elytron.
   ** Whether or not TLS 1.3 should be used by default when the OpenSSL TLS provider is in
      use and the `cipher-suite-names` attribute has not been specified will need to be
      determined using the performance tests that were used for
-     https://issues.jboss.org/browse/WFCORE-4172[WFCORE-4172].
+     https://issues.redhat.com/browse/WFCORE-4172[WFCORE-4172].
 
 
 ** Example configuration:
@@ -81,7 +81,7 @@ provider with Elytron.
   ** Whether or not TLS 1.3 should be used by default when the OpenSSL TLS provider is in
      use and the `cipher-suite names` attribute has not been specified will need to be
      determined using the performance tests that were used for
-     https://issues.jboss.org/browse/WFCORE-4172[WFCORE-4172].
+     https://issues.redhat.com/browse/WFCORE-4172[WFCORE-4172].
 
 ** Example configuration:
 [source,xml]

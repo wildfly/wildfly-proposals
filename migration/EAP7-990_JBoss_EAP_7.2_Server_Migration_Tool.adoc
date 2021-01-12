@@ -14,11 +14,11 @@ This document specifies the development of the JBoss EAP 7.2 server migration to
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-990[EAP7-990]
+* https://issues.redhat.com/browse/EAP7-990[EAP7-990]
 
 === Related Issues
 
-* https://issues.jboss.org/projects/CMTOOL/issues/CMTOOL-194[CMTOOL-194]
+* https://issues.redhat.com/projects/CMTOOL/issues/CMTOOL-194[CMTOOL-194]
 
 === Dev Contacts
 
@@ -128,7 +128,7 @@ WildFly (WFLY Migration Component), JBoss Server Migration Tool (CMTOOL)
 
 * The migration tool for JBoss EAP 7.2 is the JBoss Server Migration Tool, which is developed as a standalone project:
 ** Source repo and community binaries at https://github.com/wildfly/wildfly-server-migration[GitHub]
-** Project management at https://issues.jboss.org/projects/CMTOOL[JIRA]
+** Project management at https://issues.redhat.com/projects/CMTOOL[JIRA]
 
 * The tool is not a standalone product, it’s simply a component in the JBoss EAP product, and should follow same procedures established for other JBoss EAP components with respect to Productization, QE and Support. The MIGRATION component in WFLY JIRA should be used for issues related with the integration of the tool in the JBoss EAP 7.2 distributions.
 

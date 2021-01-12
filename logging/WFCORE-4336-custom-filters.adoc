@@ -16,11 +16,11 @@ messages based on the cause of the log message.
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-4336[WFCORE-4336]
+* https://issues.redhat.com/browse/WFCORE-4336[WFCORE-4336]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1199[EAP7-1199]
+* https://issues.redhat.com/browse/EAP7-1199[EAP7-1199]
 
 === Dev Contacts
 

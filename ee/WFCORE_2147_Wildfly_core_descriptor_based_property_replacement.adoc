@@ -48,11 +48,11 @@ The replacement of those files will continue being enabled/disabled via EE subsy
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-2147[WFCORE-2147]
+* https://issues.redhat.com/browse/WFCORE-2147[WFCORE-2147]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFCORE-1295[WFCORE-1295]
+* https://issues.redhat.com/browse/WFCORE-1295[WFCORE-1295]
 
 === Dev Contacts
 

@@ -20,17 +20,17 @@ The purpose of the suggestion of the maximum timeout attribute would be to make 
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-10009
+* https://issues.redhat.com/browse/WFLY-10009
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-981
+* https://issues.redhat.com/browse/EAP7-981
 
-* https://issues.jboss.org/browse/WFLY-9955
+* https://issues.redhat.com/browse/WFLY-9955
 
-* https://issues.jboss.org/browse/JBEAP-14240
+* https://issues.redhat.com/browse/JBEAP-14240
 
-* https://issues.jboss.org/browse/JBEAP-14241
+* https://issues.redhat.com/browse/JBEAP-14241
 
 === Dev Contacts
 

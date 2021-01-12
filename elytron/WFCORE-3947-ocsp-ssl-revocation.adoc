@@ -12,11 +12,11 @@
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-3947[WFCORE-3947]
+* https://issues.redhat.com/browse/WFCORE-3947[WFCORE-3947]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/ELY-1617[ELY-1617]
+* https://issues.redhat.com/browse/ELY-1617[ELY-1617]
 
 === Dev Contacts
 

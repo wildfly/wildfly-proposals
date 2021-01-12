@@ -26,13 +26,13 @@ configure their WildFly standalone server to connect to a Git repo and authentic
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-4484[WFCORE-4484]
+* https://issues.redhat.com/browse/WFCORE-4484[WFCORE-4484]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1213[EAP7-1213]
-* https://issues.jboss.org/browse/WFLY-12574[WFLY-12574]
-* https://issues.jboss.org/browse/ELY-1879[ELY-1879]
+* https://issues.redhat.com/browse/EAP7-1213[EAP7-1213]
+* https://issues.redhat.com/browse/WFLY-12574[WFLY-12574]
+* https://issues.redhat.com/browse/ELY-1879[ELY-1879]
 
 === Dev Contacts
 

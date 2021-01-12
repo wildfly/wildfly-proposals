@@ -15,11 +15,11 @@ This issue is about integrating the Java EE Security RI in order to become Java 
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-10172[WFLY-10172]
+* https://issues.redhat.com/browse/WFLY-10172[WFLY-10172]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-904[EAP7-904]
+* https://issues.redhat.com/browse/EAP7-904[EAP7-904]
 
 === Dev Contacts
 

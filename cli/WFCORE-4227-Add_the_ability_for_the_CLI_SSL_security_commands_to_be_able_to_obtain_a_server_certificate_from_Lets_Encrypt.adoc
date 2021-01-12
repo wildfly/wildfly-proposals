@@ -21,8 +21,8 @@ they can also obtain a server certificate from Let's Encrypt.
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-1100[EAP7-1100]
-* https://issues.jboss.org/browse/WFCORE-4227[WFCORE-4227]
+* https://issues.redhat.com/browse/EAP7-1100[EAP7-1100]
+* https://issues.redhat.com/browse/WFCORE-4227[WFCORE-4227]
 
 === Related Issues
 

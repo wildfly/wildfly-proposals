@@ -5,7 +5,7 @@
 :icons:             font
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.jboss.org/browse/
+:issue-base-url:    https://issues.redhat.com/browse/
 
 == Overview
 
@@ -15,7 +15,7 @@ The log files from logging-profiles are not displayed in the log files of web co
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-1131[EAP7-1131]
+* https://issues.redhat.com/browse/EAP7-1131[EAP7-1131]
 
 === Dev Contacts
 

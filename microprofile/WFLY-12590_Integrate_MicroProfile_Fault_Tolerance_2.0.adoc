@@ -24,12 +24,12 @@ The patterns brought by this specification are annotations such as `@Timeout`, `
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-12590[WFLY-12590 Integrate MicroProfile Fault Tolerance 2.0]
-* https://issues.jboss.org/browse/EAP7-1347[EAP7-1347 Integrate MP Fault Tolerance 2.0 into EAP]
+* https://issues.redhat.com/browse/WFLY-12590[WFLY-12590 Integrate MicroProfile Fault Tolerance 2.0]
+* https://issues.redhat.com/browse/EAP7-1347[EAP7-1347 Integrate MP Fault Tolerance 2.0 into EAP]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFLY-10522[WFLY-10522 Support Eclipse MicroProfile Config] - dependency; already integrated
+* https://issues.redhat.com/browse/WFLY-10522[WFLY-10522 Support Eclipse MicroProfile Config] - dependency; already integrated
 
 === Dev Contacts
 

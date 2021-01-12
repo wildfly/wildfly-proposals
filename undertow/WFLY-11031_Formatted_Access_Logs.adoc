@@ -16,8 +16,8 @@ JSON seems to be the most common format.
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-11031[WFLY-11031]
-* https://issues.jboss.org/browse/EAP7-1183[EAP7-1183]
+* https://issues.redhat.com/browse/WFLY-11031[WFLY-11031]
+* https://issues.redhat.com/browse/EAP7-1183[EAP7-1183]
 
 === Related Issues
 

@@ -6,7 +6,7 @@
 :idseparator:       -
 
 === Issue
-* https://issues.jboss.org/browse/WFLY-12190
+* https://issues.redhat.com/browse/WFLY-12190
 
 === Dev Contacts
 

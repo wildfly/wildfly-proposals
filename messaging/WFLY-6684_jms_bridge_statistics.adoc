@@ -17,11 +17,11 @@ The goal of this RFE is to display statistics on the number of processed message
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-6684
+* https://issues.redhat.com/browse/WFLY-6684
 
 === Related Issues
 
-* https://issues.jboss.org/browse/ENTMQBR-1004
+* https://issues.redhat.com/browse/ENTMQBR-1004
 * https://issues.apache.org/jira/browse/ARTEMIS-561
 
 === Dev Contacts

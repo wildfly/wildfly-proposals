@@ -16,7 +16,7 @@ Users will register this listener when the service is installed.
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-11098
+* https://issues.redhat.com/browse/WFLY-11098
 
 === Related Issues
 

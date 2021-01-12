@@ -39,7 +39,7 @@ The following is a configuration example of the WildFly bootable jar maven plugi
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-13353[WFLY-13353 Add a Galleon layer for the POJO subsystem]
+* https://issues.redhat.com/browse/WFLY-13353[WFLY-13353 Add a Galleon layer for the POJO subsystem]
 * https://issues.redhat.com/browse/EAP7-1483[EAP7-1483 Add Galleon layers for remaining non-deprecated subsystems]
 
 === Dev Contacts

@@ -18,11 +18,11 @@ This component upgrade also covers the upgrade of smallrye-metrics 2.4.0 that im
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-13022[WFLY-13022]
+* https://issues.redhat.com/browse/WFLY-13022[WFLY-13022]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1425[EAP7-1425]
+* https://issues.redhat.com/browse/EAP7-1425[EAP7-1425]
 * https://github.com/wildfly/wildfly-proposals/blob/master/microprofile/WFLY-12686_upgrade_microprofile_metrics_2.2.0.adoc[Dev analysis for the MicroProfile Metrics 2.2 Upgrade]
 
 === Dev Contacts

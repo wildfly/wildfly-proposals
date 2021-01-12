@@ -17,7 +17,7 @@ An MicroProfile OpenAPI subsystem exposes an HTTP GET `/openapi` endpoint that r
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-12313
+* https://issues.redhat.com/browse/WFLY-12313
 
 === Dev Contacts
 
@@ -38,7 +38,7 @@ An MicroProfile OpenAPI subsystem exposes an HTTP GET `/openapi` endpoint that r
 The SmallRye implementation of the MicroProfile OpenAPI specification is already integrated by the following projects:
 
 * https://thorntail.io/[Thorntail] via the https://github.com/thorntail/thorntail/tree/master/fractions/microprofile/microprofile-openapi[microprofile-openapi fraction].
-** General migration documentation from ThornTail is tracked by https://issues.jboss.org/browse/WFLY-12749[WFLY-12749]
+** General migration documentation from ThornTail is tracked by https://issues.redhat.com/browse/WFLY-12749[WFLY-12749]
 * https://quarkus.io/[Quarkus] via the https://github.com/quarkusio/quarkus/tree/master/extensions/smallrye-openapi[smallrye-openapi extension].
 
 These integrations will heavily inform, though not dictate, the corresponding integration into WildFly.

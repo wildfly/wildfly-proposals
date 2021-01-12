@@ -14,7 +14,7 @@ set of hosts, servlet container, etc).
 Before implementing this proposed change, mod_cluster subsystem works only the default Undertow server returned by
 `org.wildfly.extension.undertow.UndertowService#getDefaultServer` to register with the proxy servers.
 Moreover, this means that the configured listener (currently called 'connector' in the model which is scheduled to be address
-as well with or after this change, see https://issues.jboss.org/browse/WFLY-10489[WFLY-10489]) must be one from the default
+as well with or after this change, see https://issues.redhat.com/browse/WFLY-10489[WFLY-10489]) must be one from the default
 servers configured listeners.
 The goal of this issue is so that Undertow other server can be registered with reverse proxy servers as well.
 To support this, multiple mod_cluster configurations (i.e. "profiles) will be supported,
@@ -28,12 +28,12 @@ or reverse proxy servers with different configurations).
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-6803[WFLY-6803] WFLY-6803 Add multi-server support to mod_cluster
-* https://issues.jboss.org/browse/EAP7-977[EAP7-977] Add multi-server support to mod_cluster
+* https://issues.redhat.com/browse/WFLY-6803[WFLY-6803] WFLY-6803 Add multi-server support to mod_cluster
+* https://issues.redhat.com/browse/EAP7-977[EAP7-977] Add multi-server support to mod_cluster
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFLY-10439[WFLY-10439] Modernize mod_cluster subsystem
+* https://issues.redhat.com/browse/WFLY-10439[WFLY-10439] Modernize mod_cluster subsystem
 
 There is a lot of issues that must have been address with the move to multiple profiles, they are all linked to the main Jira
 with proper descriptions explaining the problem, for instance these are:

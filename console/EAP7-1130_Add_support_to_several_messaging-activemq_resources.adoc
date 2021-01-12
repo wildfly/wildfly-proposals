@@ -5,7 +5,7 @@
 :icons:             font
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.jboss.org/browse/
+:issue-base-url:    https://issues.redhat.com/browse/
 
 == Overview
 
@@ -28,7 +28,7 @@ Currently there are the same set of resources under /subsystem=messaging-activem
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-1130[EAP7-1130]
+* https://issues.redhat.com/browse/EAP7-1130[EAP7-1130]
 
 === Dev Contacts
 

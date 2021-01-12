@@ -22,11 +22,11 @@ The implementation will involve loading of this authentication configuration fro
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-11697[WFLY-11697]
+* https://issues.redhat.com/browse/WFLY-11697[WFLY-11697]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1097[EAP7-1097]
+* https://issues.redhat.com/browse/EAP7-1097[EAP7-1097]
 
 === Dev Contacts
 

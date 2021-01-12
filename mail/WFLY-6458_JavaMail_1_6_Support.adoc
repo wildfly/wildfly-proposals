@@ -16,11 +16,11 @@ be found at https://javaee.github.io/javamail/[RI website].
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-912[EAP7-912 JavaMail 1.6 Support]
+* https://issues.redhat.com/browse/EAP7-912[EAP7-912 JavaMail 1.6 Support]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFLY-6458[WFLY-6458 JavaMail 1.6 Support]
+* https://issues.redhat.com/browse/WFLY-6458[WFLY-6458 JavaMail 1.6 Support]
 
 === Dev Contacts
 

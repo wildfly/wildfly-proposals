@@ -5,7 +5,7 @@
 :icons:             font
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.jboss.org/browse
+:issue-base-url:    https://issues.redhat.com/browse
 
 == Overview
 
@@ -17,11 +17,11 @@ This task is to add such a tool to WildFly Elytron Tool.
 
 === Issue
 
-* https://issues.jboss.org/browse/ELY-1686[ELY-1686]
+* https://issues.redhat.com/browse/ELY-1686[ELY-1686]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1093[EAP7-1093]
+* https://issues.redhat.com/browse/EAP7-1093[EAP7-1093]
 
 === Dev Contacts
 

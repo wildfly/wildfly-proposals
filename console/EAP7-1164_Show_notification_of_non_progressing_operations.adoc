@@ -16,8 +16,8 @@ There is an operation `/core-service=management/service=management-operations:fi
 
 === Issue
 
-* https://issues.jboss.org/browse/HAL-527
-* https://issues.jboss.org/browse/EAP7-1164
+* https://issues.redhat.com/browse/HAL-527
+* https://issues.redhat.com/browse/EAP7-1164
 
 === Dev Contacts
 

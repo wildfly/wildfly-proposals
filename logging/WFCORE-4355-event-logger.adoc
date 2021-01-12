@@ -15,15 +15,15 @@ useful to have a common API which could be used to write this data.
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-4355[WFCORE-4355]
+* https://issues.redhat.com/browse/WFCORE-4355[WFCORE-4355]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFLY-6892[WFLY-6892]
-* https://issues.jboss.org/browse/WFLY-11031[WFLY-11031]
-* https://issues.jboss.org/browse/EAP7-1196[EAP7-1196]
-* https://issues.jboss.org/browse/EAP7-699[EAP7-699]
-* https://issues.jboss.org/browse/ELY-1712[ELY-1712]
+* https://issues.redhat.com/browse/WFLY-6892[WFLY-6892]
+* https://issues.redhat.com/browse/WFLY-11031[WFLY-11031]
+* https://issues.redhat.com/browse/EAP7-1196[EAP7-1196]
+* https://issues.redhat.com/browse/EAP7-699[EAP7-699]
+* https://issues.redhat.com/browse/ELY-1712[ELY-1712]
 
 === Dev Contacts
 

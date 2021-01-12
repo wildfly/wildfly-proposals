@@ -5,11 +5,11 @@
 :icons:             font
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.jboss.org/browse/
+:issue-base-url:    https://issues.redhat.com/browse/
 
 == Overview
 
-https://issues.jboss.org/browse/WFLY-6803[WFLY-6803] changed the modcluster subsystem, from a single configuration [1] to add support to multiple servers [2]. 
+https://issues.redhat.com/browse/WFLY-6803[WFLY-6803] changed the modcluster subsystem, from a single configuration [1] to add support to multiple servers [2]. 
 The Modcluster configuration column will change the title to "Proxy" and list all configuration proxies and actions to add and remove a proxy configuration.
 
 1. /subsystem=modcluster/mod-cluster-config=configuration
@@ -19,8 +19,8 @@ The Modcluster configuration column will change the title to "Proxy" and list al
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-773[EAP7-773]
-* https://issues.jboss.org/browse/HAL-1493[HAL-1493]
+* https://issues.redhat.com/browse/EAP7-773[EAP7-773]
+* https://issues.redhat.com/browse/HAL-1493[HAL-1493]
 
 === Dev Contacts
 

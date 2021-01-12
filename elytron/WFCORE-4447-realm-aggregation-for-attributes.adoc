@@ -14,13 +14,13 @@ WildFly Elytron provides a very flexible approach to assigning roles and permiss
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-4447[WFCORE-4447]
+* https://issues.redhat.com/browse/WFCORE-4447[WFCORE-4447]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/ELY-1804[ELY-1804]
-* https://issues.jboss.org/browse/WFLY-12051[WFLY-12051]
-* https://issues.jboss.org/browse/EAP7-1194[EAP7-1194]
+* https://issues.redhat.com/browse/ELY-1804[ELY-1804]
+* https://issues.redhat.com/browse/WFLY-12051[WFLY-12051]
+* https://issues.redhat.com/browse/EAP7-1194[EAP7-1194]
 
 === Dev Contacts
 

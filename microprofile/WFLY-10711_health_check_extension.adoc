@@ -19,13 +19,13 @@ The integration uses the smallrye-health component to provide the MicroProfile H
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-10711[WFLY-10711]
+* https://issues.redhat.com/browse/WFLY-10711[WFLY-10711]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1029[EAP7-1029]
-* https://issues.jboss.org/browse/CLOUD-2730[CLOUD-2730] - Implement EAP Health Check so that it can be consumed by OpenShift Console
-* https://issues.jboss.org/browse/WFLY-10522[WFLY-10522] - MicroProfile Config extension for WildFly.
+* https://issues.redhat.com/browse/EAP7-1029[EAP7-1029]
+* https://issues.redhat.com/browse/CLOUD-2730[CLOUD-2730] - Implement EAP Health Check so that it can be consumed by OpenShift Console
+* https://issues.redhat.com/browse/WFLY-10522[WFLY-10522] - MicroProfile Config extension for WildFly.
 ** There is no direct relation between MicroProfile Health and MicroProfile Config API but there should be consistency in their extensions (subsystem names, etc.)
 
 === Dev Contacts

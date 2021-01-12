@@ -26,11 +26,11 @@ We also have a long standing issue in that if we add a new component to WildFly 
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-1005[EAP7-1005]
+* https://issues.redhat.com/browse/EAP7-1005[EAP7-1005]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFCORE-3877[WFCORE-3877]
+* https://issues.redhat.com/browse/WFCORE-3877[WFCORE-3877]
 
 === Dev Contacts
 

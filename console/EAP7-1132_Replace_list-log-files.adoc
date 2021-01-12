@@ -5,7 +5,7 @@
 :icons:             font
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.jboss.org/browse/
+:issue-base-url:    https://issues.redhat.com/browse/
 
 == Overview
 
@@ -15,7 +15,7 @@ The list-log-files operation is deprecated. Instead, we should use the log-file 
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-1132[EAP7-1132]
+* https://issues.redhat.com/browse/EAP7-1132[EAP7-1132]
 
 === Dev Contacts
 

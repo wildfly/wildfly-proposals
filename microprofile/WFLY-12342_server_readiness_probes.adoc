@@ -26,11 +26,11 @@ Once this RFE is done, we could simplify the EAP readiness probe script by repla
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-12342[WFLY-12342]
+* https://issues.redhat.com/browse/WFLY-12342[WFLY-12342]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1322[EAP7-1322]
+* https://issues.redhat.com/browse/EAP7-1322[EAP7-1322]
 
 === Dev Contacts
 

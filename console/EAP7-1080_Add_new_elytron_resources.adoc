@@ -5,7 +5,7 @@
 :icons:             font
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.jboss.org/browse/
+:issue-base-url:    https://issues.redhat.com/browse/
 
 == Overview
 
@@ -15,7 +15,7 @@ There are three elytron resources: certificate-authority-account, custom-securit
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-1080[EAP7-1080]
+* https://issues.redhat.com/browse/EAP7-1080[EAP7-1080]
 
 === Dev Contacts
 

@@ -18,12 +18,12 @@ This component upgrade also covers the upgrade of smallrye-health 2.2.0 that imp
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-13048[WFLY-13048]
+* https://issues.redhat.com/browse/WFLY-13048[WFLY-13048]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1426[EAP7-1426]
-* Support of the `mp.health.disable-default-procedures` config property is handled separately by to https://issues.jboss.org/browse/WFLY-12952[WFLY-12952] that adds such a default server procedure for the readiness check.
+* https://issues.redhat.com/browse/EAP7-1426[EAP7-1426]
+* Support of the `mp.health.disable-default-procedures` config property is handled separately by to https://issues.redhat.com/browse/WFLY-12952[WFLY-12952] that adds such a default server procedure for the readiness check.
 * https://github.com/wildfly/wildfly-proposals/blob/master/microprofile/WFLY-12685_upgrade_microprofile_health_2.1.0.adoc[Dev analysis for the MicroProfile Health 2.1 upgrade]
 * https://github.com/wildfly/wildfly-proposals/blob/master/microprofile/WFLY-10711_health_check_extension.adoc[Dev analysis for initial integration of MicroProfile Health into WildFly]
 
@@ -45,7 +45,7 @@ This component upgrade also covers the upgrade of smallrye-health 2.2.0 that imp
 
 === Non-Requirements
 
-* Support of the `mp.health.disable-default-procedures` config property is handled separately by to https://issues.jboss.org/browse/WFLY-12952[WFLY-12952] that adds such a default server procedure for the readiness check.
+* Support of the `mp.health.disable-default-procedures` config property is handled separately by to https://issues.redhat.com/browse/WFLY-12952[WFLY-12952] that adds such a default server procedure for the readiness check.
 * Health checks in subdeployments of EAR deployment are not supported.
 
 == Implementation Plan

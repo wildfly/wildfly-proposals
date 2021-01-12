@@ -15,7 +15,7 @@ The script is an “example” script to be applied on default standalone config
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-13129
+* https://issues.redhat.com/browse/WFLY-13129
 
 === Dev Contacts
 

@@ -12,12 +12,12 @@
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-3542[WFCORE-3542]
-* https://issues.jboss.org/browse/WFCORE-3832[WFCORE-3832]
+* https://issues.redhat.com/browse/WFCORE-3542[WFCORE-3542]
+* https://issues.redhat.com/browse/WFCORE-3832[WFCORE-3832]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFLY-11923[WFLY-11923]
+* https://issues.redhat.com/browse/WFLY-11923[WFLY-11923]
 
 === Dev Contacts
 
@@ -46,7 +46,7 @@ N/A
 
 === Hard Requirements
 
-==== https://issues.jboss.org/browse/WFCORE-3832[WFCORE-3832]
+==== https://issues.redhat.com/browse/WFCORE-3832[WFCORE-3832]
 
 The JDBC SecurityRealm support a variety of password mappers to load representations of a password from a database, many of these mappers load either hashed or digested representations of the password as well as any related salt from the database.  Presently the hashes, digests and, salts are all assumed to be Base64 encoded.
 
@@ -56,7 +56,7 @@ For each password mapper that supports the loading of a digested password repres
 
 For each password mapper that supports loading a salt a new optional attribute `salt-encoding` will be added to specify the encoding of the salt, this will default to `base64` with an option to specify `hex` as an alternative encoding.
 
-==== https://issues.jboss.org/browse/WFCORE-3542[WFCORE-3542]
+==== https://issues.redhat.com/browse/WFCORE-3542[WFCORE-3542]
 
 Many password types can be encoded using modular crypt allowing their hashed encoding, salt, and iteration count if applicable to be combined and represented in a single String, the JDBC SecurityRealm implementation already supports mod_crypt encoded password however this is not presently exposed on the subsystem, this RFE will add a new password mapper to the principal-query to support the loading of modular crypt encoded passwords.
 
@@ -74,7 +74,7 @@ The configuration to specify the encoding will be contained within the individua
 
 == Test Plan
 
-JDBC SecurityRealm testing was missing from the WildFly testsuite, this has now been added under https://issues.jboss.org/browse/WFLY-11931[WFLY-11932].
+JDBC SecurityRealm testing was missing from the WildFly testsuite, this has now been added under https://issues.redhat.com/browse/WFLY-11931[WFLY-11932].
 
 For the development of this feature new tests will be added to the existing test case covering the following scenarios: -
 
@@ -88,7 +88,7 @@ Additionally within the WildFly Elytron subsystem tests will be added to parse a
 
 == Community Documentation
 
-Detailed documentation of the JDBC SecurityRealm was missing from the community documentation, this has now beed added under https://issues.jboss.org/browse/WFLY-11820[WFLY-11820].
+Detailed documentation of the JDBC SecurityRealm was missing from the community documentation, this has now beed added under https://issues.redhat.com/browse/WFLY-11820[WFLY-11820].
 
 For this RFE these changes will be added to the existing documentation: -
 

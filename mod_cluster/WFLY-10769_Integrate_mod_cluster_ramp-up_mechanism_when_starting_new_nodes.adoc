@@ -18,13 +18,13 @@ This effect is mitigated by load decay over time, but for the time a new node jo
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-10769[WFLY-10769] WFLY-6803 Integrate mod_cluster ramp-up mechanism when starting new nodes
-* https://issues.jboss.org/browse/EAP7-1087[EAP7-1087] Integrate mod_cluster ramp-up mechanism when starting new nodes
+* https://issues.redhat.com/browse/WFLY-10769[WFLY-10769] WFLY-6803 Integrate mod_cluster ramp-up mechanism when starting new nodes
+* https://issues.redhat.com/browse/EAP7-1087[EAP7-1087] Integrate mod_cluster ramp-up mechanism when starting new nodes
 
 === Related Issues
 
-* https://issues.jboss.org/browse/MODCLUSTER-449[MODCLUSTER-449] Implement ramp-up when starting new nodes
-* https://issues.jboss.org/browse/WFLY-10440[WFLY-10440] Upgrade mod_cluster to 1.4.0.Final
+* https://issues.redhat.com/browse/MODCLUSTER-449[MODCLUSTER-449] Implement ramp-up when starting new nodes
+* https://issues.redhat.com/browse/WFLY-10440[WFLY-10440] Upgrade mod_cluster to 1.4.0.Final
 
 This feature is supported since mod_cluster version 1.4.0.Final and was part of the original upgrade PR,
 but was pushed back by QE.
