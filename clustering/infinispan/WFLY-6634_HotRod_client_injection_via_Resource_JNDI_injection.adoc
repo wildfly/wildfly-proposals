@@ -18,11 +18,11 @@ I should be able to inject a hotrod client to connect to remote JDG cluster via 
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-961[EAP7-961] HotRod client injection via @Resource JNDI injection
+* https://issues.redhat.com/browse/EAP7-961[EAP7-961] HotRod client injection via @Resource JNDI injection
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFLY-6634[WFLY-6634] Add remote-cache-container configuration to Infinispan subsystem
+* https://issues.redhat.com/browse/WFLY-6634[WFLY-6634] Add remote-cache-container configuration to Infinispan subsystem
 
 === Dev Contacts
 

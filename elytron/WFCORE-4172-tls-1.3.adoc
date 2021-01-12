@@ -6,7 +6,7 @@
 :keywords:          comma,separated,tags
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.jboss.org/browse
+:issue-base-url:    https://issues.redhat.com/browse
 
 == Overview
 
@@ -17,11 +17,11 @@ that the TLS 1.3 protocol is provided by the default JSSE provider.
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-4172[WFCORE-4172]
+* https://issues.redhat.com/browse/WFCORE-4172[WFCORE-4172]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1022[EAP7-1022]
+* https://issues.redhat.com/browse/EAP7-1022[EAP7-1022]
 
 === Dev Contacts
 

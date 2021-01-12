@@ -9,7 +9,7 @@
 
 == Overview
 
-Since https://issues.jboss.org/browse/WFCORE-426[WFCORE-426] and https://issues.jboss.org/browse/EAP7-735[EAP7-735]
+Since https://issues.redhat.com/browse/WFCORE-426[WFCORE-426] and https://issues.redhat.com/browse/EAP7-735[EAP7-735]
 mouse scrolling is forbidden to large CLI out and user has to press Down or Enter to navigate.
 After pressing Down or Enter to display more output, user can not go up by pressing Up.
 Therefore, it would be convenient to allow CLI output scrolling by mouse and by Up/Down and PgUp/PgDown keys.
@@ -18,11 +18,11 @@ Therefore, it would be convenient to allow CLI output scrolling by mouse and by 
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-979[EAP7-979]
+* https://issues.redhat.com/browse/EAP7-979[EAP7-979]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFCORE-3568[WFCORE-3568]
+* https://issues.redhat.com/browse/WFCORE-3568[WFCORE-3568]
 
 === Dev Contacts
 
@@ -57,7 +57,7 @@ Therefore, it would be convenient to allow CLI output scrolling by mouse and by 
 
 ==== List of keys and actions:
 Composed keys are unstable during the testing
-(this is tracked in https://issues.jboss.org/browse/WFCORE-3545[WFCORE-3545])
+(this is tracked in https://issues.redhat.com/browse/WFCORE-3545[WFCORE-3545])
 Therefore I propose to use for every action a noncomposed key as well.
 This will enable us to create a stable tests.
 

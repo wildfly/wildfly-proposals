@@ -24,13 +24,13 @@ different than the JSON formatter implementation.
 
 === Issue
 
-* JSON Formatter: https://issues.jboss.org/browse/WFCORE-2951[WFCORE-2951]
-* XML Formatter: https://issues.jboss.org/browse/WFCORE-2952[WFCORE-2952]
+* JSON Formatter: https://issues.redhat.com/browse/WFCORE-2951[WFCORE-2951]
+* XML Formatter: https://issues.redhat.com/browse/WFCORE-2952[WFCORE-2952]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFCORE-2953[WFCORE-2953]
-* https://issues.jboss.org/browse/CLOUD-1517[CLOUD-1517]
+* https://issues.redhat.com/browse/WFCORE-2953[WFCORE-2953]
+* https://issues.redhat.com/browse/CLOUD-1517[CLOUD-1517]
 
 === Dev Contacts
 

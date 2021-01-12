@@ -5,7 +5,7 @@
 :icons:             font
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.jboss.org/browse/
+:issue-base-url:    https://issues.redhat.com/browse/
 
 == Overview
 
@@ -31,7 +31,7 @@ The operations allows to create the account on an online CA service, retrieve a 
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-1136[EAP7-1136]
+* https://issues.redhat.com/browse/EAP7-1136[EAP7-1136]
 
 === Dev Contacts
 

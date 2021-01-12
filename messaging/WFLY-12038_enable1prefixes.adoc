@@ -13,11 +13,11 @@ When connecting to a remote broker the prefixes used for Artemis 1.5.x compatibi
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE[WFLY-12038]
+* https://issues.redhat.com/browse/WFCORE[WFLY-12038]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/ENTESB-10484[ENTESB-10484]
+* https://issues.redhat.com/browse/ENTESB-10484[ENTESB-10484]
 Fuse is connecting to a remote broker 2.6.x  where the topic is created by the broker itself without the prefix.
 They access this topic through a Wildfly connection factory which will append the compatibility prefix thus making the resolution of the topic name fail.
 

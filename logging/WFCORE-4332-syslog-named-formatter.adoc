@@ -16,11 +16,11 @@ any formatter to be assigned to the syslog handler for formatter the message por
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-4332[WFCORE-4332]
+* https://issues.redhat.com/browse/WFCORE-4332[WFCORE-4332]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1195[EAP7-1195]
+* https://issues.redhat.com/browse/EAP7-1195[EAP7-1195]
 
 === Dev Contacts
 

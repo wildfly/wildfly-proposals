@@ -21,20 +21,20 @@ A new and optimized implementation of the remote cache store is introduced which
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-9294[WFLY-9294] Add security configuration for Infinispan remote cache store
-* https://issues.jboss.org/browse/EAP7-942[EAP7-942] Add security configuration for Infinispan remote cache store
+* https://issues.redhat.com/browse/WFLY-9294[WFLY-9294] Add security configuration for Infinispan remote cache store
+* https://issues.redhat.com/browse/EAP7-942[EAP7-942] Add security configuration for Infinispan remote cache store
 
 === Related Issues
 
 Incorporates
 
-* https://issues.jboss.org/browse/WFLY-6634[WFLY-6634] Add remote-cache-container configuration to Infinispan subsystem
-* https://issues.jboss.org/browse/WFLY-9860[WFLY-9860] Infinispan store implementation based on remote-cache-container configuration
+* https://issues.redhat.com/browse/WFLY-6634[WFLY-6634] Add remote-cache-container configuration to Infinispan subsystem
+* https://issues.redhat.com/browse/WFLY-9860[WFLY-9860] Infinispan store implementation based on remote-cache-container configuration
 
 Dependencies / Transitive Dependencies
 
-* https://issues.jboss.org/browse/WFLY-6973[WFLY-6973] Upgrade Infinispan to 9.x
-* https://issues.jboss.org/browse/WFLY-8207[WFLY-8207] Upgrade JGroups to 4.0
+* https://issues.redhat.com/browse/WFLY-6973[WFLY-6973] Upgrade Infinispan to 9.x
+* https://issues.redhat.com/browse/WFLY-8207[WFLY-8207] Upgrade JGroups to 4.0
 
 === Dev Contacts
 

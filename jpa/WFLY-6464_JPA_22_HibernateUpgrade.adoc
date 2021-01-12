@@ -39,15 +39,15 @@ A working proof of concept can be found here:
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-6464 JPA 2.2 container support
+* https://issues.redhat.com/browse/WFLY-6464 JPA 2.2 container support
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-905 JPA 2.2 Support
-* https://issues.jboss.org/browse/WFLY-10327 Upgrade Hibernate ORM to 5.3.0.Final and Hibernate Search to 5.10.0.Final
-* https://issues.jboss.org/browse/WFLY-10329 Have JipiJapa enable Hibernate Search backward compatibility properties
-* https://issues.jboss.org/browse/ISPN-8972 Create Hibernate 5.3 module
-* https://issues.jboss.org/browse/WFLY-10393 Upgrade Infinispan to 9.2.3.Final
+* https://issues.redhat.com/browse/EAP7-905 JPA 2.2 Support
+* https://issues.redhat.com/browse/WFLY-10327 Upgrade Hibernate ORM to 5.3.0.Final and Hibernate Search to 5.10.0.Final
+* https://issues.redhat.com/browse/WFLY-10329 Have JipiJapa enable Hibernate Search backward compatibility properties
+* https://issues.redhat.com/browse/ISPN-8972 Create Hibernate 5.3 module
+* https://issues.redhat.com/browse/WFLY-10393 Upgrade Infinispan to 9.2.3.Final
 
 === Dev Contacts
 

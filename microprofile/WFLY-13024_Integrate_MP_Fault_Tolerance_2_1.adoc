@@ -10,7 +10,7 @@
 == Overview
 
 The support for Eclipse MicroProfile (MP) Fault Tolerance (FT) spec version 2.0 was already integrated for all applications
-deployed in WildFly with https://issues.jboss.org/browse/WFLY-12590[WFLY-12590].
+deployed in WildFly with https://issues.redhat.com/browse/WFLY-12590[WFLY-12590].
 This describes the continuation of this effort updating the spec to version 2.1 following the Eclipse MicroProfile 3.3 release.
 
 This task incorporates upgrading SmallRye Fault Tolerance implementation to 4.1.0 (or newer) and the spec to 2.1 jars and TCK,

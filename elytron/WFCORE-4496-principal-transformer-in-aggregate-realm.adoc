@@ -26,14 +26,14 @@ would be a reference to a transformer defined in the mappers configuration. It w
 == Issue Metadata
 
 === Issue
-* https://issues.jboss.org/browse/WFCORE-4496[WFCORE-4496]
+* https://issues.redhat.com/browse/WFCORE-4496[WFCORE-4496]
 
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFLY-12202[WFLY-12202]
-* https://issues.jboss.org/browse/ELY-1829[ELY-1829]
-* https://issues.jboss.org/browse/EAP7-1220[EAP7-1220]
+* https://issues.redhat.com/browse/WFLY-12202[WFLY-12202]
+* https://issues.redhat.com/browse/ELY-1829[ELY-1829]
+* https://issues.redhat.com/browse/EAP7-1220[EAP7-1220]
 
 === Dev Contacts
 

@@ -22,11 +22,11 @@ Overall whilst referencing a `http-authentication-factory` provides a lot of fle
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-10614[WFLY-10614]
+* https://issues.redhat.com/browse/WFLY-10614[WFLY-10614]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1024[EAP7-1024]
+* https://issues.redhat.com/browse/EAP7-1024[EAP7-1024]
 
 === Dev Contacts
 

@@ -69,11 +69,11 @@ even an standalone application needs to have endpoints and be a web server too t
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-9818
+* https://issues.redhat.com/browse/WFLY-9818
 
 === Related Issues
 
-* https://issues.jboss.org/browse/JBTM-2928
+* https://issues.redhat.com/browse/JBTM-2928
 
 === Dev Contacts
 

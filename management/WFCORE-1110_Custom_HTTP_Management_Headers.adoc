@@ -14,13 +14,13 @@ The HTTP management endpoint of the application server already returns a pre-def
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-1110[WFCORE-1110]
+* https://issues.redhat.com/browse/WFCORE-1110[WFCORE-1110]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFLY-12787[WFLY-12787]
-* https://issues.jboss.org/browse/EAP7-1335[EAP7-1335]
-* https://issues.jboss.org/browse/WFCORE-4749[WFCORE-4749]
+* https://issues.redhat.com/browse/WFLY-12787[WFLY-12787]
+* https://issues.redhat.com/browse/EAP7-1335[EAP7-1335]
+* https://issues.redhat.com/browse/WFCORE-4749[WFCORE-4749]
 
 === Dev Contacts
 

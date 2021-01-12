@@ -5,7 +5,7 @@
 :icons:             font
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.jboss.org/browse/
+:issue-base-url:    https://issues.redhat.com/browse/
 
 == Overview
 
@@ -16,7 +16,7 @@ This operation should be available on the runtime view of the trust manager.
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-1133[EAP7-1133]
+* https://issues.redhat.com/browse/EAP7-1133[EAP7-1133]
 
 === Dev Contacts
 

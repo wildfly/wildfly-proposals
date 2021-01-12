@@ -10,7 +10,7 @@
 The goal of this issue is to implement server side EJB interceptors that can be configured system-wide through ejb3 subsystem configuration.
 
 === Issue
-* https://issues.jboss.org/browse/WFLY-6143
+* https://issues.redhat.com/browse/WFLY-6143
 
 === Dev Contacts
 

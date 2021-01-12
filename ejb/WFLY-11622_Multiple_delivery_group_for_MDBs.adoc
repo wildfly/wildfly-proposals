@@ -19,11 +19,11 @@ in the singleton node of the cluster and only if all delivery-groups associated 
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-11622
+* https://issues.redhat.com/browse/WFLY-11622
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-720
+* https://issues.redhat.com/browse/EAP7-720
 
 === Dev Contacts
 

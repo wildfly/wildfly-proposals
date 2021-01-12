@@ -5,7 +5,7 @@
 :icons:             font
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.jboss.org/browse/
+:issue-base-url:    https://issues.redhat.com/browse/
 
 == Overview
 
@@ -20,7 +20,7 @@ The subsystem contains no child resources and two attributes:
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-1060[EAP7-1060]
+* https://issues.redhat.com/browse/EAP7-1060[EAP7-1060]
 
 === Dev Contacts
 

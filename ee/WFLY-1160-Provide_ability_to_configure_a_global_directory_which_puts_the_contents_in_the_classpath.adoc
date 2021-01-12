@@ -97,13 +97,13 @@ It will be allowed only one global directory configuration.
 == Issue Metadata
 
 === Issue
-* https://issues.jboss.org/browse/EAP7-1124[EAP7-1124]
-* https://issues.jboss.org/browse/WFLY-1160[WFLY-1160]
-* https://issues.jboss.org/browse/WFCORE-4375[WFCORE-4375]
+* https://issues.redhat.com/browse/EAP7-1124[EAP7-1124]
+* https://issues.redhat.com/browse/WFLY-1160[WFLY-1160]
+* https://issues.redhat.com/browse/WFCORE-4375[WFCORE-4375]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/MODULES-99[MODULES-99]
+* https://issues.redhat.com/browse/MODULES-99[MODULES-99]
 
 === Dev Contacts
 

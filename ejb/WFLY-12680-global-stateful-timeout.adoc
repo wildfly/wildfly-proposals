@@ -12,11 +12,11 @@
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-12680 (Ability to configure default global stateful timeout for Stateful Session Beans)
+* https://issues.redhat.com/browse/WFLY-12680 (Ability to configure default global stateful timeout for Stateful Session Beans)
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1243 (Ability to configure default global stateful timeout for Stateful Session Beans)
+* https://issues.redhat.com/browse/EAP7-1243 (Ability to configure default global stateful timeout for Stateful Session Beans)
 
 === Dev Contacts
 

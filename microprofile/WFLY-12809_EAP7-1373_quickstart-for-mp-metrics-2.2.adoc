@@ -17,12 +17,12 @@ through the management web interface.
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-1373[EAP7-1373]
-* https://issues.jboss.org/browse/WFLY-12809[WFLY-12809]
+* https://issues.redhat.com/browse/EAP7-1373[EAP7-1373]
+* https://issues.redhat.com/browse/WFLY-12809[WFLY-12809]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1368
+* https://issues.redhat.com/browse/EAP7-1368
 
 === Dev Contacts
 

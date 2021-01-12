@@ -25,11 +25,11 @@ should be used when locating and loading the identity from the underlying identi
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-4361[WFCORE-4361]
+* https://issues.redhat.com/browse/WFCORE-4361[WFCORE-4361]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1173[EAP7-1173]
+* https://issues.redhat.com/browse/EAP7-1173[EAP7-1173]
 
 === Dev Contacts
 

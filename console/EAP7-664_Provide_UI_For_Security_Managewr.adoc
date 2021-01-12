@@ -5,7 +5,7 @@
 :icons:             font
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.jboss.org/browse/
+:issue-base-url:    https://issues.redhat.com/browse/
 
 == Overview
 
@@ -15,7 +15,7 @@ Provide an UI for the security manager subsystem in the configuration section.
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-664[EAP7-664]
+* https://issues.redhat.com/browse/EAP7-664[EAP7-664]
 
 === Dev Contacts
 

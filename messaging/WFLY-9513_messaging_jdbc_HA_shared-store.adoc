@@ -19,13 +19,13 @@ Artemis High Availability with its JDBC Store.
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-9513[WFLY-9513]
+* https://issues.redhat.com/browse/WFLY-9513[WFLY-9513]
 
 === Related Issues
 
 * https://issues.apache.org/jira/browse/ARTEMIS-1447[ARTEMIS-1447] - JDBC NodeManager to support JDBC HA Shared Store
-* https://issues.jboss.org/browse/WFLY-10424[WFLY-10424] - Upgrade ActiveMQ Artemis to 1.5.5.jbossorg-012
-* https://issues.jboss.org/browse/WFLY-10580[WFLY-10580] - the SQLProvider implementation provided
+* https://issues.redhat.com/browse/WFLY-10424[WFLY-10424] - Upgrade ActiveMQ Artemis to 1.5.5.jbossorg-012
+* https://issues.redhat.com/browse/WFLY-10580[WFLY-10580] - the SQLProvider implementation provided
 by WildFly has been donated to Artemis and is present in Artemis 1.5.5.jbossorg-012. The `messaging-activemq`
 can now use it from Artemis codebase and removes its own implementation to reduce code duplication
 and bug fixes.

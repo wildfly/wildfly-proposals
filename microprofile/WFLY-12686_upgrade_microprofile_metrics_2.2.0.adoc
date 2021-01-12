@@ -18,12 +18,12 @@ This component upgrade also covers the upgrade of smallrye-metrics 2.3.0 that im
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-12686[WFLY-12686]
+* https://issues.redhat.com/browse/WFLY-12686[WFLY-12686]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFLY-12735[WFLY-12735] - Upgrade smallrye-metrics to 2.3.0
-* https://issues.jboss.org/browse/EAP7-1349[EAP7-1349]
+* https://issues.redhat.com/browse/WFLY-12735[WFLY-12735] - Upgrade smallrye-metrics to 2.3.0
+* https://issues.redhat.com/browse/EAP7-1349[EAP7-1349]
 
 === Dev Contacts
 

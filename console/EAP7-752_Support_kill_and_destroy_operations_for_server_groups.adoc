@@ -5,7 +5,7 @@
 :icons:             font
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.jboss.org/browse/
+:issue-base-url:    https://issues.redhat.com/browse/
 
 == Overview
 
@@ -15,7 +15,7 @@ Support kill and destroy operations for server-groups
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-752[EAP7-752]
+* https://issues.redhat.com/browse/EAP7-752[EAP7-752]
 
 === Dev Contacts
 

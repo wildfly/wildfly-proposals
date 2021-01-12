@@ -24,14 +24,14 @@ address of a remote client available when making authorization decisions.
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-4725[WFCORE-4725]
+* https://issues.redhat.com/browse/WFCORE-4725[WFCORE-4725]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/ELY-1894[ELY-1894]
-* https://issues.jboss.org/browse/REM3-349[REM3-349]
-* https://issues.jboss.org/browse/WFLY-12661[WFLY-12661]
-* https://issues.jboss.org/browse/EAP7-448[EAP7-448]
+* https://issues.redhat.com/browse/ELY-1894[ELY-1894]
+* https://issues.redhat.com/browse/REM3-349[REM3-349]
+* https://issues.redhat.com/browse/WFLY-12661[WFLY-12661]
+* https://issues.redhat.com/browse/EAP7-448[EAP7-448]
 
 === Dev Contacts
 

@@ -24,14 +24,14 @@ The load balancer must be explicitly configured to enable support for parsing ra
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-6944
-* https://issues.jboss.org/browse/WFLY-12144
+* https://issues.redhat.com/browse/WFLY-6944
+* https://issues.redhat.com/browse/WFLY-12144
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFLY-5550
-* https://issues.jboss.org/browse/UNDERTOW-1432
-* https://issues.jboss.org/browse/MODCLUSTER-673
+* https://issues.redhat.com/browse/WFLY-5550
+* https://issues.redhat.com/browse/UNDERTOW-1432
+* https://issues.redhat.com/browse/MODCLUSTER-673
 
 === Dev Contacts
 

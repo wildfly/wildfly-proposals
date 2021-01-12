@@ -16,11 +16,11 @@ elytron authentication.
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-3672
+* https://issues.redhat.com/browse/WFCORE-3672
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-943
+* https://issues.redhat.com/browse/EAP7-943
 
 === Dev Contacts
 

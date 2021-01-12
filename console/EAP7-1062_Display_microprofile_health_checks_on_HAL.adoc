@@ -5,11 +5,11 @@
 :icons:             font
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.jboss.org/browse/
+:issue-base-url:    https://issues.redhat.com/browse/
 
 == Overview
 
-There is the /subsystem=microprofile-health-smallrye resource to configure and show the microprofile health checks from microprofile applications. It works only in standalone mode as domain mode is not supported yet (see https://issues.jboss.org/browse/WFLY-10863[WFLY-10863]).
+There is the /subsystem=microprofile-health-smallrye resource to configure and show the microprofile health checks from microprofile applications. It works only in standalone mode as domain mode is not supported yet (see https://issues.redhat.com/browse/WFLY-10863[WFLY-10863]).
 The configuration for microprofile-health has only one boolean attribute, then for the configuration section the Model Browser already takes care to let users change the attribute.
 There is a check runtime operation to show the health checks and the global outcome as boolean value. HAL should display a preview with the last N checks and the global outcome, there also should be a specific "View" button to show all checks.
 
@@ -18,12 +18,12 @@ There is a check runtime operation to show the health checks and the global outc
 
 === Issue
 
-* https://issues.jboss.org/browse/HAL-1543[HAL-1543]
-* https://issues.jboss.org/browse/EAP7-1062[EAP7-1062]
+* https://issues.redhat.com/browse/HAL-1543[HAL-1543]
+* https://issues.redhat.com/browse/EAP7-1062[EAP7-1062]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFLY-10863[WFLY-10863 - MP Health is not available in domain mode]
+* https://issues.redhat.com/browse/WFLY-10863[WFLY-10863 - MP Health is not available in domain mode]
 
 === Dev Contacts
 

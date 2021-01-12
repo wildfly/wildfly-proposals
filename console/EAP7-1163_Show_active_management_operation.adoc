@@ -21,8 +21,8 @@ On Standalone mode, the current option in a drop down item on server column actu
 
 === Issue
 
-* https://issues.jboss.org/browse/HAL-1557
-* https://issues.jboss.org/browse/EAP7-1163
+* https://issues.redhat.com/browse/HAL-1557
+* https://issues.redhat.com/browse/EAP7-1163
 
 === Dev Contacts
 

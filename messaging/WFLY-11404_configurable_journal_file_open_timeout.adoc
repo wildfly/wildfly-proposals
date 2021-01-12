@@ -19,7 +19,7 @@ Since versions 1.6.0 and 2.2.0 (see ARTEMIS-1237), Artemis allows to configure a
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-11404
+* https://issues.redhat.com/browse/WFLY-11404
 
 === Related Issues
 

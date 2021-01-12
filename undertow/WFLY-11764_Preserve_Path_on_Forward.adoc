@@ -24,17 +24,17 @@ the action name if `DeploymentInfo.preservePathOnForward` is set to `true`.
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-11764[WFLY-11764]
+* https://issues.redhat.com/browse/WFLY-11764[WFLY-11764]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1341[EAP7-1341]
-* https://issues.jboss.org/browse/JBEAP-17141[JBEAP-17141]
-* https://issues.jboss.org/browse/UNDERTOW-1159[UNDERTOW-1159]
-* https://issues.jboss.org/browse/UNDERTOW-1499[UNDERTOW-1499]
-* https://issues.jboss.org/browse/UNDERTOW-1504[UNDERTOW-1504]
-* https://issues.jboss.org/browse/JBEAP-16448[JBEAP-16448]
-* https://issues.jboss.org/browse/JBEAP-16449[JBEAP-16449]
+* https://issues.redhat.com/browse/EAP7-1341[EAP7-1341]
+* https://issues.redhat.com/browse/JBEAP-17141[JBEAP-17141]
+* https://issues.redhat.com/browse/UNDERTOW-1159[UNDERTOW-1159]
+* https://issues.redhat.com/browse/UNDERTOW-1499[UNDERTOW-1499]
+* https://issues.redhat.com/browse/UNDERTOW-1504[UNDERTOW-1504]
+* https://issues.redhat.com/browse/JBEAP-16448[JBEAP-16448]
+* https://issues.redhat.com/browse/JBEAP-16449[JBEAP-16449]
 
 
 

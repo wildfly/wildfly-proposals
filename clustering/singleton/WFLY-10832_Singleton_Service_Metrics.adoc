@@ -16,11 +16,11 @@ This feature request would make this information available from the management m
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-10832
+* https://issues.redhat.com/browse/WFLY-10832
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFLY-7234
+* https://issues.redhat.com/browse/WFLY-7234
 
 === Dev Contacts
 

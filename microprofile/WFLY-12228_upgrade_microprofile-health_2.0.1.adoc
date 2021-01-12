@@ -17,12 +17,12 @@ MicroProfile 3.0 has been released with a new major version for MicroProfile Hea
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-12228[WFLY-12228]
+* https://issues.redhat.com/browse/WFLY-12228[WFLY-12228]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1206[EAP7-1206]
-* https://issues.jboss.org/browse/CLOUD-3326[CLOUD-3326] - Integrate MicroProfile Health 2.0.1 HTTP endpoints in EAP probes
+* https://issues.redhat.com/browse/EAP7-1206[EAP7-1206]
+* https://issues.redhat.com/browse/CLOUD-3326[CLOUD-3326] - Integrate MicroProfile Health 2.0.1 HTTP endpoints in EAP probes
 
 === Dev Contacts
 
@@ -56,7 +56,7 @@ The microprofile-health-smallrye will provide its own "reporter" that aggreated 
 
 == Non Requirements
 
-* The integration of the health HTTP endpoints or operations in EAP or WildFly probes for Kubernetes is out of scope of this feature. It will be tracked in a separate https://issues.jboss.org/browse/CLOUD-3326[CLOUD-3326] issue.
+* The integration of the health HTTP endpoints or operations in EAP or WildFly probes for Kubernetes is out of scope of this feature. It will be tracked in a separate https://issues.redhat.com/browse/CLOUD-3326[CLOUD-3326] issue.
 
 == Implementation Plan
 

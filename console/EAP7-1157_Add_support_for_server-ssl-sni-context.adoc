@@ -14,8 +14,8 @@ Add the `server-ssl-sni-context` resource to the elytron subsystem configuration
 
 === Issue
 
-* https://issues.jboss.org/browse/HAL-1523
-* https://issues.jboss.org/browse/EAP7-1157
+* https://issues.redhat.com/browse/HAL-1523
+* https://issues.redhat.com/browse/EAP7-1157
 
 === Dev Contacts
 

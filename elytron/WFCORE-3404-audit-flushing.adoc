@@ -6,7 +6,7 @@
 :keywords:          elytron
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.jboss.org/browse/WFCORE-3404
+:issue-base-url:    https://issues.redhat.com/browse/WFCORE-3404
 
 == Overview
 
@@ -23,11 +23,11 @@ atttribute for stream flushing (`autoflush` for example) and for file descriptor
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-3404[WFCORE-3404]
+* https://issues.redhat.com/browse/WFCORE-3404[WFCORE-3404]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/JBEAP-10639[JBEAP-10639]
+* https://issues.redhat.com/browse/JBEAP-10639[JBEAP-10639]
 
 === Dev Contacts
 

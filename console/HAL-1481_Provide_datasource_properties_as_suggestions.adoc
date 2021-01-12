@@ -15,8 +15,8 @@ Once the jdbc-driver is added with `driver-datasource-class-name` or `driver-xa-
 
 === Issue
 
-* https://issues.jboss.org/browse/HAL-1481
-* https://issues.jboss.org/browse/EAP7-966
+* https://issues.redhat.com/browse/HAL-1481
+* https://issues.redhat.com/browse/EAP7-966
 
 === Dev Contacts
 

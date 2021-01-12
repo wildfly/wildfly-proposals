@@ -5,7 +5,7 @@
 :icons:             font
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.jboss.org/browse/
+:issue-base-url:    https://issues.redhat.com/browse/
 
 == Overview
 
@@ -15,7 +15,7 @@ There are lots of new runtime operations for messaging servers, which are curren
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-1159[EAP7-1159]
+* https://issues.redhat.com/browse/EAP7-1159[EAP7-1159]
 
 === Dev Contacts
 

@@ -26,11 +26,11 @@ behaviour.
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-6493
+* https://issues.redhat.com/browse/WFLY-6493
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-958
+* https://issues.redhat.com/browse/EAP7-958
 
 === Dev Contacts
 

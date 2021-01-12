@@ -17,12 +17,12 @@ configuration, definition of custom ``ConfigSource``s and ``Converter``s.
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-1374[EAP7-1374]
-* https://issues.jboss.org/browse/WFLY-12802[WFLY-12802]
+* https://issues.redhat.com/browse/EAP7-1374[EAP7-1374]
+* https://issues.redhat.com/browse/WFLY-12802[WFLY-12802]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1368
+* https://issues.redhat.com/browse/EAP7-1368
 
 === Dev Contacts
 

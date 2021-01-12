@@ -30,12 +30,12 @@ See the https://github.com/jboss-openshift/openshift-ping repository.
 
 === Issue
 
-* https://issues.jboss.org/browse/EAP7-861[EAP7-861] Integrate KUBE_PING discovery protocol
+* https://issues.redhat.com/browse/EAP7-861[EAP7-861] Integrate KUBE_PING discovery protocol
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFLY-9563[WFLY-9563] Integrate KUBE_PING discovery protocol (upstream issue)
-* https://issues.jboss.org/browse/WFLY-8207[WFLY-8207] Upgrade JGroups to 4.0 (dependency)
+* https://issues.redhat.com/browse/WFLY-9563[WFLY-9563] Integrate KUBE_PING discovery protocol (upstream issue)
+* https://issues.redhat.com/browse/WFLY-8207[WFLY-8207] Upgrade JGroups to 4.0 (dependency)
 
 === Dev Contacts
 

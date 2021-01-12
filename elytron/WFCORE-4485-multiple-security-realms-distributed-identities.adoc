@@ -17,11 +17,11 @@ This RFE will implement distributed security realm, which will allow to use mult
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-4485[WFCORE-4485]
+* https://issues.redhat.com/browse/WFCORE-4485[WFCORE-4485]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/ELY-1932[ELY-1932]
+* https://issues.redhat.com/browse/ELY-1932[ELY-1932]
 
 === Dev Contacts
 

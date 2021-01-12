@@ -20,11 +20,11 @@ A common request is fail over to a local file based realm if an LDAP or database
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-4486[WFCORE-4486]
+* https://issues.redhat.com/browse/WFCORE-4486[WFCORE-4486]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/ELY-1902[ELY-1902]
+* https://issues.redhat.com/browse/ELY-1902[ELY-1902]
 
 === Dev Contacts
 

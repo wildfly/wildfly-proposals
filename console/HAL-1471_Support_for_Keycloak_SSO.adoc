@@ -17,8 +17,8 @@ Keycloak javascript adapter: https://www.keycloak.org/docs/latest/securing_apps/
 
 === Issue
 
-* https://issues.jboss.org/browse/HAL-1471
-* https://issues.jboss.org/browse/EAP7-1011
+* https://issues.redhat.com/browse/HAL-1471
+* https://issues.redhat.com/browse/EAP7-1011
 
 === Dev Contacts
 

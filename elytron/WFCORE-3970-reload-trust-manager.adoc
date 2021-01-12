@@ -5,7 +5,7 @@
 :icons:             font
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.jboss.org/browse
+:issue-base-url:    https://issues.redhat.com/browse
 
 == Overview
 
@@ -15,11 +15,11 @@ It is not currently possible to reload Elytron's trust-manager dynamically, requ
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-3970[WFCORE-3970]
+* https://issues.redhat.com/browse/WFCORE-3970[WFCORE-3970]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1052[EAP7-1052]
+* https://issues.redhat.com/browse/EAP7-1052[EAP7-1052]
 
 === Dev Contacts
 

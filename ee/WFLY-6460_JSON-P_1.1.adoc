@@ -16,12 +16,12 @@ be found at https://github.com/javaee/jsonp or the official https://javaee.githu
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-6460[WFLY-6460]
+* https://issues.redhat.com/browse/WFLY-6460[WFLY-6460]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-840[EAP7-840]
-* https://issues.jboss.org/browse/WFCORE-3600[WFCORE-3600]
+* https://issues.redhat.com/browse/EAP7-840[EAP7-840]
+* https://issues.redhat.com/browse/WFCORE-3600[WFCORE-3600]
 
 === Dev Contacts
 

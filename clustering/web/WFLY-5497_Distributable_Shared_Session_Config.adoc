@@ -21,7 +21,7 @@ Beginning with version 2.0, users will need to opt-in to this behavior via the n
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-5497
+* https://issues.redhat.com/browse/WFLY-5497
 
 === Related Issues
 

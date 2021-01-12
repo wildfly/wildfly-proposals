@@ -12,7 +12,7 @@
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-12243[WFLY-12243]
+* https://issues.redhat.com/browse/WFLY-12243[WFLY-12243]
 
 === Dev Contacts
 

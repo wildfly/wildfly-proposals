@@ -13,14 +13,14 @@
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-11829
+* https://issues.redhat.com/browse/WFLY-11829
 
 === Related Issues
 
-* https://issues.jboss.org/browse/ENTMQBR-1001
+* https://issues.redhat.com/browse/ENTMQBR-1001
 * https://issues.apache.org/jira/browse/ARTEMIS-1322
 * https://issues.apache.org/jira/browse/EAP7-704
-* https://issues.jboss.org/browse/EAP7-669
+* https://issues.redhat.com/browse/EAP7-669
 
 === Dev Contacts
 

@@ -13,12 +13,12 @@ Managing an application running on WildFly in a cloud environment can be a compl
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-11824[WFLY-11824]
+* https://issues.redhat.com/browse/WFLY-11824[WFLY-11824]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1149[EAP7-1149] - Tech Preview Operator for handling already built EAP/WildFly based images
-* https://issues.jboss.org/browse/CLOUD-2262[CLOUD-2262] - Provide support for transaction recovery for transactions which contain subordinate transactions propagated over JBoss Remoting
+* https://issues.redhat.com/browse/EAP7-1149[EAP7-1149] - Tech Preview Operator for handling already built EAP/WildFly based images
+* https://issues.redhat.com/browse/CLOUD-2262[CLOUD-2262] - Provide support for transaction recovery for transactions which contain subordinate transactions propagated over JBoss Remoting
 === Dev Contacts
 
 * mailto:{email}[{author}]
@@ -114,7 +114,7 @@ This operator defines the expected behaviour of a WildFly application deployed o
 
 One of the key decision is the underlying kind of resources to represent the application.
 Currently, the https://github.com/jboss-container-images/jboss-eap-7-openshift-image/blob/89f045c458e1d196c6c4288b34ae5aae4ab58934/templates/eap-cd-basic-s2i.json#L298[EAP S2I templates] uses https://kubernetes.io/docs/concepts/workloads/controllers/deployment/[`DeploymentConfig`].
-However this introduces issues for transaction recovery (such as https://issues.jboss.org/browse/CLOUD-2262[CLOUD-2262]) as the pod names are not stable.
+However this introduces issues for transaction recovery (such as https://issues.redhat.com/browse/CLOUD-2262[CLOUD-2262]) as the pod names are not stable.
 
 The operator will instead use a https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/[`StatefulSet`] to manage the WildFly applications.
 Compared to using `DeploymentConfig`, this ensures:

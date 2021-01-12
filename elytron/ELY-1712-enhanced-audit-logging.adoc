@@ -5,7 +5,7 @@
 :icons:             font
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.jboss.org/browse
+:issue-base-url:    https://issues.redhat.com/browse
 
 == Overview
 
@@ -15,11 +15,11 @@ Currently, Audit Logging in Elytron does not have the same capabilities as Legac
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-4394[WFCORE-4394]
+* https://issues.redhat.com/browse/WFCORE-4394[WFCORE-4394]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-699[EAP7-699]
+* https://issues.redhat.com/browse/EAP7-699[EAP7-699]
 
 === Dev Contacts
 

@@ -35,14 +35,14 @@ Logging options are provided at the Client side (see [`JAEGER_REPORTER_LOG_SPANS
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-10709[WFLY-10709]
+* https://issues.redhat.com/browse/WFLY-10709[WFLY-10709]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1027[EAP7-1027]
-* https://issues.jboss.org/browse/CLOUD-2728[CLOUD-2728] - Expose EAP "Tracing" information so that it can be consumed by OpenShift Console
-* https://issues.jboss.org/browse/TRACING-85[TRACING-85] - Create jboss-modules for OpenTracing and Jaeger
-* https://issues.jboss.org/browse/TRACING-87[TRACING-87] - OpenTracing integration for JAX-RS in Wildfly
+* https://issues.redhat.com/browse/EAP7-1027[EAP7-1027]
+* https://issues.redhat.com/browse/CLOUD-2728[CLOUD-2728] - Expose EAP "Tracing" information so that it can be consumed by OpenShift Console
+* https://issues.redhat.com/browse/TRACING-85[TRACING-85] - Create jboss-modules for OpenTracing and Jaeger
+* https://issues.redhat.com/browse/TRACING-87[TRACING-87] - OpenTracing integration for JAX-RS in Wildfly
 
 === Dev Contacts
 

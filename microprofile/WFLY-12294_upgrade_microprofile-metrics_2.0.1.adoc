@@ -17,11 +17,11 @@ This component upgrade also covers inclusion of the MicroProfile Metrics TCK (bo
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-12294[WFLY-12294]
+* https://issues.redhat.com/browse/WFLY-12294[WFLY-12294]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1146[EAP7-1146] - Transition EAP Metrics to support MicroProfile Metrics 2.0.1
+* https://issues.redhat.com/browse/EAP7-1146[EAP7-1146] - Transition EAP Metrics to support MicroProfile Metrics 2.0.1
 
 === Dev Contacts
 

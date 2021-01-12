@@ -89,8 +89,8 @@ New API usage example:
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-3752[WFCORE-3752]
-* https://issues.jboss.org/browse/WFLY-10254[WFLY-10254]
+* https://issues.redhat.com/browse/WFCORE-3752[WFCORE-3752]
+* https://issues.redhat.com/browse/WFLY-10254[WFLY-10254]
 
 === Related Issues
 

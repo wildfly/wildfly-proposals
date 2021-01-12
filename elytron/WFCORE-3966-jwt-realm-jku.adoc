@@ -16,7 +16,7 @@ remote key endpoints to retrieve the keys.
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-3966[WFCORE-3966]
+* https://issues.redhat.com/browse/WFCORE-3966[WFCORE-3966]
 
 === Dev Contacts
 

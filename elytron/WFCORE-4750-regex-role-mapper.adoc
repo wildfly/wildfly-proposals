@@ -14,13 +14,13 @@ This feature is about enhancing Elytron subsystem configuration to allow possibi
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-4750[WFCORE-4750]
+* https://issues.redhat.com/browse/WFCORE-4750[WFCORE-4750]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1344[EAP7-1344] - EAP issue tracker
-* https://issues.jboss.org/browse/ELY-1909[ELY-1909] - Elytron project issue tracker
-* https://issues.jboss.org/browse/WFLY-12810[WFLY-12810] - Wildfly community documentation issue tracker
+* https://issues.redhat.com/browse/EAP7-1344[EAP7-1344] - EAP issue tracker
+* https://issues.redhat.com/browse/ELY-1909[ELY-1909] - Elytron project issue tracker
+* https://issues.redhat.com/browse/WFLY-12810[WFLY-12810] - Wildfly community documentation issue tracker
 
 === Dev Contacts
 

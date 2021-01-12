@@ -22,7 +22,7 @@ Elytron configuration should be ignored if different configuration was already s
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-11868[WFLY-11868]
+* https://issues.redhat.com/browse/WFLY-11868[WFLY-11868]
 
 === Related Issues
 

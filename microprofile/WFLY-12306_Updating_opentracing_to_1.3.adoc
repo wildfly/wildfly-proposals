@@ -17,7 +17,7 @@ This component upgrade also covers inclusion of the MicroProfile Opentracing TCK
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-12306[WFLY-12306]
+* https://issues.redhat.com/browse/WFLY-12306[WFLY-12306]
 
 === Related Issues
 

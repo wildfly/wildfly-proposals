@@ -22,11 +22,11 @@ An initial consumer of this new behavior will be the CommandDispatcher-based Dis
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-9842
+* https://issues.redhat.com/browse/WFLY-9842
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFLY-9847
+* https://issues.redhat.com/browse/WFLY-9847
 
 === Dev Contacts
 

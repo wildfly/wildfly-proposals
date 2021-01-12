@@ -17,7 +17,7 @@ requirement that the JBoss Log Manager is the log manager.
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-3656[WFCORE-3656]
+* https://issues.redhat.com/browse/WFCORE-3656[WFCORE-3656]
 
 === Dev Contacts
 

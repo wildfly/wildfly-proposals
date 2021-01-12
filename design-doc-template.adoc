@@ -12,11 +12,11 @@
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE[WFCORE-XXXX]
+* https://issues.redhat.com/browse/WFCORE[WFCORE-XXXX]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFLY[WFLY-XXXX]
+* https://issues.redhat.com/browse/WFLY[WFLY-XXXX]
 
 === Dev Contacts
 

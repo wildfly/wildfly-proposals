@@ -5,7 +5,7 @@
 :icons:             font
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.jboss.org/browse/
+:issue-base-url:    https://issues.redhat.com/browse/
 
 == Overview
 
@@ -15,12 +15,12 @@ Provide a user interface to configure the `/subsystem=infinispan/remote-cache-co
 
 === Issue
 
-* https://issues.jboss.org/browse/HAL-1468[HAL-1468]
-* https://issues.jboss.org/browse/EAP7-767[EAP7-767]
+* https://issues.redhat.com/browse/HAL-1468[HAL-1468]
+* https://issues.redhat.com/browse/EAP7-767[EAP7-767]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFLY-6634[WFLY-6634]
+* https://issues.redhat.com/browse/WFLY-6634[WFLY-6634]
 
 === Dev Contacts
 

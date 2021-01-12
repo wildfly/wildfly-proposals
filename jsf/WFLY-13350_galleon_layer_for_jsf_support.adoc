@@ -39,12 +39,12 @@ The following is a configuration example of the WildFly bootable JAR Maven plugi
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-13350[WFLY-13350 Add a Galleon layer for JSF]
+* https://issues.redhat.com/browse/WFLY-13350[WFLY-13350 Add a Galleon layer for JSF]
 * https://issues.redhat.com/browse/EAP7-1529[EAP7-1529 Add a Galleon layer for JSF]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/WFLY-13354[WFLY-13354]
+* https://issues.redhat.com/browse/WFLY-13354[WFLY-13354]
 
 === Dev Contacts
 

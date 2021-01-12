@@ -18,11 +18,11 @@ This component upgrade also covers the upgrade of smallrye-config that implement
 
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-13023[WFLY-13023]
+* https://issues.redhat.com/browse/WFLY-13023[WFLY-13023]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-1427[EAP7-1427]
+* https://issues.redhat.com/browse/EAP7-1427[EAP7-1427]
 
 === Dev Contacts
 

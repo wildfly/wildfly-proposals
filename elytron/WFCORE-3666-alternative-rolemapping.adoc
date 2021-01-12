@@ -14,12 +14,12 @@ Currently, Elytron role mapping consist mostly of logical and basic add suffix/p
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-3666[WFCORE-3666]
+* https://issues.redhat.com/browse/WFCORE-3666[WFCORE-3666]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/ELY-1591[ELY-1591]
-* https://issues.jboss.org/browse/EAP7-1008[EAP7-1008]
+* https://issues.redhat.com/browse/ELY-1591[ELY-1591]
+* https://issues.redhat.com/browse/EAP7-1008[EAP7-1008]
 
 === Dev Contacts
 

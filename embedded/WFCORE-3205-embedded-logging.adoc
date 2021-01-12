@@ -17,7 +17,7 @@ managers. The embedded server should honor the log manager being used.
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-3205[WFCORE-3205]
+* https://issues.redhat.com/browse/WFCORE-3205[WFCORE-3205]
 
 === Dev Contacts
 

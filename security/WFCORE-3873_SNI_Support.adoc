@@ -17,11 +17,11 @@ the appropriate SSL context will be selected for the name.
 
 === Issue
 
-* https://issues.jboss.org/browse/WFCORE-3873[WFCORE-3873]
+* https://issues.redhat.com/browse/WFCORE-3873[WFCORE-3873]
 
 === Related Issues
 
-* https://issues.jboss.org/browse/EAP7-726
+* https://issues.redhat.com/browse/EAP7-726
 
 === Dev Contacts
 
