@@ -1,0 +1,188 @@
+---
+title: Expose capability/requirements to deployments
+issue: https://issues.jboss.org/browse/WFCORE-3435
+tags:
+- core
+- capabilities
+- deployments
+---
+
+= Expose capability/requirements to deployments
+:toc:               macro
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+toc::[]
+
+== User Story
+
+With WildFly 11, Services that provides capabilities will warn users that they should use the capability instead of the service's ServiceName directly.
+
+For services that are activated using MSC `ServiceActivator`, the API does not provide a way to get such a capability name.
+Deployments that are activating services must be able to work with capabilities too.
+
+== Issue Metadata
+
+* WildFly issue: https://issues.jboss.org/browse/WFCORE-3435
+* Affected projects or components:
+** https://github.com/wildfly/wildfly-core[Wildfly Core]
+** https://github.com/jboss-msc/jboss-msc[JBoss Modular Service Container]
+** https://github.com/wildfly-swarm/wildfly-swarm[WildFly Swarm]
+
+== Requirements
+
+* A deployment should be able to activate a service that requires a capability.
+* The mechanism to let user interact with capabilities should be similar to the one used for services (`ServiceActivator` implementation loaded by Java `ServiceLoader`).
+
+=== Non-Requirements
+
+* Current use of `ServiceActivator` is valid and must not be affected by this change.
+* `ServiceActivator` API remains valid and will not be deprecated.
+
+=== WildFly Core Requirements
+
+WildFly Core is providing the `CapabilityServiceSupport` to support capability integration in service implementations.
+Capability is a concept from WildFly Core, while `ServiceActivator` is an API provided by MSC. A new API that allows deployments to activate capabilities must be provided by WildFly Core.
+
+* The `CapabilityServiceSupport` API should be exposed to deployments that are activating services so they can integrate with capabilities too.
+* User deployments must be processed and any services that require capabilities be activated.
+
+== Current design
+
+Currently, an user must implement `org.jboss.msc.service.ServiceActivator` and install MSC Services using the `ServiceActivatorContext` parameter.
+Its implementation is loaded by the Java ServiceLoader mechanism and its services are activated during deployment.
+
+[source]
+----
++-----------------------------------+       +--------------------+
+|             << MSC >>             |       |     << User >>     |
+|         ServiceActivator          |<|-----| MyServiceActivator |
++-----------------------------------+       +--------------------+
+| activate(ServiceActivatorContext) |
++-----------------------------------+
+        ^
+       / \
+        |
++---------------------------------------+
+|             << MSC >>                 |
+|       ServiceActivatorContext         |
++---------------------------------------+
+| getServiceTarget(): ServiceTarget     |
+| getServiceRegistry(): ServiceRegistry |
++---------------------------------------+
+----
+
+== Proposed Design
+
+We would need to introduce a new API so that an user could activate services that depends on capabilities.
+This API is provided by WildFly Core (in its wildfly-controller artifact).
+
+The user must implement the `org.jboss.as.controller.CapabilityActivator` interface.
+This interface provides a `org.jboss.as.controller.CapabilityActivatorContext` interface that extends `org.jboss.msc.service.ServiceActivatorContext` and add a method to access the `org.jboss.as.controller.capability.CapabilityServiceSupport`.
+
+This `CapabilityServiceSupport` interface can then be used to integrate with capabilities.
+
+We also propose to make `CapabilityActivator` extends `ServiceActivator`. This is not strictly required but this let the user
+implement a single interface (and register it with Java `ServiceLoader`) instead of having to deal with two different interfaces depending on the requirements for capabilities in the user services.
+
+[source]
+----
++-----------------------------------+        +--------------------------------------+      +------------------------+
+|             <<MSC>>               |<|------|          << WildFly Core >>          |<|----|        << User >>      |
+|         ServiceActivator          |        |         CapabilityActivator          |      |    MyServiceActivator  |
++-----------------------------------+        +--------------------------------------+      +------------------------+
+| activate(ServiceActivatorContext) |        | activate(CapabilityActivatorContext) |
++-----------------------------------+        +--------------------------------------+
+        ^                                          ^
+       / \                                        / \
+        |                                          |
++---------------------------------------+      +---------------------------------------------------------+
+|              <<MSC>>                  |      |                 << WildFly Core >>                      |
+|       ServiceActivatorContext         |<|----|             CapabilityActivatorContext                  |
++---------------------------------------+      +---------------------------------------------------------+
+| getServiceTarget(): ServiceTarget     |      | getCapabilityServiceSupport(): CapabilityServiceSupport |
+| getServiceRegistry(): ServiceRegistry |      +---------------------------------------------------------+
++---------------------------------------+          ^
+                                                  / \
+                                                   |
+                                               +---------------------------------------------------------------+
+                                               |                 << WildFly Core >>                            |
+                                               |             CapabilityServiceSupport                          |
+                                               +---------------------------------------------------------------+
+                                               | hasCapability(name: String): boolean                          |
+                                               | getCapabilityServiceName(capabilityName: String): ServiceName |
+                                               | ...                                                           |
+                                               +---------------------------------------------------------------+
+
+----
+
+== Work Decomposition
+
+=== WidlFly Core Work
+
+* Implement the new API (`CapabilityActivator`, `CapabilityActivatorContext`)
+* Add deployment unit processor to load the user implementation and activate them during deployment
+* Any services that requires to use capabilities instead of deprecated service names must check that is properly documented in https://github.com/wildfly/wildfly-capabilities[WildFly Capabilities repository].
+
+=== WildFly Swarm Work
+
+* Refactor problematic ServiceActivator implementations
+.. make them implement `CapabilityActivator` instead of `ServiceActivator`
+.. remove their declarations from `META-INF/services/org.jboss.msc.service.ServiceActivator` and put them in `META-INF/services/org.jboss.as.controller.CapabilityActivator`
+.. change the actual code in `activate(CapabilityActivatorContext)` to depend on capability service name instead of deprecated service name.
+
+For example, if a Swarm ServiceActivator was depending on WildFly's `NamingService`:
+
+[source,java]
+----
+public class MyServiceActivator implements ServiceActivator {
+
+   public void activate(ServiceActivatorContext context) throws ServiceRegistryException {
+       ServiceTarget target = context.getServiceTarget();
+
+       MyAppService service = new MyAppService();
+       ServiceBuilder<MyAppService> serviceBuilder = target
+               .addService(MyAppService.SERVICE_NAME, service)
+               ...
+               // use of Naming ServiceName is now deprecated
+               .addDependency(NamingService.SERVICE_NAME)
+               .install();
+   }
+}
+----
+
+The new implementation would be updated to:
+
+[source,java]
+----
+public class MyServiceActivator implements CapabilityActivator {
+
+   public void activate(CapabilityActivatorContext context) throws ServiceRegistryException {
+       ServiceTarget target = context.getServiceTarget();
+
+       MyAppService service = new MyAppService();
+       ServiceBuilder<MyAppService> serviceBuilder = target
+               .addService(MyAppService.SERVICE_NAME, service)
+               ...
+               .addDependency(context.getCapabilityServiceSupport()
+                  .getCapabilityServiceName(NamingService.CAPABILITY_NAME))
+               .install();
+   }
+}
+----
+
+
+== QE
+
+* Ensure that any current use of `ServiceActivator` is still working
+* Ensure that new functionality is working
+
+== Documentation
+
+* https://docs.jboss.org/author/display/WFLY/Working+with+WildFly+Capabilities[WildFly Capabilities documentation] would be enhanced to document the use of `CapabilityActivator` in user deployments.
+* Swarm might update its documentation to promote the use of `CapabilityActivator` instead of `ServiceActivator`.
+
+== User interface / User Experience
+
+This has no impact on the user interface and experience.
