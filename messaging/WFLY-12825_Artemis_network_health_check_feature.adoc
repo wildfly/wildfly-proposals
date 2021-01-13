@@ -1,0 +1,93 @@
+= Artemis network health check feature not configurable from WildFly
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:          messaging,jms,network,health
+:idseparator:       -
+
+== Overview
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-12825[WFLY-12825]
+
+=== Related Issues
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[X] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+== Requirements
+
+In order to help mitigate the possibility of split brain problems Artemis has the ability to ping a configurable list of hosts to check the health of the brokers network connection, https://activemq.apache.org/components/artemis/documentation/latest/network-isolation.html[this feature] is configured using the following parameters:
+
+* network-check-NIC
+* network-check-period
+* network-check-timeout
+* network-check-list
+* network-check-URL-list
+* network-check-ping-command
+* network-check-ping6-command
+
+None of these parameters are available from an EAP configuration.
+
+=== Hard Requirements
+
+Create the attributes to be able to configure the Artemis broker.
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+== Implementation Plan
+
+* Add an optional STRING `network-check-nic` attribute, to specify the NIC you want to use to check the network health.
+* Add a positive LONG `network-check-period` attribute, with a default value set to `5000` in milliseconds.
+* Add a positive LONG `network-check-timeout` attribute, with a default value set to `1000` in milliseconds.
+* Add a LIST of STRING `network-check-list` attribute.Make sure you understand your network topology as this is meant to check if your network is up. Using IPs that could eventually disappear or be partially visible may defeat the purpose. You can use a list of multiple IPs, any successful ping will make the server OK
+* Add a LIST of STRING `network-check-URL-list` attribute if you want to use an HTTP server to validate the network
+* Add a STRING `network-check-ping-command` attribute for testing the network in IPv4, with a default value set to `ping -c 1 -t %d %s`.
+* Add a STRING `network-check-ping6-command` attribute for testing the network in IPv6, with a default value set to `ping6 -c 1 %2$s`.
+
+Those attributes will be grouped in the `network-health` attribute group for the https://wildscribe.github.io/WildFly/18.0/subsystem/messaging-activemq/server/[/subsystem=messaging-activemq/server resource].
+
+== Test Plan
+
+The tests will check that setting the attribute values and reloading will return the new values and that the server will start properly.
+
+== Community Documentation
+
+The feature will be documented in WildFly Admin Guide (in the Messaging Configuration section).
+
+== Release Note Content
+
+See Overview and https://activemq.apache.org/components/artemis/documentation/latest/network-isolation.html[Artemis documentation].
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
