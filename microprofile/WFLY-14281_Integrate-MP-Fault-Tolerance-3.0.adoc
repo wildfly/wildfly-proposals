@@ -1,0 +1,75 @@
+= Integrate MP Fault Tolerance 3.0 into EAP
+:author:            Jason Lee
+:email:             jasondlee@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+MicroProfile 4.0 provides a major upgrade for https://github.com/eclipse/microprofile-fault-tolerance/releases/tag/3.0[MicroProfile Fault Tolerance 3.0] with changes described in its 
+https://download.eclipse.org/microprofile/staging/microprofile-fault-tolerance-3.0-RC4/microprofile-fault-tolerance-spec-3.0-RC4.html#release_notes_30[Release Notes].
+
+This component upgrade also covers the upgrade of smallrye-fault-tolerance that implements MicroProfile Fault Tolerance 3.0.
+
+== Issue Metadata
+ 
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-14281[WFLY-14281]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1594
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+* [X] Engineering
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+== Requirements
+
+* Upgrade MicroProfile Fault Tolerance to 3.0
+* Upgrade smallrye-fault-tolerance to the release that implements MicroProfile Fault Tolerance 3.0
+* Run any MicroProfile Fault Tolerance test in WildFly integration test suite
+* Run the Eclipse MicroProfile Fault Tolerance TCK without failures
+
+=== Hard Requirements
+
+* Artifact versions must be upgraded
+* Existing tests must be updated as needed and run cleanly
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+* Run existing tests 
+** wildfly/testsuite/integration/microprofile 
+** wildfly/testsuite/integration/microprofile-tck/fault-tolerance
+
+== Community Documentation
+
+* No changes needed
+
+== Release Note Content
+
+* Microprofile Fault Tolerance has been upgraded to 3.0, and the implementing Smallrye Fault Tolerance has been upgraded as well.
+
+== Breaking Changes
+The spec made several breaking changes, which can be found 
+here[https://download.eclipse.org/microprofile/staging/microprofile-fault-tolerance-3.0-RC4/microprofile-fault-tolerance-spec-3.0-RC4.html#_backward_incompatible_changes], 
+but summarized below:
+
+* Metric names and scopes changed
+* Lifecycle of circuit breakers and bulkheads is now specified
