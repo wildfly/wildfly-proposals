@@ -1,0 +1,129 @@
+= Add call-timeout attribute to the Artemis core bridge resource
+:author:            Tomas Hofman
+:email:             thofman@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:          messaging,jms
+:idseparator:       -
+
+== Overview
+
+The Artemis broker defines a call-timeout attribute on the core bridge, which sets a time out for blocking calls to the
+server. Unless modified, the call-timeout defaults to 30 seconds.
+
+It was requested by GSS to make this attribute configurable via the Wildfly/JBoss EAP management model.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14133
+
+=== Related Issues
+
+* https://issues.apache.org/jira/browse/ARTEMIS-3074
+* https://issues.redhat.com/browse/JBEAP-20326
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+[X] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* Wildfly
+* ActiveMQ Artemis
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* Make the `BridgeConfiguration#callTimeout` attribute configurable via the Wildfly management model.
+
+=== Nice-to-Have Requirements
+
+None.
+
+=== Non-Requirements
+
+None.
+
+== Implementation Plan
+
+Relevant entities:
+
+* `ActiveMQServerControl` is a part of the high level Artemis API used to control the embedded Artemis broker.
+* `ActiveMQServer` is part of a lower level Artemis API used to control the embedded Artemis broker.
+* `BridgeDefinition` is a Wildfly management model resource definition class describing the Artemis core bridge.
+* `BridgeAdd` is a Wildfly controller handler used to create the Artemis core bridges.
+
+Code changes:
+
+1. Add the `call-timeout` attribute to the `BridgeDefinition` class in the messaging-activemq subsystem.
+Depending on how this work aligns with other management model changes, this may require creating new schema version
+of the messaging management model.
+
+2. Modify the `BridgeAdd` class so that the `BridgeDefinition#call-timeout` management model value is propagated to the
+code responsible for creating the bridge. Currently, the attribute values are passed
+to the `ActiveMQServerControl#createBridge()` method (part of Artemis API). There are several variants of this method,
+none of these however accepts the `call-timeout` attribute. There are two options how to overcome this:
+
+** Add another variant of the `ActiveMQServerControl#createBridge()` method which would accept the `callTimeout` attribute.
+This is the preferred option but requires a change in the Artemis codebase.
+After discussion with AMQ team, the new variant of the `createBridge()` method would accept a single String parameter.
+The passed string would contain a JSON encoded representation of the bridge configuration.
+
+** Instead of calling `ActiveMQServerControl#createBridge()`, the bridge can be created with a lower level API
+by calling `ActiveMQServer#deployBridge()`. This has been discussed with
+the AMQ team as a viable option, but requires more code on the Wildfly side, some of which would be duplicating
+Artemis code.
+
+== Test Plan
+
+* Artemis:
+** Assuming that `ActiveMQServerControl#createBridge(String jsonString)` method is accepted by Artemis,
+add tests in Artemis testsuite which verify that the JSON encoded bridge configuration passed to the method
+is correctly decoded.
+
+* Wildfly testsuite:
+** Verify changes in Wildfly management model:
+*** verify that `call-timeout` value is read from XML configuration file,
+*** verify that the attribute is rejected when transforming to older schema version.
+** Verify that the `BridgeAdd` handler propagates the `call-timeout` value to the Artemis API
+(`ActiveMQServer.deployBridge()` or `ActiveMQServerControl.deployBridge()`)
+
+== Community Documentation
+
+* Attribute description in the Wildfly management model:
+"A blocking call timeout for this bridge."
+
+Otherwise no community documentation is needed.
+
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
+
+== Release Note Content
+
+Added the call-timeout attribute on JMS core bridge. The attribute specifies time out on blocking calls performed
+by a core bridge.
+
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature.
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list
+of features containing a few words on each, use "Bullet point: <The few words>"
+////
