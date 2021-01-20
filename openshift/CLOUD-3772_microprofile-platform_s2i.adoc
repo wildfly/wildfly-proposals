@@ -1,0 +1,78 @@
+= CLOUD-3772: Support 'microprofile-platform' Galleon layer in S2i workflow
+:author:            Jean-Francois Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/CLOUD-3772[CLOUD-3772]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1550[EAP7-1550]
+
+* https://issues.redhat.com/browse/EAP7-1396[EAP7-1396]
+
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TBD
+
+=== Testing By
+
+[ ] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* https://github.com/jbossas/eap-quickstarts[Quickstarts]
+
+* https://github.com/jboss-container-images/jboss-eap-7-openshift-image[XP S2I image builder]
+
+
+== Requirements
+
+==== Use 'microprofile-platform' Galleon layer decorator during S2I
+
+During S2I build operated from an XP 2.0 builder image, a user can reference the layer 'microprofile-platform' in GALLEON_PROVISION_LAYERS environment variable. It is usable with
+any base Galleon layer: 'datasources-web-server', 'jaxrs-server' and 'cloud server'
+
+=== Nice-to-Have Requirements
+
+* NONE
+
+=== Non-Requirements
+
+* NONE
+
+== Implementation Plan
+
+* No implementation required. We need to document and test this Galleon layer in the XP 2.0 S2I context.
+
+== Test Plan
+
+* Behave test added to repository https://github.com/jboss-container-images/jboss-eap-7-openshift-image. Test that we can provision all base layers with 
+'microprofile-platform'.
+
+* XP 2.0 Quickstarts to be tested on openshift with the combination: 'jaxrs-server' + 'microprofile-platform'
+
+== Community Documentation
+
+* The WildFly s2i https://github.com/wildfly/wildfly-s2i[documentation] will mention this Galleon layer.
+
+== Release Note Content
+
+* 'microprofile-platform' is a new Galleon decorator layer to provision Eclipse Microprofile subsystems that you 
+can use during S2I build using the GALLEON_PROVISON_LAYERS environment variable.
