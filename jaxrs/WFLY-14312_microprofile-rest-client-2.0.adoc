@@ -1,0 +1,56 @@
+= WFLY-14312 Microprofile REST Client 2.0 support
+:author:            Ron Sigal
+:email:             rsigal@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+We propose to upgrade the implementation of MicroProfile REST Client in RESTEasy
+to implement version 2.0 of the specification
+(https://github.com/eclipse/microprofile-rest-client/releases/tag/2.0).
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/WFLY-14312[WFLY-14312]
+* {issue-base-url}/EAP7-1595[EAP7-1595]
+
+=== Related Issues
+
+* {issue-base-url}/RESTEASY-2750[RESTEASY-2750]
+
+=== Dev Contacts
+
+* mailto:rsigal@redhat.com[Ron Sigal]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* RESTEasy
+
+== Requirements
+
+* RESTEasy will provide an implementation of the latest Microprofile REST Client 2.0 version.
+* Existing RESTEasy functionalities are not affected by the update (except for MP tests enforcing old MP spec behaviors, if any)
+
+=== Test Plan
+
+Build and run RESTEasy testsuite, which pulls the MP REST Client TCK in a dedicated testsuite submodule.
+
+== Community Documentation
+
+MP REST Client, currently documented in the RESTEasy User Guide, will be updated.
