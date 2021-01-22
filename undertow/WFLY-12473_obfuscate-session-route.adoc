@@ -66,6 +66,9 @@ The route must not change across server restarts when `obfuscate-session-route` 
 * the route equals `instance-id` attribute value, defined at `subsystem=undertow` management model address
 * `instance-id` default value is `"${jboss.node.name}"`, meaning that, when the attribute is kept unchanged, changes to `${jboss.node.name}`
 accross restarts will result in changes to the route
+* the server name: the server that is serving the request and, hence, providing the obfuscated route, uses its `name` attribute value as
+a salt for the hash that obfuscates the route (see Nice-to-Have Requirements below). So, if the `name` is changed across restarts, this will
+result in a change in the obfuscated route value
 
 === Nice-to-Have Requirements
 It is ideal to make it hard to find out the instance-id value via reverse engineering of the value used in route. For that, we are going
@@ -79,7 +82,7 @@ to use the server name as a salt when generating the obfuscated instance-id byte
 A few test cases will be submitted to verifying that the instance-id of Undertow subsystem is obfuscated on routing when `obfuscate-session-route` is `true`, and to
 verify that affected functionalities (namely, remote invocation via HTTP invoker) work as expected when session route is obfuscated.
 
-Also, we also need tests verifying that the route does not changes across server restarts, as this is a hard requirement.
+Also, we need tests verifying that the route does not changes across server restarts, as this is a hard requirement.
 
 == Community Documentation
 
