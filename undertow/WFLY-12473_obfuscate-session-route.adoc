@@ -79,10 +79,18 @@ to use the server name as a salt when generating the obfuscated instance-id byte
 
 == Test Plan
 
-A few test cases will be submitted to verifying that the instance-id of Undertow subsystem is obfuscated on routing when `obfuscate-session-route` is `true`, and to
-verify that affected functionalities (namely, remote invocation via HTTP invoker) work as expected when session route is obfuscated.
+A few test cases will be submitted to verify the requirements. We need to verify that the instance-id of Undertow subsystem is obfuscated on
+routing when `obfuscate-session-route` is `true`, and that the route does not change across server restarts.
 
-Also, we need tests verifying that the route does not changes across server restarts, as this is a hard requirement.
+Also, every functionality that relies on the session route must work as expected when the session route is obfuscated.
+In this regard, tests for the following features will be incremented to cover for the `obfuscate-session-route="true"` scenario:
+
+* EJB remote invocations via HTTP invoker
+* session management CLI operations
+* mod cluster load balancing
+
+The last item, mod cluster load balancing, is currently tested in QE mod cluster tests and is not part of the WildFly testsuite. Those tests
+will be updated in their current repository and will not added to WildFly testsuite.
 
 == Community Documentation
 
