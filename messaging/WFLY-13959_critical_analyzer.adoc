@@ -1,0 +1,85 @@
+= Provide a WildFly Management API operation to configure the critical analyzer
+:author:            Emmanuel hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:          messaging,jms
+:idseparator:       -
+
+== Overview
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-13959[WFLY-13959]
+
+=== Related Issues
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+Jan Kasik <jkasik@redhat.com>
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [X] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+== Requirements
+
+The https://activemq.apache.org/components/artemis/documentation/latest/critical-analysis.html[critical-analyzer feature]  can shutdown the broker under certain circumstances and there is no way of turning it off. The critical-analyzer should thus be configurable from WildFly Management API which should expose the following parameters:
+ * enable/disable the critical-analyzer
+ * the critical-analyzer policy (HALT,SHUTDOWN,LOG)
+ * the critical-analyzer timeout
+ * the critical-analyzer check period
+
+=== Hard Requirements
+
+Create the attributes to be able to configure the Artemis broker.
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+== Implementation Plan
+
+* Add an optional BOOLEAN `critical-analyzer-enabled` attribute, to enable / disable the critical-analyzer, with a default value set to `true`.
+* Add a positive LONG `critical-analyzer-check-period` attribute, with a default value set to `0` in milliseconds. If the value is set to `0` then `critical-analyzer-timeout` /2 will be used instead.
+* Add a positive LONG `critical-analyzer-timeout` attribute, with a default value set to `120000` in milliseconds.
+* Add a STRING `critical-analyzer-policy` attribute with a value in the list `LOG`, `SHUTDOWN`, `HALT`, with a default value set to `LOG`.
+
+Those attributes will be grouped in the `critical-analyzer` attribute group for the https://wildscribe.github.io/WildFly/20.0/subsystem/messaging-activemq/server/[/subsystem=messaging-activemq/server resource].
+
+
+== Test Plan
+
+The tests will check that setting the attribute values and reloading will return the new values and that the server will start properly.
+
+== Community Documentation
+
+The feature will be documented in WildFly Admin Guide (in the Messaging Configuration section).
+
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
