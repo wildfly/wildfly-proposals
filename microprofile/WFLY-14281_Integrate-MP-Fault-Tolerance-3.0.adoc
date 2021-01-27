@@ -8,39 +8,49 @@
 
 == Overview
 
-MicroProfile 4.0 provides a major upgrade for https://github.com/eclipse/microprofile-fault-tolerance/releases/tag/3.0[MicroProfile Fault Tolerance 3.0] with changes described in its 
-https://download.eclipse.org/microprofile/staging/microprofile-fault-tolerance-3.0-RC4/microprofile-fault-tolerance-spec-3.0-RC4.html#release_notes_30[Release Notes].
+MicroProfile 4.0 provides a major upgrade for https://github.com/eclipse/microprofile-fault-tolerance/releases/tag/3.0[MicroProfile Fault Tolerance 3.0] with changes described in its
+https://download.eclipse.org/microprofile/microprofile-fault-tolerance-3.0/microprofile-fault-tolerance-spec-3.0.html#release_notes_30[Release Notes].
 
-This component upgrade also covers the upgrade of smallrye-fault-tolerance that implements MicroProfile Fault Tolerance 3.0.
+This component upgrade also covers the upgrade of SmallRye Fault Tolerance that implements MicroProfile Fault Tolerance 3.0.
 
 == Issue Metadata
  
 === Issue
 
-* https://issues.jboss.org/browse/WFLY-14281[WFLY-14281]
+* https://issues.jboss.org/browse/WFLY-14281[WFLY-14281 Integrate MP Fault Tolerance 3.0]
 
 === Related Issues
 
-* https://issues.redhat.com/browse/EAP7-1594
+* https://issues.redhat.com/browse/EAP7-1594[EAP7-1594 Integrate MP Fault Tolerance 3.0 into EAP]
 
 === Dev Contacts
 
 * mailto:{email}[{author}]
+* mailto:rhusar@redhat.com[Radoslav Husar]
 
 === QE Contacts
 
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
+
 === Testing By
-* [X] Engineering
+
+* [x] Engineering
+
+* [ ] QE
 
 === Affected Projects or Components
 
+* WildFly
+
 === Other Interested Projects
+
+* MicroProfile
 
 == Requirements
 
-* Upgrade MicroProfile Fault Tolerance to 3.0
-* Upgrade smallrye-fault-tolerance to the release that implements MicroProfile Fault Tolerance 3.0
-* Run any MicroProfile Fault Tolerance test in WildFly integration test suite
+* Upgrade MicroProfile Fault Tolerance (specification) to 3.0
+* Upgrade smallrye-fault-tolerance to version 5.x (which implements the above specification)
+* Run all MicroProfile Fault Tolerance tests in WildFly integration test suite
 * Run the Eclipse MicroProfile Fault Tolerance TCK without failures
 
 === Hard Requirements
@@ -54,22 +64,23 @@ This component upgrade also covers the upgrade of smallrye-fault-tolerance that 
 
 == Test Plan
 
-* Run existing tests 
-** wildfly/testsuite/integration/microprofile 
-** wildfly/testsuite/integration/microprofile-tck/fault-tolerance
+* Run existing tests (part of the CI runs):
+** `wildfly/testsuite/integration/microprofile`
+** `wildfly/testsuite/integration/microprofile-tck/fault-tolerance`
 
 == Community Documentation
 
-* No changes needed
+* Update community documentation with the changes in the implemented specs and in thread configuration attributes.
 
 == Release Note Content
 
-* Microprofile Fault Tolerance has been upgraded to 3.0, and the implementing Smallrye Fault Tolerance has been upgraded as well.
+* Microprofile Fault Tolerance has been upgraded to 3.0, and the implementing Smallrye Fault Tolerance has been upgraded to 5.0.
 
 == Breaking Changes
-The spec made several breaking changes, which can be found 
-here[https://download.eclipse.org/microprofile/staging/microprofile-fault-tolerance-3.0-RC4/microprofile-fault-tolerance-spec-3.0-RC4.html#_backward_incompatible_changes], 
-but summarized below:
+
+The spec itself made several breaking changes, which can be found
+here[https://download.eclipse.org/microprofile/microprofile-fault-tolerance-3.0/microprofile-fault-tolerance-spec-3.0.html#_backward_incompatible_changes],
+and summarized below:
 
 * Metric names and scopes changed
 * Lifecycle of circuit breakers and bulkheads is now specified
