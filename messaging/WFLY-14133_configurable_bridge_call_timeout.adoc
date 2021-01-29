@@ -9,7 +9,10 @@
 == Overview
 
 The Artemis broker defines a call-timeout attribute on the core bridge, which sets a time out for blocking calls to the
-server. Unless modified, the call-timeout defaults to 30 seconds.
+server. Unless modified, the call-timeout defaults to 30 seconds (this is the default value defined in Artemis).
+It is possible to programmatically modify this timeout by a lower level Artemis API, but it is not currently possible
+to modify with the high level API that Wildfly currently uses to create core bridges. It is currently not possible at all to
+modify this attribute by an EAP user / operator.
 
 It was requested by GSS to make this attribute configurable via the Wildfly/JBoss EAP management model.
 
@@ -17,6 +20,7 @@ It was requested by GSS to make this attribute configurable via the Wildfly/JBos
 
 === Issue
 
+* https://issues.redhat.com/browse/EAP7-1622
 * https://issues.redhat.com/browse/WFLY-14133
 
 === Related Issues
@@ -30,12 +34,14 @@ It was requested by GSS to make this attribute configurable via the Wildfly/JBos
 
 === QE Contacts
 
+* mailto:mkopecky@redhat.com[Marek Kopecky]
+
 === Testing By
 // Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
 // Discuss with QE during the Kickoff state to decide this
-[X] Engineering
+[ ] Engineering
 
-[ ] QE
+[x] QE
 
 === Affected Projects or Components
 
@@ -82,6 +88,21 @@ none of these however accepts the `call-timeout` attribute. There are two option
 This is the preferred option but requires a change in the Artemis codebase.
 After discussion with AMQ team, the new variant of the `createBridge()` method would accept a single String parameter.
 The passed string would contain a JSON encoded representation of the bridge configuration.
++
+Update: it was requested by Artemis engineers that instead of adding another variant of
+the `ActiveMQServerControl#createBridge()` method (which there were already multiple, with very long list of attributes),
+the existing methods will be deprecated and replaced by a single method accepting a String attribute,
+where the caller would pass a JSON string representation of a `BridgeDefinition` instance. The reason why a JSON string
+is preferred over a complex object wrapper is that this API (`ActiveMQServerControl`) is also intended to be called by JMX or HTTP interfaces,
+so it has to only use primitive types parameters.
++
+`BridgeDefinition` class would be extended to contain `toJSON()` and `fromJSON()` methods so that the JSON string
+representation of an instance can be easily obtained or translated back to a `BridgeDefinition` instance.
++
+The Wildfly `BridgeAdd` handler would then construct a `BridgeDefinition` instance containing all parameters needed
+to create new bridge (this is already present in Wildfly), convert it into a JSON string, and pass to the newly created
+`ActiveMQServerControl#createBridge(String jsonString)` method.
+
 
 ** Instead of calling `ActiveMQServerControl#createBridge()`, the bridge can be created with a lower level API
 by calling `ActiveMQServer#deployBridge()`. This has been discussed with
