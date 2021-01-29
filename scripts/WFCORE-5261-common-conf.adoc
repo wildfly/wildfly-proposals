@@ -1,0 +1,104 @@
+= Add Common Script Configuration File
+:author:            James R. Perkins
+:email:             jperkins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+There is a desire to have a common script configuration file, `common.conf`. This will be called before the standalone
+or domain script configuration file. The other scripts will also invoke the common script configuration file. It allows
+things like common environment variables to be set by users regardless of the script being used.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-5261[WFCORE-5261]
+* https://issues.redhat.com/browse/WFLY-14399[WFLY-14399]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1251[EAP7-1251]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:spriadka@redhat.com[Simon Priadka]
+
+=== Testing By
+
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly Core
+* WildFly
+* Any project or component which invokes script files
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [ ] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* The common script should be invoked before the standard script configuration files.
+* This will need to work on all supported platforms.
+** `common.conf`
+** `common.conf.bat`
+** `common.conf.ps1`
+* The environment variable `COMMON_CONF` can be used to override the path to the file.
+** By default, `$JBOSS_HOME/bin/common.conf` will be used.
+* All scripts in the `$JBOSS_HOME/bin` directory will invoke this script configuration file.
+** Note this includes scripts in WildFly Core and WildFly.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+* The `common.conf`, `common.conf.bat` and `common.conf.ps1` files do not need to be present in default distribution.
+  Documentation will be added to indicate these files can be created. However, we should not add these files by default
+  as we shouldn't add more clutter to the standard bin directory.
+
+== Implementation Plan
+
+There are already common scripts, e.g. `common.sh`, which are invoked in the script files. We simply need to invoke the
+common script configuration file in these common scripts and ensure each script actually invokes the common script.
+
+== Test Plan
+
+There is likely some tests we can add to WildFly Core to ensure the scripts invoke the common script configuration in
+various locations. Other than that testing will likely be required to be manual testing.
+
+== Community Documentation
+
+Documentation will happen in standard WildFly documentation. There is currently any specific documentation about the
+script specific configuration files. It will need to be determined which section this should be defined it. There is
+mention of the scripts in the Getting Started Guide. This might be a good place or at least a place to link to further
+documentation.
+
+====
+
+====
+
+== Release Note Content
+
+There is now support for common script configurations. These script files can be used to set up the environment for all
+scripts. For example, you can set the `JAVA_HOME` in this `common.conf` script configuration to ensure the same version
+of Java is used for all scripts.
