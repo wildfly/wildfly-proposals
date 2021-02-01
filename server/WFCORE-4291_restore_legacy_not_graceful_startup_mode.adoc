@@ -45,12 +45,15 @@ For domain mode, the configuration will be extended to allow the system administ
 
 Mixed domains must continue to work, of course, so a transformer must be added to the system that, for starting servers on older versions of Wildfly, discards the `graceful-startup` attribute when the value is set to the default (`true`), or rejects it otherwise, preventing the older server from starting. This will require the administrator to make an explicit decision about non-graceful startups in a mixed domain environment. The requirement that that Domain Controller be at least the same version, if not newer, than the managed Host Controllers remains unchanged.
 
+If the administrator requests a non-graceful startup, but also specifies `start-mode=suspend`, the non-graceful startup request will be disregarded and the server(s) will start suspended.
+
 === Nice-to-Have Requirements
 
 === Non-Requirements
 
 * Persistent standalone non-graceful configuration
 * Existing system scripts will not be modified as usage of this new flag is covered already by `JBOSS_OPTS`.
+* No changes are needed with regard to OpenShift, as the liveness/readiness checks occur over the management interface, which is not affected by this change.
 
 == Test Plan
 
