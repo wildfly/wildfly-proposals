@@ -43,7 +43,7 @@ For standalone mode, this option will be exposed as a command line option only, 
 
 For domain mode, the configuration will be extended to allow the system administrator to configure how the Host Contoller will start the servers in the group. The `server-group` element will support a new `graceful-startup` attribute, whose default value will be `true`. Every server in the group will be configured to start in the same manner. 
 
-Mixed domains must continue to work, of course, so a transformer must be added to the system that, for starting older servers on versions of Wildfly discards, the `graceful-startup` attribute when the value is set to the default, or rejects it otherwise, preventing the older server from starting. This will require the administrator to make an explicit decision about non-graceful startups in a mixed domain environment. The requirement that that Domain Controller be at least the same version, if not greater, than the managed Host Controllers remains unchanged.
+Mixed domains must continue to work, of course, so a transformer must be added to the system that, for starting servers on older versions of Wildfly, discards the `graceful-startup` attribute when the value is set to the default (`true`), or rejects it otherwise, preventing the older server from starting. This will require the administrator to make an explicit decision about non-graceful startups in a mixed domain environment. The requirement that that Domain Controller be at least the same version, if not newer, than the managed Host Controllers remains unchanged.
 
 === Nice-to-Have Requirements
 
