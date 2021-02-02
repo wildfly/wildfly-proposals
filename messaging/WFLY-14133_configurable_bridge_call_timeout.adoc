@@ -66,14 +66,14 @@ None.
 
 == Implementation Plan
 
-Relevant entities:
+=== Relevant Entities
 
 * `ActiveMQServerControl` is a part of the high level Artemis API used to control the embedded Artemis broker.
 * `ActiveMQServer` is part of a lower level Artemis API used to control the embedded Artemis broker.
 * `BridgeDefinition` is a Wildfly management model resource definition class describing the Artemis core bridge.
 * `BridgeAdd` is a Wildfly controller handler used to create the Artemis core bridges.
 
-Code changes:
+=== Code Changes
 
 1. Add the `call-timeout` attribute to the `BridgeDefinition` class in the messaging-activemq subsystem.
 Depending on how this work aligns with other management model changes, this may require creating new schema version
@@ -82,50 +82,29 @@ of the messaging management model.
 2. Modify the `BridgeAdd` class so that the `BridgeDefinition#call-timeout` management model value is propagated to the
 code responsible for creating the bridge. Currently, the attribute values are passed
 to the `ActiveMQServerControl#createBridge()` method (part of Artemis API). There are several variants of this method,
-none of these however accepts the `call-timeout` attribute. There are two options how to overcome this:
-+
-** Add another variant of the `ActiveMQServerControl#createBridge()` method which would accept the `callTimeout` attribute.
-This is the preferred option but requires a change in the Artemis codebase.
-After discussion with AMQ team, the new variant of the `createBridge()` method would accept a single String parameter.
-The passed string would contain a JSON encoded representation of the bridge configuration.
-+
-Update: it was requested by Artemis engineers that instead of adding another variant of
-the `ActiveMQServerControl#createBridge()` method (which there were already multiple, with very long list of attributes),
-the existing methods will be deprecated and replaced by a single method accepting a String attribute,
-where the caller would pass a JSON string representation of a `BridgeDefinition` instance. The reason why a JSON string
-is preferred over a complex object wrapper is that this API (`ActiveMQServerControl`) is also intended to be called by JMX or HTTP interfaces,
-so it has to only use primitive types parameters.
-+
-`BridgeDefinition` class would be extended to contain `toJSON()` and `fromJSON()` methods so that the JSON string
-representation of an instance can be easily obtained or translated back to a `BridgeDefinition` instance.
-+
-The Wildfly `BridgeAdd` handler would then construct a `BridgeDefinition` instance containing all parameters needed
-to create new bridge (this is already present in Wildfly), convert it into a JSON string, and pass to the newly created
-`ActiveMQServerControl#createBridge(String jsonString)` method.
-+
-It has been decided to pursue this option.
+none of these however accepts the `call-timeout` attribute. Because of that, bridges needs to be created with a lower
+level API by calling `ActiveMQServer#deployBridge()` (rather than `ActiveMQServerControl#createBridge()`).
 
-** The second option that could be used in the case it wasn't possible to modify Artemis API as described
-in the previous section.
-+
-Instead of calling `ActiveMQServerControl#createBridge()`, the bridge can be created with a lower level API
-by calling `ActiveMQServer#deployBridge()`. This has been discussed with
-the AMQ team as a viable option, but requires more code on the Wildfly side, some of which would be duplicating
-Artemis code.
+=== Future Plans
+
+New variant of the `ActiveMQServerControl#createBridge()` method is being prepared in Artemis 2.17, which would accept
+a single String parameter, which would be a JSON string representation of a `BridgeConfiguration` instance.
+This new method should become the preferred variant,
+the other variants will be deprecated.
+
+When Artemis 2.17 will be pulled into Wildfly, the `BridgeAdd` handler should be modified to use the new JSON string
+method variant, which will simplify the code.
+
+This change will be tracked by a separate RFE.
 
 == Test Plan
 
-* Artemis:
-** Assuming that `ActiveMQServerControl#createBridge(String jsonString)` method is accepted by Artemis,
-add tests in Artemis testsuite which verify that the JSON encoded bridge configuration passed to the method
-is correctly decoded.
-
-* Wildfly testsuite:
-** Verify changes in Wildfly management model:
-*** verify that `call-timeout` value is read from XML configuration file,
-*** verify that the attribute is rejected when transforming to older schema version.
-** Verify that the `BridgeAdd` handler propagates the `call-timeout` value to the Artemis API
+* Verify changes in Wildfly management model:
+** verify that `call-timeout` value is read from XML configuration file,
+** verify that the attribute is rejected when transforming to older schema version.
+* Verify that the `BridgeAdd` handler propagates the `call-timeout` value to the Artemis API
 (`ActiveMQServer.deployBridge()` or `ActiveMQServerControl.deployBridge()`)
+* Provide an integration test which would create a bridge and verify the bridge is functional.
 
 == Community Documentation
 
