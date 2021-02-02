@@ -39,13 +39,15 @@ This RFE proposes a new, non-graceful startup mode that will allow requests to b
 
 === Hard Requirements
 
-For standalone mode, this option will be exposed as a command line option only, with the addition of a `--graceful-startup=false` option. Since the value is needed before standalone.xml is parsed, it must come from the command line. Given this lack of start mode persistence, system administrators managing standalone instances will need to update their system scripts (`/etc/init.d`, `sysvinit`, `systemd`, etc.)
+* For standalone mode, this option will be exposed as a command line option only, with the addition of a `--graceful-startup=false` option. Since the value is needed before standalone.xml is parsed, it must come from the command line. Given this lack of start mode persistence, system administrators managing standalone instances will need to update their system scripts (`/etc/init.d`, `sysvinit`, `systemd`, etc.)
 
-For domain mode, the configuration will be extended to allow the system administrator to configure how the Host Contoller will start the servers in the group. The `server-group` element will support a new `graceful-startup` attribute, whose default value will be `true`. Every server in the group will be configured to start in the same manner. 
+* For domain mode, the configuration will be extended to allow the system administrator to configure how the Host Contoller will start the servers in the group. The `server-group` element will support a new `graceful-startup` attribute, whose default value will be `true`. Every server in the group will be configured to start in the same manner. 
 
-Mixed domains must continue to work, of course, so a transformer must be added to the system that, for starting servers on older versions of Wildfly, discards the `graceful-startup` attribute when the value is set to the default (`true`), or rejects it otherwise, preventing the older server from starting. This will require the administrator to make an explicit decision about non-graceful startups in a mixed domain environment. The requirement that that Domain Controller be at least the same version, if not newer, than the managed Host Controllers remains unchanged.
+* Mixed domains must continue to work, of course, so a transformer must be added to the system that, for starting servers on older versions of Wildfly, discards the `graceful-startup` attribute when the value is set to the default (`true`), or rejects it otherwise, preventing the older server from starting. This will require the administrator to make an explicit decision about non-graceful startups in a mixed domain environment. The requirement that that Domain Controller be at least the same version, if not newer, than the managed Host Controllers remains unchanged.
 
-If the administrator requests a non-graceful startup, but also specifies `start-mode=suspend`, the non-graceful startup request will be disregarded and the server(s) will start suspended.
+* Servers restarted or reloaded will restart/reload in the same in which they were originally started: If a non-graceful start was requested, a non-graceful start will occur upon restart and reload.
+
+* If the administrator requests a non-graceful startup, but also specifies `start-mode=suspend`, the non-graceful startup request will be disregarded and the server(s) will start suspended.
 
 === Nice-to-Have Requirements
 
