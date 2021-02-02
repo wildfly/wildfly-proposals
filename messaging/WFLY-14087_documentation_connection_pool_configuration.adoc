@@ -1,0 +1,71 @@
+= Document how to configure a datasource to take advantage of new Artemis pool support
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:          jms,messaging
+:idseparator:       -
+
+== Overview
+
+Since Apache Artemis 2.16 the JDBC Jjournal has been updated to properly use a connection poool. This proposal is to take that change into account and look into the consequences form WildFly integration point of view.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-14087[WFLY-14087]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-13226[WFLY-13226]
+* https://issues.apache.org/jira/browse/ARTEMIS-2823[ARTEMIS-2823]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:mkopecky@redhat.com[Marek Kopecky]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [X] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* Apache Artemis
+
+=== Other Interested Projects
+
+== Requirements
+
+With Apache Artemis 2.16, proper support for a JDBC pool was introduced. While apache Artemis uses https://commons.apache.org/proper/commons-dbcp/configuration.html[Apache Commons DBCP], it allows a better support for other pools too.
+This change requires to provide proper configuration of the Ironjacamar Datasource for good perfomance. Thus we need to document this in our community doc.
+Take into account https://github.com/apache/activemq-artemis/pull/3204#issuecomment-696183450[this comment on the PR].
+
+=== Hard Requirements
+
+WildFly was already providing a connection pool to Artemis but now we need to ensure that it is still working properly with our test suite, eventually reconfiguring the pool to match the tests behaviour.
+We need to check that this new behaviour from Artemis doesn't introduce regression.
+We also need to provide an up to date documentation to help our users with the configuration of this pool.
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+== Test Plan
+
+Reuse the existing test suite
+
+== Community Documentation
+The feature will be documented in WildFly Admin Guide (in the Messaging Configuration section).
