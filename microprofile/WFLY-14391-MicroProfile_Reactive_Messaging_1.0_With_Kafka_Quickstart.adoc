@@ -1,0 +1,69 @@
+= WFLY-14392 Quickstart for MicroProfile Reactive Messaging 1.0 with Kafka
+:author:            Kabir Khan
+:email:             kkhan@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This RFE provides a new quickstart and guide for MicroProfile Reactive Messaging 1.0 use in
+WildFly / JBoss EAP. The example will cover basic functionalities of MicroProfile
+Reactive Messaging 1.0. In addition to in-memory streams, streams backed by Apache Kafka will be used.
+Docker will be used to provide the Kafka functionality on bare metal. In OpenShift, Kafka will be provided
+via the AMQ Streams operator.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14391[WFLY-14391 - Quickstart for Reactive Messaging 1.0 with Kafka]
+* https://issues.redhat.com/browse/EAP7-1518[EAP7-1518 - Quickstart for Reactive Messaging 1.0 with Kafka]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-13640[WFLY-13640 - Provide Support for MicroProfile Reactive Messaging 1.0 for Kafka]
+
+=== Dev Contacts
+
+* mailto:kkhan@redhat.com[Kabir Khan]
+
+=== QE Contacts
+
+* TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+[ ] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* Quickstarts
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* start a Kafka instance
+** On bare metal this will be done via Docker (more specifically `docker-compose` since we need to start a Zookeeper instance in addition to the Kafka instance)
+** On OpenShift we will leverage the AMQ Streams
+* Kafka connection configuration via MP Config
+* Using `@Incoming` and `@Outgoing` annotations on methods to map the streams.
+** Showcase some alternative method signatures for these methods
+* Use Reactive Streams Operators to modify streams
+
+=== Non-Requirements
+
+== Test Plan
+
+The QuickStart will have Arquillian tests to test the bare metal case.
+
+== Community Documentation
+
+Covered by the quickstart README file.
