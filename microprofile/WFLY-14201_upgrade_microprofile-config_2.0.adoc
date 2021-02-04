@@ -44,7 +44,7 @@ This component upgrade also covers the upgrade of smallrye-config that implement
 * Run any MicroProfile Config test in WildFly integration test suite
 * Run the Eclipse MicroProfile Config 2.0 TCK without failures
 * Adjust tests to work as needed
-* Adjust QuickStarts to address backward compatibility issues (tracked in https://issues.redhat.com/browse/WFLY-14398[WFLY-14398]
+* Adjust QuickStarts to address backward compatibility issues (tracked in https://issues.redhat.com/browse/WFLY-14398[WFLY-14398])
 
 
 === Non-Requirements
