@@ -1,0 +1,188 @@
+= [WFCORE-5278] Dynamically issuing a JWT Token during the Elytron authentication process
+:author:            Sonia Zaldana Calles
+:email:             szaldana@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+JSON Web Token (JWT), as defined by RFC7519, is a compact, URL-safe means
+of representing claims to be transferred between two parties. Security tokens in a
+JWT format offer a lightweight and interoperable way to propagate identities
+across different services.
+
+This task involves two main objectives: adding support to
+dynamically issue JWT tokens and generate JWT tokens as part of the
+authentication process to attach them as a private credential to the established
+security identity.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-5278[WFCORE-5278]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-14409[WFLY-14409]
+* https://issues.redhat.com/browse/ELY-2083[ELY-2083]
+* https://issues.jboss.org/browse/EAP7-1315[EAP7-1315] (This task is just one piece of the RFE, so it's not a full RFE.
+This work will later be pulled into a full RFE.)
+
+
+=== Dev Contacts
+
+* mailto:szaldana@redhat.com[Sonia Zaldana]
+
+=== QE Contacts
+
+N/A
+
+=== Testing By
+
+N/A
+
+This task is not a full RFE, so QE won't be needed yet.
+
+=== Affected Projects or Components
+
+* Elytron
+
+=== Other Interested Projects
+
+N/A
+
+== Requirements
+
+=== Hard Requirements
+
+==== Token Issuance API
+
+One of the two main objectives of this task is to add support to dynamically issue JWT tokens. Aside from token issuance,
+we should also add support to parse JWT tokens by decrypting signed tokens, verifying expiration date and issued at date,
+and parsing and returning claims sets.
+
+Note that we are not writing the API to issue tokens or parse them, as this functionality is already available in the
+https://github.com/smallrye/smallrye-jwt[SmallRye
+JWT] library - an implementation of Eclipse MicroProfile JWT RBAC. Since Elytron has an existing dependency to SmallRye JWT,
+this task uses SmallRye JWT to satisfy the token issuance API
+requirements.
+
+==== JWT Token Contents
+
+The second objective detailed in this task is to create tokens during the authentication process and add them as a
+private credential for the established security identity. During the authentication process, an access token will
+be generated with the following claims and values:
+
+* *Issuer*: The server issuing the token
+* *Subject claim*: The principal's name
+* *Expiration Time*: 5 minutes (300 seconds) which is the default lifespan used in the SmallRye JWT library.
+* *Not Before*: The time the JWT was issued
+* *Issued at*: The time the JWT was issued
+* *Groups*: The security identity's roles
+
+After issuing the access token, it can also be stored as a private credential for the security identity, where it can be
+fetched and used in various scenarios including SSO, server to server communication, transactions, etc.
+
+==== Signing and Encrypting the Tokens
+
+All tokens will be signed with a private RSA key of size 2048 bits or larger.
+Additionally, they will be signed using the `RS256` algorithm.
+
+Moreover, the tokens will be encrypted using the `RSA-OAEP-256` algorithm
+with a public RSA key of size 2048 bits or larger.
+
+These are the default algorithms used in the Smallrye JWT library. You can find more information
+https://smallrye.io/docs/smallrye-jwt/generate-jwt.html#_sign_the_claims[here]
+
+==== Token Configuration
+
+The token configuration consists of specifying a signing key, secret key and/or private & public key-pair.
+Since this task is not a full RFE, it will not incur any subsystem changes for this configuration.
+Instead, a unique key-pair will be automatically generated upon starting the server and will be stored
+in a keystore in the default location  ``$JBOSS_HOME/standalone/configuration/tokenKeystore.jks``. The name for the
+default keystore will be ``tokenKeystore``. The default name for the key-pair alias will be ``server``.
+Additionally, the server should also automatically  generate a signing key with the alias ``server-sign``
+and store it in this keystore.
+
+Note that this token configuration will prevail for all tokens generated for
+established identities.
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+The token configuration consists of specifying a signing key, secret key and/or private & public key-pair.
+This task relies on the generated keystore mentioned in the hard requirements above.
+The following discussion entails subsystem changes that will come with the full RFE that will provide
+additional token configuration options, but is not included in this task and therefore is a non-requirement.
+
+A new component ``token-configuration`` will be added to the Elytron subsystem. The purpose of this element
+is to hold information regarding encryption and signing keys to dynamically issue tokens
+during the authentication process. Note that this configuration will prevail for all tokens generated for
+established identities.
+
+The new ``token-configuration`` element will have the following attributes:
+
+* ``keystore``: A reference to an Elytron keystore containing the keys to encrypt the token. This value will be set
+by default to ``tokenKeystore`` assuming this keystore was automatically configured when the server starts up. Alternatively,
+users can modify this value to their own keystore.
+* ``keypair-alias``: The alias for the key-pair when using asymmetric encryption. Set to ``server`` by default.
+* ``signing-key-alias``: The alias for the signing key in the keystore. Set to ``server-sign`` by default.
+* ``secret-key-alias``: The alias for the secret key when using symmetric encryption. This value is undefined by
+default, but users have the ability to undefine the ``keypair-alias`` attribute and define this attribute if they wish to use
+symmetric encryption.
+
+NOTE: Keys may be formatted in any of the following formats, specified in order of precedence: Public Key Cryptography
+Standards #8 (PKCS #8) PEM, JSON Web Key (JWK) or JSON Web Key Set (JWKS), or Base64 URL Encoded JSON Web Key (JWK)
+or JSON Web Key Set (JWKS).
+
+Consequently, the default values for token-configuration are as follows:
+[source]
+----
+/subsystem=elytron/token-configuration=DefaultTokenConfiguration:read-resource()
+{
+    "outcome" => "success",
+    "result" => {
+        "keystore" => "tokenKeystore",
+        "keypair-alias" => "keypair-alias",
+        "signing-key-alias" => "alias-signing",
+        "secret-key-alias" => undefined
+    }
+}
+----
+
+Alternatively, as opposed to having a single ``token-configuration`` element that prevails for all token issuance,
+users could configure individual ``token-configuration`` elements and use them for specific use cases. For example,
+if the user wishes to use a different keystore for token issuance when using SSO, they could configure it as follows:
+
+First, configure a ``token-configuration`` element using their own keystore as follows:
+[source]
+-----
+/subsystem=elytron/token-configuration=myConfig:add(keystore=myKeystore, keypair-alias=myKeyPair, signing-key-alias=mySigning)
+-----
+
+Then, for append the ``token-configuration`` element to the single sign on element as follows:
+[source]
+----
+/subsystem=undertow/application-security-domain=exampleDomain/setting=single-sign-on:add(key-store=example-keystore, key-alias=localhost, domain=127.0.0.1, credential-reference={clear-text=secret},
+token-configuration=myConfig)
+----
+
+
+== Test Plan
+
+* WildFly Elytron test suite: All token issuance API utilities added to the WildFly Elytron will also be accompanied with their own unit tests.
+
+== Community Documentation
+
+N/A As this task will not expose anything to users.
+
+== Release Note Content
+
+N/A for the same reason as above
