@@ -12,21 +12,19 @@ The Artemis broker defines a call-timeout attribute on the core bridge, which se
 server. Unless modified, the call-timeout defaults to 30 seconds (this is the default value defined in Artemis).
 It is possible to programmatically modify this timeout by a lower level Artemis API, but it is not currently possible
 to modify with the high level API that Wildfly currently uses to create core bridges. It is currently not possible at all to
-modify this attribute by an EAP administrator.
+modify this attribute by a Wildfly administrator.
 
-It was requested by GSS to make this attribute configurable via the Wildfly/JBoss EAP management model.
+It was requested to make this attribute configurable via the Wildfly management model.
 
 == Issue Metadata
 
 === Issue
 
-* https://issues.redhat.com/browse/EAP7-1622
 * https://issues.redhat.com/browse/WFLY-14133
 
 === Related Issues
 
 * https://issues.apache.org/jira/browse/ARTEMIS-3074
-* https://issues.redhat.com/browse/JBEAP-20326
 
 === Dev Contacts
 
