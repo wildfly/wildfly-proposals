@@ -76,7 +76,7 @@ None.
 1. Add the `call-timeout` attribute to the `BridgeDefinition` class in the messaging-activemq subsystem.
 This also requires creating new schema version of the messaging management model (version 13).
 +
-Attribute is of type long and its' default value is 30000 ms. The default value is defined in the Artemis code base
+Attribute is of type long, unit is milliseconds, and its' default value is 30000 ms. The default value is defined in the Artemis code base
 (`this.callTimeout = 30000L;` in `BridgeDefinition` constructor) as well as in the Wildfly management model definition
 of the attribute.
 
