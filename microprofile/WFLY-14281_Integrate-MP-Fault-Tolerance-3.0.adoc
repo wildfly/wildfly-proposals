@@ -13,6 +13,13 @@ https://download.eclipse.org/microprofile/microprofile-fault-tolerance-3.0/micro
 
 This component upgrade also covers the upgrade of SmallRye Fault Tolerance that implements MicroProfile Fault Tolerance 3.0.
 
+The spec itself made several backward incompatible changes, which can be found
+https://download.eclipse.org/microprofile/microprofile-fault-tolerance-3.0/microprofile-fault-tolerance-spec-3.0.html#_backward_incompatible_changes[here],
+and summarized below:
+
+* Metric names and scopes changed
+* Lifecycle of circuit breakers and bulkheads is now specified
+
 == Issue Metadata
  
 === Issue
@@ -34,9 +41,9 @@ This component upgrade also covers the upgrade of SmallRye Fault Tolerance that 
 
 === Testing By
 
-* [x] Engineering
+* [ ] Engineering
 
-* [ ] QE
+* [x] QE
 
 === Affected Projects or Components
 
@@ -75,12 +82,3 @@ This component upgrade also covers the upgrade of SmallRye Fault Tolerance that 
 == Release Note Content
 
 * Microprofile Fault Tolerance has been upgraded to 3.0, and the implementing Smallrye Fault Tolerance has been upgraded to 5.0.
-
-== Breaking Changes
-
-The spec itself made several breaking changes, which can be found
-here[https://download.eclipse.org/microprofile/microprofile-fault-tolerance-3.0/microprofile-fault-tolerance-spec-3.0.html#_backward_incompatible_changes],
-and summarized below:
-
-* Metric names and scopes changed
-* Lifecycle of circuit breakers and bulkheads is now specified
