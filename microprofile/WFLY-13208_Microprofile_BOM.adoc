@@ -1,0 +1,68 @@
+= Microprofile BOM
+:author:            Eduardo Martins
+:email:             emartins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The development of a new Microprofile BOM, providing an easy way to manage Maven dependencies to the Microprofile artifacts used by WildFly/EAP, necessary to build and debug/test Microprofile apps.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-13208[WFLY-13208]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1459[EAP7-1459]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* BOMs, Quickstarts
+
+=== Other Interested Projects
+
+* NONE
+
+== Requirements
+
+=== Hard Requirements
+
+* A BOM Builder should be added to a new *microprofile* directory in the WildFly/EAP BOMs project, to build the Microprofile BOM using the WildFly BOM Builder Maven plugin.
+* The Microprofile BOM's Maven coordinate *groupId* should be the same as existent non clients BOMs.
+* The Microprofile BOM's Maven coordinate *artifactId* should be *wildfly-microprofile* for WildFly, and *jboss-eap-xp-microprofile* for EAP.
+* The Microprofile BOM should only include the Microprofile artifacts managed by WildFly/EAP, and any other WildFly/EAP managed artifact, which the Microprofile artifacts depends on.
+
+
+=== Nice-to-Have Requirements
+
+* NONE
+
+=== Non-Requirements
+
+* NONE
+
+== Test Plan
+
+* It should be tested that the Microprofile BOM is included in every WildFly/EAP build, and manages only the expected artifacts.
+
+== Community Documentation
+
+* NONE
