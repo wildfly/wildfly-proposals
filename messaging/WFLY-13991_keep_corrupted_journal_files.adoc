@@ -1,0 +1,68 @@
+= Keep corrupted Journal filesin Artemis.
+:author:            Emmanuel Hugonnet
+:email:             your.email@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:          messaging,jms
+:idseparator:       -
+
+== Overview
+
+
+When a corrupted artemis journal file is seen Artemis shuts down WildFLy, but before it does that it deletes the corrupted file. This means that no after the event analysis/investigation can be done as the corrupted journal file is gone.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-13991[WFLY-13991]
+
+=== Related Issues
+
+* https://issues.apache.org/jira/browse/ARTEMIS-2939[ARTEMIS-2939]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+
+* [X] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* ActiveMQ Artemis (finished)
+
+=== Other Interested Projects
+
+== Requirements
+
+* The journalMaxAtticFiles parameter of ActiveMQ Artemis configuration must be configurable via WildFly management model.
+
+== Implementation Plan
+
+The `journal-max-attic-files` attribute of type INT with a default value of '10' will be added to messaging server resource.
+This defines the number of files that will be kept if there is an error. If a value of `0` is set then no file will be kept. +
+The files will be stored under the *journal* folder in *$WILDFLY_HOME/standalone/data/activemq/journal/* by default.
+
+CLI to set the attribute:
+
+----
+/subsystem=messaging-activemq/server=default:write-attribute(name=journal-max-attic-files, value=10)
+----
+
+== Test Plan
+
+* The functionality of the journalMaxAtticFiles attribute on Artemis side is covered by
+https://github.com/apache/activemq-artemis/commit/fdfc581/
+
+* Changes in Wildfly management model will be covered in WF testsuite.
+
+== Community Documentation
+
+* Covered by attribute description in management model.
