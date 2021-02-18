@@ -1,0 +1,98 @@
+= Allow to dump Artemis journal to file using WildfFly Management API
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:          jms,messaging
+:idseparator:       -
+
+== Overview
+
+For debugging and investigation purposes it would useful to have a WildFly management API operation which would dump content of Artemis journal directory.
+This new operation would print content of journal to a file. It would take advantage of https://activemq.apache.org/components/artemis/documentation/latest/data-tools.html[Artemis data tools print command].
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-6660[WFLY-6660]
+
+=== Related Issues
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:jbliznak@redhat.com[Jan Bliznak]]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+
+=== Other Interested Projects
+
+== Requirements
+
+The new operation 'data-print' will added  to the https://docs.wildfly.org/22/wildscribe/subsystem/messaging-activemq/server/[/subsystem=messaging-activemq/server resource]. It will print a report about journal records and summary of existent records, as well a report on paging. This operation shouldn't be executed against a running broker.
+
+=== Hard Requirements
+
+Provide a new 'data-print' operation that will return a stream (that can be saved to a file) with the following parameters:
+ * secret a Boolean parameter with a default value of 'false' to print the data structure without showing the your data.
+
+=== Nice-to-Have Requirements
+
+ Add an `archive` Boolean parameter to return a zip of the journal dump instead of the plain text report to reduce network usage.
+
+=== Non-Requirements
+
+This operation will only work on the embedded borker and is not by any mean a way to get data from another Artemis installation (standalone or embeded) using the configuration of the broker it is run against.
+Support for JDBC journal is not a requirement as there is no JDBC connection available on admin-mode.
+
+== Implementation Plan
+
+Provide a new RuntimeOnlyHandler that will execute only in `admin-mode`. It will work in the 'same' way as the `org.wildfly.extension.messaging.activemq.ExportJournalOperation` to invoke the Artemis command: ` org.apache.activemq.artemis.cli.commands.tools.PrintData`.
+It will reuse the configuration from the embedded broker to find the `bindings`, `messages` and `paging` directories.
+
+CLI to read the report:
+----
+attachment display --operation=/subsystem=messaging-activemq/server=default:print-data()
+----
+
+CLI to download a zipped version of the report:
+----
+attachment save --file=/home/ehsavoie/tmp/test.zip --operation=/subsystem=messaging-activemq/server=default:print-data(archive=true)
+----
+
+== Test Plan
+Create a simple test class `org.jboss.as.test.integration.messaging.mgmt.PrintDataTestCase` with two test :
+
+* testPrintFullData:
+    - send a message to a queue, 
+    - restart in admin-mode
+    - dump the journal 
+    - check that it displays the queue, the correct number of total messages and the correct number of message in the queue.
+* testPrintSafeData:
+    - send a message to a queue
+    - restart in admin-mode
+    - dump the journal in secret mode 
+    - check that it displays the correct number of total messages and the correct number of message in the queue but doesn't display the queue infos.
+
+
+== Community Documentation
+
+The feature will be documented in WildFly Admin Guide (in the Messaging Configuration section).
+
+== Release Note Content
+
+Adding an operation to be able to get  a dump of the embedded Artemis journal for investigation purpose.
+
