@@ -1,0 +1,80 @@
+= Include Openshift Instructions in EAP non-CD Quickstarts READMEs
+:author:            Eduardo Martins
+:email:             emartins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently Quickstarts READMEs includes Openshift instructions only for JBoss EAP Continuous Delivery (CD) releases. The READMEs for Quickstarts that run on Openshift (those included in JBoss EAP CD releases) should also contain Openshift instructions for EAP non-CD releases too, as the Openshift image is released.
+This proposal also specifies a new naming scheme for the EAP Quickstarts published source repositories, to support multiple branches per release.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-12969[WFLY-12969]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1409[EAP7-1409]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:szhantem@redhat.com[Sultan Zhantemirov]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[ ] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+
+* EAP Quickstarts
+
+=== Other Interested Projects
+
+* NONE
+
+== Requirements
+
+=== Hard Requirements
+
+* For a JBoss EAP *non-CD* release, the README.adoc for each *Openshift compatible* Quickstart should include:
+** a "Getting Started with OpenShift" section, similar to the one included for JBoss EAP CD releases
+** a "Prepare OpenShift for Quickstart Deployment" section, similar to the one included for JBoss EAP CD releases
+** an "Import the Latest JBoss EAP for OpenShift Image Streams and Templates" section, similar to the one included for JBoss EAP CD releases
+** a "Deploy the JBoss EAP for OpenShift Source-to-Image (S2I) Quickstart to OpenShift" section, similar to the one included for JBoss EAP CD releases
+** a "OpenShift Post Deployment Tasks" section, which as the name suggests should describe post deployment tasks, for instance how to find the quickstart application URLs
+
+* For a JBoss EAP *non-CD* release, the README.adoc for each *Openshift incompatible* Quickstart should include:
+** an "OpenShift Compatibility" section indicating the Quickstart is *not compatible* with Openshift.
+
+* For a JBoss EAP *non-CD* release, there should be a single repository branch of Quickstarts sources, published at https://github.com/jboss-developer/jboss-eap-quickstarts[JBoss Developer's EAP Quickstarts Repository], containing both OpenShift compatible and incompatible Quickstarts:
+** The branch *name* should match the name of the related server branch at JBoss EAP's Repository, e.g. "7.3.x"
+** To help users find out which Quickstarts are OpenShift compatible (or not), the root README's table of quickstarts should include a new column named "OpenShift Compatible", with a value of "Yes" for an OpenShift compatible Quickstart, and a value of "No" otherwise.
+
+=== Nice-to-Have Requirements
+
+* NONE
+
+=== Non-Requirements
+
+* NONE
+
+== Test Plan
+
+* 
+
+== Community Documentation
+
+* The new sections should be to the 'shared-docs' directory of the WildFly Quickstarts repository, but only included on the READMEs built for JBoss EAP releases.
