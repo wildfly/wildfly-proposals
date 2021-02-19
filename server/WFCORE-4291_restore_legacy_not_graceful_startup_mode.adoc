@@ -1,0 +1,75 @@
+= WFCORE-4291 - Restore legacy (not "graceful") startup mode
+:author:            Jason Lee
+:email:             jasondlee@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Since Wildfly 11, the server starts up in suspended mode, thus rejecting all incoming requests, until the server has completed booting, at which point the state is set to `RUNNING` and requests are accepted. While this helps ensure that the system is in a stable state before allowing any work to happen, it does have a negative effect on some deployment scenarios reported by Wildfly users. 
+
+One example scenario is this: if Deployment A depends -- at startup -- on external configuration, fetched by an HTTP request to Deployment B, Deployment A will fail to start as the HTTP request for that configuration will be rejected by the starting server.
+
+This RFE proposes a new, non-graceful startup mode that will allow requests to be handled much earlier in the application server boot process. In standalone mode, the system administrator can choose to enable this startup mode for that server, and in domain mode, the server group can be configured similarly, applying the configuration choice to all servers in that domain. Affected subsystems include Undertow, mod_cluster, EJB, batch, transactions, and concurrency.
+
+== Issue Metadata
+
+=== Issue
+* https://issues.jboss.org/browse/WFCORE-4291[WFCORE-4291]
+
+=== Related Issues
+* https://issues.redhat.com/browse/EAP7-1320[EAP7-1320]
+
+=== Dev Contacts
+* mailto:{email}[{author}]
+
+=== QE Contacts
+* mailto:jkasik@redhat.com[Jan Kasik]
+
+=== Testing By
+* [X] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* For standalone mode, this option will be exposed as a command line option only, with the addition of a `--graceful-startup=false` option. Since the value is needed before standalone.xml is parsed, it must come from the command line. Given this lack of start mode persistence, system administrators managing standalone instances will need to update their system scripts (`/etc/init.d`, `sysvinit`, `systemd`, etc.)
+
+* For domain mode, the configuration will be extended to allow the system administrator to configure how the Host Contoller will start the servers in the group. The `server-group` element will support a new `graceful-startup` attribute, whose default value will be `true`. Every server in the group will be configured to start in the same manner. 
+
+* Mixed domains must continue to work, of course, so a transformer must be added to the system that, for starting servers on older versions of Wildfly, discards the `graceful-startup` attribute when the value is set to the default (`true`), or rejects it otherwise, preventing the older server from starting. This will require the administrator to make an explicit decision about non-graceful startups in a mixed domain environment. The requirement that that Domain Controller be at least the same version, if not newer, than the managed Host Controllers remains unchanged. _NOTE: Using this feature in a mixed domain with hosts running EAP 6.x or older is not supported._
+
+* Servers restarted or reloaded will restart/reload in the same in which they were originally started: If a non-graceful start was requested, a non-graceful start will occur upon restart and reload.
+
+* If the administrator requests a non-graceful startup, but also specifies `start-mode=suspend`, the non-graceful startup request will be disregarded and the server(s) will start suspended.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+* Persistent standalone non-graceful configuration
+* Existing system scripts will not be modified as usage of this new flag is covered already by `JBOSS_OPTS`.
+* No changes are needed with regard to OpenShift, as the liveness/readiness checks occur over the management interface, which is not affected by this change.
+
+== Test Plan
+
+* A test (NonGracefulStartTestCase) has been add to wildfly/wildfly to exercise the reporter's use case (two apps deployed to the same server that need to talk to each other during startup/deploy).
+
+== Community Documentation
+
+* Describe new --graceful-startup CLI param in https://docs.wildfly.org/21/Admin_Guide#other-command-line-parameters[section 11.1.2]
+* Add a new section describing non-graceful startup to https://docs.wildfly.org/21/Admin_Guide#Suspend[section 11.2]
+* Update the Undertow subsystem documentation to reflect that queue-requests-on-start behavior will be slightly and subtly different
+  ** If a non-graceful startup is requested, and the queue-requests-on-start attribute is not set, requests will NOT be queued despite the default value of true for the property.
+  In the instance of a non-graceful startup, non-graceful requires non-queued requests.
+  ** If non-graceful is configured, but queue-requests-on-start is explicitly set to true, then requests will be queued, effectively disabling non-graceful mode
+
+== Release Note Content
+
+A new --graceful-startup option has been added to allow the server (either standalone or servers in a group in domain mode) to start answering requests before the entire it has finished booting.
