@@ -1,0 +1,87 @@
+= Unable to set datasource class / driver class at the pool level on OpenShift
+:author:            Ivo Studensky
+:email:             istudens@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+When not using a <driver ...> specification (explicit driver entries are required only when deploying drivers as modules which is a more complex scenario that is not usually necessary), it is mandatory to set the xa-datasource-class at the pool level for each <xa-datasource ...>.
+
+When not using a <driver ...> specification, for non-XA <datasource ...> pools, it is sometimes necessary (not always required since a default driver class is specified in JDBC 4 compliant implementations but this may need to be overridden in some cases) to explicitly set a <driver-class> or <datasource-class> at the pool level.
+
+No environment variables exist to support configuring the connection class at the pool level so all XA pools and some non-XA pools require custom configuration via scripts that should not be necessary in the most common cases.
+
+=== Proposed solution
+
+Introduce new environment variables which will be processed by s2i datasource scripts and which will add relevant configuration items to a datasource.
+* `<PREFIX>_DRIVER_CLASS` processed to `<driver-class>`
+* `<PREFIX>_DATASOURCE_CLASS` processed to `<datasource-class>`
+* `<PREFIX>_XA_DATASOURCE_CLASS` processed to `<xa-datasource-class>`
+where `<PREFIX>` is a prefix taken from `DATASOURCES` environment variable.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/CLOUD-3674[CLOUD-3674]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/JBEAP-19838[JBEAP-19838]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+
+* [x] Engineering
+
+* [] QE
+
+=== Affected Projects or Components
+
+* wildfly-cekit-modules
+
+=== Other Interested Projects
+
+* wildfly-s2i
+** https://github.com/wildfly/wildfly-s2i/blob/master/doc/datasources.md[datasources.md] needs to be updated with new environment variables
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [ ] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [x] OpenShift s2i
+
+* [ ] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* add 3 new environment variables `<PREFIX>_DRIVER_CLASS`, `<PREFIX>_DATASOURCE_CLASS` and `<PREFIX>_XA_DATASOURCE_CLASS` where `<PREFIX>` is a prefix taken from a `DATASOURCES` environment variable.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+* The tests will be added to https://github.com/wildfly/wildfly-cekit-modules[wildfly-cekit-modules] (jboss/container/wildfly/launch/datasources/test/datasource/configure.bats).
+* It will verify that each environment variable is correctly processed to the corresponding configuration item in resulting standalone.xml.
+
+== Community Documentation
+
+In wildfly-s2i project the https://github.com/wildfly/wildfly-s2i/blob/master/doc/datasources.md[datasources.md] needs to be updated with new environment variables
+
+== Release Note Content
+TODO
