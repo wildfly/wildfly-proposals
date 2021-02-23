@@ -1,0 +1,73 @@
+= Integrate MicroProfile OpenAPI 2.0
+:author:            Paul Ferraro
+:email:             paul.ferraro@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WFLY-14245 proposes to upgrade WildFly's MicroProfile OpenAPI support from 1.1.2 to https://download.eclipse.org/microprofile/microprofile-open-api-2.0/microprofile-openapi-spec.html[2.0].
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-14245
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TODO
+
+=== Testing By
+
+[ ] Engineering
+
+[X] QE
+
+=== Affected Projects or Components
+
+None.
+
+=== Other Interested Projects
+
+None.
+
+== Requirements
+
+=== Hard Requirements
+
+* Upgrade the MicroProfile OpenAPI API and TCK modules to 2.0
+* Upgrade smallrye-open-api to 2.1.x
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+* MicroProfile OpenAPI 2.0 contains https://download.eclipse.org/microprofile/microprofile-open-api-2.0/microprofile-openapi-spec-2.0.html#_incompatible_changes[incompatible changes] with the previous 1.1 release.
+
+== Implementation Plan
+
+* Upgrade requires no changes to the existing microprofile-openapi-smallrye subsystem.
+* Upgrade will likely happen in a feature branch tracking other MicroProfile 4.0 upgrades.
+* Upgrade requires MicroProfile Config 2.0.
+
+== Test Plan
+
+* Run existing subsystem tests
+* Run existing microprofile-openapi TCK tests
+* Run existing microprofile-openapi integration tests
+* Update and run existing QE tests
+
+== Community Documentation
+
+* None
+
+== Release Note Content
+
+MicroProfile OpenAPI support updated to version 2.0.
