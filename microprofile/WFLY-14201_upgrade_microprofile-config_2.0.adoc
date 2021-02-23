@@ -1,0 +1,81 @@
+= Upgrade MicroProfile Config to 2.0
+:author:            Kabir Khan
+:email:             kkhan@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          microprofile,config,observability
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+
+MicroProfile 4.0 provides a major upgrade for https://github.com/eclipse/microprofile-config/releases/tag/2.0[MicroProfile Config 2.0] with changes described in its https://download.eclipse.org/microprofile/staging/microprofile-config-2.0/microprofile-config-spec-2.0.html#release_notes_20[Release Notes].
+
+This component upgrade also covers the upgrade of smallrye-config that implements MicroProfile Config 2.0.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-14201[WFLY-14201]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1591[EAP7-1591]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TODO
+
+=== Testing By
+
+[X] Engineering
+[ ] QE
+
+== Requirements
+
+* Upgrade MicroProfile Config to 2.0
+* Upgrade smallrye-config to the release that implements MicroProfile Config 2.0
+* Run any MicroProfile Config test in WildFly integration test suite
+* Run the Eclipse MicroProfile Config 2.0 TCK without failures
+* Adjust tests to work as needed
+* Adjust QuickStarts to address backward compatibility issues (tracked in https://issues.redhat.com/browse/WFLY-14398[WFLY-14398])
+
+
+=== Non-Requirements
+
+== Implementation Plan
+As several other MP subsystems rely on MicroProfile 2.0, and MicroProfile config 2.0 contains breaking changes from
+the current MicroProfile Config 1.4, this work will take place in a feature branch containing updates to all subsystems
+that are part of MicroProfile Platform 4.0.
+
+== Test Plan
+
+TODO check this!
+This upgrade does not introduce any changes that requires new tests in WildFly. Those are covered by the TCK.
+
+* Existing tests will need updating to implement new methods defined in interfaces in the MicroProfile Config API.
+* Run the WildFly integration microprofile test suite and checks there are no failures related to MicroProfile Config tests.
+* Run the `microprofile-tck/config` module from WildFly integration test suite and check that there are no failures.
+
+== Community Documentation
+
+* No community documentation is required for this upgrade
+
+
+== Breaking Changes
+The main change affecting users is that the https://github.com/eclipse/microprofile-config/blob/2.0/api/src/main/java/org/eclipse/microprofile/config/Config.java[Config] interface introduces some new methods:
+
+----
+    ConfigValue getConfigValue(String propertyName);
+    <T> Optional<Converter<T>> getConverter(Class<T> forType);
+----
+
+It does introduce a few more default methods, but the above ones do not have implementations and so will cause problems for users who are implementing this interface in their applications. They will need to provide implementations of these methods.
+
+
