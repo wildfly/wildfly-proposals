@@ -1,0 +1,98 @@
+= WFLY-14277 Upgrade to support  MicroProfile JWT 1.2
+:author:            Darran Lofthouse
+:email:             darran.lofthouse@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The MicroProfile JWT 1.2 release is only a minor upgrade upgrading from MicroProfile 1.1 with small enhancements to APIs and supported configuration options.
+
+The full list of changes in this release can be found at:
+ * https://github.com/eclipse/microprofile-jwt-auth/releases/tag/1.2
+
+Without duplicating the list from the specification release notes, each of the updates to the specification are implemented by the SmallRye JWT project - for
+this reason it is anticipated this enhancement will be delivered as a set of component upgrades.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14277[WFLY-14277]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1596[EAP7-1596]
+* https://issues.redhat.com/browse/ELY-2068[ELY-2068]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+The component upgrades can be applied exclusively to the https://github.com/wildfly/wildfly[WildFly] project.
+
+=== Other Interested Projects
+
+The implementation for MicroProfile JWT 1.2 is contained within the https://github.com/smallrye/smallrye-jwt[SmallRye JWT] project.
+
+The https://github.com/wildfly-security/wildfly-elytron[WildFly Elytron] project contains dependencies on both 
+MicroProfile and SmallRye JWT.  However this update should not require code changes to WildFly Elytron.
+
+== Requirements
+
+=== Hard Requirements
+
+The following Maven artifact dependencies in WildFly will be updated to switch to MicroProfile JWT 1.2:
+ * org.eclipse.microprofile.jwt:microprofile-jwt-auth-api
+ * org.eclipse.microprofile.jwt:microprofile-jwt-auth-tck
+ * io.smallrye:smallrye-jwt
+ 
+Where each of these projects utilises additional dependencies this RFE will review the required dependencies and update WildFly accordingly.
+
+Similar component upgrades will also be applied to the WildFly Elytron project, however code changes are not expected there in relation
+to the upgrades.
+
+The TCK component upgrade will also require a review of the configuration of the TCK to verify the correct set of tests are executed.
+
+The SmallRye JWT project also intends to split the EE Security authentication mechanism into it's own artifact, once this is available our
+dependencies and integration within the subsystem will be updated to make use of the new artifact in addition to the current dependencies.  This
+new artifact is being delivered by the SmallRye JWT project so can be ignored as a new dependency to the application server.
+
+After the relevant component upgrades are in place WildFly will be required to pass the MicroProfile JWT 1.2 TCK.
+
+=== Nice-to-Have Requirements
+
+None, this RFE will not be undertaking enhancements beyond the upgrade to support MicroProfile JWT 1.2.
+
+=== Non-Requirements
+
+No further enhancements to our MicroProfile JWT integration will be undertaken as part of this RFE.
+
+== Test Plan
+
+This RFE will be bringing in the updated MicroProfile JWT 1.2 API and TCK, as we are not changing how we support MicroProfile
+JWT within WildFly no further test changes will be required other than running the appropriate version of the TCK within our
+testsuite.
+
+== Community Documentation
+
+No community documentation is required as the exact version supported is not specified in the documentation and the overall behaviour
+of MicroProfile JWT integration remains the same with this upgrade.
+
+== Release Note Content
+
+The version of MicroProfile JWT supported has been upgraded to version 1.2, for further information 
+see https://github.com/eclipse/microprofile-jwt-auth/releases/tag/1.2.
