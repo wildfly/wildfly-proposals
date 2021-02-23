@@ -1,0 +1,79 @@
+= Integrate MP Metrics 3.0 into EAP
+:author:            Jason Lee
+:email:             jasondlee@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+MicroProfile 4.0 provides a major upgrade for https://github.com/eclipse/microprofile-metrics/releases/tag/3.0[MicroProfile Metrics 3.0] with changes described in its 
+https://download.eclipse.org/microprofile/staging/microprofile-metrics-3.0/microprofile-metrics-spec-3.0.html#release_notes_3_0[Release Notes].
+
+This component upgrade also covers the upgrade of smallrye-metrics that implements MicroProfile Metrics 3.0.
+
+== Issue Metadata
+ 
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-14206[WFLY-14206]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1592
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:jstourac@redhat.com[Jan Stourac]
+
+=== Testing By
+* [X] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+== Requirements
+
+* Upgrade MicroProfile Metrics to 3.0
+* Upgrade smallrye-metrics to the release that implements MicroProfile Metrics 3.0
+* Run any MicroProfile Metrics test in WildFly integration test suite
+* Run the Eclipse MicroProfile Metrics TCK without failures
+
+=== Hard Requirements
+
+* Artifact versions must be upgraded
+* Existing tests must be updated as needed and run cleanly
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+* Run existing tests 
+** wildfly/testsuite/integration/microprofile 
+** wildfly/testsuite/integration/microprofile-tck/metrics
+
+== Community Documentation
+
+* Likely none needed
+
+== Release Note Content
+
+* Microprofile Metrics has been upgraded to 3.0, and the implementing Smallrye Metrics has been upgraded as well.
+
+== Breaking Changes
+The spec made several breaking changes, which can be found here[https://projects.eclipse.org/projects/technology.microprofile/releases/metrics-3.0], but duplicated below:
+
+* Removed everything related to reusability from the API code. All metrics are now considered reusable.
+* CDI producers annotated with @Metric no longer trigger metric registration. If these metrics should be registered, it must be done differently (for example using the MetricRegistry methods)
+* MetricRegistry changed from abstract class to interface
+* Changed Timer.update(long duration, java.util.concurrent.TimeUnit) to Timer.update(java.time.Duration duration)
+* Removed MetadataBuilder.withOptional* methods, the remaining with* methods do accept null value (considered not present) except withName which does not accept null or ""
+* Changed Metadata.getDescription() and Metadata.getUnit() to return String instead of Optional<String> and added Metadata.description() and Metadata.unit() that return Optional<String>
