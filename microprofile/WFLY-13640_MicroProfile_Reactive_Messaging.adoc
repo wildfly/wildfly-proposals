@@ -1,0 +1,187 @@
+= MicroProfile Reactive Messaging with Focus on Apache Kafka
+:author:            Kabir Khan
+:email:             kabir.khan@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:wfversion:
+
+== Overview
+We want to offer MicroProfile Reactive Messaging 1.0 with Kafka integration.
+
+
+For WildFly {wfversion} the focus will be on a subset of this feature pack, with the focus on Reactive Messaging intergration with Kafka.
+The feature branch is: https://github.com/kabir/wildfly/tree/reactive-port.
+The https://github.com/wildfly-extras/wildfly-mp-reactive-feature-pack[the WildFly Extras MP Reactive Feature Pack] where this work was incubated has a `development` branch where community can evolve to offer experimental connector, Context Propagation etc. on top of what will be offered by this RFE once WildFly {wfversion} is out. The `development` branch essentially contains parts of the original feature pack branch that is not yet considered for WildFly.
+
+For WildFly {wfversion} we will:
+* Include the MicroProfile Reactive Messaging 1.0 specification
+* Limit Reactive Messaging functionality as far as possible to Reactive Messaging 1.0. The 'as far as possible' part will be explained later.
+* Include the SmallRye Reactive Messaging Kafka connector, but only use it via the MicroProfile Reactive Messaging 1.0 API
+* Include the MicroProfile Reactive Streams Operators 1.0.1 (RSO) specification since MicroProfile Reactive Messaging 1.0 depends on that. RSO is also useful for creating and handling streams.
+
+Links to the specifications:
+
+* https://github.com/eclipse/microprofile-reactive-messaging/releases[Reactive Messaging 1.0]
+* https://github.com/eclipse/microprofile-reactive-streams-operators/releases[RSO 1.0.1]
+
+Links to the SmallRye implementations:
+
+* https://github.com/smallrye/smallrye-reactive-messaging[Reactive Messaging]
+* https://github.com/smallrye/smallrye-mutiny/tree/master/reactive-streams-operators[RSO]
+
+Only supporting MicroProfile Reactive Messaging 1.0 means there is *no* support for the https://github.com/smallrye/smallrye-reactive-messaging/blob/master/api/src/main/java/org/eclipse/microprofile/reactive/messaging/Channel.java[@Channel] annotation and the https://github.com/smallrye/smallrye-reactive-messaging/blob/master/api/src/main/java/org/eclipse/microprofile/reactive/messaging/Emitter.java[Emitter] interface. These are essential to be allow user/imperative code push data into, and get data from, the reactive messaging channels. So this initial iteration will not be able to bridge user initiated code (such as a REST API call) and the streams used by Reactive Messaging. The processors and subscribers for Reactive Messaging may however 'call out' and for example save received data in a database.
+
+There are several libraries all implementing the http://www.reactive-streams.org[Reactive Streams] specification. One new implementation is https://github.com/smallrye/smallrye-mutiny[SmallRye Mutiny] which is used under the hood by the SmallRye implementations of RSO and Reactive Messaging. We already use https://github.com/ReactiveX/RxJava/tree/2.x[RxJava 2] as an internal (i.e. it is a private module) dependency for the runtime functionality of some existing WildFly extensions. However, these should not be exposed to users at this time. We should settle on the implementation of RSO, which, although has less functionality than the other two mentioned, is a MicroProfile specification.
+
+In addition for more 'finite' sets of data, Java's CompletionStage is supported.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-13640
+* https://issues.redhat.com/browse/EAP7-1405
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1518[Quickstart]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:jstourac@redhat.com[Jan Stourac]
+* mailto:okotek@redhat.com[Ondrej Kotek]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [X] QE
+
+=== Affected Projects or Components
+The changes will be made in WildFly adding a subsystem for each spec.
+
+The functionality of these subsystems will be provided by the SmallRye implementations and their dependencies.
+
+In addition for OpenShift we need to make sure that provides out-of-the box integration with the Kafka managed service (by leveraging integration at the operator level). This  integration is scheduled post-WildFly 23. My current understanding is that we should be able to use environment variables and system properties to indicate to the user application the address and ports of the Kafka managed service.
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+It must be possible to:
+
+* Provision a server with MicroProfile Reactive Messaging for Kafka (see <<galleon-layers,Galleon Layers>> below for more information of the layers)
+* Add the extensions and subsystems to enable MicroProfile Reactive Messaging and Reactive Streams Operators to the server resulting from downloaded server.zip (they will not be in any of our shipped)
+* Deploy a Reactive Messaging application into WildFly
+* Interact with Kafka streams via the Reactive Messaging 1.0 APIS
+
+** MicroProfile Config will be used to configure the connections to the Kafka streams.
+
+*** Because MicroProfile Config supports systems properties or environmental variable as default ConfigSources with higher ordinals than is given to a microprofile-config.properties packaged in the application, it is possible for a system that controls the server launch to use system properties or environment variables to configure integration with the Kafka managed service.
+
+* Use RSO to create/deal with streams
+* For Reactive Messaging, only constructs which are part of the MicroProfile Reactive Messaging 1.0 specification may be used by the user. See <<spec-api,Spec API>> below.
+* Be able to use environment variables and system properties to configure the Kafka connector
+
+SmallRye Reactive Messaging comes with a set of connectors to interact with external messaging systems. We will support the following connectors:
+
+* In memory - this is not actually a connector, it is part of the core SmallRye Reactive Messaging provider
+* Kafka - used to interact with Kafka/AMQ Streams
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+* For this iteration we will not add a subsystem for managing the connections to Kafka. Instead we will rely on properties in microprofile-config.properties.
+* We will not add the Reactive Messaging or Reactive Streams Operators subsystems to any of our shipped configs.
+
+[[spec-api]]
+==== Spec API
+With the way SmallRye Reactive Messaging is implemented, we cannot rely on the Reactive Messaging 1.0 API jar at runtime. This is because SmallRye Reactive Messaging has its own API jar which is used internally and contains a copy of the spec package. This copy of the https://github.com/smallrye/smallrye-reactive-messaging/tree/master/api/src/main/java/org/eclipse/microprofile/reactive/messaging[spec package] has some changes compared with the
+https://github.com/eclipse/microprofile-reactive-messaging/tree/1.0/api/src/main/java/org/eclipse/microprofile/reactive/messaging[MicroProfile Reactive Messaging 1.0 spec API].
+These changes are:
+
+* The `Message` interface has new methods, and additionally a bunch of new factory methods (both used internally, and for users to wrap the payload in a `Message` instance from their `@Outgoing` annotated methods).
+
+* New classes:
+** `@Channel` annotation
+** `Emitter` interface - Only really makes sense if annotated with `@Channel`
+** `@OnOverflow` annotation
+** `@Metadata` class - Used by some of the new `Message` methods
+
+
+These changes are backward compatible, so the best we can do right now is to have users compile against the Reactive Messaging 1.0 API to 'hide' the new functionality from them. The Reactive Messaging 1.0 and Reactive Streams Operators 1.0 APIs will be included in our BOMs. It is impossible to filter out the extra methods from the `Message` interface at runtime since the Reactive Messaging internals don't allow this, and JBoss Modules does not deal with split packages very well. So the best we can do is control the compile classpath as described.
+
+Additionally, a deployment unit processor in the Reactive Messaging subsystem will by default ensure that there are no methods annotated with `@Channel` and `@OnOverflow` and throw an error if someone tries to use them from their deployment (for example if they compiled against the SmallRye Reactive Messaging API jar instead of against the MicroProfile). Note that `Emitter` only makes sense for Reactive Messaging if annotated with `@Channel`. Similarly we will throw an error on deployment if annotations are used from the `io.smallrye.reactive.messaging.annotations` package, as these are also considered experimental.
+
+Note that in WildFly, use of the above annotations will be allowed if the `jboss.as.reactive.messaging.experimental` system property is set to `true`, as this allows us to test the full functionality of each SmallRye Reactive Messaging upgrade (also the community feature pack allows people to play with the experimental features). For product, the allowing of experimental features will be totally disabled.
+
+
+=== Organisation
+There is an extension/subsystem implementing each of the two specifications mentioned:
+
+* Reactive Messaging:
+** Extension Module: org.wildfly.extension.microprofile.reactive-messaging-smallrye
+** Subsystem Name: microprofile-reactive-messaging-smallrye
+* RSO:
+** Extension Module: org.wildfly.extension.microprofile.reactive-streams-operators-smallrye
+** Subsystem Name: microprofile-reactive-streams-operators-smallrye
+
+All subsystems are currently 'empty'. In other words they have no configuration. The presence of the subsystem turns on their respective functionality.
+
+[[galleon-layers]]
+=== Galleon Layers
+The functionality is split up into layers bringing in modules and subsystems.
+
+The layers involved are listed below:
+
+==== microprofile-reactive-messaging
+This brings in the MicroProfile Reactive Messaging subsystem, modules and associated functionality.
+
+Layer dependencies:
+
+* microprofile-config
+* microprofile-reactive-streams-operators
+
+===== microprofile-reactive-messaging-kafka
+This brings in the MicroProfile Reactive Messaging Kafka connector
+which allows reactive messaging to send messsages to and receive messages from Kafka.
+
+Layer dependencies:
+
+* microprofile-reactive-messaging
+
+
+==== microprofile-reactive-streams-operators
+This brings in the MicroProfile Reactive Streams Operators subsystem, modules and associated functionality.
+
+Layer dependencies:
+
+* cdi
+
+
+=== Nice-to-Have Requirements
+
+
+=== Non-Requirements
+
+* We should not expose the SmallRye Mutiny and RXJava 2 implementations of the Reactive Streams interfaces to the user code.
+* We will not ask users to compile against code in the https://github.com/smallrye/smallrye-reactive-messaging/tree/2.4.0/smallrye-reactive-messaging-kafka[SmallRye Kafka jar]. However, we cannot turn this off at runtime. Although more control over metadata for Kafka would be useful, at present this relies on new methods in the `Message` interface and the new `Metadata` class in the copy of the spec package in the SmallRye API jar mentioned in <<spec-api,Spec API>>. It exposes this in such a way that people would then be able to compile their applications against this new functionality.
+
+== Test Plan
+The TCKs for each spec will be added to the WildFLy testsuite.
+
+More testing against Kafka is needed, some basic testing of this will happen in the WildFly testsuite.
+
+== Community Documentation
+Community documentation will be added to WildFly
+
+== Release Note Content
+WildFly now contains support for MicroProfile Reactive Messaging 1.0. It also provides a connector for interaction with Kafka streams.
