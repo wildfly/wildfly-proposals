@@ -22,6 +22,9 @@ This chart depend on WildFly features (S2I, Bootable Jar) and will be regularly 
 
 * https://issues.redhat.com/browse/WFLY-14479[WFLY-14479]
 
+=== Related Issue
+
+* https://issues.redhat.com/browse/EAP7-1649[EAP7-1649] - As an user, I want to build and deploy EAP applications on OpenShift using Helm Chart
 === Dev Contacts
 
 * mailto:{email}[{author}]
@@ -53,7 +56,6 @@ A new project to host the Helm Charts will be created that will leverage WildFly
 
 * There will be a single chart to build and deploy WildFly applications. The chart will be named `wildfly`.
 * The chart must be usable with OpenShift free tier (e.g. https://developers.redhat.com/developer-sandbox[Developer Sandbox for Red Hat OpenShift ]).
-* The chart is targeting OpenShift (and not Kubernetes) although they should be able to be used on Kubernetes with some configuration changes.
 * It must be able to:
 ** Build application  images using WildFly S2I images
 ** Build application image using WildFly Bootable Jar
@@ -72,6 +74,11 @@ A new project to host the Helm Charts will be created that will leverage WildFly
 * a schema must be provided to validate user input and deep integration in OpenShift console
 * By default, the Helm Chart will use the latest WildFly release to build and deploy application. This must be overrideable to use previous releases.
 * It must be possible to explicitly specify WildFly S2I images.
+
+=== Strong Requirements
+
+* The chart is targeting OpenShift (and not Kubernetes) although they should be able to be used on Kubernetes with some configuration changes.
+** Some features will not be available on Kubernetes (e.g. build the image requires `BuildConfig`) but the chart should strive to instal resources that works on Kubernetes when possible
 
 === Nice-to-Have Requirements
 
@@ -107,3 +114,15 @@ For example, the prototy contains an https://github.com/jmesnil/wildfly-charts/t
 
 This wildfly-project will not be tied to a release of WildFly and can be managed separately.
 When it is released, it will be announced on https://wildfly.org/news
+
+== Helm Charts for EAP
+
+We want to provide Helm Charts for EAP (both 7.4 and XP3) (tracked by https://issues.redhat.com/browse/EAP7-1649[EAP7-1649]) that leverage this `wildfly` chart.
+However the features of the charts will depend on the version of EAP (e.g. `bootable-jar` is only possible with EAP XP). Another important difference is that EAP supports 2 JDK versions (8 and 11) while WildFly only provides S2I images for JDK11.
+
+The `wildfly` chart will be created based on a `wildfly-common` library chart that will contains all the features and capabilities in its template.
+Then the `wildfly` chart will depend on the `wildfly-common` library to provide an application chart (incuding sensible default values, schema validation and README) to install a WildFly application.
+
+The `eap74` and `eap-xp` charts will also depend on the `wildfly-common` library and provide their own application charts.
+
+The whole set of features provided by the charts for EAP  will be documented in their READMEs and schema.
