@@ -31,14 +31,14 @@ via the AMQ Streams operator.
 
 === QE Contacts
 
-* TBD
+* mailto:@jstourac@redhat.com[Jan Stourac]
 
 === Testing By
 // Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
 // Discuss with QE during the Kickoff state to decide this
 [ ] Engineering
 
-[ ] QE
+[x] QE
 
 === Affected Projects or Components
 
