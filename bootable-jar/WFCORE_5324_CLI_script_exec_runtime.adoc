@@ -1,0 +1,100 @@
+= Ability to execute CLI script at runtime
+:author:           Jean-Francois Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+During Bootable JAR build, when the server configuration can't be fully tuned with CLI script (e.g.: server config bound to 
+the execution context), we need a way to configure the server when the bootable JAR starts.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-5324[WFCORE-5324]
+
+=== Related Issues
+
+* 
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:{jkasik@redhat.com}[Jan Kasik]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* Bootable JAR runtime
+
+=== Other Interested Projects
+
+* https://github.com/wildfly-extras/wildfly-jar-maven-plugin/[Bootable JAR Maven plugin]
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [ ] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [ ] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+Ability to update server configuration at bootable JAR boot time by the mean of a WildFly CLI script.
+
+=== Hard Requirements
+
+* Introduce `--cli-script=<path to CLI script>`. The path is a file system path.
+* This argument is present in the Bootable JAR help (`--help`).
+* The referenced file must exist and be readable. If not, the server aborts.
+* The CLI script must be a text file (UTF-8), the file extension if present is meaningless although `.cli` extension is advised.
+* If error occurs during CLI script execution, the failing line and error are displayed, the server aborts.
+* The changes applied at boot are not persisted in the server config. A server re-started without providing the CLI script would not contain the changes
+applied by a previous execution.
+* `org.jboss.as.cli`JBoss Modules module is now provisioned whatever the set of provisioned Galleon layers. It is required to execute CLI commands.
+* Any operation that would require a server restart would make the bootable JAR server to exit, that is the nominal behavior of a bootable JAR 
+being asked to restart.
+* Some CLI commands are not exposed: `connect`, `reload`, `shutdown`, any command related to embedded server, `patch`.
+* CLI commands that can't be executed in admin-mode (eg: jdbc-driver-info) are not supported.
+* CLI commands and operations that target not provisioned subsystem would fail. For example `data-source` 
+and `xa-data-source` commands require the `datasources` subsystem to be provisioned).
+
+=== Nice-to-Have Requirements
+
+* NONE
+
+=== Non-Requirements
+
+* The new argument references only a single file, if multiple scripts need to be executed, they must be concatenated prior to be used.
+
+== Test Plan
+
+* Add unit test to cover new argument.
+* Evolve part of wildfly-core tests with execution of CLI script at boot.
+* Add new integration tests to the Bootable JAR Maven plugin.
+* Evolve QE testsuite with new tests.
+
+== Community Documentation
+
+The WildFly doc will cover the new argument. The argument is also auto-documented in the bootable JAR help content.
+
+== Release Note Content
+
+Not candidate for release notes.
