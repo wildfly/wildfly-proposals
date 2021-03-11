@@ -1,0 +1,151 @@
+= Quickstart for EJB remoting and transaction recovery on OpenShift
+:author:            Ondrej Chaloupka
+:email:             ochaloup@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:keywords:          openshift,transactions,EJB,remoting,recovery
+
+
+== Overview
+
+This is a follow-up task to https://issues.jboss.org/browse/CLOUD-2262[CLOUD-2262] where the goal was to provide
+a safe way to run EJB remote calls amongst WFLY servers on OpenShift and ensure safe transaction recovery
+for propagated XA transactions.
+
+The goal of this proposal is to document this effort with a small working application
+that could be used as a reference when a developer needs to set up all the parts correctly.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-12904[WFLY-12909]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/CLOUD-2262[CLOUD-2262]
+
+=== Dev Contacts
+
+* mailto:ochaloup@redhat.com[{author}]
+
+=== QE Contacts
+
+* mailto:msimka@redhat.com[msimka@redhat.com]
+
+=== Testing By
+
+[x] Engineering
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly Quickstarts
+
+=== Other Interested Projects
+
+* Transactions
+* EJB
+* WildFly Operator
+
+== Description of the quickstart
+
+The goal of the quickstart is to provide two simple EJB based applications
+which communicates with each other over EJB remoting.
+The first one will be placed on the first WildFly "client server"
+and is accessed over REST to invoke some operation.
+The second one will be deployed on the second server
+and will be called over EJB to process some a work.
+
+Both EJBs (on "client server" and on the second server)
+need to process some "transactional" work (which is e.g. inserting data to a database)
+for transaction manager may run XA transactions.
+
+The transaction work will contain a real resource (a database)
+and a mock XA resource which is important for running 2PC.
+
+The quickstart should show a failure scenario where the application fails
+during transaction processing. Such a case may show
+how recovery will be processed.
+
+The quickstart has to be prepared for being deployed on Kubernetes/OpenShift.
+The goal is to show how the WildFly Operator manages the WildFly pods,
+how works a case where the pod instance crashes and how the scaledown processing is managed.
+
+The Quickstart repository: https://github.com/wildfly/quickstart
+
+== Requirements
+
+=== Hard Requirements
+
+The quickstart has to clarify the way how to configure
+the EJB remoting on OpenShift.
+
+There has to be defined all the necessary descriptors
+that will use appropriate default values that will be understandable for users
+when they need to reconfigure it for their purposes.
+
+The `README` of the quickstart has to provide a clear explanation
+of the EJB remoting setup, why is the clustering setup important
+and it will describe the process that is needed for correct transaction recovery.
+
+The quickstart has to contain a show-case that will
+show an EJB remote call which goes from the first server to the second server.
+
+There needs to be a simulation of a failure during transaction processing
+and recovery will be involved to safely finish the unfinished work.
+
+For OpenShift the quickstart has to show the use of the WildFly operator for the deployment purposes
+as it's the way how to ensure transaction safety on crashing a pod and during scaledown.
+
+=== Nice-to-Have Requirements
+
+The quickstart could show the two ways of server to server EJB remote call
+configuration. First is usage of the remote-outbound connection
+and the second is creation of the `InitialContext` programmatically.
+
+Quickstart will use a third party database where data
+is stored at. Like having a PostgreSQL started
+(or in case of OpenShift deployed as a separated pod)
+alongside the testing application
+and the application would use it for doing the "transactional"
+work and storing data in the database.
+
+=== Non-Requirements
+
+The EAP templates are not to be used for OpenShift setup.
+
+== Test Plan
+
+EAP QE runs the quickstart automatically so the testing
+should mean to add this quickstart to the automation.
+
+The test means to automatize the steps that the user needs to do.
+The steps will be described and explained in the README of the quickstart.
+
+The tests verify in standalone mode the following
+
+* several remote calls to stateless bean are load-balanced
+* several remote calls to stateless bean with a started transaction are run with sticky-session to only one node
+* several remote calls to stateful bean that are run with sticky-session to only one node
+* remote lookup may be done with remote-outbound connection or with credentials defined in code passed to initial context 
+* when failure occurs during transaction processing on the remote server then transaction recovery will fix the state
+
+For Kubernetes/OpenShift mode
+
+* the same as for the standalone mode
+* transaction recovery is able to finish a failed transaction on the remote server
+
+== Community Documentation
+
+There is not needed a special documentation
+as the essential part of the quickstart is the `README`
+that documents the quickstart as it is.
+
+== Release Note Content
+
+This is not needed to be documented.
+The documentation is the `README` provided alongside the quickstart.
+
