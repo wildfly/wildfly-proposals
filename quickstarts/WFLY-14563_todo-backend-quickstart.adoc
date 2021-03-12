@@ -1,0 +1,98 @@
+= WFLY-14563 - todo-backend Quickstart
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+As a developer, I can use a quickstart to showcase WildFly connecting to a DB on OpenShift.
+
+This quickstart focused on cloud deployment and will use the bootable jar to provide the application.
+The Web frontend will be an external application based on https://todobackend.com. The quickstart will provide the REST API expected by this application and will store the TODO items in a PostgreSQL DB hosted on OpenShift.
+
+This quickstart will focus on OpenShift deployment and will provide developer insights for:
+
+ * Developing a Java backend that exposes a HTTP API with JAX-RS and provides a JPA Model backed by a DB
+ * Deploying this backed on OpenShift (both with EAP S2I and Bootable Jar)
+ * Leverage Bootable Jar for local development (without cloud deployment)
+ * Binding an EAP application to a DB on OpenShift
+ * Expose an EAP application outside the OpenShift cluster
+ * Support CORS filtering (so that a Web Frontend can access the HTTP API)
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14563[WFLY-14563] - As a developer, I can use a quickstart to showcase WildFly connecting to a DB on OpenShift
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1650[EAP7-1650] - As a developer, I can use a quickstart to showcase EAP connecting to a DB on OpenShift
+* https://issues.redhat.com/browse/EAP7-1634[EAP7-1634] - Create a Helm Chart to easily deploy a database app on OpenShift
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/quickstart
+* https://github.com/jbossas/eap-quickstarts
+
+=== Other Interested Projects
+
+* https://github.com/wildfly/wildfly-charts
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+
+* [x] Bootable jar (local and cloud deployment)
+* [x] OpenShift S2I
+
+== Requirements
+
+* Provides a new quickstart that showcases a typical use of WildFly: a backend that exposes a Web API (using JAX-RS) and connects to a DB (using JPA).
+* The quickstart requires an external PostgreSQL database.
+  * For local deployment, a PostgreSQL DB running in Docker will be used
+  * For Cloud deployment, a PostgreSQL DB running in OpenShift will be used
+* This quickstart will use a Helm Charts to be built and deployed on OpenShift. The configuration for the Helm Chart will be provided inside the quickstart directory.
+* PostgreSQL drivers and datasources will be explicitly provided by the https://github.com/wildfly-extras/wildfly-datasources-galleon-pack[WildFly Feature Pack for DataSources].
+* This quickstart will require CORS support:
+  * A CLI script is provided to add CORS filters to Undertow when Bootable Jar is used
+  * Environment variables that add CORS filters will be added to the Helm Chart when S2I is used to build and deploy the backend on OpenShift.
+
+=== Hard Requirements
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+* This quickstart will *not* provide documentation to be deployed on a local WildFly Server with standalone configuration modification (the focus is local deployment and cloud deployment with Bootable Jar).
+
+== Implementation Plan
+
+Initial code will be contributed from https://github.com/jmesnil/quickstart/tree/todo-backend/todo-backend.
+This `todo-backend` will be contributed to https://github.com/wildfly/quickstart.
+
+== Test Plan
+
+== Community Documentation
+
+Community documentation will be provided by the README in the quickstart directory (https://github.com/jmesnil/quickstart/blob/todo-backend/todo-backend/README.adoc[README's initial contribution]).
+
+== Release Note Content
+
+A new quickstart `todo-backend` showcases how WildFly can be deployed on OpenShift to provide a backend that exposes an HTTP API (using `JAX-RS`) and store data to a DB (using `JPA`).
