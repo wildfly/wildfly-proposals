@@ -39,6 +39,8 @@ This feature is expected to be used as base for Bootable JAR implementation, it 
 
 === Affected Projects or Components
 
+`wildfly-core` and `wildlfy-jar-maven-plugin`.
+
 === Other Interested Projects
 
 === Relevant Installation Types
@@ -46,9 +48,9 @@ This feature is expected to be used as base for Bootable JAR implementation, it 
 // to that kind of WildFly installation
 * [x] Traditional standalone server (unzipped or provisioned by Galleon)
 
-* [x] Managed domain
+* [] Managed domain
 
-* [x] OpenShift s2i
+* [] OpenShift s2i
 
 * [x] Bootable jar
 
@@ -83,6 +85,7 @@ wildfly-configuration:
               named-formatter: COLOR_PATTERN
               level: !undefine
 ----
+Using a null value is not 'doable' as we have attrbiute where the 'null' value is significant.
 
 * Allow setting null if value is empty and attribute is null-significant.
 * Allow support to remove resource using a YAML tag !remove. For example:
@@ -97,8 +100,13 @@ wildfly-configuration:
 === Non-Requirements
 
 The goal of the YAML files is to be able to customize an existing configuration. It is not here to replace the existing configuration support with XML.
-As such we won't add support to add extensions for the server as this might require modules which can be missing.
-As this configuration extension is for a server only this won't be supported in domain mode.
+As such we won't support part of the management model. Those elements would be filtered out:
+
+ - extension: to add extension to the server as this might require modules which can be missing.
+ - deployment: to add deployments to the server as this require more that just some configuration.
+ - deployment-overlay: to add deployment-overlays to the server as this require more that just some configuration.
+ 
+As this configuration extension is for a *standalone server* only this *won't be supported in domain mode*.
 
 //== Implementation Plan
 ////
