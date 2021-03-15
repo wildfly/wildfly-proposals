@@ -1,0 +1,125 @@
+= Yaml support for WildFly
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The aim of this proposal is to be able to inject external configuration in a YAML format to WildFly in order to customize an existing configuration.
+It is out of the scope of this proposal to provide support to define a complete server configuration in YAML: as such you won't be able to add a new extension using a YAML file.
+We also want this to be *idempotent*: that means that starting and restarting the server with the same command line should produce the same result and shouldn't fail.
+This feature is expected to be used as base for Bootable JAR implementation, it is not expected to be called directly by user (TODO get confirmation on this from Jeff and Brian and on how to 'hide' the feature).
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE[WFCORE-XXXX]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY[WFLY-XXXX]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+* mailto:jdenise@redhat.com[Jean-François Denise]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+WildFly will be able to take a list of YAML files from the command line to redefine its exisiting configuration.
+The operations will be applied in the order the files are defined and after the initial operations defined by the XML configuration.
+The YAML configuration should be *idempotent* so that we can start and restart with the same command line without failure nor resulting with a different final configuration.
+The YAML structure should follow the management model structure. We may use YAML local tags to support operations syntax.
+So at boot, WildFly will load and parse its XML configuration, then add all the required extensions. It will then parse the YAML files, looking for a `wildfly-configuration` element as root fo the configuration updates.
+For each entry, it will check if the resource is already created by the XML, otherwise it will add a new operation to the list of boot operations to add the required resource.
+If the resource already exist then it will add a new operation to the list of boot operations to update the attributes.
+
+=== Hard Requirements
+
+* Support for multiple files.
+External files will take precedence over the XML configuration ones. Then order will follow the command line.
+
+* If the resource is already defined then all we have to du is updating its attrbiutes using the `write-attribute` operation.
+* If the YAML part define an empty resource and the resource already exists: log a WARNING, otherwise try to add it.
+* If the YAML is incorrect: like defining an non-existing attribute or child resource we should fail.
+
+=== Nice-to-Have Requirements
+
+* Undefine attribute: using a YAML tag !undefine. For example:
+----
+wildfly-configuration:
+    subsystem:
+        logging:
+          console-handler:
+            CONSOLE: 
+              named-formatter: COLOR_PATTERN
+              level: !undefine
+----
+
+* Allow setting null if value is empty and attribute is null-significant.
+* Allow support to remove resource using a YAML tag !remove. For example:
+----
+wildfly-configuration:
+    subsystem:
+        microprofile-jwt-smallrye: !remove
+----
+
+* Allow support for adding element to list and supporting index: this might impact idempotence.
+
+=== Non-Requirements
+
+The goal of the YAML files is to be able to customize an existing configuration. It is not here to replace the existing configuration support with XML.
+As such we won't add support to add extensions for the server as this might require modules which can be missing.
+As this configuration extension is for a server only this won't be supported in domain mode.
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+== Test Plan
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
