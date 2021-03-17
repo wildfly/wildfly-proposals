@@ -11,7 +11,7 @@
 The aim of this proposal is to be able to inject external configuration in a YAML format to WildFly in order to customize an existing configuration.
 It is out of the scope of this proposal to provide support to define a complete server configuration in YAML: as such you won't be able to add a new extension using a YAML file.
 We also want this to be *idempotent*: that means that starting and restarting the server with the same command line should produce the same result and shouldn't fail.
-This feature is expected to be used as base for Bootable JAR implementation, it is not expected to be called directly by user (TODO get confirmation on this from Jeff and Brian and on how to 'hide' the feature).
+This feature is expected to be used by users of full WildFly installation as well as from the Bootable JAR implementation.
 
 == Issue Metadata
 
@@ -96,6 +96,7 @@ wildfly-configuration:
 ----
 
 * Allow support for adding element to list and supporting index: this might impact idempotence.
+* have a JSON schema describing the YAML files for IDE completion.
 
 === Non-Requirements
 
@@ -108,13 +109,16 @@ As such we won't support part of the management model. Those elements would be f
  
 As this configuration extension is for a *standalone server* only this *won't be supported in domain mode*.
 
-//== Implementation Plan
-////
-Delete if not needed. The intent is if you have a complex feature which can 
-not be delivered all in one go to suggest the strategy. If your feature falls 
-into this category, please mention the Release Coordinators on the pull 
-request so they are aware.
-////
+== Implementation Plan
+
+We are going to process the YAML files to get a list of operations to be applied at boot after the operations defined in the XML configuration file. That means that when we are processing the YAML files we don't have access to the model that was persisted int the XML configuration file.
+What we are going to do is use the boot operations to define what to do with what is described in the YAML files.
+In the YAML tree we can check if the node is matching a resource or an attribute.
+If it is a resource then we check if there are boot operations for this address, if such is the case then we have to process the attributes, otherwise that means that we need to create the resource.
+To create a resource we will look into the YAML subtree for the attributes that are defined, and add an `add` operation for it.
+If the resource is created then we look for it attributes that are writeable in the YAML subtree and add a `write-attribute` operation for each of them. That means that we need to have every element in a list since we are not using `list-add` in this case.
+Then we process the sub-resources if any exist.
+
 == Test Plan
 
 == Community Documentation
