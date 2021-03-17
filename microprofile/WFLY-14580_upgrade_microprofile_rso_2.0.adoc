@@ -1,0 +1,64 @@
+= Upgrade MicroProfile Reactive Streams Operators to {rsoversion}
+:author:            Kabir Khan
+:email:             kkhan@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          microprofile,reactive
+:idprefix:
+:idseparator:       -
+# TODO update the link to point to 2.0 once released (atm it is tagged but not released)
+:rsoversion:        2.0
+
+== Overview
+
+
+MicroProfile Reactive Streams Operators has been updated to {rsoversion} - https://github.com/eclipse/microprofile-reactive-streams-operators/releases/tag/{rsoversion}[Release Notes].
+
+This component upgrade also covers the upgrade of smallrye-config that implements MicroProfile Reactive Streams Operators {rsoversion}.
+It is just be a drop in replacement for 1.0.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14580[WFLY-14580]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1660[EAP7-1660]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TBD
+
+=== Testing By
+
+[X] Development
+
+
+== Requirements
+
+* Upgrade MicroProfile Reactive Streams Operators to {rsoversion}
+* Upgrade smallrye-reactive-streams-operators to the release that implements MicroProfile Reactive Streams Operators {rsoversion}
+* Run any MicroProfile Reactive Streams Operators and Reactive Messaging (which uses Reactive Streams Operators internally) tests in WildFly integration test suite
+* Run the Eclipse MicroProfile Reactive Streams Operators and Reactive Messaging TCKs without failures
+
+=== Non-Requirements
+
+== Implementation Plan
+
+== Test Plan
+
+This upgrade does not introduce any changes that requires new tests in WildFly or elsewhere. It will be tested by
+existing tests in the https://github.com/wildfly/wildfly/tree/master/testsuite/integration/microprofile[testsuite/integration/microprofile]
+testsuite module. This includes both RSO specific tests, and Reactive Messaging tests which use RSO internally.
+Additionally, the https://github.com/wildfly/wildfly/tree/master/testsuite/integration/microprofile-tck/reactive-streams-operators[RSO TCK]
+provides more in-depth testing of this.
+
+== Community Documentation
+
+* https://github.com/wildfly/wildfly/blob/23.0.0.Final/docs/src/main/asciidoc/_admin-guide/subsystem-configuration/MicroProfile_Reactive_Streams_Operators_SmallRye.adoc will need updating for the correct spec version.
