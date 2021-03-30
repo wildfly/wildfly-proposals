@@ -1,0 +1,112 @@
+= WFLY-14468 Add support for using Infinispan APIs from a deployment
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+EAP includes both an Infinispan and JGroups subsystems and accompanying modules.
+EAP uses these subsystems to implement clustering, web session caching and replication and Hibernate 2nd-level caching.
+While the subsystems are exposed in the domain model, user deployments have been up-to-now forbidden from using any of the `org.infinispan`/`org.jgroups` APIs.
+One of the main motivations behind this was to enable upselling to the equivalent RHDG functionality via additional modules layered on top of an EAP installation.
+
+This has a number of shortcomings:
+since the introduction of the Runtimes bundle, there no longer is a business reason to prevent users from using the Infinispan/JGroups bits that are already provided by EAP.
+The EAP clustering team already maintains the subsystems for its own purposes.
+Being part of EAP ensures that these subsystems are kept up-to-date with all the evolutions/changes of the platform.
+The duplication of modules and subsystems added by RHDG creates extra confusion and a usability hurdle, worsened by the divergence of the codebase and configuration/model between the two.
+This proposal would allow users to officially be able to use the EAP Infinispan/JGroups subsystems and modules in their own deployments without requiring the installation of additional RHDG modules.
+
+The following use-cases would be enabled:
+
+* Explicit importing of the `org.infinispan.*` modules from the `jboss-deployment-structure.xml/MANIFEST.MF`
+* Creation and use of custom caches in the Infinispan subsystem by user deployments
+
+From an engineering perspective, this merely requires making the requisite infinispan modules public (they are currently private/unsupported). This includes:
+* org.infinispan (embedded cache)
+* org.infinispan.client.hotrod (client for remote infinispan server)
+* org.infinispan.commons
+RHDG support and engineering will provide support for all use-cases relating to the components mentioned above, excluding the subsystems which would continue to be handled by EAP clustering.
+
+RHDG will provide documentation for the Infinispan API which can either be included in its modularized form or linked from the EAP documentation.
+
+It is understood that EAP will only use productized builds of the Infinispan/JGroups components that have already received RHDG QE sign-off.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14468[WFLY-14468 Add support for using Infinispan APIs from a deployment]
+* https://issues.redhat.com/browse/EAP7-1445[EAP7-1445 Add support for using Infinispan APIs from a deployment]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-13520[WFLY-13520 Add support for Infinispan query, counters, locks, and CDI]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+N/A
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+N/A
+
+=== Other Interested Projects
+
+* Infinispan
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+The following modules are public:
+
+* `org.infinispan` (embedded cache)
+* `org.infinispan.client.hotrod` (client for remote infinispan server)
+* `org.infinispan.commons`
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+== Test Plan
+
+It is understood that EAP will only use productized builds of the Infinispan/JGroups components that have already received RHDG QE sign-off.
+
+== Community Documentation
+
+Upstream documentation demonstrates how to inject and use a Cache and references upstream docs.
+For downstream, RHDG will provide documentation for the Infinispan API which can either be included in its modularized form or linked from the EAP documentation.
+
+== Release Note Content
+
+The Infinispan modules can now be used without a private usage warning.
