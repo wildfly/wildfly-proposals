@@ -1,0 +1,215 @@
+= [Bootable JAR] Server components upgrade and Galleon feature-pack dependency update.
+:author:           Jean-Francois Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+We have a need to be able to upgrade the server components present in a Bootable JAR when building the jar
+from the Bootable JAR maven plugin.
+
+2 kind of components can be upgraded:
+
+* JBoss Modules module jar files (eg: undertow-core, postgresql driver that would be provisioned from third party Galleon feature-pack).
+* Galleon feature-packs that are dependencies of the Galleon feature-pack(s) in use to build a Bootable JAR.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14411[WFLY-14411]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFGP-194
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:{jkasik@redhat.com}[Jan Kasik]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [X] QE
+
+=== Affected Projects or Components
+
+* Bootable JAR Maven plugin
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [ ] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [ ] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+* The upgrade mechanism is done from the Bootable JAR Maven plugin.
+
+* Components that we want to upgrade are referenced with Maven Coordinates 
+(GroupId, ArtifactId, Classifier, Version and Type) from the Maven dependencies section of the Maven project.
+That is the nominal Maven way of expressing dependencies.
+
+* We are not automatically using all artifacts present in the project dependencies section for the upgrade.  
+A user needs to list the GroupId/ArtifactId/[Classifier] of the artifacts he wants to see used during the upgrade.
+
+* The `wildfly-jar-maven-plugin` configuration is evolved with an `<overridden-server-artifacts>` set that contains the artifacts that 
+are in use for the upgrade.
+
+* JBoss Modules jar artifacts and Galleon feature-packs zip artifacts are treated the same way and can be present in the `overridden-server-artifacts` set.
+
+=== Hard Requirements
+
+* This RFE doesn't introduce backward incompatibility.
+
+* This RFE is made possible starting with WildFly 23. Older WildFly release can't be used.
+
+* Usage of Galleon feature-pack location (FPL) to reference the Galleon channel of a producer registered inside a universe) is still possible.
+
+* This mechanism strongly depends on Maven dependency resolution. 
+Any artifact to upgrade must be present in accessible Maven repositories (remote or local cache).
+
+* An artifact present in the  `overridden-server-artifacts` set must be present in the dependencies section. 
+It is advised that the dependency scope be `provided` to be not included in the application artifact (eg: war).  A warning is displayed if
+the scope is not `provided`.
+If an artifact is not present in the dependencies, then a failure occurs during build.
+
+* An artifact is referenced in the `overridden-server-artifacts` by GroupId, ArtifactId and optionally Classifier. 
+Version being retrieved from the Maven dependencies. 
+
+* An overridden artifact (artifact present in the `overridden-server-artifacts` list) must be unique. Any duplicate will make the packaging to fail.
+
+* Adding an overridden artifact that is not part of the provisioned server artifacts will lead to a failure during build.
+
+* Adding an overridden Galleon feature-pack artifact that is not a dependency of the WildFly server being 
+provisioned will lead to an error during packaging. 
+
+* The version of the galleon feature-packs referenced using GAV becomes optional in the maven plugin configuration if the  Galleon 
+feature-pack artifact has been added to the dependencies. In this case the version is being retrieved from the dependencies. If the version
+is missing and no Feature-pack artifact is retrieved in the dependencies, a failure occurs during packaging.
+
+* Third party galleon feature-packs benefit from this upgrade capability for JBoss Module artifacts they are bringing to the provisioned server.
+
+* The server jar components that can be upgraded are:
+** The JBoss module runtime jar (jboss-modules.jar file).
+** All jar artifacts referenced from JBoss Modules modules.
+
+* The set of artifacts that can be upgraded can be retrieved by setting the parameter `<dump-original-artifacts>true</dump-original-artifacts> or 
+the system property `bootable.jar.dump.original.artifacts` to true when building a bootable JAR. 
+The file `target/bootable-jar-build-artifacts/bootable-jar-server-original-artifacts.xml` is generated. 
+It contains XML elements for the Galleon feature-packs dependencies, JBoss Modules runtime and artifacts. 
+JBoss Modules modules artifacts are grouped by JBoss Modules name.
+The generated file contains only the artifacts that are provisioned by Galleon. 
+Each artifact version is the one that would get installed when building the Bootable JAR without upgrade.
+
+* An artifact upgraded to the same version as the one referenced in the Galleon feature-pack is not upgraded. In this case a warning is displayed during build.
+
+* It is possible to downgrade an artifact to an older version. In this case a warning is displayed during build. 
+Warning can be disabled with `<disable-warn-for-artifact-downgrade>true</disable-warn-for-artifact-downgrade>` element.
+
+Example of an hypotetical `undertow-core` and `wildfly-ee-galleon-pack` upgrade:
+
+```
+...
+        <dependency>
+            <groupId>io.undertow</groupId>
+            <artifactId>undertow-core</artifactId>
+            <version>2.2.4</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.wildfly</groupId>
+            <artifactId>wildfly-ee-galleon-pack</artifactId>
+            <version>23.0.1.Final</version>
+            <type>zip</type>
+            <scope>provided</scope>
+        </dependency>
+...
+
+<plugin>
+        <groupId>org.wildfly.plugins</groupId>
+        <artifactId>wildfly-jar-maven-plugin</artifactId>
+        <configuration>
+            <feature-packs>
+                <feature-pack>
+                    <groupId>org.wildfly</groupId>
+                    <artifactId>wildfly-galleon-pack</artifactId>
+                    <version>23.0.0.Final</version>
+                </feature-pack>
+            </feature-packs>
+            <layers>
+                <layer>jaxrs-server</layer>
+            </layers>
+            <!-- We list the set of artifacts we want to see replaced during provisioning -->
+            <overridden-server-artifacts>
+                <artifact>
+                    <groupId>io.undertow</groupId>
+                    <artifactId>undertow-core</artifactId>
+                </artifact>
+                <artifact>
+                    <groupId>org.wildfly</groupId>
+                    <artifactId>wildfly-ee-galleon-pack</artifactId>
+                </artifact>
+            </overridden-server-artifacts>
+        </configuration>
+...
+```
+
+==== Impact on Preview (EE9) Galleon feature-pack
+
+The Artifact upgrade is operated during provisioning before any EE9 transformation occurs. Upgraded artifacts will be transformed 
+even if the original artifact was excluded from the set of transformed artifacts. This seems safer, the fix could have introduced an EE9
+incompatible change.
+
+=== Nice-to-Have Requirements
+
+* NONE
+
+=== Non-Requirements
+
+* Ability to upgrade a local artifact (eg: a jar file) not registered in accessible Maven repository (local or remote).
+
+* Upgrade of a top level Galleon feature-pack (Feature-pack referenced in the plugin configuration 
+`<feature-pack-location>` or `<feature-packs>` is out of scope.
+
+* Although technically possible (thanks to WildFly Galleon plugins support for server component upgrade), 
+the ability to upgrade server component in Galleon contexts (WildFly S2I build, Galleon Maven provisioning plugin and Galleon CLI) 
+other than Bootable JAR are not in the scope of this RFE. 
+
+* The ability to upgrade Galleon feature-pack dependencies in Galleon contexts (WildFly S2I build, Galleon Maven provisioning plugin and Galleon CLI) 
+other than Bootable JAR are not in the scope of this RFE.
+
+* JBoss modules artifacts that are Maven dependencies of the Galleon feature-pack can be upgraded. Artifacts that have  GAV hardcoded in JBoss Modules module.xml 
+(or with artifact binary packaged inside the Galleon feature-pack) can't be upgraded. 
+
+* Narrowing the artifact upgrade inside a given feature-pack is not supported. Adding such support would imply a new RFE.
+
+== Test Plan
+
+* New tests to cover overridden artifacts added to Bootable JAR Maven plugin.
+
+* New functional tests should be added to QE testsuite.
+
+== Community Documentation
+
+The Maven plugin community documentation will be updated with this new support.
+
+== Release Note Content
+
+Not candidate for release notes.
