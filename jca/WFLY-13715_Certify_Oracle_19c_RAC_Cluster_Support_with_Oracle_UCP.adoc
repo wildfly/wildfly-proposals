@@ -1,0 +1,51 @@
+= WFLY-13715 Certify Oracle 19c RAC Cluster Support with Oracle UCP
+:author:            Tomasz Adamski
+:email:             tadamski@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          thread pool,Oracle UCP
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse/
+
+== Overview
+
+One of our customer's application relies on Oracle RAC, which further relies on Oracle's Universal Connection Pool (UCP). UCP manages it's own connection pool and provides it using PoolDataSource. Usage of UCP allows for a number of advantages (fast connection failover, run time connection loadbalancing, connection affinity) which are required in customer's use case. 
+On the other hand, Iron Jacamar manages it's own connection pool and was not designed for integration with DataSources with their own pool. Furthermore, there are no plans of changing IronJacamar architecture for such use case. As a result, the goal of this RFE is to provide workaround that would allow the customer to take advantage of most of UCP features without changing IronJacamar architecture.
+The workaround that allows to achieve this is a notification send to Oracle's specific connection implementation when it is started and ended.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/WFLY-13715[WFLY-13715]
+
+=== Related Issues:
+
+* {issue-base-url}/EAP7-168[EAP7-168]
+
+=== Dev Contacts:
+
+* mailto:{email}[{author}]
+
+=== QE Contacts:
+
+*
+
+=== Affected Projects or Components:
+
+* IronJacamar, WildFly
+
+== Requirements
+
+* customers should be able to take advantage of Oracle UCP features
+* there would be no changes to IronJacamar architecture
+
+== Proposed solution
+* notify OracleConnection about start and end of the request
+* in org.jboss.jca.adapters.jdbc.WrappedConnection invoke java.sql.Connection#beginRequest,java.sql.Connection#endRequest when connection is started and ended
+* if above methods are not present (JDBC API <9 is used) notification is not performed
+
+
+=== Test Plan
+
