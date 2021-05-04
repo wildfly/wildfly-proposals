@@ -1,0 +1,128 @@
+= Add the ability to resolve standard server system properties to configure the managed server JVMs
+:author:            Yeray Borges
+:email:             yborgess@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The Host Controller cannot resolve expressions that use the standard `${jboss.server.xxxx}` server system properties as model values. Consequently, the users cannot use those standard properties to globally configure the java options on domain mode. One specific use case is the use of `${jboss.server.log.dir}` system property to globally configure GC log path affecting all the servers in a server-group. For example, if a user wants to have at server-group level the configuration of the GC log, the following configuration fails when the server starts:
+
+----
+[domain@localhost:9990 /] /server-group=main-server-group/jvm=default:add-jvm-option(jvm-option=-Xloggc:${jboss.server.log.dir}/gc.log)
+{
+    "outcome" => "success",
+    "result" => undefined,
+    "server-groups" => {"main-server-group" => {"host" => {"master" => {"server-one" => {"response" => {
+        "outcome" => "success",
+        "response-headers" => {
+            "operation-requires-restart" => true,
+            "process-state" => "restart-required"
+        }
+    }}}}}}
+}
+
+[domain@localhost:9990 /] /server-group=main-server-group:restart-servers
+{
+    "outcome" => "failed",
+    "failure-description" => {"domain-failure-description" => "WFLYCTL0158: Operation handler failed: java.lang.IllegalStateException: WFLYCTL0211: Cannot resolve expression '-Xloggc:${jboss.server.log.dir}/gc.log'"},
+    "rolled-back" => true
+}
+----
+
+The reason is the standard management model resolution resolves these expressions by looking at the JVM environment properties. These properties are created when the HC configures the managed servers and are available for resolution only on the server JVM.
+
+This situation forces the users to configure per server the JVM options figuring out the name of the server name:
+
+----
+[domain@localhost:9990 /] /host=master/server-config=server-one/jvm=default:add-jvm-option(jvm-option=-Xloggc:${jboss.domain.servers.dir}/server-name/log/gc.log)
+----
+
+This approach is inappropriate if you have a considerable amount of servers, it doesn't scale well and doesn't take into account if the HC server grouping is by-type or by-server.
+
+The goal of this RFE is to make available some of these server configuration properties to configure the managed server JVMs.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-2806[WFCORE-2806]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-823[EAP7-823]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:jjedlick@redhat.com[Jakub Jedlicka]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+wildfly-core
+
+=== Other Interested Projects
+
+N/A
+
+=== Relevant Installation Types
+
+* [ ] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [ ] OpenShift s2i
+
+* [ ] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* The following standard server system properties will be available as management model expressions to configure the managed server JVM:
+** jboss.server.base.dir: Root directory for an individual server instance.
+** jboss.server.data.dir: Directory the server will use for persistent data file storage.
+** jboss.server.log.dir: Directory the server will use for log file storage.
+** jboss.server.temp.dir: Directory the server will use for temporary file storage.
+* These environment variables will be available to configure the jvm resources at:
+** /host=+*+/jvm=+*+
+** /server-group=+*+/jvm=+*+
+** /host=+*+/server-config=+*+/jvm=+*+
+* The resolution of these expressions only will work in the context where there is one and only one relevant server, i.e. during server launch.
+* The resolution of these expressions on mixed domains won't be available for HCs that don't support it.
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+== Security Considerations
+
+There are no security implications to consider. The values of these expressions are created by the HC and not exposes any sensible information.
+
+== Test Plan
+
+The standard WildFly testsuite will be enhanced to verify that the managed server JVM can use those expressions. The implemented tests will use variants to verify the expression resolution based on different directory-grouping configuration.
+
+== Community Documentation
+
+The admin guide will incorporate information about the uses of these expressions on the https://docs.wildfly.org/24/Admin_Guide.html#managed-domain-5[managed server JVM configuration].
+
+== Release Note Content
+
+Add the ability of using standard server system properties to configure the managed server JVMs, for example, to globally configure the GC log path at server-group level.
