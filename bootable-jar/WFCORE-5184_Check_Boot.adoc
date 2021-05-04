@@ -1,0 +1,109 @@
+= Bootable JAR, check server and deployment state at boot time
+:author:           Jean-Francois Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This feature is to enforce that a Bootable JAR that successfully booted is in a valid state (server and deployment started without error).
+During boot, when an invalid state is encountered, the Bootable JAR process is aborted.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-5184[WFCORE-5184]
+
+=== Related Issues
+
+* 
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* Bootable JAR runtime
+
+=== Other Interested Projects
+
+* https://github.com/wildfly-extras/wildfly-jar-maven-plugin/[Bootable JAR Maven plugin]
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [ ] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [ ] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+The JAR is auto-checking the server and deployment states at boot time in order to abort the process in case of errors.
+
+=== Hard Requirements
+
+* The boot checks are enabled by default. This is a change of behavior that needs to be documented.
+* Introduce `--check-boot=[true|false]` in order to disable the checks.
+* Prior to check for errors, the Bootable JAR waits for the server to reach the following states:
+** In case the server has been started with a CLI script to execute, the server running mode is expected to reach the NORMAL mode.
+** The server state is expected to be RUNNING. 
+* This new feature doesn't introduce a timeout to bound the server start time (that can be very long for large and complex application).
+* In case the server never reaches these states, the Bootable JAR doesn't take any decision and waits until the server is stopped (by any mean).
+* When the server is running the following checks are operated:
+** If boot errors are detected, the process abort
+** If a deployment exists and has a FAILED status, the process is aborted.
+* If no invalid conditions are met, the bootable JAR advertises that it is up and running.
+* If an invalid condition is met, the bootable JAR advertises the problem and exits (error code == 1).
+* It could happen that the server is aborting (Fatal server error), in this case, no action is taken by the Bootable JAR. 
+The server exits automatically (as done today).
+* Once the server has booted successfully, the state of the deployment is no more tracked.
+* In case the boot is aborted due to an invalid state, the server installation is deleted as it is done today when the Bootable JAR process exits.
+
+* This feature relies on a set of server resources, attributes and operations that are expected to be always available (whatever the set of galleon layers that are provisioned):
+** /deployments=*:read-attribute(name=status)
+** /core-service=management:read-boot-errors operation.
+** :read-attribute(name=server-state) and :read-attribute(name=running-mode) server attributes.
+
+=== Nice-to-Have Requirements
+
+* NONE
+
+=== Non-Requirements
+
+* There is no support to monitor the state of the server and deployment once the boot phase is over. This feature is not a probe monitoring the server
+state during is full life cycle.
+
+* This support doesn't replace Openshift probes.
+
+== Test Plan
+
+* Add unit test to cover new argument.
+* Evolve wildfly-jar-maven-plugin tests with some new tests to cover cases where the JAR should be aborted by this new support.
+* Evolve QE testsuite with new tests.
+
+== Community Documentation
+
+The WildFly doc will cover the new argument. The argument is also auto-documented in the bootable JAR help content.
+
+== Release Note Content
+
+A note on the change of behavior could be documented.
