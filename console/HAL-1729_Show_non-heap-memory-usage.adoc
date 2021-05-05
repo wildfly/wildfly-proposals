@@ -30,7 +30,7 @@ This issue is about adding the attribute `non-heap-memory-usage` to the server p
 
 === QE Contacts
 
-* mailto:jkasik@redhat.com[Jan Kasik]
+* mailto:msvehla@redhat.com[Martin Svehla]
 
 === Testing By
     
