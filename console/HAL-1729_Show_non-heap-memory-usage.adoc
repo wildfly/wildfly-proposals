@@ -9,9 +9,9 @@
 
 == Overview
 
-The memory information in the server preview currently only shows information about the attribute `heap-memory-usage`, but the resource also provides non-heap memory usage via the attribute `non-heap-memory-usage`.
+The memory information in the server status preview currently only shows information about the attribute `heap-memory-usage`, but the resource also provides non-heap memory usage via the attribute `non-heap-memory-usage`.
 
-This issue is about adding the attribute `non-heap-memory-usage` to the server preview.
+This issue is about adding the attribute `non-heap-memory-usage` to the server status preview.
 
 == Issue Metadata
 
@@ -45,9 +45,9 @@ This issue is about adding the attribute `non-heap-memory-usage` to the server p
 
 == Requirements
 
-The server preview of the console must contain an additional section about the non-heap memmory usage. 
+The server status preview of the console must contain an additional section about the non-heap memmory usage. 
 
-The section must contains two values:
+This new section must contains two values:
 
 1. used non-heap memory
 2. commited non-heap memory
