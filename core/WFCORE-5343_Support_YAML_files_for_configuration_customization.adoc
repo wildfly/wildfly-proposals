@@ -13,6 +13,7 @@ It is out of the scope of this proposal to provide support to define a complete 
 We also want this to be *idempotent*: that means that starting and restarting the server with the same command line should produce the same result and shouldn't fail.
 This feature is expected to be used by users of full WildFly installation as well as from the Bootable JAR implementation.
 Also given that the YAML files are used to cusomize an XML configuration, they are expected to work on the current server implementation.
+This feature might interfere with the support for CLI script on boot as those configuration changes will be applied before the CLI boot scripts so the server might not be fully configured at that time (like for example in WildFly s2i images).
 
 == Issue Metadata
 
@@ -24,6 +25,7 @@ Also given that the YAML files are used to cusomize an XML configuration, they a
 
 * https://issues.redhat.com/browse/EAP7-1677[EAP7-1677]
 * https://issues.redhat.com/browse/WFLY-13978[WFLY-13978]
+* https://issues.redhat.com/browse/WFCORE-5324[WFCORE-5324]
 
 === Dev Contacts
 
@@ -42,6 +44,7 @@ Also given that the YAML files are used to cusomize an XML configuration, they a
 === Affected Projects or Components
 
 `wildfly-core` and `wildlfy-jar-maven-plugin`.
+`wildfly-s2i` images may have issues since the server configuration is going to be modified after the yaml file have been applied.
 
 === Other Interested Projects
 
@@ -66,6 +69,12 @@ We may use YAML local tags to support operations syntax.
 So at boot, WildFly will load and parse its XML configuration, then add all the required extensions. It will then parse the YAML files, looking for a `wildfly-configuration` element as root fo the configuration updates.
 For each entry, it will check if the resource is already created by the XML, otherwise it will add a new operation to the list of boot operations to add the required resource.
 If the resource already exist then it will add a new operation to the list of boot operations to update the attributes.
+
+This feature differs from what was done in https://issues.redhat.com/browse/WFCORE-5324[WFCORE-5324] because while we are customizing the configuration, the result is not persisted.
+Please note that the scripts will be applied after the YAML files so those changes might be done on a server that is not in its final configuration state (like for example in WildFly s2i images).
+The changes are applied on boot and not after an initial boot, and thus don't require a *reload*, thus we should have better performance.
+Also we don't provide the logic semantic that you have with the Jboss CLI scripts but on the other hand since we don't persist the resulting configuration you can reuse the same command and you don't have to check for pre-existing resources.
+This feature is also a general purpose feature and doesn't just aim the bootable jar runtime.
 
 === Hard Requirements
 
