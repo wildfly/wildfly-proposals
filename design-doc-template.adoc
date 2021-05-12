@@ -61,6 +61,14 @@ not be delivered all in one go to suggest the strategy. If your feature falls
 into this category, please mention the Release Coordinators on the pull 
 request so they are aware.
 ////
+
+== Security Considerations
+
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+
 == Test Plan
 
 == Community Documentation
