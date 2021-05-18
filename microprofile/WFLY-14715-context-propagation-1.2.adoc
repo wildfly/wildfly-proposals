@@ -1,0 +1,97 @@
+= MicroProfile Context Propagation
+:author:            Kabir Khan
+:email:             kkhan@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+We want to offer MicroProfile Context Propagation 1.2. This is important for the use cases introduced with the planned bump of MicroProfile Reactive Messaging from 1.0 to 2.0 (tracked in https://issues.redhat.com/browse/WFLY-14798[WFLY-14798]).
+
+The MicroProfile Context Propagation 1.2 spec can be found https://github.com/eclipse/microprofile-context-propagation/releases/tag/1.2[here].
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/EAP7-1663
+* https://issues.redhat.com/browse/WFLY-14715
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-14798[WFLY-14798 - Upgrade Reactive Messaging] - While context propagation will work on its own, it makes more sense when we have support for `@Channel` and `@Emitter` from the Reactive Messaging 2.0 spec.
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+The Context Propagation Subsystem will be copied over from the https://github.com/wildfly-extras/wildfly-mp-reactive-feature-pack[WildFly Extras MP Reactive Feature Pack] where this work was incubated. This subsystem has no configuration. It's main job is to make the MicroProfile Context Propagation classes available on the deployment classpath, and to provide an implementation each of `ManagedExecutor` and `ThreadContext` for injection via CDI.
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+For community all installation types are relevant. For product, this is currently targetted for EAP XP.
+
+== Requirements
+=== Hard Requirements
+It must be possible to:
+
+* Provision a server with MicroProfile Context Propagation enabled
+* Add the extensions and subsystems to enable MicroProfile Context Propagation to the server resulting from the downloaded server .zip (it is not in any of our shipped configs)
+* Deploy an application using MicroProfile Context Propagation into WildFly
+** Create a new ManagedExecutor via the builder API
+** Create a new ThreadContext via the builder API
+** Inject the 'All' ManagedExecutor provided by the subsystem. The 'All context' will propagate all available contexts to the user
+** Inject the 'All' ThreadContext provided by the subsystem
+** Get propagation for the selected contexts as mentioned in the next sub-section
+
+==== Contexts
+`ThreadContextProvider` implementations for the following contexts will be provided:
+
+* `Application` - this propagates the TCCL, and the current naming context. The naming context propagation part will only be provisioned if the modules providing naming have been provisioned.
+* `CDI` - this propagates the CDI context so the same CDI bean instances get injected into code potentially running on another thread. As Context Propagation depends on CDI, this provider is always provisioned.
+* `Transaction` - Transactions get propagated. This will only be available if the modules providing JTA support have been provisioned.
+* `RestEasy` - the RestEasy context is propagated. This means that `@Context` annotated parameters to a REST endpoint for JAX-RS constructs such as `javax.ws.rs.core.UriInfo` get propagated. This will only be available if the modules providing RestEasy support have been provisioned.
+* `Servlet` - the servlet context is propagated. This means thaat `@Context` annotated parameters to a REST endpoint for Servlet constructs such as `javax.servlet.http.HttpServletRequest` get propagated. This will only be available if the modules providing Servlet support have been provisioned.
+
+For the ThreadContextProviders mentioned above which are only provisioned if their dependent modules have been provisioned, we also need to make sure that the subsystems providing the underlying functionality are active. For example, the JTA modules may be provisioned but the JTA ThreadContextProvider will throw an error if the transactions subsystem is not active since in that case no `TransactionManager` is available.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+The MicroProfile Context Propagation spec also mentions propagation of the `Security` context but as that is more complicated, it is tracked in a separate RFE.
+
+== Test Plan
+Tests will be added to the microprofile WildFly testsuite. Also the TCK for MicroProfile Context Propagation will be added to the WildFly testsuite.
+
+
+== Community Documentation
+Community documentation will be added to WildFly.
+
+== Release Note Content
+WildFly now contains support for MicroProfile Context Propagation 1.2.
