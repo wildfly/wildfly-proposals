@@ -1,0 +1,63 @@
+= Add ability to FileAuditEndpoint to allow file encoding to be overridden.
+:author:            Ilia Vassilev
+:email:             ivassile@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The FileAuditEndpoint doesn't allow file encoding to be overridden. It should allow the encoding to be overridden and specify UTF-8 as the default.
+
+Add "encoding" attribute to "file-audit-log", "periodic-rotating-file-audit-log" and "size-rotating-file-audit-log" elements in Elytron subsystem.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/ELY-1211
+* https://issues.redhat.com/browse/WFCORE-5106
+
+=== Related Issues
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+* mailto:darran.lofthouse@redhat.com[Darran Lofthouse]
+* mailto:fjuma@redhat.com[Farah Juma]
+
+=== QE Contacts
+
+=== Testing By
+
+[ ] Engineering
+
+[X] QE
+
+=== Affected Projects or Components
+
+ * wildfly-elytron
+ * wildfly-core
+ 
+=== Other Interested Projects
+
+== Requirements
+Modify FileAuditEndpoint implementation to allow file encoding to be modified. Set UTF-8 as default value to ensure backward compatibility with current implementation.
+Add "encoding" attribute to "file-audit-log", "periodic-rotating-file-audit-log" and "size-rotating-file-audit-log" elements in Elytron subsystem to utilize the new feature.
+
+=== Hard Requirements
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+== Community Documentation
+
+New "encoding" attribute has been added to "file-audit-log", "periodic-rotating-file-audit-log" and "size-rotating-file-audit-log" elements in Elytron subsystem which can be used to override the default "UTF-8" encoding. 
+
+
+== Release Note Content
+
