@@ -1,0 +1,113 @@
+= Evolve support for custom Galleon feature-packs usage during s2i.
+:author:           Jean-Francois Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Today the ability to integrate custom Galleon feature-packs and layers during s2i build phase is limited and not flexible. We are here proposing
+to evolve it with new configuration points and behavior.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/CLOUD-3928[CLOUD-3928]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1647[EAP7-1647]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly-s2i/[WildFly S2i]
+
+* https://github.com/wildfly/wildfly-cekit-modules/[WildFly cekit modules]
+
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [ ] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [x] OpenShift s2i
+
+* [ ] Bootable jar
+
+== Requirements
+
+* Ability to configure the location of the custom Galleon content a user is providing.
+
+* Ability to provide a settings.xml file used during galleon provisioning of the server.
+
+* Ability to locate un-released custom Galleon feature-packs in the application project. Custom galleon feature-packs are then copied to local maven cache 
+to be used during provisioning.
+
+* Ability to provide a list of custom Galleon feature-packs without requiring a provisioning.xml file. 
+
+=== Hard Requirements
+
+* Define new env variable: `GALLEON_DIR=<path relative to app root dir that contains Galleon content>`. Default being `galleon`. If the referenced directory doesn't
+exist, the build phase aborts.
+
+ * A settings.xml file can be located in the `${GALLEON_DIR: galleon}` dir and used during provisioning. Any local repository configured in such settings are ignored. 
+If no settings.xml is found, a default settings.xml is used.
+
+* Define a new env variable: `GALLEON_CUSTOM_FEATURE_PACKS_MAVEN_REPO=<absolute path to a maven repo dir containing custom galleon feature-packs>`
+By default we are looking into the `<src root dir>/${GALLEON_DIR:galleon}/repository`. Any path can be set for `GALLEON_CUSTOM_FEATURE_PACKS_MAVEN_REPO`, this allows to mount a volume containing the maven repo.
+During s2i build, the content of the maven repository is copied to the local maven repository present in the image used to provision a server.
+If the referenced directory doesn't exist, the build phase aborts.
+
+* Define a new env variable: `GALLEON_PROVISION_FEATURE_PACKS=<comma separated list of custom galleon feature-packs GAV>`. The order is important, the feature-packs
+are added to the provisioning context in the order of the list. If the one of the GAV is missing G, A or V, the build phase aborts.
+This env variable can only be used in conjunction with the existing `GALLEON_PROVISION_LAYERS` that can now contain both WildFly s2i layers and custom layers.
+ The feature-packs in the list can be retrieved from:
+ ** Configured repos in the default settings.xml (the default)
+ ** Repos configured in provided galleon/settings.xml
+ ** Local to the application project (@see `GALLEON_CUSTOM_FEATURE_PACKS_MAVEN_REPO` usage).
+
+Example: GALLEON_PROVISION_FEATURE_PACKS=com.foo.bar:foo:1.0 GALLEON_PROVISION_LAYERS=cloud-server,foo
+
+* NB: If a layer in`GALLEON_PROVISION_LAYERS`doesn't exist, the build phase aborts. This is already the case.
+
+=== Nice-to-Have Requirements
+
+* NONE
+
+=== Non-Requirements
+
+== Test Plan
+
+* New behave tests added to wildfly-s2i
+
+* New functional tests should be added to QE testsuite.
+
+== Community Documentation
+
+The WildFly s2i doc will cover the new env variables.
+
+== Release Note Content
+
+Not candidate for release notes.
