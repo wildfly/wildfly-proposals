@@ -1,0 +1,100 @@
+= Stop batch job execution from a different node
+:author:            Cheng Fang
+:email:             cfang@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+When running batch job executions in a clustered or multiple-node environment configured with the same jdbc batch job
+repository, users may need to start job execution from one node and later stop it from a different node.
+The current implementation assumes the job execution will always be stopped from the same node, and thus stopping
+from a different node has no effect. The implementation should be enhanced to support stopping a job execution from
+a different node.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14619[WFLY-14619 Stop batch job execution from a different node]
+* https://issues.redhat.com/browse/EAP7-1668[EAP7-1668 Stop batch job execution from a different node]
+* https://issues.redhat.com/browse/JBERET-508[JBERET-508 Stop batch job execution from a different node]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:TBD@redhat.com[TBD]
+
+=== Testing By
+
+* [X] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+WildFly
+JBeret
+
+=== Other Interested Projects
+
+N/A
+
+== Requirements
+
+=== Hard Requirements
+
+* With jdbc job repository configured in WildFly instances, users should be able to start a batch job execution from
+node A and later stop it from node B, and then restart it from either node A or B.
+* The above batch job operations should work for jobs that consist of both chunk-type steps and batchlet-type steps.
+* The above batch job operations should work for jobs that consist of both non-partitioned and partitioned steps.
+* There should be no change to WildFly batch subsystem model or schema.
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+* the ability to stop job execution from a different node when non-jdbc job repository is used
+
+=== Proposed Solution
+
+This feature requires changes to both project JBeret and WildFly
+
+* Changes to JBeret jberet-core
+** Immediately save the STOPPING batch status to jdbc job repository after receiving the stop request.
+JOB_EXECUTION, STEP_EXECUTION, and PARTITION_EXECUTION tables should be updated to reflect the STOPPING status.
+** For chunk-type step execution: when persisting the step or partition execution at the end of a chunk, update
+the step or partition tables only if the persistent batch status is not STOPPING. If the update is not successful,
+it means the current execution has been requested to stop.
+** For batchlet step execution: when persisting the step or partition execution at the end of a batchlet processing,
+update the step or partition execution only if the persistent batch status is not STOPPING. If the update is not successful,
+it means the current execution has been requested to stop.
+** Prepare to stop the current step or partition execution after receiving the stop request, via either database update
+status, or direct stop call from the current node.
+
+
+* Changes to WildFly batch subsystem
+** upgrade to jberet-core 1.3.8.Final
+** update `batch-jberet/src/main/java/org/wildfly/extension/batch/jberet/job/repository/JobRepositoryService.java`
+to implement the additional methods introduced to jberet-core class `org/jberet/repository/JdbcRepository`
+
+== Test Plan
+
+The following tests will be performed:
+
+* standalone batch TCK will be executed
+* component project (jberet) test suites will be executed
+* manual testing of the batch job operations listed in hard requirements will be executed
+* existing WildFly test suites will be executed
+* new testcase will be added to WildFly testsuite/multinode
+
+== Community Documentation
+
+Community documentation `_admin-guide/subsystem-configuration/Jakarta_Batch.adoc` will be updated to document this new feature.
