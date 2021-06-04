@@ -1,0 +1,76 @@
+ = Add OpenTelemetry Tracing Support to WildFly
+:author:            Jason Lee
+:email:             jasondlee@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+https://opentelemetry.io[OpenTelemetry] is an ambitious specification that aims to encapsulate APIs for tracing, metrics, and logging. With OpenTracing (which WildFly already supports) having shutdown in favor of OpenTelemetry, we need to migrate our support as well. This project will only cover the tracing aspects of OpenTelemetry. Any future support for the metrics and logging parts of the OpenTelemetry spec will need to be handled by a separate effort.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14854
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1688
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+* [X] Engineering
+* [X] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+* [x] Managed domain
+* [x] OpenShift s2i
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* The server/domain administrator should be able to configure OpenTelemetry export and span processor options
+* Jakarta REST endpoints should be automatically traced
+* Adherence to the Observability Standard for Runtimes
+* Context propagation should work for both incoming and outgoing request (e.g., a `ClientRequestFilter`)
+* Use of the OpenTracing shim to allow existing OpenTracing apps to continue to function without modification
+
+=== Nice-to-Have Requirements
+
+* Feature parity with current OpenTracing support, if/where it makes sense.
+* Tracing of JDBC calls
+* Tracing of EJB calls
+
+=== Non-Requirements
+
+* Multiple span processor support (if desired, users should submit an RFE)
+* Metrics API support
+* Logging API support
+
+== Test Plan
+
+* Add tests to testsuite/integration
+
+== Community Documentation
+
+The feature will be documented in WildFly Admin Guide (possibly in a new observability section).
+
+== Release Note Content
+
+Support for the tracing aspects of the OpenTelemetry spec have been added, allowing for the injection of the 
+`OpenTelemetry` and `Tracer` objects from the specification, as well as implicit tracing of Jakarta REST endpoints.
