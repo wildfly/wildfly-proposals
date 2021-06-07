@@ -1,0 +1,129 @@
+= Support for MicroProfile LRA
+:author:            Ondrej Chaloupka
+:email:             ochaloup@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:keywords:          transaction, saga, lra, microprofile
+
+== Overview
+
+The goal of this RFE is providing the Galleon feature pack for WildFly
+which integrates the https://github.com/jbosstm/narayana/tree/master/rts/lra[Narayana implementation]
+of the https://github.com/eclipse/microprofile-lra[MicroProfile LRA specification].
+
+The MicroProfile LRA is a transaction processing pattern well suited for microservice development
+based on the saga pattern. The motivation of such processing is summarized in the https://github.com/eclipse/microprofile-lra/blob/1.0/README.adoc#motivation[MicroProfile Spec readme].
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14869
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1496
+
+=== Dev Contacts
+
+* mailto:{mkunwar@redhat.com}[Mayank Kunwar]
+* mailto:{ochaloup@redhat.com}[{author}]
+
+=== QE Contacts
+
+* mailto:{szhantem@redhat.com}[Sultan Zhantemirov]
+
+=== Testing By
+
+* [ ] Engineering
+* [X] QE
+
+
+=== Affected Projects or Components
+
+* Transactions
+* WildFly
+
+=== Other Interested Projects
+
+* MicroProfile
+* Galleon
+* WildFly Operator
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+* [ ] Managed domain
+* [ ] OpenShift s2i
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+The feature pack will integrate the LRA specification as the Galleon feature pack.
+The Galleon layer will be available for provisioning.
+The provisioned feature pack will provide all functionality defined in LRA specification for users in WildFly.
+
+The feature pack will be split to two Galleon layers (i.e., two separate subsystems).
+
+The first layer provides a capability of the LRA participant - bundling the Narayana client library capable
+to parse the annotations from LRA specification and work with JAX-RS and non-JAX-RS bindings.
+
+The second layer provides the capability of the LRA coordinator - a server which provides
+a HTTP endpoints where application may register as participants and then the coordinator
+calls them back (via HTTP calls) when LRA finishes.
+
+The feature pack will be placed amongst other MicroProfile WildFly feature packs
+under https://github.com/wildfly/wildfly/tree/master/microprofile[the WildFly GitHub repository].
+
+Each MicroProfile spec is optional to allow for exclusion during provisioning.
+
+The LRA feature packs will be dependent on the `transactions` subsystem. The LRA uses the same object store types
+as the JTA/JTS transaction uses, it requires the recovery manager thread to be running and requires transaction
+specifics like unique node-identifier per running application server (WildFly).
+
+We need to provide a way how to list unfinished (as well failed) LRA records in the Narayana object store.
+As said before the LRA coordinator is based on the Narayana core (`transactions` subsystem within WildFly)
+the LRA records and JTA records shares the same storage and recovery processing.
+The LRA records will be listed under `/subsystem=transactions/log-store=log-store/lras=...`
+and the operations (e.g. a need for probing) will be consistent to what was develope for JTA transaction types
+under `/subsystem=transactions/log-store=log-store/transactions=...`.
+
+=== Nice-to-Have Requirements
+
+Create a quickstart on LRA on how to use LRA with WildFly for https://github.com/wildfly/quickstart
+
+=== Non-Requirements
+
+NONE
+
+== Test Plan
+
+1. Testing LRA functionality within WildFly
++
+The LRA functionality tests are part of the Narayana LRA codebase (https://github.com/jbosstm/narayana/tree/master/rts/lra/test/
++
+2. The WildFly will be running with LRA TCK module
++
+https://github.com/wildfly/wildfly/tree/main/testsuite/integration/microprofile-tck
++
+3. Basic integration tests which tests the Galleon layer provisioning
++
+https://github.com/wildfly/wildfly/tree/main/testsuite/integration/microprofile
++
+4. OpenShift testing
++
+TBD
+
+
+== Community Documentation
+
+Description of the LRA configuration to be added in the documentation as part of the implementation PR.
+
+== Release Note Content
+
+WildFly introduces a new Galleon layer `microprofile-lra` for provisioning. It provides the MicroProfile LRA specification into WildFly.
