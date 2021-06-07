@@ -19,7 +19,8 @@ During boot, when an invalid state is encountered, the Bootable JAR process is a
 
 === Related Issues
 
-* 
+* https://issues.redhat.com/browse/WFCORE-436[WFCORE-436]
+* https://issues.redhat.com/browse/WFCORE-2219[WFCORE-2219]
 
 === Dev Contacts
 
