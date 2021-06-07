@@ -1,0 +1,137 @@
+= Adding management operations to process transaction recovery
+:author:            Ondrej Chaloupka
+:email:             ochaloup@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:keywords:          transactions,recovery
+
+== Overview
+
+The transaction subsystem obtains an operation to execute transaction recovery manually via JBoss CLI.
+On top of that the transaction subsystem obtains configuration settings which configures the transaction recovery processing
+to speed up resolving the prepared unfinished transactions from the Narayana object store.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-12610[WFLY-12610]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/JBEAP-20714[JBEAP-20714]
+
+=== Dev Contacts
+
+* mailto:ochaloup@redhat.com[{author}]
+
+=== QE Contacts
+
+* mailto: TBD
+
+=== Testing By
+
+* [x] Engineering
+* [ ] QE
+
+=== Affected Projects or Components
+
+* Transactions
+
+=== Other Interested Projects
+
+* WildFly Operator
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+* [ ] Managed domain
+* [ ] OpenShift s2i
+* [ ] Bootable jar
+
+== Motivation
+
+These operations will be used for OpenShift scaledown processing. The current processing is run
+https://github.com/wildfly/wildfly-operator/blob/0.5.1/pkg/controller/wildflyserver/transaction_recovery.go#L196[by WildFly Operator].
+The WildFly scaledown processing needs to ensure that all transactions are finished before the pod is removed from the cluster.
+With the pod removal the object store content is lost. If the Narayana object store contained some in-doubt transaction then it is never restored.
+The notion about it is removed at time the pod is removed.
+For not losing the transactions the scaledown processing removes all unfinished transactions before it permits the pod to be removed from the OpenShift.
+Resolving the in-doubt transaction is the task for recovery manager. The CLI operations, that are added by this proposal, provide a way to manually
+launch the recovery processing and set up the Narayana transaction manager in way to speed-up the recovery to successfully resolve the in-doubt records.
+
+Until now the configuration has to be done with use of the system properties, enabling the special network socket and restarting JVM.
+All these operations are time consuming and do not permit the recovery to be processed with https://issues.redhat.com/browse/JBEAP-20714[bootable jar].
+
+== Requirements
+
+Ability to manually launch the transaction recovery and configure the behaviour
+with changing the fundamental attributes via JBoss CLI.
+
+=== Hard Requirements
+
+Adding the following operations and configuration attributes to transaction subsystem to XML definition and as the JBoss CLI operations
+
+[cols="1,1,1"]
+|===
+|Name |Type |Description
+
+|process-recovery
+|operation
+|Execute the transaction recovery processing. Runtime operation.
+
+|orphan-safety-interval
+|attribute
+|Defines a time after which the record at remote resource without counterpart in the object store is considered as orphan and rolled-back, in milliseconds. Runtime, no reload needed.
+
+|transactions-enabled
+|attribute
+|When true a new transaction can be started, when false starting a new transaction is forbidden. Runtime, no reload needed.
+
+|recovery-period
+|attribute
+|Defines a time after which the transaction recovery processing is periodically started, in seconds. Reload needed.
+
+|recovery-backoff-period
+|attribute
+|Defines a pause between transaction recovery first and second phase. Reload needed.
+
+|allow-recovery-suspension
+|attribute
+|When app server is suspended (`:suspend`, `:reload(suspend=true)`) then by default transaction recovery is stopped. When this attribute is `false` then recovery is not stopped at suspend. Runtime, no reload needed.
+
+|===
+
+=== Nice-to-Have Requirements
+
+NONE
+
+=== Non-Requirements
+
+NONE
+
+== Implementation Plan
+
+The implementation means to create a new JBoss CLI operation and attributes for WildFly transaction subsystem.
+It means to build on top of the existing Narayana configuration and operations and providing the specific parts
+at the JBoss CLI level.
+
+== Test Plan
+
+The tests will be added as part of the feature PR to WildFly testsuite.
+The test verifies the functionality of the CLI operations.
+
+As a new management operation is added the QE `tests-management` testsuite
+will be enhanced to cover these new operations.
+
+== Community Documentation
+
+Community documentation is provided as description of the newly added CLI operation and attributes.
+The WildFly community documentation will be enhanced with information about these properties as well as part of the feature PR to WildFly repository.
+
+== Release Note Content
+
+A new transaction subsystem management operation and configuration properties to manually execute transaction recovery processing
+and providing a way to configure it without a need of restarting JVM.
