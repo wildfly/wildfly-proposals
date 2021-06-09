@@ -1,0 +1,137 @@
+= [WFCORE-5279] Split Elytron SSL into it's own subsystem
+:author:            Martin Mazanek
+:email:             mmazanek@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+
+Working on bootable jar layers it is apparent that SSL requirements for a server can be distinct from the general authentication requirements, also the elytron subsystem takes a number of resources to define a working SSL configuration.
+
+This RFE is to look at providing a new subsystem dedicated to a simplified SSL configuration, the elytron subsystem approach will not be deprecated and will be preserved to leave administrators with complete control but the majority can likely be satisfied with a simplified model.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE[WFCORE-5279]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/ELY[ELY-2084]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* TBD
+//* [ ] Engineering
+
+//* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly Elytron
+* WildFly Core
+* WildFly (Community Documentation)
+
+//=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+In order to reduce the required configuration, we need to select the appropriate use-case scenarios. In order to make the best of
+the proposed subsystem, we need to cover most of the use-cases with least amount of configuration needed.
+With the simplification and focusing on SSL usage with HTTPS, we can also limit the amount of dependent code and lower the
+memory requirements, which can be great for bootable jar usages.
+
+Although we want to use this subsystem instead of full 'elytron' subsystem for simpler use-cases. This subsystem is not a replacement
+and is expected to work even if 'elytron' subsystem is used.
+
+The new subsystem will use the same capabilities as the already existing 'elytron' subsystem.
+
+The PoC subsystem is currently being developed inside the WildFly Core project, but it could be moved to WildFly or
+outside if needed.
+
+==== Wildfly Elytron
+
+SSL code in Wildfly Elytron is loosely dependent on the majority of Wildfly Elytron by being dependent on SecurityDomain. We want to split the
+SSL code to ssl-base and ssl-domain modules, so that we will minimalize the dependencies on ssl-base and use it in the new subsystem,
+eliminating a large chunk of dependencies that come from using Security Domain related code.
+
+==== Galleon layers
+
+In order to make the most out of the proposed subsystem, appropriate Galleon layers for replacing full 'elytron' subsystem will be added.
+The point of this is to reduce the memory overhead of simple deployments as much as possible.
+
+==== Covered use-case scenarios
+
+* basic one way client-server configuration - truststore for client side, certificate for server side
+* basic configuration - specify TLS version, select cipher suites
+* keystore (truststore) related configuration
+* 2 way ssl
+* FIPS
+* providers
+* Lets Encrypt
+
+Please feel free to comment any other possible use-cases
+
+
+=== Nice-to-Have Requirements
+
+* TBD
+
+=== Non-Requirements
+
+* TBD
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+== Test Plan
+
+* TBD
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
+
+* TBD
+
+
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
