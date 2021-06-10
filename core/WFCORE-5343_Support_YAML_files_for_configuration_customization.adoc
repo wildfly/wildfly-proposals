@@ -71,7 +71,7 @@ For each entry, it will check if the resource is already created by the XML, oth
 If the resource already exist then it will add a new operation to the list of boot operations to update the attributes.
 
 This feature differs from what was done in https://issues.redhat.com/browse/WFCORE-5324[WFCORE-5324] because while we are customizing the configuration, the result is not persisted.
-Please note that the scripts will be applied after the YAML files so those changes might be done on a server that is not in its final configuration state (like for example in WildFly s2i images).
+Please note that the scripts would be applied after the YAML files so those changes might be done on a server that is not in its final configuration state (like for example in WildFly s2i images). In order to address that, if we detect that we are running in admin-mode with cli scripts to be applied we won't apply the YAML changes until the reload.
 The changes are applied on boot and not after an initial boot, and thus don't require a *reload*, thus we should have better performance.
 Also we don't provide the logic semantic that you have with the Jboss CLI scripts but on the other hand since we don't persist the resulting configuration you can reuse the same command and you don't have to check for pre-existing resources.
 This feature is also a general purpose feature and doesn't just aim the bootable jar runtime.
@@ -154,6 +154,7 @@ To create a resource we will look into the YAML subtree for the attributes that 
 If the resource is created then we look for it attributes that are writeable in the YAML subtree and add a `write-attribute` operation for each of them. That means that we need to have every element in a list since we are not using `list-add` in this case.
 Then we process the sub-resources if any exist.
 We should be able to get the effective XML file (using the `read-config-as-xml` operation) to validate the resut of our YAML configuration.
+In order to behave properly with boot cli scripts, if we detect that we are running in admin mode with cli scripts to be applied we won't apply the YAML changes until the reload.
 
 == Test Plan
 
