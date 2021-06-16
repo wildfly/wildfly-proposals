@@ -1,0 +1,49 @@
+= remote+tls is not supported by EJBClient and remote-outbound-connection
+:email:             tomasz.adamski@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+=== Issue
+* https://issues.redhat.com/browse/WFLY-13828
+
+=== Dev Contacts
+
+* mailto:tadamski@redhat.com
+
+=== QE Contacts
+
+=== Testing By
+[x] Engineering
+
+[] QE
+
+=== Affected Projects or Components
+EJB
+Remoting
+
+== Introduction
+Customers would like to be able to configure EJB to use remote+tls protocol. This feature is already implemented in remoting but the configuration has to be added to jboss-ejb-client library and WildFly in order to make it work.
+
+== Implementation
+
+After the change users would be able to configure remote+tls protocol in remoting subsystem's remote-outbound-connection:
+
+[source]
+----
+<subsystem xmlns="urn:jboss:domain:remoting:4.1">
+   <http-connector name="http-remoting-connector" connector-ref="default" security-realm="ApplicationRealm"/>
+   <outbound-connections>
+      <remote-outbound-connection name="remote-ejb-connection" outbound-socket-binding-ref="binding-remote-ejb-connection" username="user1" security-realm="PasswordRealm" protocol="remote+tls">
+   </outbound-connections>
+   </subsystem>
+----
+
+== Test Plan
+
+TBD
+
+
+== Community Documentation
+None
