@@ -1,0 +1,146 @@
+= [ELY-2320] Add integrity support to FilesystemSecurityRealm
+:author:            Ashpan Raskar
+:email:             araskar@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This objective of this proposal is to add the ability to verify integrity for the filesystem realm, this will be done with the use of a Public and Private Key pair, that will be used to add a signature for each identity in the xml identity files.
+
+To store the KeyPair, a key store will be created and the FileSystem realm will utilize the key store to access the PublicKey and PrivateKey to verify filesystem integrity.
+
+For the default out of box configuration for WildFly, the goal is for the FileSystemSecurityRealm to have integrity enabled which will be done in a separate RFE.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/ELY-2320[ELY-2320]
+* https://issues.redhat.com/browse/WFCORE-5859[WFCORE-5859]
+* https://issues.redhat.com/browse/WFLY-16179[WFLY-16179]
+
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1892[EAP7-1892]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+* [X] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+- Widlfly, Wildfly Elytron, Wildfly Core
+
+=== Other Interested Projects
+N/A
+
+== Requirements
+=== Integrity of Filesystem Realm
+
+The two approaches being considered are between signing each identity file, and just calculating the checksum of each identity file.
+
+The advantage of using just a straightforward checksum using a hash algorithm is that it will not be resource heavy, as an algorithm such as SHA256 or MD5 is very efficient, although it comes with a caveat that it is possible to produce collisions (false positivies) due to the lack of complexity of the algorithm. The disadvantage of using a simple checksum is that if an authorized user were to gain access to the master list of checksums that is used to verify each identity when accessed, they could change the checksum rendering that identity to be useless, until that checksum is amended. Is it also possible for the unauthorized user to modify the identity file, calculate the new checksum, and update the checksum list with an updated one. This would be very detrimental as we have no way of knowing that the file has been modified and is no longer valid.
+
+If the approach of signing a file was chosen, it would require an asymmetric key pair, a public key and private key. This would involve a key store and a method to ensure only the correct party has access to the private key.
+
+It could be made that the public key is available for everyone to use. This means anyone can decrypt the signature to get the hash of the identity, but only people with access to the key store for the realm would have access to the private key that encrypts the hash of each identity. This way an unauthorized user could view the hash via the public key, but cannot change the hash/signature of the identity.
+
+The approach that is taken is to use the key pair file signature approach. To do so, ever time data is to be written or fetched for an identity, first the filesystem realm will verify the signature with identity file. If signature verification fails, then the filesystem realm integrity has been compromised.
+The details about adding a signature to an XML file is described here and also has the XSD schema: https://www.w3.org/TR/xmldsig-core2/#sec-xsdSchema
+
+==== Hard Requirements
+In the FileSystemSecurityRealm in Elytron, 2 new optional parameters were introduced to the constructor that accepts a PublicKey, and PrivateKey. Passing in both a PublicKey and PrivateKey indicates that the user wants to enable filesystem integrity to the realm. If only one of the two keys is set, the filesystem realm builder method will throw an IllegalArgumentException (although this should never occur due to the implementation done in wildfly-core).
+
+A new element is added to the identity files as well, the `<principal name="user">` element. This is used to to also verify the integrity. If someone renames the file and does not rename the principal element, the two names will not match and flag as a modified file. If someone renames both the filename and the principal element, then the filesystem signature will not match and flag as a modified file.
+
+A CLI operation will be added in Core (`udpate-key-pair`) that will allow a realm previously not configured to verify filesystem integrity to be updated to do so, after a key pair has been added to the realm.
+
+Along with that, another operation would be to verify filesystem integrity of the entire realm (`verify-integrity()`). This can be be used for instances when a system administrator wants to verify the integrity of the entire realm.
+
+This is an example of using the new FileSystemSecurityRealm builder to set the public and private key.
+```java
+ FileSystemSecurityRealm.builder()
+                        .setRoot(getRootPath())
+                        .setLevels(3)
+                        .setPublicKey(publicKey)
+                        .setPrivateKey(privateKey)
+                        .build();
+```
+This will create a new file system with 3 levels for the identity file, and filesystem integrity verified using the Public Key "publicKey" and Private Key "privateKey".
+
+In WildFly Core, the filesystem-realm will include an attribute for a KeyStore and an attribute for the alias of the keys to be used within that KeyStore. The keystore contains the private key, and certificate which contains the public key.
+
+*Attributes*
+
+`key-store` - a reference to the KeyStore that contains the key pair used to sign and verify the signature of each identity. This is an optional attribute.
+
+`key-store-alias` - an alias to the keypair in the key-store used to sign and verify the signature of each identity. If the key-pair attribute is specified, this attribute is required. Otherwise this is an optional attribute.
+
+To create an FileSystem with integrity enabled the following commands would be used
+
+```bash
+/subsystem=elytron/key-store=keystore:add(path=keystore, relative-to=jboss.server.config.dir, type=JKS, credential-reference={clear-text=secret})
+/subsystem=elytron/key-store=keystore:generate-key-pair(alias=localhost,algorithm=RSA,key-size=1024,validity=365,distinguished-name="CN=localhost")
+/subsystem=elytron/key-store=keystore:store()
+```
+```bash
+/subsystem=elytron/filesystem-realm=fsRealm:add(path=fs-realm-users, relative-to=jboss.server.config.dir, key-store=keystore, key-store-alias=localhost)
+```
+The signature will be added to the identity xml file at the end before the closing `</identity>` tag.
+The identity file with integrity enabled via a Private and Public Key that contains a clear text password along with an attribute would look like the following.
+```XML
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><identity xmlns="urn:elytron:1.0">
+    <principal name="user">
+    <credentials>
+        <password algorithm="digest-md5" format="base64">AgR1c2VyCmZpbGVzeXN0ZW3dJf7xqO/siBRfcZNHPL9d</password>
+    </credentials>
+    <attributes>
+        <attribute name="Roles" value="JBossAdmin"/>
+    </attributes><Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315"/><SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><Reference URI=""><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><DigestValue>KzLR5/cf78iV3iT1L7fgl7z2Wq1XTvoD2FTqk9FXWYs=</DigestValue></Reference></SignedInfo><SignatureValue>IsOfSpixRMUmgdkuCy/gANiETAfEF5/XWIl8yKT50JjpH3ChGE5i/O1mO4YLPC4OwzilJPNSGHTb&#13;
+dJHmGw5jH5K8vtUZEr+4eAcrpayxv31sDY1Q5WDC0WGfjoNgVb852HGHtk4+uKI3xIFp7Dq0jYUH&#13;
+XHpPrFREJoaCvWSjxCE=</SignatureValue><KeyInfo><KeyValue><RSAKeyValue><Modulus>kPygJfQ9TQnsOo3isWUm6haeceXCW3pNWmu72Vx1pdpwrMajm9TNC9AN69QTHaQwUtUNc1AhY4r2&#13;
+amnXtq5PI/VovIG+evCLKuUy55V96H2XT2OKx+tHGL8TKkM/lzFzfXE06jxg2MgabHGYH4avukYA&#13;
+hFugIwrWfQTg2IVrQR0=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue></KeyValue></KeyInfo></Signature></identity>
+```
+The filesystem integrity feature is designed to be used seperately from filesystem encryption, but can also be used at the same time. For example to setup a filesystem realm with both integrity and encryption the following command would be run, provided that `keystore` with alias `localhost` and `mycredstore` with alias `key` is already created
+
+```bash
+/subsystem=elytron/filesystem-realm=fsRealm:add(path=fs-realm-users, relative-to=jboss.server.config.dir, credential-store=mycredstore, secret-key=key, key-store=keystore, key-store-alias=localhost)
+```
+
+=== Nice-to-Have Requirements
+N/A
+
+=== Non-Requirements
+In a follow up RFE the default out of the box configuration will be changed to use the filesystem realm to replace the properties realm.
+Another follow up RFE can also be created to improve the efficiency by using a checksum hash and an index. If that checksum matches from the index, then the signature does not need to be verified.
+
+== Implementation Plan
+=== Filesystem Integrity
+
+In the FileSystemSecurityRealm, a method will be added to generate the signature for any given identity file. Another method will be added to verify the signature of a given file.
+
+If a signature already exists for the file before updating the data in the file, it will first be verified to ensure the contents match what is expected, after which the contents will be updated and a new signature will be generated.
+
+Anytime an identity file is read, the verify-signature method is run before proceeding any further. This is to ensure the file has not been tampered with since the last authorized write.
+
+The accepted xml namespaces will also be updated to accept `XMLSignature.XMLNS` that has the value of `http://www.w3.org/2000/09/xmldsig#`.
+
+== Test Plan
+Elytron subsystem filesystem-realm tests will be added. Tests will be added to the Elytron testsuite and the Elytron subsystem tests to ensure that the filesystem always checks the integrity of each identity and passes every time when a keystore reference and an alias to the keypair is provided.
+
+== Community Documentation
+Documentation will be added in the "FileSystem Security Realm" section under elytron/components in the WildFly documentation to indicate that it is possible to  verify integrity of the filesystem-realm during the creation.
+
+== Release Note Content
+Support for enabling filesystem integrity support using an asymmetric KeyPair.
