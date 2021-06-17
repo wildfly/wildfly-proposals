@@ -1,0 +1,246 @@
+= [WFCORE-5027] Security Realms should support specifying the charset and encoding for credentials
+:author:            Sonia Zaldana Calles
+:email:             szaldana@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+
+This task is to ensure Elytron provides feature parity with the PicketBox based configuration ahead of the next major release.
+Specifically, the legacy modules can be configured to support
+hashed passwords to prevent plain text passwords from being stored on the server side.
+Elytron already supports specifying hashing algorithms in its security realms. This task enables support for encodings and
+character sets.
+
+
+====  PicketBox Configuration
+
+In the legacy configuration, the module ``UsernamePasswordLoginModule`` imposes an
+``identity == String username, credentials == String password`` view on the login process.
+To avoid storing clear text passwords in the management system, it supports the ability
+to configure the hashing algorithm, encoding and character set to compare the client-supplied
+password to the password stored in the management system. The configuration for the hashing algorithm, encoding string and character set are specified
+as the module options: ``hashAlgorithm``, ``hashEncoding`` and ``hashCharset``. See https://access.redhat.com/documentation/en-us/red_hat_jboss_enterprise_application_platform/7.3/html-single/login_module_reference/index#password_hashing[here]
+for more information on the module configuration.
+
+
+The ``UsersRolesLoginModule``, ``DatabaseServerLoginModules`` and ``LDAPLoginModule`` share
+``UsernamePasswordLoginModule`` as their parent module. Ergo, they all support configuring the hashing algorithm, encoding
+and character set to be used across all passwords in the module.
+
+The Elytron security realms provide similar functionality than the descendants of the
+``UserRolesLoginModule``. For instance, the Properties Security Realm uses a properties file
+similarly to the ``UsersRolesLoginModule``. Furthermore, the ``DatabaseServerLoginModule``
+is a JDBC login module that supports authentication and role mapping, whose behaviour
+is replicated by the JDBC realm in the Elytron subsystem. Finally, the ``LDAPLoginModule`` authenticates
+against an LDAP server just like the LDAP security realm in Elytron.
+
+=== PicketBox Authentication
+
+Given a hashing algorithm has been provided as a module option, the Legacy modules https://github.com/picketbox/picketbox/blob/master/security-jboss-sx/jbosssx/src/main/java/org/jboss/security/auth/spi/UsernamePasswordLoginModule.java#L263[hash] the client provided passwords prior to validating whether it matches
+the store password. Note that validating whether the store password and the client provided password  might have a module specific
+implementation i.e. in the https://github.com/picketbox/picketbox/blob/master/security-jboss-sx/jbosssx/src/main/java/org/jboss/security/auth/spi/LdapLoginModule.java#L265[LDAPLoginModule] it takes the client provided password and it tries to
+create an  LDAP init context with the client password and username.
+
+All modules use the https://github.com/picketbox/picketbox/blob/master/security-jboss-sx/jbosssx/src/main/java/org/jboss/security/auth/spi/UsernamePasswordLoginModule.java#L190[UsernamePasswordLoginModule#login] method to perform the authentication
+which creates an identity  based on the username provided by the client,
+retrieves the password in the store corresponding to that identity, hashes the client provided password
+and checks whether the hashed client password matches the password in the store.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-5027[WFCORE-5027]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-13625[WFLY-13625]
+* https://issues.redhat.com/browse/ELY-2001[ELY-2001]
+* https://issues.redhat.com/browse/EAP7-1104[EAP7-1104]
+
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+N/A
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [ X ] Engineering
+
+* [ ] QE
+
+
+=== Affected Projects or Components
+
+* Wildfly, Wildfly-Core and Elytron
+
+=== Other Interested Projects
+
+N/A
+
+== Requirements
+
+=== Hard Requirements
+
+All realms that support hashed passwords need to be modified: https://github.com/wildfly-security/wildfly-elytron/blob/1.x/auth/realm/base/src/main/java/org/wildfly/security/auth/realm/LegacyPropertiesSecurityRealm.java[Properties Realm],
+https://github.com/wildfly-security/wildfly-elytron/blob/1.x/auth/realm/base/src/main/java/org/wildfly/security/auth/realm/FileSystemSecurityRealm.java[Filesystem Realm],
+https://github.com/wildfly-security/wildfly-elytron/blob/1.x/auth/realm/jdbc/src/main/java/org/wildfly/security/auth/realm/jdbc/JdbcSecurityRealm.java[JDBC Realm],
+and https://github.com/wildfly-security/wildfly-elytron/blob/1.x/auth/realm/ldap/src/main/java/org/wildfly/security/auth/realm/ldap/LdapSecurityRealm.java[LDAP Realm].
+Note the Filesystem realm has been added to the scope of this RFE even if it was not available in the PicketBox configuration,
+as the properties realm is a legacy configuration.
+
+
+Two new attributes will be added to all of these realms: ``hash-encoding`` and
+``hash-charset``.
+
+
+* ``hash-encoding``: This attribute specifies the string format for the hashed password if a hashing algorithm is specified.
+It may specify one of two: ``hex`` or ``base64``. It will be set to ``base64`` by default if omitted
+to replicate the legacy configuration options except for the ``properties realm``, where it was already using
+``hex`` encoding as its default. Note the legacy configuration also supports the ``rfc2617`` encoding, but this is
+simply ``hex`` encoding when using the ``MD5 DIGEST`` algorithm. See https://tools.ietf.org/html/rfc2617#section-3.1.3[here] for reference.
+For that reason, it has been omitted, as a user can simply specify ``hex`` encoding instead.
+
+* ``hash-charset``: This attribute specifies the name of the character set to use when converting the password string to
+a byte array. The legacy configuration options set the charset used in the container's runtime
+environment by default. However, in the Elytron configuration, it will be set to ``UTF-8``, as this was the charset
+already being used by default across Elytron realms.
+
+Though this is the general definition for what these attributes mean, they will be configured in
+different ways depending on the security realm. See below for the realm-specific configurations.
+
+
+==== Properties Realm
+
+The ``hash-encoding`` and ``hash-charset`` attributes will be configured as resource-wide
+attributes, as all the passwords within a properties file follow the same format and
+are either clear text or already digested. For example:
+
+    /subsystem=elytron/properties-realm=propRealm:add(groups-attribute=groups, groups-properties={...}, users-properties={...), \
+    plain-text=false, hash-encoding=hex, hash-charset=ISO-8859-5)
+
+Note that this realm already uses hex encoding by default if passwords are not stored in clear text.
+See https://docs.wildfly.org/20/wildscribe/core-service/management/security-realm/authentication/properties/index.html[here]
+for reference. Therefore, in this realm, ``hash-encoding`` will be set to ``hex`` by default as opposed to
+``base64`` which was used as the default in the legacy configuration.
+
+
+The configuration for the properties realm is similar to the ``UserRolesLoginModule`` in the PicketBox configuration
+since these options are resource-wide i.e. these hashing options will be
+used when verifying every single client-provided password against the credentials stored in the
+security realm, as long as hashing is enabled. The only difference lies in that the Elytron Properties realm
+only allows ClearPasswords or DigestPasswords, as opposed to the ``UserRolesLoginModule`` which supports a wider variety of
+hashing algorithms. Supporting more hashing algorithms is out of the scope of this RFE.
+
+
+
+
+
+==== FileSystem Realm
+
+The proposed changes for the FileSystem realm include adding the options ``hash-encoding`` and
+``hash-charset`` to the ``add`` operation as follows:
+
+    /subsytem=elytron/filesystem-realm=fsRealm:add(path=fs-realm-users,relative-to=jboss.server.config.dir,hash-encoding=hex,hash-charset=GB2312)
+
+The proposed configuration for the Filesystem realm is similar to the ``UserRolesLoginModule`` in the PicketBox configuration
+since these options are resource-wide i.e. these hashing options will be
+used when verifying every single client-provided password against the credentials stored in the
+security realm, as long as hashing is enabled.
+
+
+Notice the identities stored in a filesystem security realm  might use different hashing algorithms. However, in order to replicate the Legacy configuration,
+a filesystem realm will only support one encoding and one charset across the entire resource.
+
+
+==== JDBC Security Realm
+
+
+In the JDBC Security Realm, one or more principal queries can be defined. Each defined principal query is associated
+with its own datasource, which means they can use different password mappers with configurations specific to that datasource.
+
+The configuration for the JDBC security realm queries a datasource for the entry matching the desired
+username. The result for that query contains columns containing the password,
+the hashing algorithm, salt iterations, etc. This information is then used to hash the client
+provided password and compare against the password stored in the database.
+
+
+Note there already exists an attribute called ``hash-encoding`` under the configuration for password
+mappers which currently supports ``base64`` and ``hex``. No additional changes are required to ensure feature parity with the
+Legacy configuration regarding the string encoding.
+
+On the other hand, the proposed changes for this realm include
+adding a ``hash-charset`` attribute, which specifies the character set to use. Together, these
+attributes would be configured as follows:
+
+    /subsystem=elytron/jdbc-realm=servlet-security-jdbc-realm:add(principal-query=[ \
+    {sql="SELECT PASSWORD, SALT, ITERATION_COUNT FROM USERS WHERE USERNAME = ?", \
+    data-source="ServletSecurityDS",bcrypt-mapper={password-index=1, salt-index=2,iteration-count-index=3, hash-encoding=hex}}], hash-charset=UTF-16)
+
+Notice the ``hash-charset`` attribute does not belong to the password mapper and is instead a specification to be used across
+the entire realm. This resembles the PicketBox configuration since the ``hash-charset`` configuration is module-wide
+and not specific to each query.
+
+==== LDAP Realm
+
+The ``hash-encoding`` and ``hash-charset`` attributes will be configured as resource-wide
+attributes, under the assumption that all passwords stored within an LDIF file have the
+same encoding and the same character set.  For example:
+
+
+    /subsystem=elytron/ldap-realm=ldapRalm:add(dir-context=..., identity-mapping={...}, \
+    attribute-mapping=[...], hash-encoding=hex, hash-charset=UTF-16BE)
+
+The PicketBox configuration is similar to the proposed changes for the LDAP realm since the hashing
+configurations are module-wide and not specific to each password. The main difference
+lies in the specification of the hashing algorithm. The PicketBox configuration has a module-wide
+specification for the hashing algorithm, whilst Elytron currently supports different hashing algorithms
+within the same realm. These algorithms are specified as a prefix for the password string
+stored in the LDIF file in the format  ``{hashingAlgo}password``
+i.e. ``{md5}WhBei51A4TKXgNYuoiZdig==``. See https://tools.ietf.org/id/draft-stroeder-hashed-userpassword-values-01.html#rfc.section.2[here]
+for more information about the syntax.
+
+Note that the standard for storing the ``userPassword`` attribute in LDIF files
+is ``base64``, therefore the proposed changes allow for enabling resource wide
+hash encodings including ``base64`` by default.
+
+== Test Plan
+
+* WildFly Elytron test suite: tests for each of the four realms testing the additional functionality with
+the encodings and character sets.
+* Wildfly Core test suite: tests for each of the four realms testing the additional functionality with encoding
+and character sets configured in the Elytron subsystem, tests for Elytron parsing and transformer tests.
+* Wildfly test suite: test to ensure passwords are encoded correctly when comparing the
+client-supplied password to a password stored in the security realm.
+
+== Community Documentation
+
+* Documentation will be added to https://github.com/wildfly/wildfly/blob/master/docs/src/main/asciidoc/_elytron/Using_the_Elytron_Subsystem.adoc#configure-authentication-with-a-properties-file-based-identity-store[Configure Authentication with a Properties File-Based Identity Store
+] to include information about the new attributes ``hash-encoded`` and ``hash-charset`` and how to configure them in the properties realm.
+
+* Documentation will be added to https://github.com/wildfly/wildfly/blob/master/docs/src/main/asciidoc/_elytron/Using_the_Elytron_Subsystem.adoc#configure-authentication-with-a-filesystem-based-identity-store[Configure Authentication with a Filesystem-Based Identity Store
+] to include information about the new attributes ``hash-encoded`` and ``hash-charset``
+and how to configure them for a specific identity in a filesystem realm.
+
+* Documentation will be added to https://github.com/wildfly/wildfly/blob/master/docs/src/main/asciidoc/_elytron/Using_the_Elytron_Subsystem.adoc#configure-authentication-with-a-database-identity-store[Configure Authentication with a Database Identity Store
+] to include information about the new attributes ``hash-encoded`` and ``hash-charset`` and how to configure them within password mappers in the JDBC realm.
+
+
+* Documentation will be added to https://github.com/wildfly/wildfly/blob/master/docs/src/main/asciidoc/_elytron/Using_the_Elytron_Subsystem.adoc#configure-authentication-with-an-ldap-based-identity-store[Configure Authentication with an LDAP-Based Identity Store]
+to include information about the new attributes ``hash-encoded`` and ``hash-charset`` and how to configure them in the LDAP realm.
+
+
+== Release Note Content
+
+It is now possible to specify the character set and hash encoding strings to verify client-supplied passwords
+against passwords stored in the Properties Realm, Filesystem Realm, JDBC Realm and LDAP realm
+in the Elytron subsystem.
