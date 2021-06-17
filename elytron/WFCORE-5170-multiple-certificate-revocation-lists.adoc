@@ -1,0 +1,187 @@
+= [WFCORE-5170] Certificate Revocation Lists
+:author:            Sonia Zaldana Calles
+:email:             szaldana@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Certificate Revocation Lists (CRLs) contain a list of certificates that have been revoked
+by the issuing Certificate Authority before their expected expiration date, and therefore should no longer
+be trusted. Elytron currently supports configuring one Certificate Revocation List.
+
+However, if several Certificate Authorities are used, there is no way to configure several
+CRL files. This task is to enable support for more than one Certificate Revocation List in Elytron.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-5170[WFCORE-5170]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-14007[WFLY-14007]
+* https://issues.redhat.com/browse/ELY-2033[ELY-2033]
+* https://issues.jboss.org/browse/EAP7-1548[EAP7-1548]
+
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+N/A
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [ X ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly, WildFly-Core and Elytron
+
+=== Other Interested Projects
+
+N/A
+
+== Requirements
+
+=== Hard Requirements
+
+* Add a new attribute ``certificate-revocation-lists`` in the ``trust-manager`` resource in the Elytron subsystem:
+
+** The ``trust-manager`` must be able to use the CRLs obtained from the distribution points referenced
+in the certificates using the ``certificate-revocation-lists`` attribute as follows:
+
+    /subsystem=elytron/trust-manager=myTrustManager:write-attribute(name=certificate-revocation-lists,value=[])
+
+** Alternatively, the ``trust-manager`` must be able to configure CRLs using certificate revocation
+list objects (which override the CRLs referenced in the distribution points). These objects have the
+attributes ``path`` and ``relative-to`` which specify the path to the CRL and the
+base path to the CRL respectively. These objects can be configured as follows:
+
+    /subsystem=elytron/trust-manager=myTrustManager:write-attribute(name=certificate-revocation-lists, value=[{path=/path/to/CRL_FILE.crl.pem, relative-to=/SOME/DIRECTORY},
+    {path=/path/to/CRL_FILE2.crl.pem, relative-to=/SOME/DIRECTORY}])
+
+** The current client side schema to configure ``certificate-revocation-lists`` in ``wildfly-config.xml`` looks as follows:
+
+    <ssl-context name="...">
+        <trust-store key-store-name="..."/>
+        <certificate-revocation-list path="/path/to/CRL.pem" maximum-cert-path="2"/>
+    </ssl-context>
+
+** The proposed client side schema should support the new attribute ``certificate-revocation-lists`` which
+contains multiple ``certificate-revocation-list`` objects as follows:
+
+    <ssl-context name="...">
+        <trust-store key-store-name="..."/>
+        <certificate-revocation-lists>
+            <certificate-revocation-list path="/path/to/CRL.pem"/>
+            <certificate-revocation-list path="/path/to/CRL2.pem" />
+        </certificate-revocation-lists>
+    </ssl-context>
+
+NOTE: The ``certificate-revocation-list`` objects under the ``certificate-revocation-lists`` attribute
+will not allow the configuration of a ``maximum-cert-path`` for each CRL, as this attribute has been
+deprecated. Instead, it assumes this value has been configured
+as an attribute for the trust manager.
+
+* As the new ``certificate-revocation-lists`` attribute can pose more complexity in the CLI,
+the existing attribute ``certificate-revocation-list`` should be kept. These attributes should be
+mutually exclusive.
+
+* For older schema versions, the ``certificate-revocation-lists`` attribute will be transformed
+to ``certificate-revocation-list`` in the following two cases:
+
+** When the ``certificate-revocation-lists`` attribute is holding a single CRL object,
+it will be converted to ``certificate-revocation-list``.
+
+** When the ``certificate-revocation-lists`` is empty it indicates the distribution points
+should be used. It will then be converted to an empty ``certificate-revocation-list``.
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+
+== Test Plan
+
+The following test scenarios will be added to the WildFly Elytron test suite:
+
+* One way SSL tests where a client configures a single CRL under the certificate-revocation-lists
+attribute. A server is configured to send a certificate which is present in the CRL
+configured in the client. Communication is expected to fail.
+
+* One way SSL tests where a client configures multiple CRLs under the certificate-revocation-lists
+attribute. A server is configured to send a certificate which is present in one of the CRLs configured by the client.
+Communication is expected to fail.
+
+* One way SSL tests where a client configures multiple CRLs under the certificate-revocation-lists
+attribute. A server is configured to send a certificate
+*not* present in any of the CRLs configured by the client. Communication is expected to succeed.
+
+* Two way SSL test where a server configures a list of CRLs containing a single CRL. The client configures no CRLs,
+but it sends a certificate present in the CRL configured by the server. Communication is expected to fail.
+
+* Two way SSL test where a server configures a list of CRLs containing a single CRL.
+The client configures no CRLs, and it sends a certificate *not* present in the CRL
+configured by the server. Communication is expected to succeed.
+
+* Two way SSL test where a server configures a list of CRLs containing multiple
+CRLs. The client configures no CRLs, but it sends a certificate present in one of the
+CRLs configured by the server. Communication is expected to fail.
+
+* Two way SSL test where a server configures a list of CRLs containing two CRLs.
+The client configures no CRLs, and it sends a certificate *not* present in any of the CRLs
+configured by the server. Communication is expected to succeed.
+
+The following test scenarios will be added to the WildFly Core test suite:
+
+* A test to ensure the management system adequately creates trust managers containing multiple
+certificate revocation lists using the ``certificate-revocation-lists`` attribute. It would additionally verify
+the trust manager can be reloaded successfully.
+
+* A test to ensure the management system adequately creates a trust manager where the CRLs are
+specified using the distribution points by specifying an empty ``certificate-revocation-lists`` attribute.
+
+The following test scenarios will be added to the WildFly test suite:
+
+* A web application secured using an Elytron ``server-ssl-context`` backed by a ``trust-manager`` configured with
+multiple certificate revocation lists. The test would check certificate based
+authentication succeeds when connecting to a server which sends a certificate not present in the certificate
+revocation lists.
+Additionally, they would check
+certificate based authentication fails if the client provides a certificate present in any of the CRLs configured.
+
+
+* Subsystem parsing to verify the parsing of older version of the model in addition to
+testing the parsing of the current version including the new configuration options.
+
+* Transformer tests to verify the ``certificate-revocation-lists`` attribute gets
+converted into ``certificate-revocation-list`` when containing a single list or empty. Otherwise, the
+attribute ``certificate-revocation-lists`` should be rejected.
+
+
+== Community Documentation
+
+* Documentation will be added to the "Using the Elytron Subsystem"
+section in the WildFly documentation, specifically under https://docs.wildfly.org/20/WildFly_Elytron_Security.html#configure-ssltls[4.3.3. Configure certificate revocation in trust-manager].
+The new documentation will specify that multiple certificate revocation lists are supported.
+
+== Release Note Content
+
+Elytron previously supported configuring one certificate revocation list. However, if
+several Certificate Authorities were used, there was no
+way to configure more than one certificate revocation file.
+It is now possible to configure multiple certificate revocation lists in Elytron.
