@@ -1,0 +1,174 @@
+= Support for YAML files to customize WildFly configuration
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The aim of this proposal is to be able to inject external configuration in a YAML format to WildFly in order to customize an existing configuration.
+It is out of the scope of this proposal to provide support to define a complete server configuration in YAML: as such you won't be able to add a new extension using a YAML file.
+We also want this to be *idempotent*: that means that starting and restarting the server with the same command line should produce the same result and shouldn't fail.
+This feature is expected to be used by users of full WildFly installation as well as from the Bootable JAR implementation.
+Also given that the YAML files are used to cusomize an XML configuration, they are expected to work on the current server implementation.
+This feature might interfere with the support for CLI script on boot as those configuration changes will be applied before the CLI boot scripts so the server might not be fully configured at that time (like for example in WildFly s2i images).
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-5343[WFCORE-5343]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1677[EAP7-1677]
+* https://issues.redhat.com/browse/WFLY-13978[WFLY-13978]
+* https://issues.redhat.com/browse/WFCORE-5324[WFCORE-5324]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+* mailto:jdenise@redhat.com[Jean-François Denise]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+`wildfly-core` and `wildlfy-jar-maven-plugin`.
+`wildfly-s2i` images may have issues since the server configuration is going to be modified after the yaml file have been applied.
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [] Managed domain
+
+* [] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+WildFly will be able to take a list of YAML files from the command line to redefine its exisiting configuration.
+The operations will be applied in the order the files are defined and after the initial operations defined by the XML configuration.
+The YAML configuration should be *idempotent* so that we can start and restart with the same command line without failure nor resulting with a different final configuration.
+The YAML structure should follow the management model structure, the YAML tree should match the management model resource tree.
+We may use YAML local tags to support operations syntax.
+So at boot, WildFly will load and parse its XML configuration, then add all the required extensions. It will then parse the YAML files, looking for a `wildfly-configuration` element as root fo the configuration updates.
+For each entry, it will check if the resource is already created by the XML, otherwise it will add a new operation to the list of boot operations to add the required resource.
+If the resource already exist then it will add a new operation to the list of boot operations to update the attributes.
+
+This feature differs from what was done in https://issues.redhat.com/browse/WFCORE-5324[WFCORE-5324] because while we are customizing the configuration, the result is not persisted.
+Please note that the scripts would be applied after the YAML files so those changes might be done on a server that is not in its final configuration state (like for example in WildFly s2i images). In order to address that, if we detect that we are running in admin-mode with cli scripts to be applied we won't apply the YAML changes until the reload.
+The changes are applied on boot and not after an initial boot, and thus don't require a *reload*, thus we should have better performance.
+Also we don't provide the logic semantic that you have with the Jboss CLI scripts but on the other hand since we don't persist the resulting configuration you can reuse the same command and you don't have to check for pre-existing resources.
+This feature is also a general purpose feature and doesn't just aim the bootable jar runtime.
+
+=== Hard Requirements
+
+* Support for multiple files.
+External files will take precedence over the XML configuration ones. Then order will follow the command line.
+
+* If the resource doesn't already exists: add the resource with all the specified attributes of the YAML section.
+* If the resource is already defined then all we have to do is updating its attributes using the `write-attribute` operation.
+* If the YAML part define an empty resource and the resource already exists: log a WARNING, otherwise try to add it.
+* If the YAML is incorrect: like defining an non-existing attribute or child resource we should fail.
+
+=== Nice-to-Have Requirements
+
+* Undefine attribute: using a YAML tag !undefine. For example:
+----
+wildfly-configuration:
+    subsystem:
+        logging:
+          console-handler:
+            CONSOLE: 
+              named-formatter: COLOR_PATTERN
+              level: !undefine
+----
+Using a null value is not 'doable' as we have attribute where the 'null' value is significant.
+
+* Allow setting null if value is empty and attribute is null-significant.
+* Allow support to remove resource using a YAML tag !remove. For example:
+----
+wildfly-configuration:
+    subsystem:
+        microprofile-jwt-smallrye: !remove
+----
+
+* Allow support for adding element to list and supporting index.
+A YAML sequence of the elements to be added is expected.
+----
+  permission-set:
+    default-permissions: 
+      permissions: !list-add 
+        - class-name: org.wildfly.transaction.client.RemoteTransactionPermission
+          module: org.wildfly.transaction.client
+          target-name: "*"
+          index: 0
+----
+
+=== Non-Requirements
+
+The goal of the YAML files is to be able to customize an existing configuration. It is not here to replace the existing configuration support with XML. As such we won't support part of the management model.
+
+Only those elements would be *supported*:
+
+- core-service
+- interface
+- socket-binding-group
+- subsystem
+- system-property
+
+That means that at least those entries would be *ignored*:
+
+ - extension: to add extension to the server as this might require modules which can be missing.
+ - deployment: to add deployments to the server as this require more that just some configuration.
+ - deployment-overlay: to add deployment-overlays to the server as this require more that just some configuration.
+ - path: since those should already have been defined when the YAML files are parsed.
+ 
+As this configuration extension is for a *standalone server* only this *won't be supported in domain mode*.
+
+Because we need to support expressions, it might be complex to get a JSON schema describing the YAML files for IDE completion. Also such a schema would be really big and would be really difficult to maintain or verify. 
+
+== Implementation Plan
+
+If we are processing YAML files then the server is in *read-only* mode: that makes idempotence easy to achieve. We could persist the resulting configuration after boot so that we wouldn't be in read-only mode but then what is the purpose of the YAML files after the 1st execution ?
+We are going to process the YAML files to get a list of operations to be applied at boot after the operations defined in the XML configuration file. That means that when we are processing the YAML files we don't have access to the model that was persisted int the XML configuration file.
+What we are going to do is use the boot operations to define what to do with what is described in the YAML files.
+In the YAML tree we can check if the node is matching a resource or an attribute.
+If it is a resource then we check if there are boot operations for this address, if such is the case then we have to process the attributes, otherwise that means that we need to create the resource.
+To create a resource we will look into the YAML subtree for the attributes that are defined, and add an `add` operation for it.
+If the resource is created then we look for it attributes that are writeable in the YAML subtree and add a `write-attribute` operation for each of them. That means that we need to have every element in a list since we are not using `list-add` in this case.
+Then we process the sub-resources if any exist.
+We should be able to get the effective XML file (using the `read-config-as-xml` operation) to validate the resut of our YAML configuration.
+In order to behave properly with boot cli scripts, if we detect that we are running in admin mode with cli scripts to be applied we won't apply the YAML changes until the reload.
+
+== Test Plan
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
