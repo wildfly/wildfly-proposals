@@ -1,0 +1,130 @@
+= Server Mode for Bootable JAR Maven Plugin
+:author:           Jean-Francois Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Introduce a mode in the Bootable JAR Maven Plugin to build a server installation with the application deployment. 
+This mode is an alternative to the existing mode that bundles the server installation and the application deployment inside 
+an executable Bootable JAR.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14934[WFLY-14934]
+
+=== Related Issues
+
+* New WildFly S2I: https://issues.redhat.com/browse/WFLY-14936[WFLY-14936]
+
+* JKube evolved support: https://issues.redhat.com/browse/WFLY-14938[WFLY-14938]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly-extras/wildfly-jar-maven-plugin/[Bootable JAR Maven plugin]
+
+* https://github.com/eclipse/jkube[JKube]
+
+* https://github.com/wildfly/wildfly-s2i[WildFly s2i]
+
+* https://github.com/wildfly/quickstart[WildFly quickstarts]
+
+* ODO dev files.
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [ ] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Maven-controlled standalone server
+
+* [ ] Bootable jar
+
+== Requirements
+
+Ability to provision and configure a server installation. Ability to run the server from the plugin's run goals (run, start, dev and dev-watch).
+
+=== Hard Requirements
+
+==== Plugin requirements
+
+* Plugin behave the same as when producing a Bootable JAR, the only visible difference is that the project target dir contains 
+   a directory (named server by default) that contains the server and any deployments.
+* The Server mode is activated by the ```<server>``` configuration element. 
+* The server mode can be enabled/disabled, e.g.: ```<server> <enabled>[true|false]</enabled></server>```
+* In server mode, multiple deployments can be deployed inside the server. The primary one (the current project if producing a primary artifact) 
+   but also any war/ear files added as Maven dependencies in the project pom.xml file.
+* In bootable JAR mode, a single deployment can be added (the primary or dependency one).
+* By default the server is generated in ```target/server``` directory. The plugin offers a configuration item to provide the name of a directory relative to the project 
+   ```target``` directory in which the server will be installed. E.g.: ```<server> <directory-name>foo-server</directory-name></server>```
+* In server mode, in order to allow for execution of a launch script for start/run/dev/dev-watch modes in a cloud 
+   context (eg: ODO), a launcher bash script file name (relative to  $JBOSS_HOME/bin) can be provided. For example, 
+   when using the legacy cloud galleon feature-pack, one can provide the ``` openshift-launch.sh``` script file name that this galleon feature-pack provisions.
+   For example: ```<server> <launch-script>openshift-launch.sh</launch-script></server>```
+* ```<cloud>``` configuration applies to the server mode the same way it applies to Bootable JAR. The Bootable JAR specific cloud extension is not packaged in the server.
+It is expected that the cloud execution context (e.g.: the WildFly S2i v2 builder and runtime images 
+defined in https://issues.redhat.com/browse/WFLY-14936[WFLY-14936]) handles the specifics required for the WildFly server to behave properly.
+* ```dev, dev-watch, start, run and shutdown``` goals work the same way as when Bootable JAR packaging occurs.
+
+==== Requirements for cloud integration
+
+* The plugin configured in this server mode can be used in a "cloud build" context. In particular, the plugin must be usable with:
+** WildFly s2i V2 builder image for s2i in binary and source (see: https://issues.redhat.com/browse/WFLY-14936[WFLY-14934])
+** JKube s2i and docker binary builds (see https://issues.redhat.com/browse/WFLY-14938[WFLY-14938])
+** Other technologies such as Buildpacks.
+* The generated server can be installed and run successfully inside a WildFly runtime image v2 defined 
+   in https://issues.redhat.com/browse/WFLY-14936[WFLY-14936].
+* When the ```<cloud/>``` element is set, a lookup is operated to discover the Galleon layer to use to provision an "health" endpoint. 
+If the ```microprofile-health``` layer is found in the provisioning, it is used (that is the today behavior). If this layer is not found, the ```health``` layer is used. 
+Finally, if none are found, a warning is displayed in the console during build.
+
+==== Impact on quickstarts 
+
+* A set of quickstarts (List TBD) will be refactored to use this server mode in both bare-metal and cloud.
+
+=== Nice-to-Have Requirements
+
+* NONE
+
+=== Non-Requirements
+
+* No support for domain mode.
+* The ability to execute a launch bash script file is not multi platforms. The use-case it addresses is execution of the Maven plugin in a cloud context (eg: ODO).
+
+== Test Plan
+
+* Add new Maven plugin tests to cover this mode.
+* Add new QE tests.
+
+== Community Documentation
+
+* The Maven plugin community doc will be evolved with the new configuration points.
+* 2 New examples will be added to the Maven plugin examples set to cover single and multiple deployments.
+
+== Release Note Content
+
+Yes.
