@@ -1,0 +1,144 @@
+= WFCORE-5489 - As a developer, I want to override management attribute values using environment variables
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WildFly on the cloud relies on container environment variables to customize its configuration to the container platform.
+
+It is difficult to change the value of a management attribute from the standalone configuration if the attribute does not provide a default value with an expression that can be resolved at runtime.
+
+For example, the user wants to update the `proxy-address-forwarding` attribute on the `/subsystem=undertow/server=default-server/http-listener=default` resource.
+
+It is not possible to achieve this with our existing configuration as the value is not specified in standalone.xml and defaults to `false`.
+If we want to allow our users to change this attribute, we must explicitely set its value with an expression that defaults to its default value:
+
+[source]
+----
+/subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=proxy-address-forwarding, value=${undertow.default.http-listener.proxy-address-forwarding:false)
+----
+
+[NOTE]
+====
+This is an actual use case as we are changing the value of this attribute when a Bootable jar is targeting a cloud deployment in https://github.com/wildfly-extras/wildfly-jar-maven-plugin/blob/master/plugin/src/main/resources/org/wildfly/plugins/bootablejar/maven/cloud/openshift-undertow-script.cli 
+====
+
+With that change, the user can now use the expression resolution to change the attribute value.
+
+However this implies for *any* attribute that can be modified by the user at deployment time to explicity set its value to a resolvable expression with a default.
+This is not achievable while keeping our configuration readable and maintainable.
+
+Instead this RFE proposes to introduce a generic mechanism to let user override *any* management attribute using environment variables.
+
+For the same example above, the user could set an env var when starting WildFly to change the value of this `proxy-address-forwarding` attribute with the env var `SUBSYSTEM_UNDERTOW_SERVER_DEFAULT_SERVER_HTTP_LISTENER_DEFAULT__PROXY_ADDRESS_FORWARDING`
+
+[source]
+----
+$ export SUBSYSTEM_UNDERTOW_SERVER_DEFAULT_SERVER_HTTP_LISTENER_DEFAULT__PROXY_ADDRESS_FORWARDING=true
+$ ./bin/standalone.sh
+----
+
+If he runs WildFly on the Cloud, he needs to set this *env var* on its pod container without any modificaiton to the application image.
+
+This RFE will simplify the integration of services with WildFly with information that is only known during deployment (such as URLs, credentials, etc.)
+
+== Resource and attribute mapping
+
+The mapping is straightforward. The name of the env var is based on thethe address of the resource and the name of the attribute:
+
+1. take the address of the resource
+** `/subsystem=undertow/server=default-server/http-listener=default`
+2. remove the leading slash (`/`)
+** `subsystem=undertow/server=default-server/http-listener=default`
+3. append *two underscores* (`__`) and the name of the attribute:
+** `subsystem=undertow/server=default-server/http-listener=default__proxy-address-forwarding`
+4. Replace all non-alphanumeric characters with an underscore (`_`) and put it in upper case
+** `SUBSYSTEM_UNDERTOW_SERVER_DEFAULT_SERVER_HTTP_LISTENER_DEFAULT__PROXY_ADDRESS_FORWARDING`
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-5489[As a developer, I want to override management attribute values using environment variables]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFCORE-5464[WFCORE-5464 - Add environment variables as a source for model expression resolution]
+** this is a different feature as it reads environment variables *if the attribute value is an expression*. With WFCORE-5489, we override the attribute value but do not specify its semantics (it can be an expression if the attribute allows it).
+
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+
+* [x] Engineering
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly-core
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+* [x] Managed domain
+* [x] OpenShift s2i
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+Everytime an attribute value is validated and set in the management model, we look if there is a corresponding environment value that overrides it *before* doing any expression resolution or correction.
+
+This change will be done in `org.jboss.as.controller.AttributeDefinition#validateAndSet`. Any attribute definition that does not use this method to validate and set their values will not be taken into account.
+
+The fact of populating the management model with the overridden attribute value implies that, going forward, the persisted value will be the overriden value.
+
+In the Cloud deployment, this is not relevant as the configuration will be read from its initial state whenever a Pod is created.
+
+In bare metal deployment, this will change the persisted configuration and will affect subsequent server starts (even if the env var that was used to override the value is no longer present).
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+* We are not supporting to override management attributes value using Java System Properties.
+
+== Test Plan
+
+Tests will be added to the WildFly Core testsuite to ensure that overriding an attribute value with an environment variable works as expected.
+
+Tests will also verify the mapping between the (resource, address) tuple and the name of the environment variable to look up.
+
+== Community Documentation
+
+The WildFly Admin and Developer Guides will be enhanced to showcase the new mechanism.
+
+== Release Note Content
+
+WildFly now supports overriding the value of any management attribute with an environment variable.
+
+To overrid the attribute value of a management resource, you can specify an environment variable with the following conversion mapping:
+
+1. take the address of the resource.
+2. remove the leading slash (`/`).
+3. append *two underscores* (`__`) and the name of the attribute.
+4. Replace all non-alphanumeric characters with an underscore (`_`) and transform it in upper case.
+
+For example, to set the value of the `proxy-address-forwarding` attribute to `true` on the `/subsystem=undertow/server=default-server/http-listener=default` resource, you can use the following environment variable:
+
+[source]
+----
+export SUBSYSTEM_UNDERTOW_SERVER_DEFAULT_SERVER_HTTP_LISTENER_DEFAULT__PROXY_ADDRESS_FORWARDING=true
+----
