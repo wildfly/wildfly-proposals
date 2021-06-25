@@ -1,0 +1,161 @@
+= WFCORE-5489 - As a developer, I want to override management attribute values using environment variables
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WildFly on the cloud relies on container environment variables to customize its configuration to the container platform.
+
+It is difficult to change the value of a management attribute from the standalone configuration if the attribute does not provide a default value with an expression that can be resolved at runtime.
+
+For example, the user wants to update the `proxy-address-forwarding` attribute on the `/subsystem=undertow/server=default-server/http-listener=default` resource.
+
+It is not possible to achieve this with our existing configuration as the value is not specified in standalone.xml and defaults to `false`.
+If we want to allow our users to change this attribute, we must explicitely set its value with an expression that defaults to its default value:
+
+[source]
+----
+/subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=proxy-address-forwarding, value=${undertow.default.http-listener.proxy-address-forwarding:false)
+----
+
+[NOTE]
+====
+This is an actual use case as we are changing the value of this attribute when a Bootable jar is targeting a cloud deployment in https://github.com/wildfly-extras/wildfly-jar-maven-plugin/blob/master/plugin/src/main/resources/org/wildfly/plugins/bootablejar/maven/cloud/openshift-undertow-script.cli 
+====
+
+With that change, the user can now use the expression resolution to change the value of any attributes.
+
+However this implies for *any* attribute that can be modified by the user at deployment time to explicity set its value to a resolvable expression with a default.
+This is not achievable while keeping our configuration readable and maintainable.
+
+Instead this RFE proposes to introduce a generic mechanism to let user override any __simple__ management attribute using environment variables. Complex attributes (of type `OBJECT`, `LIST`, `PROPERTY`) are not impacted by this change.
+
+For the same example above, the user could set an env var when starting WildFly to change the value of this `proxy-address-forwarding` attribute with the env var `SUBSYSTEM_UNDERTOW_SERVER_DEFAULT_SERVER_HTTP_LISTENER_DEFAULT__PROXY_ADDRESS_FORWARDING`
+
+[source]
+----
+$ export SUBSYSTEM_UNDERTOW_SERVER_DEFAULT_SERVER_HTTP_LISTENER_DEFAULT__PROXY_ADDRESS_FORWARDING=true
+$ ./bin/standalone.sh
+----
+
+If he runs WildFly on the Cloud, he needs to set this *env var* on its pod container without any modificaiton to the application image.
+
+This RFE will simplify the integration of services with WildFly with information that is only known during deployment (such as URLs, credentials, etc.)
+
+== Resource and attribute mapping
+
+The mapping is straightforward. The name of the env var is based on the address of the resource and the name of the attribute:
+
+1. take the address of the resource
+** `/subsystem=undertow/server=default-server/http-listener=default`
+2. remove the leading slash (`/`)
+** `subsystem=undertow/server=default-server/http-listener=default`
+3. append *two underscores* (`__`) and the name of the attribute:
+** `subsystem=undertow/server=default-server/http-listener=default__proxy-address-forwarding`
+4. Replace all non-alphanumeric characters with an underscore (`_`) and put it in upper case
+** `SUBSYSTEM_UNDERTOW_SERVER_DEFAULT_SERVER_HTTP_LISTENER_DEFAULT__PROXY_ADDRESS_FORWARDING`
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-5489[As a developer, I want to override management attribute values using environment variables]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFCORE-5464[WFCORE-5464 - Add environment variables as a source for model expression resolution]
+** this is a different feature as it reads environment variables *if the attribute value is an expression*. With WFCORE-5489, we override the attribute value but do not specify its semantics (it can be an expression if the attribute allows it).
+
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+
+* [x] Engineering
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly-core
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+* [x] Managed domain
+* [x] OpenShift s2i
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+Everytime the value of a simple attribte is validated and set in the management model, we look if there is a corresponding environment value that overrides it *before* doing any expression resolution or correction. Complex attributes are not taken into account.
+
+This change will be done in `org.jboss.as.controller.AttributeDefinition#validateAndSet`. Any attribute definition that does not use this method to validate and set their values will not be taken into account.
+
+This feature is activated by a presence of an environment variable: `WILDFLY_OVERRIDING_ENV_VARS`.
+
+As the target of this feature is application images running on the cloud, we will make it the default behaviour for the S2I images by setting this `WILDFLY_OVERRIDING_ENV_VARS` in the builder and runtime images.
+
+For cloud deployment with Bootable Jar, the users will have to set this env var in addition to any env var that will override attribute values.
+
+When the feature is activated, persistence of the configuration is affected by this change:
+
+* If an attribute value is determined from an environment variable, the next time the configuration is persisted, that value from the environment variable will be persisted.
+* Until something triggers persistence of the configuration file (which may never happen), the configuration file will not reflect the current running configuration.
+* If the WildFly process is stopped and started again and the env var is still present but has a different value, the new env var value will take effect.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+* This feature is not activated by default in other installation types than OpenShift S2I
+* It is not possible to override management attributes value using Java System Properties.
+* This feature only works for simple attributes. Complex attributes (of type `OBJECT`, `LIST`, `PROPERTY`) are not impacted by this feature.
+* It is not a requirement that an attribute value being determined from an environment variable triggers persistence of the configuration in order to make its state match the current running configuration.
+* Following from this it is not a requirement that files in the configuration history dir reflect environment variable values unless those history files record configuration state that was persisted for some other reason. For example, a `standalone.xml.initial` and `standalone.xml.boot` would not record information that wasn't in the config file that was read on the initial or most recent boot.
+
+== Test Plan
+
+Tests will be added to the WildFly Core testsuite to ensure that overriding an attribute value with an environment variable works as expected.
+
+Tests will also verify the mapping between the (resource, address) tuple and the name of the environment variable to look up.
+
+== Community Documentation
+
+The WildFly Admin and Developer Guides will be enhanced to showcase the new mechanism.
+
+== Release Note Content
+
+WildFly now supports overriding the value of simple management attribute with an environment variable.
+
+To override the value of simple attributes of a management resource, you can specify an environment variable with the following conversion mapping:
+
+1. take the address of the resource.
+2. remove the leading slash (`/`).
+3. append *two underscores* (`__`) and the name of the attribute.
+4. Replace all non-alphanumeric characters with an underscore (`_`) and transform it in upper case.
+
+For example, to set the value of the `proxy-address-forwarding` attribute to `true` on the `/subsystem=undertow/server=default-server/http-listener=default` resource, you can use the following environment variable:
+
+[source]
+----
+export SUBSYSTEM_UNDERTOW_SERVER_DEFAULT_SERVER_HTTP_LISTENER_DEFAULT__PROXY_ADDRESS_FORWARDING=true
+----
+
+This feature is not activated by default. To activate this feature, you must set the `WILDFLY_OVERRIDING_ENV_VARS` in your target platform with:
+
+[source]
+----
+export WILDFLY_OVERRIDING_ENV_VARS=1
+----
