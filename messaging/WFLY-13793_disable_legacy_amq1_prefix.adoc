@@ -1,0 +1,91 @@
+= [WFLY-13793] Allow for a remote jms queue / topic not to use legacy amq1 prefix
+:author:            Chao Wang
+:email:             chaowan@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:          messaging,jms
+:idseparator:       -
+
+== Overview
+Currently we can disable the use of legacy amq1 prefixes `jms.queue` and `jms.topic` only at the cnnection factory level but not for queue or topic defined in the model or using JakartaEE annotations.
+The goal of this proposal is to be able to disable the usage of such prefixes at the destination level for external JMS queues and topics.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-13793[WFLY-13793]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1559[EAP7-1559]
+* https://issues.redhat.com/browse/EAP7-1244[EAP7-1244]
+
+Previous EAP7-1244 exposed the enable1Prefixes configuration on external pooled connection factories, but it does not allow to disable the use of legacy amq1 prefix for queue or topic defined in the model or using JakartaEE annotations.
+
+=== Dev Contacts
+
+* mailto:chaowan@redhat.com[Chao Wang]
+* mailto:ehugonne@redhat.com[Emmanuel Hugonnet]
+
+=== QE Contacts
+
+TODO
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. Discuss with QE during the Kickoff state to decide this
+[ ] Engineering
+
+[ ] QE
+
+* TBD
+
+=== Affected Projects or Components
+* WildFly
+
+=== Other Interested Projects
+
+== Requirements
+
+* Add a `enable-amq1-prefix`  boolean attribute to the https://wildscribe.github.io/WildFly/18.0/subsystem/messaging-activemq/external-jms-queue/[/subsystem=messaging-activemq/external-jms-queue resource] to control the enablement of Artemis 1.x prefix for queue defined on a remote Artemis server. Default is `true` (meaning that name retro-compatibility is enabled).
+
+* Add a `enable-amq1-prefix`  boolean attribute to the https://wildscribe.github.io/WildFly/18.0/subsystem/messaging-activemq/external-jms-topic/[/subsystem=messaging-activemq/external-jms-topic resource] to control the enablement of Artemis 1.x prefix for topic defined on a remote Artemis server. Default is `true` (meaning that name retro-compatibility is enabled).
+
+* For a destination created by annotation `@JMSDestinationDefinition` on a remote Artemis Server, add a `enable-amq1-prefix` boolean property to control the enablement of Artemis 1.x prefix. If the property is not defined, the default is `true` (meaning that name retro-compatibility is enabled).
+
+[source, java]
+----
+@JMSDestinationDefinition(
+    // explicitly mention a resourceAdapter corresponding to a pooled-connection-factory resource to the remote server
+    resourceAdapter = "remote-artemis",
+    name="java:global/env/myQueue2",
+    interfaceName="javax.jms.Queue",
+    destinationName="myQueue2",
+    properties = {
+        "enable-amq1-prefix=false"
+    }
+)
+----
+
+=== Hard Requirements
+
+N/A
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+== Test Plan
+First connect WildFly to an remote Artemis server.
+
+Create an external JMS queue on a remote broker with the amq1 prefixe disabled from /subsystem=messaging-activemq/external-jms-queue resource, and connect to it to produce messages on the queue and receive same messages with a MDB listening that queue name without amq1 prefix.
+
+Create an external JMS queue on a remote broker with the amq1 prefixe disabled from annotation `@JMSDestinationDefinition`, and connect to it to produce messages on the queue and receive same messages with a MDB listening that queue name without amq1 prefix.
+
+== Community Documentation
+
+The feature will be documented in WildFly Admin Guide (in the Messaging Configuration section).
