@@ -1,0 +1,164 @@
+= WFCORE-5178 Native support for OpenID Connect
+:author:            Farah Juma
+:email:             fjuma@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The ability to secure deployments using https://openid.net/connect/[OpenID Connect] (OIDC)
+is currently provided by installing a Keycloak
+https://www.keycloak.org/docs/latest/securing_apps/#_jboss_adapter[client adapter].
+When Elytron was still in development for WildFly 11, the specifications in use by Keycloak
+around OIDC were still very much in a state of ongoing development. Thus, at the time, it made
+sense for Keycloak to handle this integration. Since the OIDC specifications are now stable,
+it makes sense for individual projects to handle their own OIDC integration. This RFE is to
+add native support for OIDC to Elytron. This means that the Keycloak client adapter will
+no longer be needed to secure applications deployed to WildFly using OIDC. This will also
+greatly simplify other cases where OIDC is used (e.g., bootable JAR).
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-5178[WFCORE-5178]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/ELY-2034[ELY-2034]
+* https://issues.redhat.com/browse/WFLY-14017[WFLY-14017]
+* https://issues.redhat.com/browse/EAP7-1540[EAP7-1540]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+
+[ ] Engineering
+
+[ ] QE
+
+* TBD
+
+=== Affected Projects or Components
+
+* WildFly Elytron
+* WildFly Core
+* WildFly
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+==== HTTP mechanism implementation
+
+A new `HttpServerAuthenticationMechanism` implementation, similar to `org.keycloak.adapters.elytron.KeycloakHttpServerAuthenticationMechanism`,
+will be added to WildFly Elytron to provide support for OIDC, as specified in the https://openid.net/specs/openid-connect-core-1_0.html[OpenID Connect Core 1.0 spec].
+
+Like the existing Keycloak client adapter, this new `HttpServerAuthenticationMechanism` implementation will only
+support the https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth[Authorization Code Flow] and
+Authorization Code Flow with https://tools.ietf.org/html/rfc7636[Proof Key for Code Exchange] (PKCE).
+
+==== Token storage
+
+The new HTTP mechanism implementation will be able to make use of a session token store and a cookie token store
+to store account info (i.e., access tokens, ID tokens, and refresh tokens).
+
+The session token store will be used by default but it should be possible to specify that the cookie token store
+should be used instead.
+
+The new HTTP mechanism implementation will refresh the access token when it is expired. Since the Keycloak client adapter
+provides an option to refresh the token on every request, we should provide this option as well but make
+sure to document that the use of this option is discouraged since it can have a significant impact on performance.
+
+==== New elytron-oidc subsystem
+
+A new subsystem, `elytron-oidc` will be added to WildFly. Its schema will be similar to the existing
+https://github.com/keycloak/keycloak/blob/master/adapters/oidc/wildfly/wildfly-subsystem/src/main/resources/schema/wildfly-keycloak_1_1.xsd[keycloak-adapter-subsystem].
+The new subsystem will install a `DeploymentUnitProcessor` which will detect if OIDC is required for a deployment.
+
+Like with the existing Keycloak client adapter, the OIDC configuration will be specified via the deployment
+or via subsystem configuration. For the deployment case, the OIDC configuration will be specified in a JSON
+configuration file in the WEB-INF directory along with the `auth-method`, `OIDC`, specified in the `web.xml`.
+For the subsystem case, the `auth-method` won't need to be specified in the `web.xml` file, it will be set
+automatically.
+
+Once a deployment has been processed, if its `auth-method` is `OIDC`, the OIDC integration will be activated.
+Otherwise, no activation will occur and the deployment will continue to use the existing security capabilities
+provided by WildFly.
+
+If the OIDC integration is activated for a deployment, then appropriate module dependencies will be added to
+the deployment (e.g., a dependency on the new Elytron OIDC module). This will ensure the activation of the
+OIDC HTTP mechanism implementation for the deployment. The deployment will make use of a "Virtual Security Domain",
+similar to what was implemented for https://github.com/wildfly/wildfly-proposals/blob/master/microprofile/WFLY-12609_MicroProfile_JWT_1_1.adoc#hard-requirements[Microprofile JWT].
+This means that it will no longer be necessary to pre-configure SecurityDomains in the Elytron subsystem,
+as was required with the Keycloak client adapter.
+
+It should be possible to make use of different OpenID providers with WildFly. While working on the
+implementation for this RFE, we should make sure that we aren't including Keycloak-specific configuration, if
+possible.
+
+==== New galleon layer for OIDC support
+
+A new Galleon layer, `oidc`, should be added to allow a server to be provisioned with OIDC support.
+
+=== Nice-to-Have Requirements
+
+https://openid.net/specs/openid-connect-rpinitiated-1_0.html[RP-Initiated Logout] is an optional
+OIDC specification that defines how a relying party (RP) can request that an OpenID provider logs
+out the end-user. The Keycloak client adapter provides support for this so this is something we
+should provide as well but we could possibly look at that as a follow-up to this RFE if necessary.
+
+=== Non-Requirements
+
+This integration will not be supporting the use of pre-configured SecurityDomains. The purpose of OIDC
+is to allow a client to verify the identity of an end-user based on authentication that is performed
+by an authorization server. Information about the end-user can be obtained from ID tokens. Scope
+information (i.e., role information) can be obtained from access tokens. Thus, we do not need
+pre-configured security resources in the Elytron subsystem.
+
+Support for the following optional OIDC specifications are currently non-requirements. These
+are also not provided by the Keycloak Java client adapter:
+
+* https://openid.net/specs/openid-connect-discovery-1_0.html[Discovery]
+* https://openid.net/specs/openid-connect-registration-1_0.html[Dynamic Registration]
+* https://openid.net/specs/oauth-v2-multiple-response-types-1_0.html[OAuth 2.0 Multiple Response Types]
+* https://openid.net/specs/oauth-v2-form-post-response-mode-1_0.html[OAuth 2.0 Form Post Response Mode]
+* https://openid.net/specs/openid-connect-session-1_0.html[Session Management]
+* https://openid.net/specs/openid-connect-frontchannel-1_0.html[Front-Channel Logout]
+* https://openid.net/specs/openid-connect-backchannel-1_0.html[Back-Channel Logout]
+* https://openid.net/specs/openid-connect-federation-1_0.html[OpenID Connect Federation]
+
+== Test Plan
+
+This will require some discussion with QE to determine the best approach for testing. We will
+need to decide if it is acceptable to add dependencies on Keycloak (or another OIDC provider)
+to our testsuites or if we need to mock an OIDC provider.
+
+== Community Documentation
+
+A new section will be added to the Elytron documentation that describes:
+
+ * How to activate the OIDC integration for a deployment
+ * The new `elytron-oidc` subsystem and how to configure it
+ * The OIDC configuration properties that can be specified via a JSON file or via subsystem configuration
+ * How to use the new Galleon `oidc` layer
+
+It would be good to have a quickstart for this. This can be handled under its own RFE.
+
+== Release Note Content
+
+WildFly now provides the ability to secure deployments using OpenID Connect, without needing
+to make use of the Keycloak client adapter. It is now possible to make use of other OpenID
+Connect providers in addition to Keycloak.
