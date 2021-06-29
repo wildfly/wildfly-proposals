@@ -1,0 +1,89 @@
+= Aliases for standard configuration files
+:author:            Michal Petrov
+:email:             mpetrov@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Introduce aliases for standard configuration files
+
+This will allow users to provide a short alias instead of a long filename, e.g. `standalone.sh -c full` instead of `standalone.sh -c standalone-full.xml`
+
+.Full list of aliases:
+|===
+|  Configuration file | Aliases
+
+| *-full.xml             | full
+
+| *-full-ha.xml          | fullha, full-ha
+
+| *-ha.xml               | ha
+
+| *-load-balancer.xml    | lb
+
+| *-microprofile.xml     | mp, micro
+
+| *-microprofile-ha.xml  | mpha, micro-ha
+|===
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-4868
+* https://issues.redhat.com/browse/EAP7-1700
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+WildFly
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [?] Managed domain
+
+* [?] OpenShift s2i
+
+* [?] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+Allow the commandline parameter `-c` to work with an alias of a configuration file instead of a full filename.
+Provide aliases for all standard configuration files (except the default).
+
+=== Nice-to-Have Requirements
+
+Allow users to leverage the alias for their custom configuration files.
+This would only work for files named `standalone-<alias>.xml`.
+
+=== Non-Requirements
+
+== Test Plan
+Unit test will be added to controller.
+
+== Community Documentation
+Documentation will be added to wildfly master.
+
+== Release Note Content
+See Overview
