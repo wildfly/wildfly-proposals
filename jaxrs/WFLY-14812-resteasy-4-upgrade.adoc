@@ -1,0 +1,121 @@
+= Upgrade RESTEasy from 3.x to 4.x
+:author:            James R. Perkins
+:email:             jperkins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The RESTEasy project has made some structural changes and been updated to remove some old deprecated types which are
+now part of the Jakarta EE RESTful Web Services specification. This upgrade also includes better support for Java 17.
+It will also be the future for the Jakarta EE 9+ specifications.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14812[WFLY-14812]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1742[EAP7-1742]
+* https://issues.redhat.com/browse/WFLY-14817[WFLY-14817]
+* https://issues.redhat.com/browse/WFCORE-5459[WFCORE-5459]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+TBD
+
+=== Testing By
+
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+Any project that uses REST API's or endpoints.
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* Deprecate the `org.jboss.resteasy.resteasy-jaxrs` module
+  ** This will be replaced by the following modules:
+    *** `org.jboss.resteasy.resteasy-client`
+    *** `org.jboss.resteasy.resteasy-client-api`
+    *** `org.jboss.resteasy.resteasy-core`
+    *** `org.jboss.resteasy.resteasy-core-spi`
+* Remove the `org.jboss.resteasy.resteasy-jettison-provider` module
+* Remove the `org.jboss.resteasy.resteasy-yaml-provider` module
+* The `StringConverter` will be removed in favor of the `ParamConverter`
+* The RESTEasy async response will be removed and replaced with the async response from the specification.
+* The GZIP interceptors have changed package names.
+  ** The workaround for this will be to simply set the `resteasy.allowGzip` property to `true`
+  ** The migration step will be to change the package from `org.jboss.resteasy.plugins.interceptors.encoding` to
+     `org.jboss.resteasy.plugins.interceptors`
+* Migration rules will need to be written.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+There are currently no plans to update the current testing except any changes needed for removing removed code. The
+current tests should be enough to ensure backwards compatibility.
+
+== Community Documentation
+
+Community documentation will need to be updated to list the removed functionality.
+
+== Release Note Content
+
+RESTEasy has been upgraded in WildFly from the legacy 3.x to 4.x. If you're using the Jakarta RESTful Web Services API
+you should not see any differences. However, if you use API's specific to RESTEasy these may have changed.
+
+The module `org.jboss.resteasy.resteasy-jaxrs` has been deprecated and replaced by `org.jboss.resteasy.resteasy-client-api`
+and `org.jboss.resteasy.resteasy-core-spi`.
+
+The `org.jboss.resteasy.resteasy-jettison-provider` and `org.jboss.resteasy.resteasy-yaml-provider` have been removed.
+Jettison can be replaced either by the JSON-P/JSON-B provider or the Jackson 2 provider. There is currently no
+replacement for a YAML provider.
+
+Some examples are:
+
+* `@Suspend` and `org.jboss.resteasy.spi.AsynchronousResponse` have been removed and replaced by Jakarta REST annotations.
+* `StringConverter` replaced with `ParamConverter`
+* `org.jboss.resteasy.core.ResourceInvoker` moved to `org.jboss.resteasy.spi.ResourceInvoker`
+* GZIP interceptors have changed packages, `org.jboss.resteasy.plugins.interceptors.encoding` -> `org.jboss.resteasy.plugins.interceptors`
+    ** The workaround is to set the `resteasy.allowGzip` parameter to `true`.
+
+The following features have been added to 4.x:
+
+* https://issues.redhat.com/browse/RESTEASY-1418[RESTEASY-1418]: RESTEasy should be able to provide trace information about request
+* https://issues.redhat.com/browse/RESTEASY-1905[RESTEASY-1905]: Asynch injection
+* https://issues.redhat.com/browse/RESTEASY-1996[RESTEASY-1996]: Provide builtin ParamConverter* classes for multi valued params
+* https://issues.redhat.com/browse/RESTEASY-2175[RESTEASY-2175]: MediaType to/from String cache
+* https://issues.redhat.com/browse/RESTEASY-2265[RESTEASY-2265]: Statistics of REST endpoints
+* https://issues.redhat.com/browse/RESTEASY-2364[RESTEASY-2364]: Add support for remote ip/address without requiring HttpServletRequest
+* https://issues.redhat.com/browse/RESTEASY-2506[RESTEASY-2506]: Server-side async IO support
+* https://issues.redhat.com/browse/RESTEASY-2597[RESTEASY-2597]: Allow prevention of automatic http request retries
+* https://issues.redhat.com/browse/RESTEASY-2776[RESTEASY-2776]: Add support of Optional types in BeanParams
+* https://issues.redhat.com/browse/RESTEASY-754[RESTEASY-754]: Port resteasy-multipart-provider to a recent mime4j version
+
