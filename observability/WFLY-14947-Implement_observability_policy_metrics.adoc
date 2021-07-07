@@ -1,0 +1,69 @@
+ = Implement Observability Policy for Metrics
+:author:            Jason Lee
+:email:             jasondlee@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+While WildFly already supports basic metrics in the base WildFly system, as well as MicroProfile Metrics in the WildFly MicroProfile configuration, there is an effort in Red Hat Middleware Runtimes to implement a consistent observability policy across all Runtime offerings. In the Java space, the library of choice, and the emerging de facto standard for Java developers is https://micrometer.io[Micrometer].  This RFE will add support for Micrometer to WildFly Preview and adhere to the policy decided upon by the various stakeholders.
+
+== Issue Metadata
+
+=== Issue
+* https://issues.redhat.com/browse/WFLY-14947
+
+=== Related Issues
+* https://issues.redhat.com/browse7-1686
+
+=== Dev Contacts
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+* [X] Engineering
+* [X] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+* [x] Managed domain
+* [x] OpenShift s2i
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+* A single registry for metrics
+* Server and JVM metrics tracked and exposed
+* Availability of metric registry for injection into user applications
+* Endpoint to expose metrics in Prometheus format
+** Remove base/vendor prefixes (in accordance with Prometheus standards)
+* This subsystem will replace the existing WildFly Metrics subsystem. Documentation will be provided describing the change.
+* If MicroProfile Metrics is enabled, it (MP Metrics) will override this new metrics subsystem, as is does now with WildFly Metrics. This means that Micrometer metrics will NOT be exported if the MP Metrics subsystem is enabled.
+* RBAC support for server/jvm metrics
+
+=== Non-Requirements
+* Automatic timing of REST requests
+* Support for multiple metric backends
+* Removal of MicroProfile Metrics (Future MicroProfile specs should address the relationship with Micrometer)
+* Removal of application metrics when a user application is undeployed
+* Transforming of Prometheus-compliant meter names to existing format
+* Mechanism for arbitrary subsystems to register meters (e.g., Micrometer's `MeterBinder`)
+
+== Test Plan
+* Add tests to `testsuite/integration/preview`
+
+== Community Documentation
+The feature will be documented in WildFly Admin Guide. A description of the differences in the output format will be listed.
+
+== Release Note Content
+The WildFly Metrics subsystem has been replaced by the Micrometer subsystem. This will continue to provide application
+server JVM metrics via the existing /metrics endpoint, though now in a Prometheus-compliant format, and will also now
+allow user applications to register their own meters for export via the same endpoint.
