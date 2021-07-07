@@ -1,0 +1,100 @@
+= Upgrade RESTEasy from 3.x to 4.x
+:author:            James R. Perkins
+:email:             jperkins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The RESTEasy project has made some structural changes and been updated to remove some old deprecated types which are
+now part of the Jakarta EE RESTful Web Services specification. This upgrade also includes better support for Java 17.
+It will also be the future for the Jakarta EE 9+ specifications.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14812[WFLY-14812]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1742[EAP7-1742]
+* https://issues.redhat.com/browse/WFLY-14817[WFLY-14817]
+* https://issues.redhat.com/browse/WFCORE-5459[WFCORE-5459]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+TBD
+
+=== Testing By
+
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+Any project that uses REST API's or endpoints.
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* Deprecate the `org.jboss.resteasy.resteasy-jaxrs` module
+  ** This will be replaced by the following modules:
+    *** `org.jboss.resteasy.resteasy-client`
+    *** `org.jboss.resteasy.resteasy-client-api`
+    *** `org.jboss.resteasy.resteasy-core`
+    *** `org.jboss.resteasy.resteasy-core-spi`
+* Remove the `org.jboss.resteasy.resteasy-jettison-provider` module
+* Remove the `org.jboss.resteasy.resteasy-yaml-provider` module
+* The `StringConverter` will be removed in favor of the `ParamConverter`
+* The RESTEasy async response will be removed and replaced with the async response from the specification.
+* The GZIP interceptors have changed package names.
+  ** The workaround for this will be to simply set the `resteasy.allowGzip` property to `true`
+  ** The migration step will be to change the package from `org.jboss.resteasy.plugins.interceptors.encoding` to
+     `org.jboss.resteasy.plugins.interceptors`
+* Migration rules will need to be written.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+There are currently no plans to update the current testing except any changes needed for removing removed code. The
+current tests should be enough to ensure backwards compatibility.
+
+== Community Documentation
+
+Community documentation will need to be updated to list the removed functionality.
+
+== Release Note Content
+
+RESTEasy 4.7.0 is now the Jakarta RESTful Web Services implementation in WildFly. This is a change from the previous
+3.x versions used in WildFly.
+
+The module `org.jboss.resteasy.resteasy-jaxrs` has been deprecated and replaced by `org.jboss.resteasy.resteasy-client-api`
+and `org.jboss.resteasy.resteasy-core-spi`.
+
+The `org.jboss.resteasy.resteasy-jettison-provider` and `org.jboss.resteasy.resteasy-yaml-provider` have been removed.
+Jettison can be replaced either by the JSON-P/JSON-B provider or Jackson. There is currently no replacement for a YAML
+provider.
+
