@@ -1,0 +1,71 @@
+ = Implement Observability Policy for Metrics
+:author:            Jason Lee
+:email:             jasondlee@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+While WildFly/EAP already supports basic metrics in the base WildFly/EAP system, as well as MicroProfile Metrics in the WildFly MicroProfile configuration and EAP XP, there is an effort in Red Hat Middleware Runtimes to implement a consistent observability policy across all Runtime offerings. In the Java space, the library of choice, and the emerging de facto standard for Java developers is https://micrometer.io[Micrometer].  This RFE will add support for Micrometer to WildFly/EAP and adhere to the policy decided upon by the various stakeholders.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14947
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1686
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+* [X] Engineering
+* [X] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+* [x] Managed domain
+* [x] OpenShift s2i
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* Feature parity with existing "base metrics"
+* Application registry available during injection
+* Prometheus endpoint that provides application and jvm statistics as allowed by RBAC (if enabled)
+* Deprecate/remove/replace existing base metrics?
+
+=== Nice-to-Have Requirements
+
+* MicroProfile Metrics-friendly API wrapper (similar to what Quarkus offers)
+
+=== Non-Requirements
+
+* Support for multiple metric backends
+* Removal of MicroProfile Metrics (Future MP specs will address this)
+
+== Test Plan
+
+* Add tests to testsuite/integration
+
+== Community Documentation
+
+The feature will be documented in WildFly Admin Guide (possibly in a new observability section).
+
+== Release Note Content
+
+Support for Micrometer was added, allowing applications to register and record metrics which will be aggregrated and reported
