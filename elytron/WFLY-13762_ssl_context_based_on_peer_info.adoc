@@ -1,0 +1,105 @@
+= WFLY-13762 SSLContext to support delegation to alternate instances based on peer information
+:author:            Diana Krepinska
+:email:             dvilkola@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+As an SSLEngine is created the host and port information of the peer being accessed is available at the time the engine is requested:
+
+https://docs.oracle.com/en/java/javase/11/docs/api/java.base/javax/net/ssl/SSLContext.html#createSSLEngine(java.lang.String,int)
+
+This feature is about making use of this information to dynamically select alternative configurations of SSL contexts.
+
+This feature deals with outbound requests.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-13762[WFLY-13762]
+
+=== Related Issues
+
+* follow up on: https://issues.redhat.com/browse/EAP7-1096[EAP7-1096]
+* https://issues.redhat.com/browse/EAP7-1121[EAP7-1121]
+* https://issues.redhat.com/browse/EAP7-1121[EAP7-1120]
+
+=== Dev Contacts
+
+* mailto:dvilkola@redhat.com[Diana Krepinska]
+
+=== QE Contacts
+
+* TODO
+
+=== Testing By
+
+* [x] QE
+
+=== Affected Projects or Components
+
+WildFly Core, WildFly Elytron
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+New SSL context will be added that will function as a wrapper and will dynamically delegate to different SSL contexts chosen based on destination's host and port. It will be possible to use it for outbound requests on the server side as well as on the client side.
+
+On the server side the rules that define which ssl context to use will be obtained from configured `authentication-context` resource, whereas on the client side the configuration will be dynamically loaded from the classpath.
+
+==== Server side
+
+Child resource called `dynamic-client-ssl-context` will be added to the elytron subsystem. This will be a reference to resources providing the `org.wildfly.security.ssl-context` capability and it will have a required `authentication-context` attribute. Rules for choosing SSL contexts will be obtained from this `authentication-context`.
+
+When a `dynamic-client-ssl-context` is used as SSL context for the outbound requests it will dynamically switch between different configurations based on destination's host and port.
+
+Example of configuration:
+
+```
+/subsystem=elytron/authentication-context=ac:add(match-rules=[{match-port=9443,ssl-context=client-ssl-context1},{match-host="localhost",ssl-context=client-ssl-context2},{ssl-context=ssl-context-to-use-if-no-previous-rule-matches}])
+
+/subsystem=elytron/dynamic-client-ssl-context=dynamicClientSSLContext:add(authentication-context=ac)
+```
+*Note*: The first matching rule from given `authentication-context` will be used.
+
+It will also be possible to set this dynamic ssl context to be a default ssl context on the server:
+
+```
+/subsystem=elytron:write-attribute(name=default-ssl-context,value=dynamicClientSSLContext)
+reload
+```
+
+If this is the case, clients in deployed applications that use `SSLContext.getDefault()` will use it successfully.
+
+==== Client side
+
+DynamicSSLContext class will be using an SPI implementation loaded from classpath. Elytron client will implement this SPI. It will provide methods for obtaining of SSLContext (based on URI), obtaining of all configured SSLContexts and also of configured default SSLContext.
+
+The configured default SSLContext will be used if destination does not match any of the rules. If it is not configured then `SSLContext.getDefault()` will be used. If it is configured to be the same DynamicSSLContext instance then an exception will be thrown.
+
+If a standalone client is using DynamicSSLContext and has Elytron client on classpath, then it will use its configuration.
+
+The SPI will be public to allow external clients to implement it and provide their own configuration.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+Tests of functionality will be placed in wildfly-elytron repository.
+
+Tests surrounding configuration on server side as well as transformers will be added to the WildFly Core repository.
+
+Test of client in the deployment that successfully uses `dynamic-client-ssl-context` by calling `SSLContext.getDefault()` when it is configured to be default ssl context on the server will be placed in WildFly repository.
+
+== Community Documentation
+
+Community documentation will be placed in WildFly repository.
