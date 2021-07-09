@@ -1,0 +1,66 @@
+= WFLY-14347 Allow to configure module for custom validation classes
+:author:            Tomasz Adamski
+:email:             tadamski@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          connector, validation, custom modules
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse/
+
+== Overview
+
+Connector subsystem allows to configure custom classes for datasource validation (exception-sorter, valid-connection-checker, stale-connection-checker). However currently there is no possibility to use custom module for those classes. This PR is going to implement it.
+
+== Configuration
+
+'module' attribute would be added to those places of datasource subystem that are use to configure exception-sorter,valid-connection-checker and stale-connection-checker validation classes:
+
+{code}
+   <datasource (...)> 
+      (...)
+      <validation>
+          (...)
+          <valid-connection-checker class-name="someClass1" module="someModule1"/>
+          <stale-connection-checker class-name="someClass2" module="someModule2"/>
+          <exception-sorter class-name="someClass3" module="someModule3"/>
+          (...)
+      </validation>
+      (...)
+  </datasource>
+{code}
+
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/WFLY-14347[WFLY-14347]
+
+=== Related Issues:
+
+* {issue-base-url}/EAP7-1189[EAP7-1189]
+
+=== Dev Contacts:
+
+* mailto:{email}[{author}]
+
+=== QE Contacts:
+
+*
+
+=== Affected Projects or Components:
+
+* IronJacamar, WildFly Connector
+
+== Requirements
+
+* customers should be able to configure custom modules for datasource validation classes
+
+== Proposed solution
+* extend IronJacamar org.jboss.jca.common.api.metadata.common.Extension so that it can be configured with custom classloader
+* modify WildFly Connector subystem datasource configuration so that exception-sorter,valid-connection-checker and stale-connection-checker classes can be configured with custom module (by refering module classloader to appropriate extension)
+
+
+=== Test Plan
+
