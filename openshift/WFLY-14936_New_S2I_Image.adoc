@@ -1,0 +1,228 @@
+= New WildFly S2I image
+:author:           Jean-Francois Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Today, we are relying on the WildFly s2i builder image to build a WildFly application image. 
+There is a strong coupling inside this image that implies releasing a new image for each new WildFly release. 
+This approach is not flexible. We should be able to build an application image for any WildFly release 
+(even for a locally built SNAPSHOT) without having to wait for the WildFly s2i builder image to be deployed.
+
+In addition, the WildFly server located inside the builder image, enforces a set of configuration API (a set of environment variables) 
+and bash launch scripts. At startup time, a complex CLI script generation that impacts the server startup time is mandatorily executed. 
+Having this level of configurability should be a user choice and not be enforced by the WildFly s2i image.
+
+To solve these pain points, we are removing the server and its configuration aspects from the image. 
+
+The WildFly s2i image becomes a generic image allowing to properly install and execute any provisioned WildFly server.
+ As a developer one should be able in max 2 steps to deploy to the cloud an app. Same for WildFly developers that should 
+deploy a locally built WildFly SNAPSHOT in one step (as done with WildFly Bootable JAR today). 
+
+==== Responsabilities of the WildFly s2i builder image
+
+* Provide JDK and maven tooling
+* Provides automatic and configurable JVM configuration at server startup (same as the openjdk builder image)
+* Understand the execution constraints for the server and adapt the server launch processing (e.g.: start the server in a way that would allow a server killed by POD to terminate properly).
+* Provides nice defaults for the minimal set of server configuration items (e.g.: jboss.node.name derived from hostname, public interface address, management address)
+* Install the server in the image.
+* Support s2i build from source and binary.
+* Support custom S2i build operated from JKube (see: https://issues.redhat.com/browse/WFLY-14936[WFLY-14938]).
+* Handle incremental build.
+* Built application Image must be runnable but also usable inside a docker chained build to construct 
+   a final application image (that doesn't contain any build tooling). 
+
+==== Responsabilities of the WildFly runtime image
+
+* Provides JRE
+* Provides automatic and configurable JVM configuration at server startup (same as the openjdk builder image)
+* Understand the execution constraints for the server and adapt the server launch processing (e.g.: start the server in a way that would allow a server killed by POD to terminate properly).
+* Provides nice defaults for the minimal set of server configuration items (e.g.: jboss.node.name derived from hostname, public interface address, management address)
+
+==== A Maven plugin to provision and configure WildFly
+
+The steps that have been removed from the WildFly s2i build processing are now aggregated inside a 
+single point of configuration inside a WildFly Maven plugin defined by https://issues.redhat.com/browse/WFLY-14934[WFLY-14934]. 
+The plugin (Bootable JAR Maven plugin evolved with the ability to create a server installation) handles Galleon provisioning, 
+user CLI scripts execution, ability to enrich server content and application(s) deployment. 
+
+This plugin used in conjunction with this new WildFly s2i image is all what is needed to offer a flexible experience. 
+We gain the flexibility to provision/configure a WildFly instance to answer specific requirements instead of 
+relying on a fixed set of features packaged inside a WildFly s2i builder image.
+
+N.B.: The image is not strongly coupled with this Maven plugin. For source build, any plugin that outputs a server installation can be used during S2I source build.
+For binary build, any server installation can be the source of binary build.
+
+==== Legacy cloud Galleon feature-pack
+
+All the existing launch scripts and configurability aspects are moved inside a legacy cloud Galleon feature-pack 
+that one can use to build a server to be installed in the new WildFly S2I image.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14936[WFLY-14936]
+
+=== Related Issues
+
+* Server Mode for Bootable JAR: https://issues.redhat.com/browse/WFLY-14934[WFLY-14934]
+
+* JKube evolved support: https://issues.redhat.com/browse/WFLY-14936[WFLY-14938]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly-extras/wildfly-jar-maven-plugin/[Bootable JAR Maven plugin]
+
+* https://github.com/eclipse/jkube[JKube]
+
+* https://github.com/wildfly/wildfly-s2i[WildFly s2i]
+
+* https://github.com/wildfly/quickstart[WildFly quickstarts]
+
+* https://github.com/shipwright-io/build[Shipwright, S2I build framework]
+
+* ODO dev files.
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [ ] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [x] OpenShift s2i
+
+* [ ] Bootable jar
+
+== Requirements
+
+=== Implementation notes
+
+In WildFly s2i repo, a new git branch v2 will be used to implement the feature and release the first versions of the images. The master will be used to 
+build and release the current WildFly S2I and runtime images that will become deprecated. The build and release of the legacy cloud Galleon feature-pack 
+is also done in the master branch.
+Once the deprecated images are no more released, a legacy branch will be created, the v2 branch will be merged into master. At this point, no more "legacy" content will be released.
+
+=== Hard Requirements
+
+==== WildFly s2i builder image
+
+===== Building
+
+* The builder image is built from ubi8-minimal image.
+* It adds on top JDK11 and maven s2i tooling.
+* It contains the user jboss.
+* It is deployed on quay.io: ```quay.io/wildfly/wildfly-s2i-jdk11```
+* Has a versioning independent from WildFly versioning
+* Has support for binary and source build.
+* Expects a server to be provisioned in ```<target dir>/server``` by default. Directory name relative to the target directory can be configured with 
+ ```S2I_SERVER_DIR=<relative path in target directory>``` env variable.
+* The image should be usable using https://github.com/shipwright-io/build[Shipwright build framework] on both Kubernetes and Openshift.
+
+
+===== Running
+
+* Image produced with this builder image is runnable.
+* Image execution can be configured with Java related environment variables. https://github.com/jboss-openshift/cct_module/tree/master/jboss/container/java/jvm/api[JVM API]
+* The image entry-point offers the following features:
+** Discover the WildFly launcher script to be called: ```standalone.sh, standalone-cloud.sh or openshift-launch.sh```. 
+N.B.: In case of openshift-launch.sh (legacy entry point), no configuration is applied. Configuration of the server is delegated 
+to the ```openshift-launch.sh``` script that handles it all. The env variable ```SERVER_LAUNCH_SCRIPT_OVERRIDE``` can be used to override the server launch script file name. 
+The file must be located in ```$JBOSS_HOME/bin``` directory.
+** *WARNING. This needs to be reviewed at the light of future evolutions in the transaction subsystem.* Computes the value of the jboss.node.name system property (required by transactions). By default a truncated to 23 characters name based on the hostname is computed. This can be 
+overridden by using the ```JBOSS_NODE_NAME``` env variable.
+** Computes the JVM options to be conveyed to the server
+** Appends the content of ```JAVA_OPTS_APPEND``` env variable to ```JAVA_OPTS```.
+** If the env variable ```CLI_LAUNCH_SCRIPT=<cli script path>``` has been set, the referenced CLI script is executed during boot. The file can be an absolute path or a path relative to ```JBOSS_HOME``` directory.
+** Handles POD termination with CLI shutdown. Can be disabled with ```CLI_GRACEFUL_SHUTDOWN=true``` env variable. N.B.: 
+the ```PORT_OFFSET``` env variable is to be used to convey a port offset, This allows the CLI shutdown logic to retrieve the port offset when interacting with the server.
+** Set default value for management (0.0.0.0) and public (value of ```hostname -i``` command) interfaces. 
+    The default values can be specified with ```SERVER_PUBLIC_BIND_ADDRESS``` and  ```SERVER_MANAGEMENT_BIND_ADDRESS```.
+** Enables the server statistics. Can be overridden with ```SERVER_ENABLE_STATISTICS=false```.
+** Calls the server launch script passing it the ```SERVER_ARGS``` env variable that can contain extra arguments to provide to the server.
+
+The API to configure the server launch (for both the builder and runtime images entry-point) is defined in https://github.com/wildfly/wildfly-cekit-modules/blob/v2/jboss/container/wildfly/run/api/module.yaml[this cekit module]
+
+==== WildFly runtime image
+
+* The runtime image is built from openjdk JRE 11 image.
+* Has the same versioning that the S2I Builder image.
+* It is deployed on quay.io: ```quay.io/wildfly/wildfly-runtime-jre11```
+* It contains the user jboss
+* Image produced from this runtime image is runnable.
+* It contains the same entry-point present in the builder image.
+* Examples of Docker file to install a server inside the runtime image:
+
+Local WildFly installation copied to the image
+```
+FROM quay.io/wildfly/wildfly-runtime-jre11:latest
+COPY --chown=jboss:root vanilla-wildfly $JBOSS_HOME
+RUN chmod -R ug+rwX $JBOSS_HOME
+```
+
+Chained build from builder image
+```
+FROM quay.io/wildfly/wildfly-runtime-jre11:latest
+COPY --from=builder --chown=jboss:root /opt/wildfly $JBOSS_HOME
+RUN chmod -R ug+rwX $JBOSS_HOME
+```
+
+==== WildFly Cloud legacy Galleon feature-pack
+
+* It contains all cloud specific content (launcher scripts, keycloak client oidc and saml adapters, updated server configuration and Galleon layers) 
+contained in a server provisioned inside the current WildFly S2I image.
+* GAV: ```org.wildfly:wildfly-cloud-legacy-galleon-pack:[WildFly version]```
+* https://github.com/wildfly/wildfly-s2i/tree/master/wildfly-cloud-legacy-galleon-pack[Source code] present in wildfly-s2i master branch.
+* ```org.wildfly:wildfly-cloud-legacy-galleon-pack:24.0.0.Final```is currently used (as an implementation detail) in the WildFly 24 s2i image.
+
+
+==== Impact on quickstarts 
+
+* A set of quickstarts (List TBD) will contain steps to deploy on the cloud using the builder image (TBD: oc command or helm or jkube).
+
+==== Impact on bootable JAR Maven plugin 
+
+* At least one Maven Plugin example will use of this image (TBD: oc command or helm or jkube).
+
+=== Nice-to-Have Requirements
+
+* These images should be usable by buildpacks.
+
+=== Non-Requirements
+
+* This RFE doesn't specify what WildFly future "cloud related" (eg: a WildFly Galleon feature-pack specific to clustering in the cloud) 
+feature-packs would be (if any). Nevertheless such feature-packs will be usable in this new build workflow. 
+
+== Test Plan
+
+* Add new Behave tests that would use Bootable JAR server mode and Vanilla WildFly. This would cover the entrypoint configurability.
+* Port existing behave tests to the new design by using the wildfly-cloud-legacy-galleon-pack.
+* Add new Openshift QE tests.
+
+== Community Documentation
+
+* A complete rework of the community documentation is required.
+
+== Release Note Content
+
+Yes.
