@@ -1,0 +1,278 @@
+= Configure Reactive Messaging Kafka connector to use SSLContext from the Elytron subsystem and allow SASL_PLAINTEXT and SASL_SSL protocols
+:author:            Kabir Khan
+:email:             kkhan@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+The SmallRye Kafka Connector for MicroProfile Reactive Messaging uses the Apache Kafka client under the hood.
+
+To connect to a secured instance of Kafka which doesn't have a CA signed certificate you need to specify MicroProfile Config properties to configure the truststore, either deployment-wide in `microprofile-config.properties`, e.g.
+```
+# mp.messaging.connector.smallrye-kafka.ssl.truststore.location=/Users/kabir/temp/kafka_2.13-2.8.0/config/sasl-ssl/client.truststore.p12
+# mp.messaging.connector.smallrye-kafka.ssl.truststore.password=clientts
+```
+or override per `@Incoming` (or `@Outgoing`, not shown - it follows the same pattern) annotated method in `microprofile-config.properties`:
+```
+mp.messaging.outgoing.to-kafka.ssl.truststore.location=/Users/kabir/temp/kafka_2.13-2.8.0/config/sasl-ssl/client.truststore.p12
+mp.messaging.outgoing.to-kafka.ssl.truststore.password=test
+```
+Under the hood the prefixes are stripped off by SmallRye Reactive Messaging, and the keys that are passed in to the Kafka client are simply `ssl.truststore.location` and `ssl.truststore.password`.
+
+These properties are used by the Apache Kafka client as input for creating a `javax.net.ssl.SSLContext`, which in turn is used to create a `javax.net.ssl.SSLEngine` for the secure connection.
+
+This RFE proposes that in addition to the above approach to configure the `SSLContext`, we also provide the ability to set up an `SSLContext` via the `/subsystem=elytron/client-ssl-context=*` management resources in WildFly and to have a custom property to make the Kafka client connection use such an SSLContext.
+
+The proposed format is
+```
+mp.messaging.connector.smallrye-kafka.wildfly.elytron.ssl.context=test123
+```
+where `test123` reflects the `SSLContext` specified by the `/subsystem=elytron/client-ssl-context=test123` resource.
+
+Again this can be done for an individual `@Incoming` (or `@Outgoing`, not shown - it follows the same pattern) annotated method:
+```
+mp.messaging.outgoing.to-kafka.wildfly.elytron.ssl.context=test123
+```
+
+When this property is present, the whole factory used to create the `SSLContext` is swapped out, and the referenced `SSLContext` from the Elytron subsystem is used instead. A side-effect of this is that the native Kafka properties pertaining to SSLContexts (they start with `ssl.`) no longer have an effect if this property is used. This is fine, since the SSLContext provided by Elytron has been created from the information in the subsystem, and no further configuration is needed.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14987[WFLY-14987]
+* https://issues.redhat.com/browse/EAP7-1664
+
+=== Related Issues
+
+
+=== Dev Contacts
+
+* mailto:{email}}[{author}]
+
+=== QE Contacts
+
+* mailto:jstourac@redhat.com[Jan Stourac]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [x] QE
+
+=== Affected Projects or Components
+* WildFly - the Reactive Messaging integration will be enhanced to provide the functionality for this to work
+
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+* It must be possible to use the global connector or individual method format properties to specify an Elytron provided `SSLContext` (set up via the `/subsystem=elytron/client-ssl-context` resources and its dependencies).
+** If there is no Elytron provided `SSLContext` with that name an error will be thrown on deployment
+* The examples shown above for using properties from a deployment `microprofile-config.properties`. However, the configuration is using MicroProfile Config, so other mechanisms to specify these values, such as environment variables, are also valid.
+* The indicated Elytron `SSLContext` must be present at the time of deployment, or an error will be thrown.
+* There will be a dependency from the deployment on the JBoss MSC service providing the `SSLContext`.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+* Although we encourage users to use the Elytron provided `SSLContext` mechanism, it is not an error to use the native SmallRye Reactive Messaging/Apache Kafka client properties
+* If the user has specified the `<PREFIX>wildfly.elytron.ssl.context` property in their MicroProfile Config, it is not an error to use the other Kafka native ssl properties (e.g. the ones that start with `<PREFIX>.ssl.` in the configuration). These properties will simply be ignored.
+
+== Test Plan
+At the moment, it looks like the tests for this will need to reside in QE's testsuite.
+
+The issue is that we are currently using the Spring embedded Kafka test utility for testing the Kafka integration which does not have the required hooks. testcontainers.org is also popular but requires users have a running version of Docker on their machines, which is not the case for our CI.
+
+I looked into forking the Spring utility, but noticed that the system property needed to set up JAAS (`-Djava.security.auth.login.config`) is read at JVM boot. Also, Zookeeper and Kafka need a separate config file for JAAS, and that config file must be specified on JVM startup via a system property. Hence enhancing the embedded Kafka used by the current WildFly tests does not look practical at the moment without writing a lot of process wrappers and starting them as external processes.
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
+The WildFly documentation will be updated to cover this use case.
+
+== Example Setup and Configuration
+For manual testing, I use Zookeeper and Kafka from the download as indicated in the https://kafka.apache.org/quickstart[Apache Kafka Quickstart].
+
+=== Generating the key-/truststores
+To create the certificates:
+Followed  https://docs.actian.com/integrationmanager/2.0/index.html#page/User/Step_1_3a_Create_a_Keystore_File.htm
+
+Create the server keystore with a certificate
+----
+keytool -genkeypair -alias localhost -keyalg RSA -keysize 2048 -storetype PKCS12 -keystore server.keystore.p12 -validity 3650  -ext SAN=DNS:localhost,IP:127.0.0.1
+(Pwd: serverks)
+----
+
+Export the certificate
+----
+keytool -exportcert -alias localhost -keystore server.keystore.p12 -file server.cer -storetype pkcs12 -noprompt -storepass serverks
+----
+Import to the server and client trust stores
+----
+keytool -keystore server.truststore.p12 -alias localhost -importcert -file server.cer -storetype pkcs12
+(Pwd: serverts)
+keytool -keystore client.truststore.p12 -alias localhost -importcert -file server.cer -storetype pkcs12
+(Pwd: clientts)
+----
+=== Configuring Zookeeper and Kafka to work with SASL_SSL
+This is adapted from https://kafka.apache.org/documentation/#security_ssl and https://kafka.apache.org/documentation/#security_sasl, and I use the setup from the https://kafka.apache.org/quickstart[Kafka Quickstart] as the base installation to verify it works.
+
+Following on from the quickstart, I copy the default configuration from the `config` folder of the Apache Kafka distribution to the `config/sasl-ssl` child folder. Next I make the following changes.
+
+*1 - Copy the keystore and truststores in the previous step to the `config/sasl-ssl` folder*
+
+*2 - Add the following files to the `config/sasl-ssl` folder*
+kafka_server_jaas.conf:
+
+[source]
+----
+KafkaServer {
+org.apache.kafka.common.security.plain.PlainLoginModule required
+username="admin"
+password="admin-secret"
+user_admin="admin-secret";
+};
+Client {
+org.apache.zookeeper.server.auth.DigestLoginModule required
+username="admin"
+password="admin-secret";
+};
+----
+
+zookeeper_jaas.conf
+
+[source]
+----
+Server {
+org.apache.zookeeper.server.auth.DigestLoginModule required
+user_super="zookeeper"
+user_admin="admin-secret";
+};
+----
+
+*3 - Modify following files copied in step 1*
+Append the following to the end of `zookeeper.properties`:
+
+[source]
+----
+authProvider.1=org.apache.zookeeper.server.auth.SASLAuthenticationProvider
+requireClientAuthScheme=sasl
+#jaasLoginRenew=3600000
+----
+Append the following to the end of `server.properties`
+
+[source]
+----
+listeners=SASL_SSL://localhost:9092
+advertised.listeners=SASL_SSL://localhost:9092
+security.inter.broker.protocol=SASL_SSL
+sasl.mechanism.inter.broker.protocol=PLAIN
+sasl.enabled.mechanisms=PLAIN
+authorizer.class.name=kafka.security.auth.SimpleAclAuthorizer
+allow.everyone.if.no.acl.found=true
+auto.create.topics.enable=t----
+
+# Property substitution doesn't seem to work
+ssl.keystore.location=/Users/kabir/temp/kafka_2.13-2.8.0/config/sasl-ssl/server.keystore.p12
+ssl.keystore.password=serverks
+ssl.key.password=serverks
+# Property substitution doesn't seem to work
+ssl.truststore.location=/Users/kabir/temp/kafka_2.13-2.8.0/config/sasl-ssl/server.truststore.p12
+ssl.truststore.password=serverts
+
+ssl.client.auth=required
+ssl.enabled.protocols=TLSv1.2,TLSv1.1,TLSv1
+ssl.keystore.type=PKCS12
+ssl.truststore.type=PKCS12
+ssl.secure.random.implementation=SHA1PRNG
+
+----
+As this property file doesn't seem to understand property substituion, replace `/Users/kabir/temp/kafka_2.13-2.8.0` with the path to your Kafka installation.
+
+*4 - Start Zookeeper and the Kafka server*
+Start Zookeeper in one terminal:
+
+[source]
+----
+export KAFKA_HOME=$(pwd)
+export KAFKA_OPTS="-Djava.security.auth.login.config=$KAFKA_HOME/config/sasl-ssl/zookeeper_jaas.conf"
+./bin/zookeeper-server-start.sh config/sasl-ssl/zookeeper.properties
+----
+Start Kafka in another terminal
+[source]
+----
+export KAFKA_HOME=$(pwd)
+export KAFKA_OPTS="-Djava.security.auth.login.config=$KAFKA_HOME/config/sasl-ssl/kafka_server_jaas.conf"
+./bin/kafka-server-start.sh  config/sasl-ssl/server.properties
+----
+
+*5 - Start WildFly and set up an SSLContext*
+Start WildFly normally, then connect via the CLI.
+First enable the reactive messaging and RSO subsystems
+[source]
+----
+# Add subsystems
+/extension=org.wildfly.extension.microprofile.reactive-streams-operators-smallrye:add
+/extension=org.wildfly.extension.microprofile.reactive-messaging-smallrye:add
+/subsystem=microprofile-reactive-streams-operators-smallrye:add
+/subsystem=microprofile-reactive-messaging-smallrye:add
+----
+Then set up the Elytron SSLContext (the truststore file is the same one we created earlier)
+----
+#Adding SSLContext in Elytron
+/subsystem=elytron/key-store=test:add(credential-reference={clear-text=clientts}, path=/Users/kabir/temp/kafka_2.13-2.8.0/config/sasl-ssl/client.truststore.p12, type=PKCS12)
+/subsystem=elytron/trust-manager=test:add(key-store=test)
+/subsystem=elytron/client-ssl-context=test:add(trust-manager=test)
+----
+*6 - Configure your WildFLy application to connect to secured Kafka.*
+
+The following contains a reworked `microprofile-config.properties` from the https://github.com/wildfly/quickstart/tree/master/microprofile-reactive-messaging-kafka[WildFly QuickStart]
+
+[source]
+----
+mp.messaging.connector.smallrye-kafka.bootstrap.servers=localhost:9092
+mp.messaging.connector.smallrye-kafka.sasl.mechanism=PLAIN
+mp.messaging.connector.smallrye-kafka.security.protocol=SASL_SSL
+mp.messaging.connector.smallrye-kafka.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required \
+  username="admin" \
+  password="admin-secret";
+# Use the SSL Context from Elytron
+mp.messaging.connector.smallrye-kafka.wildfly.elytron.ssl.context=test
+
+# These are as before, we have not changed these
+mp.messaging.outgoing.to-kafka.connector=smallrye-kafka
+mp.messaging.outgoing.to-kafka.topic=testing
+mp.messaging.outgoing.to-kafka.value.serializer=org.wildfly.quickstarts.microprofile.reactive.messaging.TimedEntrySerializer
+
+mp.messaging.incoming.from-kafka.connector=smallrye-kafka
+mp.messaging.incoming.from-kafka.topic=testing
+mp.messaging.incoming.from-kafka.value.deserializer=org.wildfly.quickstarts.microprofile.reactive.messaging.TimedEntryDeserializer
+----
+If instead of using an Elytron provided `SSLContext`, we want to use the SmallRye Reactive Messaging/Apache Kafka Client mechanism we would replace the `mp.messaging.connector.smallrye-kafka.wildfly.elytron.ssl.context` line with the following two lines:
+
+[source]
+----
+mp.messaging.connector.smallrye-kafka.ssl.truststore.location=/Users/kabir/temp/kafka_2.13-2.8.0/config/sasl-ssl/client.truststore.p12
+mp.messaging.connector.smallrye-kafka.ssl.truststore.password=clientts
+----
+
+== Release Note Content
+You can now connect to a secure Kafka instance using the MicroProfile Reactive Messaging functionality of WildFly. For cases where you are using self-signed certificates, the truststore can be specified in an SSLContext provided by the Elytron subsystem.
