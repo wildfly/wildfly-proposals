@@ -1,0 +1,167 @@
+= MicroProfile Reactive Messaging Integration with RHOSAK
+:author:            Kabir Khan
+:email:             kkhan@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+RHOSAK (Red Hat Openshift Streams for Apache Kafka) is a new Managed Service provided by Red Hat. It is important that Red Hat products that can run on OpenShift and support Kafka are able to use RHOSAK.
+
+The integration of MicroProfile Reactive Messaging introduced for MicroProfile XP 3 uses SmallRye Reactive Messaging as its implementation. This already works with RHOSAK from Quarkus.
+
+Initial manual testing (tweaking of the Reactive Messaging Quickstart) shows that it is possible to do the same with WildFly once patched with https://issues.redhat.com/browse/WFLY-14613[WFLY-14613].
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-15006[WFLY-15006]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-13640[WFLY-13640 - Original RFE bringing in MP Reactive Messaging + Kafka support]
+* https://issues.redhat.com/browse/WFLY-14987[WFLY-14987 - The MP Reactive Messaging Kafka connector should be able to use an SSLContext configured in the Elytron subsystem]
+
+=== Dev Contacts
+
+* mailto:{author}[{email}]
+
+=== QE Contacts
+* mailto:jstourac@redhat.com[Jan Stourac]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [x] QE
+
+=== Affected Projects or Components
+WildFly - minor changes to the module structure might be needed (such as https://issues.redhat.com/browse/JBEAP-21331[JBEAP-21331]) if further issues are found during testing. Apart from that this is largely expected to be a verification task.
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+It must be possible to connect to, authenticate with, and send/receive messages from RHOSAK. RHOSAK is secured with a certificate signed by a CA, so no client side truststore is needed to accept the certificate. (https://issues.redhat.com/browse/WFLY-14987[WFLY-14987] is a follow-up to allow injection of client SSLContexts from the Elytron subsystem).
+
+To connect to Kafka users must either update their `microprofile-config.properties`, deploy a ConfigMap or set the corresponding environment variables for their OpenShift deployment as summarized below in the example configurations.
+
+In all cases environment variables take precedence over corresponding `microprofile-config.properties` entries as per the normal MicroProfile Config rules. The first example given below will be via the ConfigMap. To convert the names to environment variables, convert them to upper case and replace all period and hyphen occurrences with underscores. For example, the MP Config property  `mp.messaging.connector.smallrye-kafka.bootstrap.servers` can be converted to the environment variable `MP_MESSAGING_CONNECTOR_SMALLRYE_KAFKA_BOOTSTRAP_SERVERS`.
+
+==== Example Config
+This https://github.com/kabir/quickstart/blob/rhosak/microprofile-reactive-messaging-kafka/RHOSAK.adoc[guide] contains instructions for how to set up RHOSAK and Kafka. In summary, the steps are:
+
+* `oc apply https://raw.githubusercontent.com/kabir/quickstart/rhosak/microprofile-reactive-messaging-kafka/reactive-messaging-properties.yaml` - this step deploys a ConfigMap providing the config properties required by MicroProfile Reactive Messaging based on the configuration of the Kafka instance. This is in place of a `microprofile-config.properties`. The format of this is:
+[source]
+----
+apiVersion: v1
+kind: ConfigMap
+metadata:
+name: reactive-messaging-properties
+data:
+ordinal: "500"
+
+  mp.messaging.connector.smallrye-kafka.bootstrap.servers: ${rhosak-config-bootstrapServers}
+
+  mp.messaging.connector.smallrye-kafka.security.protocol: ${rhosak-config-securityProtocol}
+  mp.messaging.connector.smallrye-kafka.sasl.mechanism: ${rhosak-config-saslMechanism}
+  mp.messaging.connector.smallrye-kafka.sasl.jaas.config: >-
+    org.apache.kafka.common.security.plain.PlainLoginModule required
+    username="${rhosak-config-user}"
+    password="${rhosak-config-password}";
+----
+* Next create a ServiceBinding to to bind the KafkaConnection (which represents the Kafka instance) in our application. Run `oc apply -f ./rhosak-binding.yaml` where `rhosak-binding.yaml` contains:
+[source]
+----
+apiVersion: binding.operators.coreos.com/v1alpha1
+kind: ServiceBinding
+metadata:
+  name: rhosak-binding
+spec:
+  application:
+    group: apps
+    name: kafka-app
+    resource: deployments
+    version: v1
+
+  namingStrategy: rhosak-config-{{ .name }}
+  bindAsFiles: true
+  services:
+  - group: rhoas.redhat.com
+    version: v1alpha1
+    kind: KafkaConnection
+    # This name should match what you called your Kafka instance
+    name: wildfly-qs-kafkas
+----
+* `rhosak-binding.yaml` will populate the config map with properties from our connection and put it under `/bindings/rhosak-bindings`.
+* The server needs to be set up to use the config source
+** `/subsystem=microprofile-config-smallrye/config-source=reactive-messaging-properties:add(dir={path=/etc/config/reactive-messaging-properties})`
+** `/subsystem=microprofile-config-smallrye/config-source=rhosak-binding:add(dir={path=/bindings/rhosak-binding})`
+
+As well as deployment-wide variants of the properties to specify the Kafka properties, it will also be possible to have stream level overrides for them. In which case the `mp.messaging.connector.smallrye-kafka` prefix is replaced with
+* `mp.messaging.outgoing.<stream name>` - for `@Outgoing` annotated methods/streams
+* `mp.messaging.incoming.<stream name>` - for `@Incoming` annotated methods/streams
+
+==== Simpler example config
+While the above example is more in line with what we should document, to get something up and running quickly, we can deploy the quickstart with a `microprofile-config.properties` containing:
+[source]
+----
+mp.messaging.connector.smallrye-kafka.bootstrap.servers=kk-rhosak--pvx-lnroldignpcfuiphfvfnka.kafka.devshift.org:443
+mp.messaging.connector.smallrye-kafka.sasl.mechanism=PLAIN
+mp.messaging.connector.smallrye-kafka.security.protocol=SASL_SSL
+mp.messaging.connector.smallrye-kafka.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required \
+username="srvc-acct-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" \
+password="yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy";
+----
+
+`mp.messaging.connector.smallrye-kafka.bootstrap.servers` must be set to the bootstrap URL of the managed Kafka instance as returned by the `rhoas kafka describe command`.
+
+`mp.messaging.connector.smallrye-kafka.sasl.mechanism` must be set to PLAIN and
+`mp.messaging.connector.smallrye-kafka.security.protocol` to SASL_SSL.
+
+The SASL JAAS config is set with the `mp.messaging.connector.smallrye-kafka.sasl.jaas.config property`. Under that we specify the username and password values.
+
+Note that MicroProfile Config supports property substitution from environment variables, so we don’t need to hardcode the values for the servers, nor the JAAS credentials as shown above. We could e.g do:
+[source]
+----
+mp.messaging.connector.smallrye-kafka.bootstrap.servers=${SERVERS_URL}
+----
+As long as `SERVERS_URL` is set by the container, it will be substituted in.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+* Connecting to Kafka instances with a self-signed certificate (this will be done via https://issues.redhat.com/browse/WFLY-14987[WFLY-14987])
+** It will however work if the user has a truststore and specifies its location with MicroProfile Config properties with the following suffixes (using the deployment-wide, or individual stream prefixes pointed out in the previous section):
+*** `.ssl.truststore.location`
+*** `.ssl.truststore.password`
+
+== Test Plan
+It does not make sense to test against RHOSAK in community. It would have been nice to make sure we can connect to a secured Kafka instance, but unfortunately that is not practical for the following reasons:
+* Zookeeper and Kafka need a separate config file for JAAS, and that config file must be specified on JVM startup via a system property. Hence enhancing the embedded Kafka used by the current WildFly tests isn’t practical without writing a lot of process wrappers and starting them as external processes.
+* It is common for projects doing Kafka testing to use testcontainers.org to run Zookeeper and Kafka in Docker, but this would mean needing access to Docker from within the VMs on which our CI runs, and also would fail tests for contributors who do not have Docker installed.
+
+So although I initially wanted to have smoke tests for this in WildFly, it is not going to work for the above reasons. Instead we will need something in the QE testsuites.
+
+The current OpenShift and other testsuites handled by QE will need updating to test against RHOSAK and secured Kafka.
+
+== Community Documentation
+The lessons learnt from connecting to secured Kafka should be added to the documentation. But since this is not a community based feature, no community documentation is needed for RHOSAK itself.
+
+== Release Note Content
+RHOSAK integration is now supported via the MicroProfile Reactive Messaging Kafka Connector.
