@@ -86,7 +86,8 @@ vault resources in the latest version will result in a usual unexpected element 
 
 Where configurations are read using older model versions if they contain a vault definition this
 will be logged as a warning and the vault configuration dropped at the next write.  This is to
-allow older configurations to still be handled in admin mode.
+allow older configurations to still be handled in admin mode.  This same approach will be used for
+appclient parsing.
 
 Vault expressions are not prevented from occurring within the management model for two reasons:
 
@@ -102,7 +103,7 @@ All vault integration code is deleted from WildFly Core reducing the dependence 
 
 All vault test utilities are deleted and removed from the testsuite.
 
-* TODO - Describe impact on Galleon layers.
+The `vault` galleon layer will be removed from the available galleon layers.
 
 === Nice-to-Have Requirements
 
@@ -275,8 +276,6 @@ The following table identifies the tests in WildFly Core and WildFly affected by
 |Removed
 |===
 
-TODO - On the second pass in WildFly this list may be expanded further.
-
 .Action Key
 |===
 |Action | Description
@@ -308,5 +307,5 @@ of the documentation in relation to legacy security.
 == Release Note Content
 
 The legacy PicketBox Vault integration has now been removed from WildFly, please refer to
-http://TODO for information on alternatives available utilising the WildFly Elytron credential
-store.
+https://docs.wildfly.org/25/Migration_Guide.html#Migration_PicketBox_Vault for information on 
+alternatives available utilising the WildFly Elytron credential store.
