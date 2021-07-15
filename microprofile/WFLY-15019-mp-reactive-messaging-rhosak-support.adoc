@@ -1,0 +1,87 @@
+= Full Support for MicroProfile Reactive Messaging with RHOSAK
+:author:            Kabir Khan
+:email:             kkhan@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+RHOSAK is Red Hat's offering of Kafka as a managed service on OpenShift. Users use tooling to set up an instance of RHOSAK outside of their standard OpenShift environment and connect their applications to use that.
+
+Most of the work has been done in the related issues below, so this RFE is more about testing and documenting.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-15019[WFLY-15019]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-14932[WFLY-14932 - Upgrade to MicroProfile Reactive Messaging 2.0] - This version introduces the new `@Channel` annotation, which makes it easier for users to get data into/from the Reactive Messaging Streams
+* https://issues.redhat.com/browse/WFLY-14932[WFLY-14932 - Configuration of Reactive Messaging Kafka messages] - The API introduced here allows you to get information about how Kafka handled a message, and to influence how messages are sent to Kafka. Most importantly it enables the use of a key for the messages sent to Kafka, which in turn inside Kafka are stored as records. Being able to query them, and not simply use Kafka as a messaging system is important.
+* https://issues.redhat.com/browse/WFLY-15006[WFLY-15006] - Initial Technical Preview feature request for integration with RHOSAK.
+* https://issues.redhat.com/browse/WFLY-13640[WFLY-13640 - Provide Support for MicroProfile Reactive Messaging 1.0 for Kafka] - This was the original issue bringing Reactive Messaging 1.0 into WildFly. Some testing was done against AMQ Streams on OpenShift.
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [x] QE
+
+=== Affected Projects or Components
+WildFly
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+* It should be possible to connect to a RHOSAK Kafka broker from an application.
+* RHOSAK uses the  `SASL_SSL` security protocol, which uses Encrypted communication with SASL-based authentication
+** The SSL certificate is signed by a CA so no trusttore is needed
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+TBD as we identify pain points during testing. I am not intimately familiar with Kafka/RHOSAK.
+
+Although, when asking the SmallRye team they say that all Apache Kafka https://kafka.apache.org/documentation/#consumerconfigs[Consumer] and https://kafka.apache.org/documentation/#producerconfigs[Producer] properties are supported, we may want to limit scope somewhat.
+
+== Test Plan
+For WildFly we test what we can as indicated in the linked <<Related Issues>>.
+
+== Community Documentation
+This is covered by the linked <<Related Issues>>.
+
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
