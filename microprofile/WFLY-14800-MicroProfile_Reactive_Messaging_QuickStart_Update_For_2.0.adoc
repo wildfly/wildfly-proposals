@@ -1,0 +1,79 @@
+= WFLY-14800 Modernise Reactive Messaging QuickStart for MicroProfile Reactive Messaging 2.0
+:author:            Kabir Khan
+:email:             kkhan@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The MicroProfile Reactive Messaging 2.0 upgrade brings in new features for users. In addition, as part of this work, we are now able to get more information about Kafka metadata for received messages, and to set that when sending messages to influence how they are sent.
+
+The existing quickstart will be enhanced to show some of these new features.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14800[WFLY-14800 - Modernise the MicroProfile Reactive Messaging QuickStart for Reactive Messaging 2.0]
+* https://issues.redhat.com/browse/EAP7-1662[EAP7-1662 - Modernise the MicroProfile Reactive Messaging QuickStart for Reactive Messaging 2.0]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-14798[WFLY-14798 - Upgrade to MicroProfile Reactive Messaging 2.0]
+* https://issues.redhat.com/browse/WFLY-14932[WFLY-14932 - Configuration of Reactive Messaging Kafka messages]
+* https://issues.redhat.com/browse/WFLY-TODO[TODO - Integrate MicroProfile Reactive Messaging with RHOSAK]
+* https://issues.redhat.com/browse/WFLY-14987[WFLY-14987 - The MP Reactive Messaging Kafka connector should be able to use an SSLContext configured in the Elytron subsystem]
+* https://issues.redhat.com/browse/WFLY-14391[WFLY-14391 - Quickstart for Reactive Messaging 1.0 with Kafka] - This was the original Quickstart which this one will expand upon
+
+=== Dev Contacts
+
+* mailto:kkhan@redhat.com[Kabir Khan]
+
+=== QE Contacts
+
+TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+[ ] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+
+* Quickstarts
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* start a Kafka instance
+** On bare metal this will be done via Docker (more specifically `docker-compose` since we need to start a Zookeeper instance in addition to the Kafka instance)
+* Kafka connection configuration via MP Config
+** On OpenShift we will provide examples for
+*** AMQ Streams - this already exists
+*** RHOSAK - We should provide alternate instructions for how to set up the container to use RHOSAK as outlined in https://issues.redhat.com/browse/[WFLY-15006]
+**** Rather than having a separate bare-metal configuration to cover https://issues.redhat.com/browse/WFLY-14391[WFLY-14391 - using an Elytron SSL Context for the Kafka connector], we should mention the extra config property that will allow the users to connect to a secured Kafka instance which does not have a CA signed certificate
+* Using `@Incoming` and `@Outgoing` annotations on methods to map the streams.
+** Showcase some alternative method signatures for these methods
+* Using the `@Channel` annotation on a `Publisher` (or `PublisherBuilder`) as an alternative to `@Incoming`
+** Mention that we do not recommend returning such a `Publisher` via JAX-RS due to the limitations pointed out in the Non-Requirements section of https://github.com/wildfly/wildfly-proposals/pull/395/files (for https://issues.redhat.com/browse/WFLY-14798[WFLY-14798])
+* Using the `@Channel` annotation on a `Emitter` as an alternative to `@Outgoing`
+* Use Reactive Streams Operators to modify streams
+* Use the Kafka API to get information about topic, partition etc. for a `Message`.
+** Trying to fit in how to influence sending via this API, will clutter up the example, so we should mention the possibility. How this is done should be clear after showing how we can read this information.
+
+=== Non-Requirements
+
+== Test Plan
+
+The QuickStart will have Arquillian tests to test the bare metal case.
+
+== Community Documentation
+
+Covered by the quickstart README file.
