@@ -1,0 +1,307 @@
+= CLI control flow improvements 
+:author:           Jean-Francois Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Today the CLI suffers from limitations when using workflow commands (if/else,for and try/catch). These limitations don't allow to 
+write CLI scripts to deal with complex server configurations. With the introduction of Galleon, the content of server configuration is much more dynamic 
+and writing CLI scripts to adapt to the server configuration is required.
+
+For example, it is a common practice to check for the existence of multiple subsystems, to iterate array of resources and 
+take decisions according to the configuration (or env variables) state. Current CLI support handles such cases in a very limited way.
+
+We are here not defining a new programming language (that is really out of scope of the CLI command line utility) but we 
+are evolving existing commands to solve the major blocking points that forbid its usage in complex scenario.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-5500[WFCORE-5500]
+
+=== Related Issues
+
+* Completion issue with control flow commands: https://issues.redhat.com/browse/WFCORE-3489[WFCORE-3489]
+
+* Variables handling: https://issues.redhat.com/browse/WFCORE-5388[WFCORE-5388]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly-core[WildFly core, CLI component]
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Nested workflow commands
+
+* We are removing the limitation to a single level of nesting. 
+* ```if``` can be nested without limitations inside any workflow command blocks. 
+* ```for``` can be nested without limitations inside any workflow command blocks. 
+* ```try``` can be nested without limitations inside any workflow command blocks.
+* Command completion takes into account nesting and proposes the right associated operations 
+(e.g.: ```catch```, ```finally```, ```end-try``` for the ```try``` command).
+* ```batch``` commands completion takes into account nesting.
+
+For example:
+
+```
+if outcome==success of /subsystem=security:read-resource
+  if outcome==success of /subsystem=elytron:read-resource
+    echo We have legacy security and elytron
+  else
+     for domain in /subsystem=security:read-children-names(child-type=security-domain)
+        echo $domain
+        for elytronDomain in /subsystem=elytron:read-children-names(child-type=security-domain)
+          batch
+            ...
+          run-batch
+        done
+     done
+  end-if
+end-if
+```
+
+=== ```if``` command new operators for Array.
+
+* Add the ability to test the size of an array by using the operator ```#=```
+* Add the ability to test if an array contains a String element by using the operator ```*=```
+
+For example:
+
+```
+if (result#=2 && result*="ManagementDomain") of /subsystem=elytron:read-child-names(child-type=security-domain)
+  /subsystem=elytron/security-domain=ManagementDomain:remove()
+end-if 
+```
+
+=== ```if``` command ModelNode path to take into account arrays.
+
+* ModelNode path takes into account array '['<index>']'.
+
+For example:
+
+```
+if result.realms[0].realm==ApplicationRealm of /subsystem=elytron/security-domain=ApplicationDomain:read-resource
+...
+end-if
+```
+
+=== ```if``` command to allow variable as condition input
+
+* The ```of``` part of the command can be a variable (a word starting by '$'). If no variable is defined, an attempt is made to resolve a Model operation.
+* The variable content becomes the scope of the condition.
+* A single variable can be used.
+* A path inside a variable can be used (eg: ```$foo.bar[0].attribute```).
+* The keyword ```this``` in a condition references the current variable.
+
+For example:
+
+```
+# An array of security domain names
+for domain in /subsystem=elytron:read-children-names(child-type=security-domain)
+  if this=="ApplicationDomain" of $domain
+    ...
+  else
+    if this=="ManagementDomain" of $domain
+      ...
+    end-if
+  end-if
+done
+```
+
+```
+# An array of security domain names set in a variable
+set domains=`/subsystem=elytron:read-children-names(child-type=security-domain)`
+
+if (this[0]="ApplicationDomain" && this[1]="ManagementDomain") of $domains
+ ...
+end-if
+```
+
+=== ```if``` command to allow expression as condition input
+
+* The ```of``` part of the command can be an expression (a word starting by '${'). If no expression is defined, an attempt is made to resolve a Model operation.
+* The expression content becomes the scope of the condition.
+* A single expression can be used.
+* The keyword ```this``` in a condition references the current expression value.
+
+For example:
+
+```
+if this=="true" of ${env.WILDFLY_TRACING_ENABLED}
+  if (outcome != success) of /extension=org.wildfly.extension.microprofile.opentracing-smallrye:read-resource
+    /extension=org.wildfly.extension.microprofile.opentracing-smallrye:add()
+  end-if
+  if (outcome != success) of /subsystem=microprofile-opentracing-smallrye:read-resource
+    /subsystem=microprofile-opentracing-smallrye:add()
+  end-if  
+end-if
+```
+
+=== ```set``` command to assign variable value from a variable path
+
+* The ```set``` command variable value syntax used to execute an operation recognizes a variable path 
+and assign the value referenced by the path to the new variable.
+
+For example:
+
+```
+set props=[{"name" => "prop1", "value" => "val1"},{"name" => "prop2", "value" => "val2"}]
+set name=`$props[0].name`
+set value=`$props[0].value`
+/system-property=$name:add(value=$value)
+```
+
+=== ```for``` command to allow variable as iterable
+
+* The ```in``` part of the command can be a variable (a word starting by '$'). If no variable is defined, an attempt is made to resolve a Model operation.
+* The variable value becomes the iterable content.
+* A single variable can be used.
+* A path inside a variable can be used (eg: ```$foo.bar[0].attribute```).
+
+For example:
+
+```
+for mechanism in /subsystem=elytron/http-authentication-factory=management-http-authentication:read-attribute(name=mechanism-configurations
+  for config in $mechanism.mechanism-realm-configurations
+    ...
+  done
+done
+```
+
+```
+# Create a set of system properties from a variable.
+set props=[{"name" => "prop1", "value" => "val1"},{"name" => "prop2", "value" => "val2"}]
+for p in $props
+  set name=`$p.name`
+  set value=`$p.value`
+  if outcome==success of /system-property=$name:read-resource
+    /system-property=$name:remove
+  end-if
+  /system-property=$name:add(value=$value)
+  # unset variables
+  set name= 
+  set value=
+done
+```
+
+=== ```fail``` command to abort an execution
+
+When and invalid condition is met we have no way to abort the execution of an interactive CLI session or CLI script. 
+
+* Introduce the ```fail <message>``` command to abort the current execution with a message.
+* Execution of the fail command in an interactive session will throw an exception that can be catch by the ```catch``` command.
+ Inside a catch block the variable ```_CLI_ERROR=<message>``` is made accessible. The variable is removed after 
+the catch block has been executed. NB: Any exception thrown by any command inside the try block will populate the ```_CLI_ERROR``` variable.
+* Execution of the ```fail``` command outside of a ```try/catch``` block inside a CLI script will make the CLI process to 
+abort with a return code of 1.
+
+For example:
+
+```
+if this=="true" of ${env.SET_SECURITY_REALM}
+  if (outcome != success) of /core-service=management/management-interface=http-interface:read-resource
+    fail "You have set environment variables to configure http-interface security-realm. Fix your configuration to contain the http-interface for this to happen"
+  else
+    if (result == undefined) of /core-service=management/management-interface=http-interface:read-attribute(name=http-authentication-factory)
+      if (outcome != success) of /core-service=management/security-realm=ManagementRealm:read-resource
+        fail "You have set environment variables to configure http-interface security-realm. Fix your configuration to contain the ManagementRealm for this to happen"
+      else
+        /core-service=management/management-interface=http-interface:write-attribute(name=security-realm, value=ManagementRealm)
+      end-if
+    end-if
+  end-if
+end-if
+```
+
+```
+try 
+ if (outcome != success) of /core-service=management/security-realm=ManagementRealm:read-resource
+   fail noManagementRealm
+ end-if
+ if (outcome != success) of /core-service=management/management-interface=http-interface:read-resource
+   fail noInterface
+ end-if
+catch
+ if this==noManagementRealm in $_CLI_ERROR
+   echo no management realm
+ end-if
+ if this==noInterface in $_CLI_ERROR
+   echo no interface
+   fail "Abort!!!!"
+ end-if
+end-try
+```
+=== Ignore failing operations
+
+We are adding the ability to express that the failure of a management model operation shouldn't raise an exception.
+
+* The character '?' can be appended to the end of a valid operation to advertise that the failure should be ignored.
+* A valid operation is an operation composed of an address and one of:
+** A name
+** A name + properties
+** A name + headers
+** A name + properties + headers
+* The CLI will not validate the operation and will silently ignore the operation failure.
+* The CLI debug log will contain the ignored failure in case of failure.
+* In case of success the operation behaves as if the '?' character was not appended .
+
+Examples:
+
+```
+/extension=foo:remove?
+/extension=foo:remove()?
+/system-property=foo:add(value=bar)?
+/subsystem=elytron:read-children-names(child-type=foo){allow-resource-service-restart=true}?
+/system-property=foo:read-resource{allow-resource-service-restart=true}?
+```
+
+=== Nice-to-Have Requirements
+
+* NONE
+
+=== Non-Requirements
+
+* NONE
+
+== Test Plan
+
+* Add new unit and integration tests in wildfly-core repo.
+
+== Community Documentation
+
+* These evolutions require community documentation.
+
+== Release Note Content
+
+Yes.
