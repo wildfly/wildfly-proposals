@@ -1,0 +1,128 @@
+= WFLY-14479 - Helm Charts for WildFly
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+As an user, I want to build and deploy WildFly applications on OpenShift using https://helm.sh[Helm Charts].
+
+The Charts will help users build and deploy WildFly images on OpenShift and leverage the whole features of the application server to make it a best-of-breed runtime on the cloud.
+
+In particular, this chart will let users go from source code to deployed application with an unified and consolidated configuration. They will leverage the most recent innovations of WildFly (Galleon provisioning, Bootable Jar) to make sure that the application matches the user requirements and are fully integrated in the container platform.
+
+This chart depend on WildFly features (S2I, Bootable Jar) and will be regularly updated whenever a new release of WildFly is available so that their users will always be able to use the latest WildFly release.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14479[WFLY-14479]
+
+=== Related Issue
+
+* https://issues.redhat.com/browse/EAP7-1649[EAP7-1649] - As an user, I want to build and deploy EAP applications on OpenShift using Helm Chart
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== Testing By
+
+* [x] Engineering
+
+=== Affected Projects or Components
+
+A new project to host the Helm Charts will be created that will leverage WildFly cloud features (in particular S2I and Bootable Jar).
+
+* https://github.com/wildfly/wildfly-s2i[wildfly-s2i] is providing an https://github.com/wildfly/wildfly-s2i/blob/master/templates/wildfly-s2i-chained-build-template.yml[OpenShif template] to build an application image. This template will be superseded by this new Helm Chart.
+* In order to showcase this chart, I am proposing to add a new quickstart (`todo-backend`) that illustrates a typical use case (a backend exposing a REST API to a Web frontend and connecing to a PostgreSQL DB). This quickstart has already been developed at https://github.com/jmesnil/quickstart/tree/todo-backend/todo-backend.
+
+=== Other Interested Projects
+
+* https://github.com/wildfly/wildfly-operator[wildfly-operator] is a complementary mechanism to deploy WildFly applications on OpenShift that focuses on day-2 operations.
+* https://github.com/wildfly/quickstart[WildFly quickstarts] will be used to demonstrate the Helm Charts capabilities and provide ready-to-use examples.
+
+=== Relevant Installation Types
+
+* [x] OpenShift s2i
+* [x] Bootable jar (for Cloud deployment only)
+
+== Requirements
+
+=== Hard Requirements
+
+* There will be a single chart to build and deploy WildFly applications. The chart will be named `wildfly`.
+* The chart must be usable with OpenShift free tier (e.g. https://developers.redhat.com/developer-sandbox[Developer Sandbox for Red Hat OpenShift ]).
+* It must be able to:
+** Build application  images using WildFly S2I images
+** Build application image using WildFly Bootable Jar
+** Deploy application images that use WildFly S2I images
+** Deploy application images that uses WildFly Bootable Jar
+** Build and deploy steps can be disabled	
+*** E.g. deploy a bootable jar image that was built separately
+*** E.g. build a S2I image that will be deployed by the WildFly Operator
+* Deep integration with OpenShift and support for native primitives to let our uses fit the resources to their application. This includes:
+** Support for env variables (from values, from secret/configmaps)
+** Full access to healthiness probes
+** Full access to resource requirements and limits
+** Full access to volumes and volumeMounts
+** Full access to sidecars and initcontainers
+** Automatic exposition of the application (using a route)
+* a schema must be provided to validate user input and deep integration in OpenShift console
+* By default, the Helm Chart will use the latest WildFly release to build and deploy application. This must be overrideable to use previous releases.
+* It must be possible to explicitly specify WildFly S2I images.
+
+=== Strong Requirements
+
+* The chart is targeting OpenShift (and not Kubernetes) although they should be able to be used on Kubernetes with some configuration changes.
+** Some features will not be available on Kubernetes (e.g. build the image requires `BuildConfig`) but the chart should strive to instal resources that works on Kubernetes when possible
+
+=== Nice-to-Have Requirements
+
+* All relevant quickstarts for cloud deployment should provide a Helm configuration file to install the quickstart from this Helm Chart.
+* Add this chart in community offering for OpenShift Developer Catalog (by submitting it to https://github.com/redhat-developer/redhat-helm-charts[redhat-developer/redhat-helm-charts])
+
+== Implementation Plan
+
+A prototype has been developed at https://github.com/jmesnil/wildfly-charts[jmesnil/wildfly-charts].
+It will be contributed to https://github.com/wildfly/wildfly-charts and the Helm Chart repository will be available on https://wildfly.github.io/wildfly-charts/.
+
+This repository will be added to https://artifacthub.io to help users find and install this chart.
+
+== Test Plan
+
+The charts will expose many knobs to fullfill all building and deployment use cases.
+
+The tests for the Charts should focus at first on smoke tests for basic features.
+They will use WildFly Quickstarts as the applications to build and deploy and verify that the resources installed on the container platform complies with the Chart configuration.
+
+These tests relies on the existence of a OpenShift cluster that is accessible to install and test the charts.
+
+== Community Documentation
+
+The Chart will be self-documented in a README file that is bundled in a chart as well as a schema that will validates and describes configuration.
+
+The prototype contains such a https://github.com/jmesnil/wildfly-charts/blob/main/charts/wildfly/README.md[README] and https://github.com/jmesnil/wildfly-charts/blob/main/charts/wildfly/values.schema.json[schema] (though they are feature complete).
+
+The wildfly-charts project will also comes with examples showcasing how to build and deploy WildFly applications (with some advanced features).
+For example, the prototy contains an https://github.com/jmesnil/wildfly-charts/tree/main/examples/todo-backend[example to build and deploy a backend (running in a Bootable Jar) connected to PostgreSQL] as well as https://github.com/jmesnil/wildfly-charts/blob/main/examples/microprofile-config/microprofile-config-app.yaml[an example to build and deploy a MicroProfile application that uses environment variables for application configuration]
+
+== Release Note Content
+
+This wildfly-project will not be tied to a release of WildFly and can be managed separately.
+When it is released, it will be announced on https://wildfly.org/news
+
+== Helm Charts for EAP
+
+We want to provide Helm Charts for EAP (both 7.4 and XP3) (tracked by https://issues.redhat.com/browse/EAP7-1649[EAP7-1649]) that leverage this `wildfly` chart.
+However the features of the charts will depend on the version of EAP (e.g. `bootable-jar` is only possible with EAP XP). Another important difference is that EAP supports 2 JDK versions (8 and 11) while WildFly only provides S2I images for JDK11.
+
+The `wildfly` chart will be created based on a `wildfly-common` library chart that will contains all the features and capabilities in its template.
+Then the `wildfly` chart will depend on the `wildfly-common` library to provide an application chart (incuding sensible default values, schema validation and README) to install a WildFly application.
+
+The `eap74` and `eap-xp` charts will also depend on the `wildfly-common` library and provide their own application charts.
+
+The whole set of features provided by the charts for EAP  will be documented in their READMEs and schema.
