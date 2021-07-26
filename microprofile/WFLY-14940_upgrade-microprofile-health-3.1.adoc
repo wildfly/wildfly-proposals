@@ -1,0 +1,103 @@
+= Upgrade MicroProfile Health to 3.1
+:author:            Martin Stefanko
+:email:             mstefank@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          microprofile,health,observability
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+
+MicroProfile 4.1 provides a minor upgrade for https://github.com/eclipse/microprofile-health/releases/tag/3.1[MicroProfile Health 3.1] with changes described in its https://download.eclipse.org/microprofile/microprofile-health-3.1/microprofile-health-spec-3.1.html#release_notes_3_1[Release Notes]. The MicroProfile Health 3.1 is an incremental, backwards compatible release that only added one major feature called Startup probes (@Startup qualifier and /health/startup endpoint) for the Kubernetes startup probes.
+
+This component upgrade also covers the upgrade of https://github.com/smallrye/smallrye-health/releases/tag/3.1.1[smallrye-health 3.1.1] that implements MicroProfile Health 3.1.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-14940[WFLY-14940]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1763[EAP7-1763]
+* https://issues.redhat.com/browse/WFLY-15089[WFLY-15089]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
+
+=== Testing By
+
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* SmallRye Health and MicroProfile Health
+* Quickstarts - https://github.com/wildfly/quickstart
+* OpenShift templates - https://github.com/jboss-container-images/jboss-eap-openshift-templates
+
+=== Other Interested Projects
+
+* Quickstarts
+* OpenShift templates
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [x] OpenShift s2i
+** Probably templates need to also define the startup probes
+
+* [x] Bootable jar
+
+== Requirements
+
+* Upgrade MicroProfile Health to https://download.eclipse.org/microprofile/microprofile-health-3.1/microprofile-health-spec-3.1.html[3.1]
+* Upgrade SmallRye Health to https://github.com/smallrye/smallrye-health/releases/tag/3.1.1[3.1.1]
+* Users must be able to use @Startup health checks
+* the endpoint :9990/health/started must be responding (200, 503, 500 - according to the specification)
+* Add a management attribute empty-startup-checks-status to the microprofile-health-smallrye subsytem
+* Add support for mp.health.default.startup.empty.response (when also defined mp.health.disable-default-procedures=true) and add relevant tests to the integration test suite
+* Pass all MicroProfile Health tests in WildFly integration test suite
+* Pass the MicroProfile Health 3.1 TCK without failures
+* Adjust the tests to work as needed
+* Adjust QuickStarts to showcase new Startup feature
+** https://issues.redhat.com/browse/WFLY-15089
+
+=== Nice-to-Have Requirements
+
+* N/A
+
+=== Non-Requirements
+
+* N/A
+
+== Test Plan
+
+The implementation should pass the TCK and also add tests for the mp.health.default.startup.empty.response as this functionality cannot be implemented in the TCK itself.
+
+* Run the WildFly integration microprofile test suite and check there are no failures related to MicroProfile Health tests.
+* Run the `microprofile-tck/health` module from WildFly integration test suite and check that there are no failures.
+* Add additional tests for mp.health.default.startup.empty.response
+
+== Community Documentation
+
+* The MicroProfile Health 3.1 specification document
+* The relevant sections in the WildFly admin guide
+** https://docs.wildfly.org/24/Admin_Guide.html#Health
+** https://docs.wildfly.org/24/Admin_Guide.html#MicroProfile_Health_SmallRye
+
+== Release Note Content
+
+This RFE provides updates to the MicroProfile Health 3.1 which a new backwards compatible release of the MicroProfile Health specification that added support for the Kubernetes startup probes in form of the new CDI qualifier called `@Startup` and exposing this check at the `:9990/health/started` endpoint.
