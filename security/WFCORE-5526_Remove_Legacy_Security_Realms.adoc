@@ -1,0 +1,223 @@
+= WFCORE-5526 Remove Legacy Security Realms
+:author:            Darran Lofthouse
+:email:             darran.lofthouse@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+At the start of development for JBoss AS7 a custom security solution in the way of security realms
+was developed to secure the management interfaces, the use of these realms has grown in a number of
+areas across the application server.
+
+During WildFly 11 with the addition of support for WildFly Elytron an alternative solution was
+added providing all of the capabilities provided by the security realms.
+
+This task is focused on the removal of the legacy security realms and converting the configuration to
+use WildFly Elytron exclusively where security realms were previously used.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-5526[WFCORE-5526 - Remove legacy security realm support]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1095[EAP7-1095 - Remove the legacy SecurityRealms]
+* https://issues.redhat.com/browse/WFLY-15001[WFLY-15001 - Update feature packs to remove use of legacy security realms]
+* https://issues.redhat.com/browse/WFLY-15067[WFLY-15067 - Prepare for removal of legacy security realm support]
+* https://issues.redhat.com/browse/WFLY-15067[WFLY-15068 - Final stage for the removal of legacy security realms.]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [x] QE
+
+As a removal RFE this does not require new feature test development, however both teams will need
+to review existing testsuites for tests dependent on the Vault integration.  Identified tests will
+either need deleting or converting to a credential store equivalent.
+
+=== Affected Projects or Components
+
+* WildFly Core
+* WildFly
+
+=== Other Interested Projects
+
+* [x] External Testsuites
+
+* [x] Quickstarts
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+As a removal task, this section is describing the steps being undertaken rather than a set of
+"requirements".
+
+=== Hard Requirements
+
+The next version of the management model is updated to remove all security-realm resources.  Any use of
+security-realm resources in the latest version will result in a usual unexpected element error.
+
+References to security realms will also be removed from the core domain management model as this is not
+transferred to remote hosts in domain mode.
+
+Where an older configuration is being parsed we will fail parsing and abort boot.  We can not quietly drop
+the references to security realms as this would lead to unsecured servers.
+
+For all subsystems that use a `security-realm` reference, these will remain usable in `Stage.MODEL` but will
+be flagged as deprecated.  Where they are used in `Stage.RUNTIME` they will result in an
+`OperationFailedException` as they can only be used on older hosts.
+
+All code implementing the security realms will be removed from WildFly Core, all security realm related APIs
+and SPIs will be removed.
+
+The following table shows how existing references to security realms will be updated across all configurations.
+
+.Capability References
+|===
+|Old Reference |Purpose |New Reference
+
+|ManagementRealm
+|HTTP Authentication
+|management-http-authentication
+
+|ManagementRealm
+|SASL Authentication
+|management-sasl-authentication
+
+|ApplicationRealm
+|HTTP Authentication
+|application-http-authentication
+
+|ApplicationRealm
+|SASL Authentication
+|application-sasl-authentication
+
+|ApplicationRealm
+|SSL
+|applicationSSC
+
+The aim within this enhancement is to end up with a default configuration using Elytron capabilities which is
+almost identical to the legacy configuration using `security-realms`.  By "almost identical" this work may
+trigger follow up activities.
+
+The following changes will be made to the Galleon layers:
+
+ * All layers which define security realms removed.
+ * Any layers specifically to reference security realms removed.
+ * Remaining layers adjusted to reference Elytron capabilites.
+ * New layers added for specifically referencing Elytron capabilities.
+
+By the end of this RFE there will be no use for `PicketBox` in WildFly Core so the dependency can
+be moved to WildFly.
+
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+Later enhancements will be looking at how we can evolve the default configuration further, this enhancement
+is specifcially covering the removal.
+
+The following issues have been raised for follow up activities to be considered later:
+
+ * ????
+
+== Implementation Plan
+
+This task will need to be developed in stages, logically the first step is to remove the
+integration from WildFly Core then move to WildFly, however this would break CI for any WildFly
+use of security realms.
+
+A first set of changes is prepared under https://issues.redhat.com/browse/WFLY-15001[WFLY-15001],
+this just updates the feature packs to remove the use of security realms but at this point tests
+may still be defining their own security realms.
+
+A second issue https://issues.redhat.com/browse/WFLY-15067[WFLY-15067] will prepare WildFly for the
+security realms becoming unavailable in an upcomming WildFly Core release.
+
+https://issues.redhat.com/browse/WFCORE-5526[WFCORE-5526] will then proceed to completely remove
+the security realms from WildFly Core.
+
+A final task https://issues.redhat.com/browse/WFLY-15067[WFLY-15068] will complete the removal in
+WildFly and update the documentation to reflet the removal.
+
+During this task follow up activities will be identified, these should not block the progress
+of the initial PRs being merged.
+
+Follow up tasks may include:
+
+* Re-purposing test cases or developing new test cases where Elytron coverage is required.
+* Additional enhancements for feature parity in relation to removed features.
+
+== Test Plan
+
+The following table identifies the tests in WildFly Core and WildFly affected by the removal.
+
+.Test Case Updates
+|===
+|Project |Test Case |Action
+
+|Project
+|Class Name
+|Action
+
+
+.Action Key
+|===
+|Action | Description
+
+|Removed
+|Test case removed entirely.
+
+|Reduced
+|Removed vault specific testing from case.
+
+|Tweaked
+|Minor changes needed for vault removal.
+|===
+
+== Community Documentation
+
+This task will include a pass through of all existing community documentation and remove all
+references to the security realms.
+
+A migration "article" will be added to the documentation, this article will identify where
+security-realm integration has been removed with some high level examples of alternatives.
+The article will contain some simple examples but a complete like for like comparison would be
+impractical.
+
+At the end of all of the removals we will come back to the issue 
+https://issues.redhat.com/browse/WFLY-15067[WFLY-15068] to perform a final clean up and refactor
+of the documentation in relation to legacy security.
+
+== Release Note Content
+
+The legacy security realms have now been removed from WildFly, please refer to
+https://docs.wildfly.org/25/Migration_Guide.html#Migration_Security_Realms for information on 
+alternatives available utilising the WildFly Elytron capabilities.
