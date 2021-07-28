@@ -33,7 +33,7 @@ The existing quickstart will be enhanced to show some of these new features.
 
 === QE Contacts
 
-TBD
+* mailto:spriadkaredhat.com[Simon Priadka]
 
 === Testing By
 // Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
@@ -57,7 +57,7 @@ TBD
 * Kafka connection configuration via MP Config
 ** On OpenShift we will provide examples for
 *** AMQ Streams - this already exists
-*** RHOSAK - We should provide alternate instructions for how to set up the container to use RHOSAK as outlined in https://issues.redhat.com/browse/[WFLY-15006]
+*** RHOSAK - We should provide alternate instructions for how to set up the container to use RHOSAK as outlined in https://issues.redhat.com/browse/WFLY-15006[WFLY-15006]
 **** Rather than having a separate bare-metal configuration to cover https://issues.redhat.com/browse/WFLY-14391[WFLY-14391 - using an Elytron SSL Context for the Kafka connector], we should mention the extra config property that will allow the users to connect to a secured Kafka instance which does not have a CA signed certificate
 * Using `@Incoming` and `@Outgoing` annotations on methods to map the streams.
 ** Showcase some alternative method signatures for these methods
