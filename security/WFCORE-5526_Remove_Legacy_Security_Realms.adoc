@@ -120,6 +120,7 @@ The following table shows how existing references to security realms will be upd
 |SSL
 |applicationSSC
 
+
 The aim within this enhancement is to end up with a default configuration using Elytron capabilities which is
 almost identical to the legacy configuration using `security-realms`.  By "almost identical" this work may
 trigger follow up activities.
@@ -183,9 +184,45 @@ The following table identifies the tests in WildFly Core and WildFly affected by
 |===
 |Project |Test Case |Action
 
-|Project
-|Class Name
-|Action
+|WildFly Core
+|org.jboss.as.domain.management.security.realms.GroupLoadingReferralsSuiteTest
+|Removed
+
+|WildFly Core
+|org.jboss.as.domain.management.security.realms.BaseLdapSuiteAuthenticationReferralsTest
+|Removed
+
+|WildFly Core
+|org.jboss.as.domain.management.security.realms.LdapAuthenticationSuiteTest
+|Removed
+
+|WildFly Core
+|org.jboss.as.domain.management.security.realms.LdapGroupAssignmentBaseSuiteTest
+|Removed
+
+|WildFly Core
+|org.jboss.as.domain.management.security.realms.PrincipalToGroupLdapSuiteTest
+|Removed
+
+|WildFly Core
+|org.jboss.as.domain.management.security.realms.PrincipalToGroupMissingNameLdapSuiteTest
+|Removed
+
+|WildFly Core
+|org.jboss.as.domain.management.security.realms.PropertiesAuthenticationDigestedTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.domain.management.security.SecurityRealmServiceUtilTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.domain.management.security.KeytabIdentityFactoryServiceTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.domain.management.security.LdapCacheServiceMockTest
+|Removed
 
 
 .Action Key
