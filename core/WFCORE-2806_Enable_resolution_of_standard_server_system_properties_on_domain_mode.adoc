@@ -53,6 +53,7 @@ The goal of this RFE is to make available some of these server configuration pro
 === Related Issues
 
 * https://issues.redhat.com/browse/EAP7-823[EAP7-823]
+* https://issues.redhat.com/browse/WFLY-15095[WFLY-15095]
 
 === Dev Contacts
 
