@@ -147,7 +147,8 @@ is specifcially covering the removal.
 
 The following issues have been raised for follow up activities to be considered later:
 
- * ????
+ * https://issues.redhat.com/browse/WFCORE-5532[WFCORE-5532 Elytron Realm Readiness Check.]
+ * https://issues.redhat.com/browse/WFCORE-5533[WFCORE-5533 Simplify slave host controller configuration.]
 
 == Implementation Plan
 
@@ -224,10 +225,128 @@ The following table identifies the tests in WildFly Core and WildFly affected by
 |org.jboss.as.domain.management.security.LdapCacheServiceMockTest
 |Removed
 
+|WildFly Core
+|org.wildfly.extension.elytron.SubsystemParsingTestCase.testGetCredentialSourceSupplier()
+|Removed (Replacement Needed)
+
+|WildFly Core
+|org.jboss.as.core.model.test.mgmt_interfaces.StandaloneMgmtInterfacesTestCase.testConfiguration_Legacy()
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.access.RoleMappingTestCase.testIncludeByUsernameAndRealm()
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.access.RoleMappingTestCase.testIncludeByGroupAndRealm()
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.access.RoleMappingTestCase.testExcludeByUsernameAndRealm()
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.access.RoleMappingTestCase.testExcludeByGroupAndRealm()
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.access.RoleMappingTestCase.testDuplicateGroupRealmLess()
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.access.RoleMappingTestCase.testIncludeAll()
+|Tweaked
+
+|WildFly Core
+|org.jboss.as.core.model.test.security.StandaloneKerberosTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.security.StandaloneLdapTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.security.StandaloneSSLTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.security.HostKerberosTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.security.HostLdapTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.security.HostSSLTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.host.HostModelTestCase.testHostXmlWithServerSSL()
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.host.HostModelTestCase.testWFLY2870()
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.mgmt_interfaces.HostMgmtInterfacesTestCase.testConfiguration_Legacy()
+|Removed
+
+|WildFly Core
+|org.wildfly.core.test.standalone.mgmt.api.core.ReadConfigAsFeaturesStandaloneTestCase.coreManagementTest()
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.integration.credential.store.ManagementAuthenticationUsersTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.integration.mgmt.access.LdapRoleMappingG2UTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.integration.mgmt.access.LdapRoleMappingU2GTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.integration.domain.KerberosServerIdentityTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.integration.domain.management.LegacySecurityRealmPropagationTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.integration.domain.HTTPSManagementInterfaceTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.integration.domain.suites.ServerAuthenticationTestCase
+|Ignored https://issues.redhat.com/browse/WFCORE-5549[WFCORE-5549]
+
+|WildFly Core
+|org.jboss.as.test.integration.domain.SSLMasterSlaveOneWayTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.integration.domain.SSLMasterSlaveTwoWayTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.integration.domain.SlaveHostControllerAuthenticationTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.test02_RBAC_user_and_model_out_of_sync()
+|Ignored https://issues.redhat.com/browse/WFCORE-5549[WFCORE-5549]
 
 .Action Key
 |===
 |Action | Description
+
+|Ignored
+|Ignored to revisit.
 
 |Removed
 |Test case removed entirely.
