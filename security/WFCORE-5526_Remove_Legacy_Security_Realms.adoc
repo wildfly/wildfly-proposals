@@ -135,6 +135,13 @@ The following changes will be made to the Galleon layers:
 By the end of this RFE there will be no use for `PicketBox` in WildFly Core so the dependency can
 be moved to WildFly.
 
+The `RealmDirectLoginModule` will be removed from WildFly as without security realms there will be
+nothing for this module to authenticate against.
+
+The client processing the EJBs will not be able to reference a security realm to obtain an outbound
+credential, the `security-realm` and `username` attributes will be removed from a new version of 
+the schema and parsing these against older versions of the schema will result in an error being thrown.
+
 
 === Nice-to-Have Requirements
 
@@ -149,6 +156,11 @@ The following issues have been raised for follow up activities to be considered 
 
  * https://issues.redhat.com/browse/WFCORE-5532[WFCORE-5532 Elytron Realm Readiness Check.]
  * https://issues.redhat.com/browse/WFCORE-5533[WFCORE-5533 Simplify slave host controller configuration.]
+ * https://issues.redhat.com/browse/WFCORE-5514[WFCORE-5514 The management layer should depend on "just enough" Elytron to secure it.]
+ * https://issues.redhat.com/browse/WFCORE-5555[WFCORE-5555 CLIEmbedServerTestCase.testBuildServerConfig() needs rewriting to use Elytron]
+ * https://issues.redhat.com/browse/WFCORE-5544[WFCORE-5544 Servers unable to connect in domain mode with Elytron without local auth]
+ * https://issues.redhat.com/browse/WFCORE-5554[WFCORE-5554 Reduce management security testing to a single suite.]
+ * https://issues.redhat.com/browse/WFLY-15159[WFLY-15159 Web subsystem migration needs updating to migrate to Elytron.]
 
 == Implementation Plan
 
@@ -340,6 +352,35 @@ The following table identifies the tests in WildFly Core and WildFly affected by
 |WildFly Core
 |org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.test02_RBAC_user_and_model_out_of_sync()
 |Ignored https://issues.redhat.com/browse/WFCORE-5549[WFCORE-5549]
+
+|WildFly Core
+|org.wildfly.core.test.standalone.mgmt.RemoveManagementInterfaceTestCase
+|Removed
+
+|WildFly Core
+|org.wildfly.core.test.standalone.mgmt.HTTPSManagementInterfaceTestCase
+|Removed (Replacement needed?)
+
+|WildFly Core
+|org.wildfly.core.test.standalone.mgmt.HTTPSConnectionWithCLITestCase
+|Removed (Replacement needed?)
+
+|WildFly Core
+|org.wildfly.core.test.standalone.mgmt.HTTPSManagementInterfacePKCS12TestCase
+|Removed (Replacement needed?)
+
+|WildFly Core
+|org.jboss.as.test.manualmode.management.cli.ReloadRedirectTestCase
+|Removed (Replacement needed?)
+
+|WildFly Core
+|org.jboss.as.test.manualmode.management.cli.CLIAuthenticationTestCase
+|Ignored https://issues.redhat.com/browse/WFCORE-5522[WFCORE-5522]
+
+|WildFly Core
+|org.jboss.as.test.manualmode.management.cli.CLIEmbedHostControllerTestCase
+|Ignored https://issues.redhat.com/browse/WFCORE-5522[WFCORE-5522]
+
 
 .Action Key
 |===
