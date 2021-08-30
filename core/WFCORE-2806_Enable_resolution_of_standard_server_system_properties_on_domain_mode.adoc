@@ -97,7 +97,7 @@ N/A
 ** jboss.server.data.dir: Directory the server will use for persistent data file storage.
 ** jboss.server.log.dir: Directory the server will use for log file storage.
 ** jboss.server.temp.dir: Directory the server will use for temporary file storage.
-* These environment variables will be available to configure the jvm resources at:
+* The use of these properties to resolve expressions will be available for attributes in the jvm resources at:
 ** /host=+*+/jvm=+*+
 ** /server-group=+*+/jvm=+*+
 ** /host=+*+/server-config=+*+/jvm=+*+
