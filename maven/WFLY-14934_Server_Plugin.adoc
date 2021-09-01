@@ -144,6 +144,8 @@ the provisioning file is being ignored.
 It contains Galleon provisioning information used to provision this server.
 * layers: A set of layers to include when building-up a custom configuration.
 * excluded-layers: A set of layers to exclude when building-up a custom configuration.
+* layers-configuration-file-name: The name of the configuration file generated from layers. Default value is ``standalone.xml``. 
+If no ``layers`` have been configured, setting this parameter is invalid.
 
 ==== ```provision``` goal specific behavior
 
@@ -168,7 +170,9 @@ By default a lookup is done to retrieve the primary artifact to deploy. If no fi
 * name: The name of the deployment. By default the file name is used.
 * runtime-name: The runtime name of the deployment. By default the file name is used. NB: In order to deploy 
 the deployment inside the root context, ```ROOT.war``` runtime name is to be used.
-* server-config: The server config to use when executing CLI scripts and deploying artifact. Is ```standalone.xml``` by default.
+* server-config: The server config to use when executing CLI scripts and deploying artifact. Is ```standalone.xml``` by default. 
+If ``layers-configuration-file-name`` has been set, this property is ignored and the deployment is deployed inside the 
+configuration referenced from ``layers-configuration-file-name``.
 * stdout: Indicates how ```stdout``` and ```stderr``` should be handled for the forked CLI process. 
 By default the output is redirected to the current process. ```none``` to disable output, ```System.out``` or ```System.err``` to redirect to the current process. 
 Any other value is assumed to be the path to a file and the out/err will be written there. All CLI executions output is appended to the file.
