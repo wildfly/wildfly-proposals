@@ -30,6 +30,7 @@ use WildFly Elytron exclusively where security realms were previously used.
 * https://issues.redhat.com/browse/WFLY-15001[WFLY-15001 - Update feature packs to remove use of legacy security realms]
 * https://issues.redhat.com/browse/WFLY-15067[WFLY-15067 - Prepare for removal of legacy security realm support]
 * https://issues.redhat.com/browse/WFLY-15067[WFLY-15068 - Final stage for the removal of legacy security realms.]
+* https://issues.redhat.com/browse/WFCORE-5522[WFCORE-5522 - The CLI security SSL commands are too tied to the default configuration]
 
 === Dev Contacts
 
@@ -120,6 +121,7 @@ The following table shows how existing references to security realms will be upd
 |SSL
 |applicationSSC
 
+|===
 
 The aim within this enhancement is to end up with a default configuration using Elytron capabilities which is
 almost identical to the legacy configuration using `security-realms`.  By "almost identical" this work may
@@ -188,6 +190,70 @@ Follow up tasks may include:
 
 * Re-purposing test cases or developing new test cases where Elytron coverage is required.
 * Additional enhancements for feature parity in relation to removed features.
+
+== Impact on WildFly CLI command line
+
+The CLI security ```ssl-{enable|disable}-http-server``` commands are impacted by this change and are evolving as described:
+
+* The commands are backward compatible. The CLI commands behavior is not impacted when the CLI interacts
+ with a server that still supports security-realms.
+
+* The CLI commands had been designed to switch from legacy to elytron security. Now that this switches 
+is meaningless, we are introducing new options for the command to still operates with a valid meaning. 
+
+=== disable-ssl-http-server
+
+* New ```--remove-https-listener``` to remove the HTTPS listener. That is the only way to fully disable SSL on the HTTPS listener.
+By default backward compatibility is kept, the HTTPS listener is not removed.
+
+* New ```--https-listener-name=<listener name>``` to name the HTTPS listener to remove or update. 
+The completer of this option proposes the list of existing HTTPS listeners. Default value is ```https```
+
+* New ```--default-server-ssl-context=<ssl-context>```. This allow to set the ssl-context to use when replacing 
+the current ssl-context with the default one. Default value is ```applicationSSC``` that is expected to be found in default config.
+
+* The CLI help command is evolved to contain new options.
+
+When CLI detects a legacy config:
+
+* If the HTTPS listener is not asked to be removed, Keep the current logic: remove the SSL context, set back 
+the security-realm. Fails if it doesn't exist.
+
+* If the HTTPS listener is asked to be removed just remove it.
+
+When CLI detects a new server config:
+
+* If the HTTPS listener is not asked to be removed, replace the SSL context with the value of the ```--default-server-ssl-context```. 
+The command fails if if doesn't exist.
+
+* If the HTTPS listener is asked to be removed just remove it.
+
+=== enable-ssl-http-server
+
+* New ```--add-https-listener``` to add a new HTTPS listener. By default backward compatibility is kept, the HTTPS listener is not added.
+
+* New ```--https-listener-name=<listener name>``` to name the HTTPS listener to add and/or update. 
+The completer of this option proposes the list of existing HTTPS listeners when not adding a new 
+HTTPS listener (when ```--add-https-listener``` is not used). Default value is ```https```
+
+* New ```--https-listener-socket-bindig=<socker binding>``` with completer to complete socket binding. 
+This option is only available when adding a new https-listener (```--add-https-listener``` is present). Default value is ```https```.
+
+* New ```--override-ssl-context``` option to override an existing SSL context. By default backward compatibility is kept, 
+the SSL context is not overwritten and the command will fail if an SSL context already exists.
+
+* Existing option ```--no-override-security-realm``` used to not erase the existing security-realm is hidden 
+for new config and only available for legacy config that supports security-realm.
+
+* The CLI help command is evolved to contain new options.
+
+When CLI detects a legacy config:
+
+* Keep the current logic update the HTTPS listener (new one or existing) with a new SSL context, erase the existing security-realm
+
+When CLI detects a new config:
+
+* Update the HTTPS listener (new one or existing) with a new SSL context.
 
 == Test Plan
 
@@ -381,6 +447,10 @@ The following table identifies the tests in WildFly Core and WildFly affected by
 |org.jboss.as.test.manualmode.management.cli.CLIEmbedHostControllerTestCase
 |Ignored https://issues.redhat.com/browse/WFCORE-5522[WFCORE-5522]
 
+|WildFly 
+|org.jboss.as.test.integration.management.cli.SecurityCommandsTestCase
+|Evolved https://issues.redhat.com/browse/WFLY-15057[WFLY-15057]
+|===
 
 .Action Key
 |===
@@ -412,6 +482,8 @@ impractical.
 At the end of all of the removals we will come back to the issue 
 https://issues.redhat.com/browse/WFLY-15067[WFLY-15068] to perform a final clean up and refactor
 of the documentation in relation to legacy security.
+
+The CLI SSL security commands examples in WildFly community doc are adjusted. 
 
 == Release Note Content
 
