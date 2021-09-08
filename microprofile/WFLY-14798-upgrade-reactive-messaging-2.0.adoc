@@ -1,0 +1,149 @@
+= MicroProfile Reactive Messaging 2.0
+:author:            Kabir Khan
+:email:             kkhan@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+
+== Overview
+We need to upgrade to the latest MicroProfile Reactive Messaging version 2.0 (Note that we will upgrade to a micro version of this due to some fixes needed to the TCK but the API of Reactive Messaging itself will be the same as 2.0). It is partly a drop-in replacement for MicroProfile Reactive Messaging 1.0, which was originally included in https://issues.redhat.com/browse/WFLY-13640[WFLY-13640] so existing Reactive Messaging 1.0 applications should still work on 2.0. Additionally, it introduces some new functionality.
+
+The MicroProfile Reactive Messaging 2.0 spec can be found https://github.com/eclipse/microprofile-reactive-messaging/releases/tag/2.0[here].
+
+This is not a full list, but some notable additions are:
+* It is now easier to exchange data between the Reactive Messaging streams and code triggered by a user action (such as a REST endpoint) via the `@Channel` and `Emitter` constructs which were introduced for this version. An example will be given below
+* MicroProfile Metrics are now leveraged to count the number of messages sent on a channel.
+
+As was done in https://issues.redhat.com/browse/WFLY-13640[WFLY-13640] we will limit the Reactive Messaging functionality exposed to users as far as possible to Reactive Messaging 2.0. This will be via what we expose in our BOMs, so it is still a compile-time limitation.
+
+To recap, Reactive Messaging 1.0 allowed you to write code like the following:
+
+[source, java]
+----
+@ApplicationScoped
+class MyBean {
+    @Outgoing("my-stream")
+    public PublisherBuilder<String> publish() {
+        return ReactiveStreams.of("Hello", "world").buildRs();
+    }
+
+    @Incoming("my-stream")
+    public void consume(String value) {
+        //These are the values emitted by the above method
+    }
+}
+----
+
+There was not really any 'easy' way to get data into the streams from user-initiated code, nor to receive data from the streams and make available for user-initiated code. Reactive Messaging 2.0 introduces
+injected `Emitter` and `Publisher` (or RSO `PublisherBuilder`) instances to help with this. e.g.:
+
+
+[source, java]
+----
+@Path("/")
+@ApplicationScoped
+class MyBean {
+    @Inject @Channel("my-stream")
+    Emitter<String> emitter;
+
+    @Inject @Channel("my-stream")
+    Publisher<String> dest;
+
+    @POST
+    public PublisherBuilder<String> publish(@FormParam("value") String value) {
+        return emitter.send(value);
+    }
+
+    @GET
+    public Publisher poll(String value) {
+        return dest;
+    }
+}
+----
+Sending data via the Emitter works fine, but as we will see in the Non-Requirements section there are some issues with returning the `Publisher` via JAX-RS in the `poll()` method.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/EAP7-1659
+* https://issues.redhat.com/browse/WFLY-14798
+
+=== Related Issues
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:spriadka@redhat.com[Simon Priadka]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [x] QE
+
+=== Affected Projects or Components
+We will upgrade to the SmallRye version implementing MicroProfile Reactive Messaging 2.0.
+
+All other code changes to support the changes will happen in WildFly itself. Tests for the new functionality will be moved over from the https://github.com/wildfly-extras/wildfly-mp-reactive-feature-pack[WildFly Extras MP Reactive Feature Pack] where this work was incubated.
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+For community all installation types are relevant. For product, this is currently targeted for EAP XP.
+
+== Requirements
+=== Hard Requirements
+It must be possible to:
+
+* Provision a server with MicroProfile Reactive Messaging for Kafka. The layers will be the same as in the https://issues.redhat.com/browse/WFLY-13640[original implementation].
+* Deploy a Reactive Messaging application into WildFly
+* Interact with Reactive Messaging in-memory and Kafka streams via the Reactive Messaging 2.0 APIS
+** MicroProfile Config will be used to configure the connections to the Kafka streams.
+* Get metrics for messages sent via the streams
+** The microprofile-reactive-messaging layer will introduce a dependency on the `microprofile-metrics` layer, and the `microprofile-reactive-messaging-smallrye` subsystem will require the capabilities provided by the `microprofile-metrics-smallrye` subsystem.
+* If a user tries to use annotations coming from SmallRye Reactive Messaging API jar that are not in the Reactive Messaging 2.0 specification, reasonable effort is made to raise an error on deployment.
+
+=== Nice-to-Have Requirements
+
+It might be possible to make the dependency on the `microprofile-metrics` layer, and the `microprofile-metrics-smallrye` subsystem capabilities, optional.
+
+=== Non-Requirements
+After discussions with the SmallRye team it has become apparent that the following scenarios are not suppported:
+
+* `@Inject @Channel("x") Emitter (-> processor(s)) -> @Inject @Channel("x") Publisher` - if you try to send on the emitter before there is a subscriber on the Publisher, there will be an error. This means it is not practical to return the injected publisher via a JAX-RS endpoint (as the subscription is created on request, which is likely too late).
+* Returning an injected Publisher via JAX-RS is problematic. The issue is that RestEasy will create a subscription for each request and data is only pushed to one subscription. So if you have three requests you end up with three subscriptions, and somewhat unintuitively they will not all end up with the received data. SmallRye has a https://github.com/smallrye/smallrye-reactive-messaging/blob/3.4.0/api/src/main/java/io/smallrye/reactive/messaging/annotations/Broadcast.java[`@Broadcast`] annotation that can be added to the streams, however this is expermental API which PM does not want at this stage. Also Clement advises against trying to roll our own or to do too much caching of such data from user code (however, it depends on how the user does this and depends on their use-case). We will document this shortcoming. However, emitting data to push data from user-initiated code to the messaging streams works fine and as expected.
+
+
+== Test Plan
+Tests will be added to the microprofile WildFly testsuite for the new functionality brought in by the new specification version.
+
+Also, the TCK for MicroProfile Reactive Messaging in the WildFly testsuite will be upgraded to the current version. Note that at the moment there are some disabled tests. The reason and solution for this is tracked in https://issues.redhat.com/browse/WFLY-15014.
+
+Also, the TCK for MicroProfile Reactive Messaging in the WildFly testsuite will be upgraded to the current version. Note that at the moment there are some disabled tests. The reason and solution for this is tracked in https://issues.redhat.com/browse/WFLY-15014.
+
+== Apache Kafka Client classes exposed
+The original RFE https://github.com/wildfly/wildfly-proposals/pull/320[WFLY-13640] introduced exposure of the the classes from the `org.apache.kafka.common.serialization` package. https://github.com/wildfly/wildfly-proposals/pull/402[WFLY-14932] exposes additional classes from the Apache Kafka Client jar.
+
+== Community Documentation
+Community documentation will be added to WildFly.
+
+== Release Note Content
+WildFly now contains support for MicroProfile Reactive Messaging 2.0. This now integrates with MicroProfile Health for messages sent, and facilitates user-initiated code to push data to, and, to some extent,receive data from, Reactive Messaging streams.
