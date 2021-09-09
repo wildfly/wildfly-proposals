@@ -89,9 +89,38 @@ The following table identifies the tests in WildFly Core and WildFly affected by
 |===
 |Test Case |Action
 
-|
-|
+|org.jboss.as.test.integration.web.security.WebSecuritySimpleRoleMappingSecurityManagerTestCase
+|Removed
 
+|org.jboss.as.test.integration.web.security.digest.WebSecurityDIGESTTestCase
+|Converted
+
+|org.jboss.as.test.integration.web.security.external.WebSecurityExternalAuthTestCase
+|Converted
+
+|org.jboss.as.test.integration.web.security.form.WebSecuritySimpleRoleMappingTestCase
+|Removed
+
+|org.jboss.as.test.integration.web.security.jaspi.WebSecurityJaspiTestCase
+|Removed
+
+|org.jboss.as.test.integration.web.security.jaspi.WebSecurityJaspiWithFailingAuthModuleTestCase
+|Removed
+
+|
+|Removed
+
+|
+|Removed
+
+|
+|Removed
+
+|
+|Removed
+
+|
+|Removed
 
 
 .Action Key
@@ -104,11 +133,8 @@ The following table identifies the tests in WildFly Core and WildFly affected by
 |Removed
 |Test case removed entirely.
 
-|Reduced
-|Removed vault specific testing from case.
-
-|Tweaked
-|Minor changes needed for vault removal.
+|Converted
+|Converted to use Elytron security exclusively.
 |===
 
 == Community Documentation
