@@ -1,0 +1,123 @@
+= [WFLY-15199] Remove legacy the security subystsem from the feature packs and convert to a skeleton,
+:author:            Darran Lofthouse
+:email:             darran.lofthouse@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+During the development of WildFly 11 a new security solution using WildFly Elytron was integrated
+into WildFly in parallel with the legacy security solution based on PicketBox.  This enhancement 
+is to complete the activities to de-activate the legacy security subsystem and remove it from the
+default configurations and Galleon feature packs.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-15199[WFLY-15199]
+
+=== Related Issues
+
+* 
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+The `security` subsystem will be converted to a skeleton subsystem, this will mean that it can
+be used in domain mode to manage older servers but it can not be used for runtime configuration in
+WildFly 25 or later.
+
+All feature packs will be updated to remove the legacy security subsystem and any references to
+it's capabilities.
+
+The following subsystems will require additional configuration to default to WildFly Elytron
+security:
+
+ * ejb2
+ * iiop-openjdk
+ * messaging-activemq
+ * undertow
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+== Test Plan
+
+The following table identifies the tests in WildFly Core and WildFly affected by the removal.
+
+.Test Case Updates
+|===
+|Test Case |Action
+
+|
+|
+
+
+
+.Action Key
+|===
+|Action | Description
+
+|Ignored
+|Ignored to revisit.
+
+|Removed
+|Test case removed entirely.
+
+|Reduced
+|Removed vault specific testing from case.
+
+|Tweaked
+|Minor changes needed for vault removal.
+|===
+
+== Community Documentation
+
+After the removal is merged a full pass through the community documentation will be required to
+remove references to legacy security.
+
+== Release Note Content
+
+The legacy security subsystem has now been disabled for use at runtime and has been removed from
+the default configurations we ship and removed from the Galleon feature packs.  Users should 
+define their security resources within the `elytron` subsystem.
