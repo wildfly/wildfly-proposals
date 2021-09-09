@@ -452,6 +452,90 @@ The following table identifies the tests in WildFly Core and WildFly affected by
 |Evolved https://issues.redhat.com/browse/WFLY-15057[WFLY-15057]
 |===
 
+|WildFly
+|org.jboss.as.test.integration.ws.wsse.trust.WSBearerSecurityPropagationTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.integration.ejb.security.LdapLegacyTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.integration.ejb.security.securitydomain.EJBContextMultipleSDTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.integration.ejb.client.descriptor.EJBClientDescriptorTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15171[WFLY-15171]
+
+|WildFly
+|org.jboss.as.test.integration.ejb.container.interceptor.security.api.SwitchIdentityTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.integration.management.api.web.ListenerTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15172[WFLY-15172]
+
+|WildFly
+|org.jboss.as.test.integration.security.loginmodules.RemotingLoginModuleTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.integration.security.loginmodules.RemotingLoginModuleUseNewClientCertTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.manualmode.web.ssl.HTTPSWebConnectorTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15177[WFLY-15177]
+
+|WildFly
+|org.jboss.as.test.manualmode.web.ssl.CertificateRolesLoginModuleTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.manualmode.web.ssl.DatabaseCertLoginModuleTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.manualmode.parse.ParseAndMarshalModelsTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15178[WFLY-15178]
+
+|WildFly
+|org.jboss.as.test.manualmode.ejb.ssl.SSLEJBRemoteClientTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15179[WFLY-15179]
+
+|WildFly
+|org.jboss.as.test.manualmode.security.OutboundLdapConnectionTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.manualmode.security.OutboundLdapConnectionClientCertTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.manualmode.jms.resourceadapter.LegacySecurityDomainRATestCase
+|Removed
+
+|WildFly
+|
+|Removed
+
+|WildFly
+|
+|Removed
+
+|WildFly
+|
+|Removed
+
+|WildFly
+|
+|Removed
+
+|WildFly
+|
+|Removed
+
 .Action Key
 |===
 |Action | Description
