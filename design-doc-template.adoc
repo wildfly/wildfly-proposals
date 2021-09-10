@@ -54,6 +54,20 @@
 
 === Non-Requirements
 
+== Backwards Compatibility
+
+// Does this enhancement affect backwards compatibility with previously released
+// versions of WildFly?
+// Can the identified incompatibility be avoided?
+
+=== Default Configuration
+
+=== Importing Existing Configuration
+
+=== Deployments
+
+=== Interoperability
+
 //== Implementation Plan
 ////
 Delete if not needed. The intent is if you have a complex feature which can 
