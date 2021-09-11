@@ -107,6 +107,129 @@ The following table identifies the tests in WildFly Core and WildFly affected by
 |org.jboss.as.test.integration.web.security.jaspi.WebSecurityJaspiWithFailingAuthModuleTestCase
 |Removed
 
+|org.jboss.as.test.smoke.deployment.rar.tests.earpackage.EarPackagedDeploymentTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.smoke.deployment.rar.tests.multiactivation.MultipleActivationTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.smoke.deployment.rar.tests.afterresourcecreation.AfterResourceCreationDeploymentTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.smoke.deployment.rar.tests.configproperty.ConfigPropertyTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.smoke.deployment.rar.tests.raconnection.RaTestConnectionTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.rar.RarDeploymentTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.smoke.deployment.rar.tests.redeployment.ReDeploymentTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.smoke.mgmt.resourceadapter.ResourceAdapterOperationsUnitTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.smoke.deployment.rar.tests.multiobjectactivation.MultipleObjectActivationTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.smoke.deployment.rar.tests.multiobjectpartialactivation.MultipleObjectPartialActivationTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.ws.authentication.EJBEndpointAuthenticationTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15253[WFLY-15253]
+
+|org.jboss.as.test.integration.ws.authentication.EJBEndpointNoClassLevelSecurityAnnotationAuthenticationTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15253[WFLY-15253]
+
+|org.jboss.as.test.integration.ws.authentication.EJBEndpointSecuredWSDLAccessTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15253[WFLY-15253]
+
+|org.jboss.as.test.integration.ws.authentication.PojoEndpointAuthenticationTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15253[WFLY-15253]
+
+|org.jboss.as.test.integration.security.loginmodules.CustomLoginModuleTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.DatabaseLoginModuleTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.IdentityLoginModuleTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.LdapExtLikeAdvancedLdapLMTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.LdapExtLoginModuleTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.LdapExtPasswordCachingTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.LdapLoginModuleTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.MultipleCustomLoginModulesTest
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.RunAsLoginModuleTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.UsersRolesLoginModuleTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.jaas.JAASIdentityCachingTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.negotiation.SPNEGOLoginModuleTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.negotiation.AdvancedLdapLoginModuleTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.auditing.CustomAuditProviderModuleTest
+|Removed
+
+|org.jboss.as.test.integration.web.security.runas.WebSecurityRunAsTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15261[WFLY-15261]
+
+|org.jboss.as.test.integration.web.security.servlet.methods.DenyUncoveredHttpMethodsTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15261[WFLY-15261]
+
+|org.jboss.as.test.integration.jca.security.WildFlyActivationRaWithSecurityDomainTestCase
+|Removed
+
+|org.jboss.as.test.integration.jca.security.DsWithSecurityDomainTestCase
+|Removed
+
+|org.jboss.as.test.integration.jca.security.WildFlyActivationRaWithMixedSecurityTestCase
+|Removed
+
+|org.jboss.as.test.integration.jca.security.DsWithMixedSecurityTestCase
+|Removed
+
+|org.jboss.as.test.integration.jca.security.workmanager.WildFlyActivationRaWithWMSecurityDomainWorkManagerTestCase
+|Removed
+
+|org.jboss.as.test.integration.ejb.security.callerprincipal.GetCallerPrincipalWithNoDefaultSecurityDomainTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15262[WFLY-15262]
+
+|org.jboss.as.test.integration.ejb.security.RunAsPrincipalCustomDomainTestCase
+|Removed
+
+|org.jboss.as.test.integration.jca.security.IronJacamarActivationRaWithSecurityDomainTestCase
+|Removed
+
+|org.jboss.as.test.integration.jca.security.WildFlyActivationRaWithElytronAuthContextTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.management.api.security.SecurityDomainTestCase
+|Removed
+
+|org.jboss.as.test.integration.management.api.security.SecurityDomainDotNameTestCase
+|Removed
+
 |
 |Removed
 
