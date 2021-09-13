@@ -1,0 +1,66 @@
+= Configure enable-amq1-prefix Attribute
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+Report underlying / causal error for datasource test failure when using the web console. When testing a datasource, if failure occurs, a generic message is reported in the console:
+
+[source]
+----
+WFLYJCA0040: failed to invoke operation: WFLYJCA0047: Connection is not valid
+----
+
+To discover the cause (e.g. invalid user, password, etc.), it is necessary to look into the server.log. The actual error (such as the invalid user exception seen below) should be reported in the console.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1636[HAL-1636]
+* {issue-base-url}/EAP7-1587[EAP7-1587]
+
+=== Related Issues
+
+* {issue-base-url}/WFLY-14313[WFLY-14313]
+* {issue-base-url}/JBJCA-1397[JBJCA-1397]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:jkasik@redhat.com[Jan Kasik]
+
+=== Testing By
+
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+The console uses the management operation `:test-connection-in-pool()` to test a data source. When this operation fails, the error description is taken from the field `failure-description` in the response. Currently, this description is very generic and does not describe the underlying error like invalid username / password.
+
+The operation `:test-connection-in-pool()` has to be changed in a way that the underlying error is addes to the field `failure-description`. This has to be done in the scope of the related issues.
+
+The console already has a generic way to handle failed operations and shows the failure description in a message box to the user. Once the specific error has been added to the `:test-connection-in-pool()` result, the error shows up in the console.
+
+== Test Plan
+
+Additional tests are added to the test suite that contain faulty data source connections. These tests must show the underlying failure in a message box.
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
