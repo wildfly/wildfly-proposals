@@ -1,0 +1,58 @@
+= Replace JavaEE references with corresponding JakartaEE ones
+:author:            Alessio Soldano
+:email:             asoldano@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+As WildFly is JakartaEE 8 certified since version 18 (https://github.com/wildfly/certifications/blob/EE8/WildFly_18.0.0.Final/jakarta-full-platform.adoc) and JakartaEE 9 implementation is in progress, we want to properly position the project as a JakartaEE implementation more than a JavaEE one.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/WFLY-14061 [WFLY-14061]
+
+=== Related Issues
+
+* {issue-base-url}/EAP7-1193 [EAP7-1193]
+
+=== Dev Contacts
+
+* mailto:asoldano@redhat.com[Alessio Soldano]
+
+=== QE Contacts
+
+* Jan Blizňák
+
+=== Testing By
+
+[ ] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* WildFly Core
+
+=== Other Interested Projects
+
+* None
+
+== Requirements
+
+=== Hard Requirements
+
+* We need to replace any occurrence of JavaEE terms with the corresponding JakartaEE one. This applies to javadoc, code comments (possibly), community documentation, quickstarts, examples, etc.
+
+== Test Plan
+
+* This feature request shouldn't imply any functional change to the code. Hence we should just ensure no regression is caused in the existing testsuites.
+
+== Community Documentation
+
+* Reviewing the existing documentation to cover the requirements above is what will be needed; no new behavior is expected to be mentioned in the documentation.
