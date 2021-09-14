@@ -137,18 +137,6 @@ The following table identifies the tests in WildFly Core and WildFly affected by
 |org.jboss.as.test.smoke.deployment.rar.tests.multiobjectpartialactivation.MultipleObjectPartialActivationTestCase
 |Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
 
-|org.jboss.as.test.integration.ws.authentication.EJBEndpointAuthenticationTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15253[WFLY-15253]
-
-|org.jboss.as.test.integration.ws.authentication.EJBEndpointNoClassLevelSecurityAnnotationAuthenticationTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15253[WFLY-15253]
-
-|org.jboss.as.test.integration.ws.authentication.EJBEndpointSecuredWSDLAccessTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15253[WFLY-15253]
-
-|org.jboss.as.test.integration.ws.authentication.PojoEndpointAuthenticationTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15253[WFLY-15253]
-
 |org.jboss.as.test.integration.security.loginmodules.CustomLoginModuleTestCase
 |Removed
 
