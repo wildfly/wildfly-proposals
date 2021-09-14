@@ -230,21 +230,185 @@ The following table identifies the tests in WildFly Core and WildFly affected by
 |org.jboss.as.test.integration.management.api.security.SecurityDomainDotNameTestCase
 |Removed
 
-|
+|org.jboss.as.test.integration.security.aselytron.SecurityDomainAsElytronSecurityRealmTestCase
 |Removed
 
-|
+|org.jboss.as.test.integration.security.cli.JsseTestCase
 |Removed
 
-|
+|org.jboss.as.test.integration.jca.anno.NoRaAnnoTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.anno.RaAnnoTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.basic.BasicDeployment10TestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.basic.BasicDeployment15TestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.basic.BasicDeployment16TestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.basic.BasicDeployment17TestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.basic.BasicDoubleDeployment16TestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.basic.BasicDoubleDeploymentFail16_1TestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.basic.BasicDoubleDeploymentFail16_2TestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.security.auditing.SecurityAuditingTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15263[WFLY-15263]
+
+|org.jboss.as.test.integration.security.jaspi.EESecurityAuthMechanismMultiConstraintsTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15264[WFLY-15264]
+
+|org.jboss.as.test.integration.security.jaspi.EESecurityAuthMechanismTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15264[WFLY-15264]
+
+|org.jboss.as.test.integration.security.jaspi.JASPIHttpSchemeServerAuthModelTestCase
 |Removed
 
-|
+|org.jboss.as.test.integration.security.jaspi.JaspiFormAuthTestCase
 |Removed
 
-|
+|org.jboss.as.test.integration.security.xacml.EjbXACMLAuthorizationModuleTestCase
 |Removed
 
+|org.jboss.as.test.integration.security.xacml.JBossPDPInteroperabilityTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.xacml.JBossPDPServletInitializationTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.xacml.WebXACMLAuthorizationModuleTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.databases.ExternalDatabaseLoginTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.context.ReuseAuthenticatedSubjectTestCase
+|Removed
+
+|org.wildfly.test.elytron.intermediate.SecurityDomainContextRealmTestCase
+|Removed
+
+|org.wildfly.test.elytron.intermediate.X509SecurityDomainContextRealmTestCase
+|Removed
+
+|org.jboss.as.test.integration.jca.capacitypolicies.ResourceAdapterCapacityPoliciesTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.ijdeployment.IronJacamarDeploymentTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.ijdeployment.IronJacamarDoubleDeploymentTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.metrics.RaCfgMetricUnitTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.poolattributes.ResourceAdapterPoolAttributesTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.statistics.ResourceAdapterStatisticsTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.moduledeployment.BasicFlatTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.moduledeployment.BasicJarTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.moduledeployment.MultiActivationFlatTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.moduledeployment.MultiActivationJarTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.moduledeployment.MultiObjectActivationFlatTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.moduledeployment.MultiObjectActivationJarTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.moduledeployment.PartialObjectActivationFlatTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.moduledeployment.PartialObjectActivationJarTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.moduledeployment.PureFlatTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.moduledeployment.PureJarTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.moduledeployment.TwoModulesFlatTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.moduledeployment.TwoModulesJarTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.moduledeployment.TwoModulesOfDifferentTypeTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.moduledeployment.TwoRaFlatTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.jboss.as.test.integration.jca.moduledeployment.TwoRaJarTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
+
+|org.wildfly.test.integration.vdx.standalone.MessagingTestCase.testWrongOrderOfElements
+|Ignored https://issues.redhat.com/browse/WFLY-15271[WFLY-15271]
+
+|org.jboss.as.test.iiop.security.IIOPSecurityInvocationTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15271[WFLY-15271]
+
+|org.jboss.as.test.xts.wsba.participantcompletion.client.BAParticipantCompletionTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15275[WFLY-15275]
+
+|org.jboss.as.test.xts.wsat.client.ATTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15275[WFLY-15275]
+
+|org.jboss.as.test.xts.suspend.wsat.AtomicTransactionSuspendTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15275[WFLY-15275]
+
+|org.jboss.as.test.xts.annotation.client.TransactionalTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15275[WFLY-15275]
+
+|org.jboss.as.test.xts.wsba.coordinatorcompletion.client.BACoordinatorCompletionTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15275[WFLY-15275]
+
+|org.jboss.as.test.xts.annotation.client.CompensatableTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15275[WFLY-15275]
+
+|org.jboss.as.test.txbridge.fromjta.BridgeFromJTATestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15275[WFLY-15275]
+
+|org.jboss.as.test.xts.suspend.wsba.BusinessActivitySuspendTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15275[WFLY-15275]
+
+|org.jboss.as.test.clustering.cluster.sso.ReplicatedSingleSignOnTestCase
+|Removed
+
+|org.jboss.as.test.clustering.cluster.sso.remote.RemoteSingleSignOnTestCase
+|Removed
+
+|org.wildfly.test.manual.management.MPScriptTestCase.testFailure()
+|Removed
+
+|org.jboss.as.test.manualmode.security.SecuredDataSourceTestCase
+|Removed
+
+|org.jboss.as.testsuite.integration.secman.PBStaticMethodsTestCase
+|Removed
 
 .Action Key
 |===
