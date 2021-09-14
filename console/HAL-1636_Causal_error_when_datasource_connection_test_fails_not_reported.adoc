@@ -36,7 +36,7 @@ To discover the cause (e.g. invalid user, password, etc.), it is necessary to lo
 
 === QE Contacts
 
-* mailto:jkasik@redhat.com[Jan Kasik]
+* mailto:msvehla@redhat.com[Martin Svehla]
 
 === Testing By
 
