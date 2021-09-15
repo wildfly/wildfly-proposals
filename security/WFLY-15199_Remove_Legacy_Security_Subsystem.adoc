@@ -359,30 +359,6 @@ The following table identifies the tests in WildFly Core and WildFly affected by
 |org.jboss.as.test.iiop.security.IIOPSecurityInvocationTestCase
 |Ignored https://issues.redhat.com/browse/WFLY-15271[WFLY-15271]
 
-|org.jboss.as.test.xts.wsba.participantcompletion.client.BAParticipantCompletionTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15275[WFLY-15275]
-
-|org.jboss.as.test.xts.wsat.client.ATTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15275[WFLY-15275]
-
-|org.jboss.as.test.xts.suspend.wsat.AtomicTransactionSuspendTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15275[WFLY-15275]
-
-|org.jboss.as.test.xts.annotation.client.TransactionalTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15275[WFLY-15275]
-
-|org.jboss.as.test.xts.wsba.coordinatorcompletion.client.BACoordinatorCompletionTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15275[WFLY-15275]
-
-|org.jboss.as.test.xts.annotation.client.CompensatableTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15275[WFLY-15275]
-
-|org.jboss.as.test.txbridge.fromjta.BridgeFromJTATestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15275[WFLY-15275]
-
-|org.jboss.as.test.xts.suspend.wsba.BusinessActivitySuspendTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15275[WFLY-15275]
-
 |org.jboss.as.test.clustering.cluster.sso.ReplicatedSingleSignOnTestCase
 |Removed
 
