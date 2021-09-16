@@ -107,36 +107,6 @@ The following table identifies the tests in WildFly Core and WildFly affected by
 |org.jboss.as.test.integration.web.security.jaspi.WebSecurityJaspiWithFailingAuthModuleTestCase
 |Removed
 
-|org.jboss.as.test.smoke.deployment.rar.tests.earpackage.EarPackagedDeploymentTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.smoke.deployment.rar.tests.multiactivation.MultipleActivationTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.smoke.deployment.rar.tests.afterresourcecreation.AfterResourceCreationDeploymentTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.smoke.deployment.rar.tests.configproperty.ConfigPropertyTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.smoke.deployment.rar.tests.raconnection.RaTestConnectionTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.rar.RarDeploymentTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.smoke.deployment.rar.tests.redeployment.ReDeploymentTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.smoke.mgmt.resourceadapter.ResourceAdapterOperationsUnitTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.smoke.deployment.rar.tests.multiobjectactivation.MultipleObjectActivationTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.smoke.deployment.rar.tests.multiobjectpartialactivation.MultipleObjectPartialActivationTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
 |org.jboss.as.test.integration.security.loginmodules.CustomLoginModuleTestCase
 |Removed
 
@@ -209,9 +179,6 @@ The following table identifies the tests in WildFly Core and WildFly affected by
 |org.jboss.as.test.integration.jca.security.IronJacamarActivationRaWithSecurityDomainTestCase
 |Removed
 
-|org.jboss.as.test.integration.jca.security.WildFlyActivationRaWithElytronAuthContextTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
 |org.jboss.as.test.integration.management.api.security.SecurityDomainTestCase
 |Removed
 
@@ -223,33 +190,6 @@ The following table identifies the tests in WildFly Core and WildFly affected by
 
 |org.jboss.as.test.integration.security.cli.JsseTestCase
 |Removed
-
-|org.jboss.as.test.integration.jca.anno.NoRaAnnoTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.anno.RaAnnoTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.basic.BasicDeployment10TestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.basic.BasicDeployment15TestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.basic.BasicDeployment16TestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.basic.BasicDeployment17TestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.basic.BasicDoubleDeployment16TestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.basic.BasicDoubleDeploymentFail16_1TestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.basic.BasicDoubleDeploymentFail16_2TestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
 
 |org.jboss.as.test.integration.security.auditing.SecurityAuditingTestCase
 |Ignored https://issues.redhat.com/browse/WFLY-15263[WFLY-15263]
@@ -289,69 +229,6 @@ The following table identifies the tests in WildFly Core and WildFly affected by
 
 |org.wildfly.test.elytron.intermediate.X509SecurityDomainContextRealmTestCase
 |Removed
-
-|org.jboss.as.test.integration.jca.capacitypolicies.ResourceAdapterCapacityPoliciesTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.ijdeployment.IronJacamarDeploymentTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.ijdeployment.IronJacamarDoubleDeploymentTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.metrics.RaCfgMetricUnitTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.poolattributes.ResourceAdapterPoolAttributesTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.statistics.ResourceAdapterStatisticsTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.moduledeployment.BasicFlatTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.moduledeployment.BasicJarTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.moduledeployment.MultiActivationFlatTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.moduledeployment.MultiActivationJarTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.moduledeployment.MultiObjectActivationFlatTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.moduledeployment.MultiObjectActivationJarTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.moduledeployment.PartialObjectActivationFlatTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.moduledeployment.PartialObjectActivationJarTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.moduledeployment.PureFlatTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.moduledeployment.PureJarTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.moduledeployment.TwoModulesFlatTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.moduledeployment.TwoModulesJarTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.moduledeployment.TwoModulesOfDifferentTypeTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.moduledeployment.TwoRaFlatTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
-
-|org.jboss.as.test.integration.jca.moduledeployment.TwoRaJarTestCase
-|Ignored https://issues.redhat.com/browse/WFLY-15249[WFLY-15249]
 
 |org.wildfly.test.integration.vdx.standalone.MessagingTestCase.testWrongOrderOfElements
 |Ignored https://issues.redhat.com/browse/WFLY-15271[WFLY-15271]
