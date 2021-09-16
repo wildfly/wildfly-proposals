@@ -17,11 +17,12 @@ default configurations and Galleon feature packs.
 
 === Issue
 
-* https://issues.redhat.com/browse/WFLY-15199[WFLY-15199]
+* https://issues.redhat.com/browse/WFLY-15199[WFLY-15199 - Remove legacy security configuration from all feature packs.]
+* https://issues.redhat.com/browse/WFLY-15301[WFLY-15301 - Convert the legacy security subsystem to a model only subsystem.]
 
 === Related Issues
 
-* 
+* https://issues.redhat.com/browse/EAP7-1094[EAP7-1094]
 
 === Dev Contacts
 
