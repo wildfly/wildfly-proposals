@@ -252,6 +252,9 @@ The following table identifies the tests in WildFly Core and WildFly affected by
 |org.jboss.as.testsuite.integration.secman.PBStaticMethodsTestCase
 |Removed
 
+|org.jboss.as.test.clustering.cluster.web.ReplicationForNegotiationAuthenticatorTestCase
+|Removed
+
 .Action Key
 |===
 |Action | Description
