@@ -255,6 +255,9 @@ The following table identifies the tests in WildFly Core and WildFly affected by
 |org.jboss.as.test.clustering.cluster.web.ReplicationForNegotiationAuthenticatorTestCase
 |Removed
 
+|org.jboss.as.security.service.SimpleSecurityServiceManagerMockTest
+|Removed
+
 .Action Key
 |===
 |Action | Description
