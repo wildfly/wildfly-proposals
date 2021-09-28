@@ -1,0 +1,188 @@
+= WFLY-14953 Create distributable-ejb subsystem
+:author:            Richard Achmatowicz
+:email:             rachmato@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The Undertow and EJB subsystems depend on certain abstractions provided by the clustering subsystems in order to support
+clustered deployments.
+
+Hard-coding clustering subsystem dependencies within the EJB subsystem creates a tight-coupling between
+the subsystems in question, and also makes configuring the various dependencies (or plugging in alternative dependencies)
+difficult. Defining a separate "configuration" subsystem to sit in between the EJB subsystem and the relevant clustering
+subsystems simplifies configuration and provides a looser coupling between the subsystems.
+
+The distributable-web subsystem was introduced to provide decoupling between the Undertow subsystem and the relevant clustering
+subsystems. The aim of the distriubutable-ejb subsystem is to do the same for the EJB subsystem and the clustering abstractions
+that it depends on.
+
+There are at present four features provided by the EJB3 subsystem which depend on clustering abstractions:
+
+* provision of cache factories, used to store stateful session bean sessions
+* provision of client mappings registries, used to provide EJB client topology updates
+* provision of singleton services used to support singleton message-driven bean delivery groups
+* provision of distributed timer management, used to support distributed EJB timers (future)
+
+The distributable-ejb subsystem will allow defining different backend providers of these abstractions, which may be configured
+independently of the ejb3 subsystem.
+
+Ultimately, the distributable-ejb subsystem will provide providers for all four of the feature areas listed above.
+But this issue will be restricted to the following scope:
+
+* defining the distributable-ejb subsystem
+* defining a cache factory provider for stateful session beans and integrating that provider into the ejb3 subsystem
+* defining a client mappings registry provider for the EJB client and integrating that provider into the ejb3 subsystem
+
+The remaining two features will be completed in separate RFEs:
+
+** WFLY-7628 will address this for distributed timer management
+** WFLY-15432 will address this for singleton service
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14953
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-7628
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:tborgato@redhat.com[Tommaso Borgato]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [] QE
+
+=== Affected Projects or Components
+
+Clustering, EJB
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+The distributable-ejb subsystem:
+
+* Must allow configuration of one or more named bean management providers
+* Must identify a default bean management provider from amongst those defined in the subsystem
+
+The ejb3 subsystem:
+
+* Must allow integration of cache factories with named bean management providers defined in the distributable-ejb subsystem
+* Must cause the default bean management provider to be used when a distributable cache factory does not specify a bean management provider
+
+=== Nice-to-Have Requirements
+
+The ability to allow overriding the default bean manager for a whole deployment is not a hard requirement, but a nice-to-have.
+
+=== Non-Requirements
+
+== Backwards Compatibility
+
+These changes affect backward compatability (c.f. legacy configuration of cache factories, passivation stores,
+client mappings registries, etc)
+
+=== Default Configuration
+
+Here is an example of the way the new subsystem will look, for the case of specifying a bean management provider:
+----
+<subsystem xmlns="urn:jboss:domain:distributable-ejb:1.0" default-bean-management="infinispan">
+    <infinispan-bean-management name="infinispan" cache-container="ejb" cache="dist" max-size="10"/>
+</subsystem>
+----
+and here is its corresponding integration into the ejb3 subsystem:
+----
+<subsystem xmlns="urn:jboss:domain:ejb3:10.0">
+     ...
+     <caches>
+        <simple-cache name="simple-cache"/>
+        <distributable-cache name="distributable-cache" bean-management="infinispan"/>
+    </caches>
+    ...
+ </subsystem>
+----
+Note that the distributable-cache element takes an optional bean-management attribute, which is a reference to
+the bean management provider in the new subsystem. A similar arrangment will be used for client mappings registries.
+When unspecified, the default-bean-management profile is used.
+
+As before, for each EJB SFSB, the @Cache annotation (resp. deployment descriptor configuration) may be used to specify
+the name of the desired cache factory defined in the ejb3 subsystem. If no @Cache annotation (resp. deployment descriptor
+configuration) is present, a suitable default cache will be used for the bean.
+
+=== Importing Existing Configuration
+
+=== Deployments
+
+A new deployment configuration namespace, specified via jboss-all.xml or a separate distributable-ejb.xml, will be introduced
+to permit specifying default providers for bean management (resp. client-mappings management) on a per-deployment basis.
+This means that named, configured providers for bean management (resp. client-mappings management) may be specified in
+several places:
+
+* in the distributable-ejb subsystem, providing server-wide default provider values
+* in the distributable-ejb.xml file included with a deployment, providing deployment-scoped default provider values
+
+=== Interoperability
+
+== Implementation Plan
+
+As mentioned in the overview, the distributable-ejb subsystem will eventually support the provision of providers for four
+key areas of ejb3 subsystem functionality. However, this issue will be restricted to the following scope:
+
+* defining the distributable-ejb subsystem itself
+* defining a cache factory provider for stateful session beans and integrating that provider into the ejb3 subsystem
+* defining a client mappings registry provider for the EJB client and integrating that provider into the ejb3 subsystem
+
+The remaining two features will be completed in the separate RFEs mentioned above.
+
+== Security Considerations
+
+None
+
+== Test Plan
+
+The following areas of testing will be required:
+
+* integration of the EJB3 subsystem and the distributable-ejb subsystem
+** verifying that beans do end up with their specified providers (default case, custom case) when specified via the ejb3 subsystem
+** verifying that beans do end up with their specified providers (default case, custom case) when specified via the distributable-ejb.xml file
+* interoperation of the relevant legacy ejb3 subsystem elements and the new subsystem
+
+== Community Documentation
+
+Documentation is required in order to explain how the subsystem can be used to define and configure clustering-related
+backend implmentations for features provided by the EJB3 subsystem, such as SFSB session caches and EJB client-related client
+mappings registries.
+
+== Release Note Content
+
+The distributable-ejb subsystem permits defining named, configured providers for key functionalities of the ejb3 subsystem
+in clustered scenarios; functionalities such as SFSB cache factories, client mappings registries for EJB client applications,
+singleton providers for singleton MDBs, and distributed EJB timers. These providers may then be referenced on a per-deployment or
+system-wide basis, permitting the user to tailor such implementations to desired use cases.
