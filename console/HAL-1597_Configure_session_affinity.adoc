@@ -1,0 +1,55 @@
+= Configure session affinity using multiple routes if supported by balancer
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+Configure the affinity resource of an Infinispan session management in the distributable web subsystem.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1597[HAL-1597]
+* {issue-base-url}/EAP7-775[EAP7-775]
+
+=== Related Issues
+
+* {issue-base-url}/EAP7-1074[EAP7-1074]
+* {issue-base-url}/WFLY-6944[WFLY-6944]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:msvehla@redhat.com[Martin Svehla]
+
+=== Testing By
+
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+Pending
+
+== Test Plan
+
+Additional tests are added to the test suite that verify that the affinity attribute of an Infinispan session management in the distributable web subsystem can be configured.
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
