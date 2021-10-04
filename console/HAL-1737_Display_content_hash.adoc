@@ -1,0 +1,67 @@
+= Display content hash in deployment panel
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+View the deployment hash in the JBoss management console
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1737[HAL-1737]
+* {issue-base-url}/EAP7-1324[EAP7-1324]
+
+=== Related Issues
+
+* n/a
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:msvehla@redhat.com[Martin Svehla]
+
+=== Testing By
+
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+The deployment preview should contain a section showing the deployment hash as provided by the following CLI command:
+
+[source,console]
+----
+[standalone@localhost:9990 /] /deployment=kitchensink.war:read-attribute(name=content)
+{
+    "outcome" => "success",
+    "result" => [{"hash" => bytes {
+        0xbe, 0xe8, 0xb8, 0xba, 0xef, 0xfc, 0x66, 0x38,
+        0xff, 0xdd, 0x07, 0x4b, 0x60, 0x72, 0x81, 0xa2,
+        0xea, 0x3a, 0x98, 0xc1
+    }}]
+}
+----
+
+== Test Plan
+
+Additional tests are added to the test suite that verify that the hash is visible in the deployment preview.
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
