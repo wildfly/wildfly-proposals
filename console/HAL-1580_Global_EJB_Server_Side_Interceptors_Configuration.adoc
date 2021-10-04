@@ -32,10 +32,10 @@ The goal of this issue is to provide support in HAL to configure system-wide ser
 * mailto:jkasik@redhat.com[Jan Kasik]
 
 === Testing By
-    
-[ ] Engineering
-    
-[x] QE
+
+[x] Engineering
+
+[ ] QE
 
 === Affected Projects or Components
 
@@ -44,11 +44,11 @@ The goal of this issue is to provide support in HAL to configure system-wide ser
 
 == Requirements
 
-* Interceptors should be configured in the EJB3 subsystem
+* Interceptors can be configured in the EJB3 subsystem.
 
 == Test Plan
 
-TBD
+Additional tests are added to the test suite that verify that interceptors can be configured in the EJB3 subsystem.
 
 == Community Documentation
 
