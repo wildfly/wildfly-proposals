@@ -5,11 +5,19 @@
 :icons:             font
 :idprefix:
 :idseparator:       -
+<<<<<<< Updated upstream
 :issue-base-url:    https://issues.jboss.org/browse
 
 == Overview
 
 Pending
+=======
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+Add HTTP headers to the management console response.
+>>>>>>> Stashed changes
 
 == Issue Metadata
 
@@ -20,8 +28,13 @@ Pending
 
 === Related Issues
 
+<<<<<<< Updated upstream
 * {issue-base-url}/WFCORE-1110[WFCORE-1110]
 * {issue-base-url}/EAP7-1335[EAP7-1335]
+=======
+* {issue-base-url}/EAP7-1335[EAP7-1335]
+* {issue-base-url}/WFCORE-1110[WFCORE-1110]
+>>>>>>> Stashed changes
 
 === Dev Contacts
 
@@ -29,12 +42,21 @@ Pending
 
 === QE Contacts
 
+<<<<<<< Updated upstream
 * mailto:jkasik@redhat.com[Jan Kasik]
 
 === Testing By
     
 [x] Engineering
     
+=======
+* mailto:msvehla@redhat.com[Martin Svehla]
+
+=== Testing By
+
+[x] Engineering
+
+>>>>>>> Stashed changes
 [ ] QE
 
 === Affected Projects or Components
@@ -44,11 +66,19 @@ Pending
 
 == Requirements
 
+<<<<<<< Updated upstream
 Pending
 
 == Test Plan
 
 Pending
+=======
+New HTTP headers can be added / removed to the HTTP management console responses.
+
+== Test Plan
+
+Additional tests are added to the test suite that verify that new HTTP headers can be added to the HTTP management console responses.
+>>>>>>> Stashed changes
 
 == Community Documentation
 
