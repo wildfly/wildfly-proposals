@@ -1,0 +1,104 @@
+= Check Environment Variables When Resolving Expressions
+:author:            Kabir Khan
+:email:             kkhan@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+As the cloud use-cases rely more on container environment variables vars than system properties, we should allow for transparent resolution of properties from env vars as well as the current system property mechanism.
+
+For example, taking following xml
+
+[source, xml]
+----
+<element some-attribute="${test.my-property:default}"/>
+----
+
+At present you need to start the server with `-Dtest.my-property=hello` (or via a management model entry for the system property) to replace the value at runtime. This RFE proposes that if the env var `TEST_MY_PROPERTY=hola` is set when starting the server, we may also use the value of the environment variable. To keep this similar to how MP Config does the same thing, the system property will take precedence over the environment variable if both are defined.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-5464[WFCORE-5464 - Add environment variables as a source for model expression resolution]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/DMR-45[DMR-45 - Resolve env variables without requiring a env. prefix]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+https://issues.redhat.com/browse/DMR-45[DMR-45] contains the implementation of the feature.
+
+https://issues.redhat.com/browse/WFCORE-5464[WFCORE-5464] will contain tests and documentation.
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+We will also check environment variables when resolving expressions, inspired by how MicroProfile Config (https://github.com/eclipse/microprofile-config/blob/2.0/spec/src/main/asciidoc/configsources.asciidoc[specification]) does it. However, we will do something a bit lighter weight.
+
+This means that if the expression can be resolved by both a system property and an environment variable, the system property takes precedence, as per the `Default ConfigSources` section of the MicroProfile Config specification. The other ConfigSources mentioned are not relevant for this use case.
+
+When converting between the expression name and the environment variable we will only use option 3 of the `Environment Variables Mapping Rules` from the MicroProfile Config specification. The aim is to avoid having to do too much string manipulation and too many lookups when resolving expressions, and to my knowledge environment variables available on OpenShift (which is the main target for this RFE) follow the `UPPERCASE_WITH_UNDERSCORES` pattern for environment variable names.
+
+Additionally, we need to stay backward compatible, so the existing mechanism of specifying environment variables in expressions with the `env.` prefix must remain.
+
+Looking at the flow of resolving expressions, this is the current mechanism (if any of the steps return a value, we return that and don't perform the next steps):
+
+* Look for a system property with the name as specified by the expression
+* If the expression starts with `env.` we strip of the prefix and look for an environment variable with that name (e.g. if the expression is `env.MY_VAR` we would look for `MY_VAR`)
+* Return null
+
+The proposal is to change this to (if any of the steps return a value, we return that and don't perform the next steps):
+
+* Look for a system property with the name as specified by the expression
+* Convert the expression to environment variable format (as mentioned earlier, as per option 3 of the `Environment Variables Mapping Rules` section in the MicroProfile Config specification).
+* If the expression starts with `env.` we strip of the prefix and look for an environment variable with that name (e.g. if the expression is `env.MY_VAR` we would look for `MY_VAR`)
+* Return null
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+* Adding more ConfigSources as the MicroProfile Config specification mentions.
+* Environment Variable name conversion as per options 1 and 2 of the `Environment Variables Mapping Rules` section in the MicroProfile Config specification.
+
+== Test Plan
+Tests will be added to the WildFly Core testsuite to ensure expressions are resolved both via the existing system property mechanism, via the new environment variable mechanism, and that the precedence rules are followed.
+
+== Community Documentation
+The https://docs.wildfly.org/23/Admin_Guide.html[Admin Guide] will be enhanced to showcase the new mechanism.
+
+== Release Note Content
+WildFly now supports checking environment variables, in addition to system properties, when resolving expressions used in the server configuration. If a system property value can be found, that is returned as has happened until now. If no system property is found, the name is converted to environment property format and the value of the environment variable is checked. The conversion happens by replacing each character that is neither alphanumeric nor `_` with `_`, and then converting the name to upper case (i.e. `com.acme-size` becomes `COM_ACME_SIZE`).
+
+== Other Documentation Concerns
+As noted in https://github.com/wildfly/wildfly/pull/14376, there is a scope to introduce some issues when upgrading in special cases.  Say you have an environment variable `COMMON_VAR_NAME=foo` already in use, and you use `${common-var-name:bar}` in the wildfly configuration. Prior to WildFly 25, the default value (i.e. `bar`) will be used. In WildFly 25 and later, the value from the environment variable (i.e. `foo`) will be used.
