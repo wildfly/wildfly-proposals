@@ -1,0 +1,98 @@
+= Add default 60s r/o timeout to R/W listeners
+:author:            Bartosz Baranowski
+:email:             bbaranow@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Add default(60s) read/write timeout to undertow socket listeners.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14980[WFLY-14980]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-15454[WFLY-15454]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:msvehla@redhat.com[Martin Svehla]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [x] QE
+
+=== Affected Projects or Components
+
+* undertow
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* add defaults to src/xsd to set R/W timeouts - this means http, https and ajp listeners read-timeout and write-timeout will have now default value ot 60000ms(60s)
+* backward compatibility of configuration
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Backwards Compatibility
+
+Yes, has to be vetted - transformers.
+
+=== Default Configuration
+
+None, this is about adding default configuration.
+
+=== Importing Existing Configuration
+
+Transformers need update.
+
+=== Deployments
+
+N/A
+
+=== Interoperability
+
+N/A
+
+== Security Considerations
+
+N/A
+
+== Test Plan
+
+== Community Documentation
+
+No need, should be done as part of model reference.
+
+== Release Note Content
+
+As of release XXX undertow listeners read-timeout and write-timeout have default value of 60s.
