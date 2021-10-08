@@ -1,0 +1,130 @@
+= [Preview]modify ajp-listener to allow specifying pattern for ajp request attributes
+:author:            Bartosz Baranowski
+:email:             bbaranow@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Since UNDERTOW-1667 one can set additional AJP request attribute parsing permission via env variable. However there is no way to set it in WFLY config/model. This RFE's goal is to make it possible.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-15452[WFLY-15452]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/UNDERTOW-1667[UNDERTOW-1667]
+* https://issues.redhat.com/browse/UNDERTOW-1977[UNDERTOW-1977]
+* https://issues.redhat.com/browse/WFLY-15453[WFLY-15453]
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [X] Preview
+
+* [ ] Community
+
+* [ ] default
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:msvehla@redhat.com[Martin Svehla]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [X] QE
+
+=== Affected Projects or Components
+
+* undertow
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* Being able to configure pattern via model/xml.
+[literal]
+<subsystem xmlns="urn:jboss:domain:undertow:14.0" default-server="some-server" default-servlet-container="myContainer" default-virtual-host="default-virtual-host" instance-id="some-id" statistics-enabled="true">
+   ...
+   <server default-host="other-host" name="some-server" servlet-container="myContainer">
+      ...
+      <ajp-listener ...  allowed_request_attr_pattern="(?:apple|banana)"  .../>
+      ...
+   </server>
+   ...
+</subsystem>
+
+Parameters will be present in undertow server element(for standalone: /subsystem=undertow/server=default-server/ajp-listener=myListener):
+* allowed_request_attr_pattern
+** Default: null
+** Type: String(regex - java.util.regex.Pattern)
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Backwards Compatibility
+
+Possibly. Subsystem transformers should be able to handle it.
+
+=== Default Configuration
+
+No change.
+
+=== Importing Existing Configuration
+
+No steps should suffice, as it would mean defaulting to 'null', which is default value in undertow source.
+
+=== Deployments
+
+Not affected.
+
+=== Interoperability
+
+Not affected.
+
+== Implementation Plan
+
+Done.
+
+== Security Considerations
+
+Possibly. UNDERTOW-1667 is a CVE, so this RFE should be documented well, in order to warn users of potential exposure.
+
+== Test Plan
+
+Unit tests should cover new functionality(there is already test case covering AjpListener).
+
+== Community Documentation
+
+Task for WFLY documentation already exist - WFLY-15453. HOwever, this is model change and there is model reference doc generated, so its unclear which approach is better?
+
+== Release Note Content
+
+Allow configuration of AJP request attribute pattern with model entry, rather than only via system property.
