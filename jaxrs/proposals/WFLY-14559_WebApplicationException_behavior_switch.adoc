@@ -1,0 +1,63 @@
+= WFLY-14559 Add new attribute to control the client's WebApplicationException handlin
+:author:            Ron Sigal
+:email:             rsigal@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+The fix for https://issues.redhat.com/browse/RESTEASY-2782 "[CVE-2020-25633] JAX-RS RESTEasy and MP Client"
+introduced an altered behavior in populating WebApplicationExceptions and a new RESTEasy
+context parameter, resteasy.original.webapplicationexception.behavior, which allows restoring
+the original behavior.
+
+The wildfly/jaxrs module currently exposes all of the user relevant context parameters, so it should be extended
+to expose this new parameter.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/EAP7-1655[EAP7-1655]
+* {issue-base-url}/WFLY-14559[WFLY-14559]
+
+=== Related Issues:
+
+* {issue-base-url}/RESTEASY-2782[RESTEASY-2782]
+
+=== Dev Contacts:
+
+* mailto:rsigal@redhat.com[Ron Sigal]
+
+=== QE Contacts:
+
+=== Affected Projects or Components:
+
+* WildFly
+* RESTEasy
+
+== Requirements
+
+* Some simple modifications to the wildfly/jaxrs module will be necessary to add a new parameter.
+* This affects the web interface.
+
+=== Test Plan
+
+The proper behavior of the existing parameters is already tested. The test just has to be extended.
+
+== Community Documentation
+
+The new behavior and the context parameter are discussed
+
+* in the RESTEasy User Guide
+(https://docs.jboss.org/resteasy/docs/4.7.2.Final/userguide/html/Installation_Configuration.html#configuration_switches),
+and also 
+
+* in the WildFly Admin Guide
+(https://github.com/wildfly/wildfly/blob/main/docs/src/main/asciidoc/_admin-guide/subsystem-configuration/Jakarta_RESTful_Web_Services.adoc).
+
+Nothing new is required.
