@@ -1,0 +1,54 @@
+= Add support for gRPC
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+Add support for gRPC to WildFly
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/WFLY-15495[WFLY-15495]
+* {issue-base-url}/EAP7-1819[EAP7-1819]
+
+=== Related Issues
+
+* {issue-base-url}/WFLY-13530[WFLY-13530]
+* {issue-base-url}/EAP7-1536[EAP7-1536]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* TBD
+
+=== Testing By
+
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+
+== Requirements
+
+Pending
+
+== Test Plan
+
+Pending
+
+== Community Documentation
+
+Pending
