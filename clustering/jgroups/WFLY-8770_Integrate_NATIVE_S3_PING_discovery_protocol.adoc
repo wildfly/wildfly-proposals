@@ -1,0 +1,64 @@
+= Integrate NATIVE_S3_PING discovery protocol
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          aws,ec2,s3,jgroups,ping,clustering
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+`NATIVE_S3_PING` is a discovery protocol designed for JGroups cluster nodes running in AWS EC2.
+While there are other protocols that can be used in such an environment (TCPPING, JDBC_PING),
+the NATIVE_S3_PING is an ideal fit.
+Discovery is performed by writing and reading from an S3 bucket.
+Protocol is automatically configured from system properties.
+
+Historically all protocols were bundled within main `jgroups-<version>.jar`.
+Since the main JGroups project does not allow runtime dependencies, protocols had to include a lot of unmaintainable copy-pasted and trimmed library code.
+This hinders supportability.
+Protocols needing to fetch dependencies now reside in separate repository in the https://github.com/jgroups-extras repository.
+As such, `NATIVE_S3_PING` resides in https://github.com/jgroups-extras/native-s3-ping repository.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/EAP7-863[EAP7-861] Integrate NATIVE_S3_PING discovery protocol
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-9563[WFLY-8770] Integrate NATIVE_S3_PING discovery protocol (upstream issue)
+
+=== Dev Contacts
+
+* mailto:rhusar@redhat.com[Radoslav Husar]
+
+=== QE Contacts
+
+* mailto:TBD[TBD]
+
+=== Affected Projects or Components
+
+* WildFly
+* JBoss EAP
+
+=== Other Interested Projects
+
+* N/A
+
+== Requirements
+
+=== Hard Requirements
+
+* `NATIVE_S3_PING` discovery protocol can be configured in the application server out of the box.
+* Protocol must be configured with `module="org.jgroups.aws"` attribute.
+
+=== Nice-to-Have Requirements
+
+* N/A
+
+=== Non-Requirements
+
+* Existing protocol properties (endpoint, region_name, bucket_name, bucket_prefix, check_if_bucket_exists) could be optionally exposed as model attributes.
