@@ -1,0 +1,145 @@
+= Limit number of records loaded by the JDBC job repository
+:author:            Tomas Hofman
+:email:             thofman@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The batch subsystem uses _job repositories_ to store metadata about batch job executions. The _job repositories_ implemented
+in Wildfly are the in-memory job repository and the JDBC job repository.
+
+When the batch subsystem is configured to use the JDBC job repository to store execution metadata, and when it accumulates
+a large number of records, degraded performance can be observed when deploying applications which use batch jobs. This
+performance degradation is caused by the fact that the batch subsystem needs to load past execution records during
+the application deployment.
+
+We have reports from customers and upstream users whose repositories contain hundreds of thousands of records. These users
+can't prune their job repositories any further due to business requirements to keep operational records for some minimum
+amount of time. The reported delays during application deployments are as high as several minutes. OutOfMemory exceptions and
+failed deployments were also reported.
+
+Several fixes have already been completed, which optimized processing of these large job repositories:
+
+* https://issues.redhat.com/browse/WFLY-14275
+* https://issues.redhat.com/browse/WFLY-14946
+
+While these fixes improved the deployment times considerably, an upstream user reported that application deployments still take
+significantly longer in their environment, than they used to take with an older version of Wildfly.
+
+Debugging performed by us and by the upstream user indicates that most time is spent on reading records from the JDBC ResultSet, not
+on executing the actual database query. Database latency seems to be an important factor.
+
+Another issue noticed later on is that the Wildfly Web Console is not able to process and display such large number job executions,
+as the operation that loads the data fails with OutOfMemory exception. (Neither is the Web Console designed to display that amount of
+records.)
+
+Hence, it is proposed to implement a way to limit the number of execution records that are loaded by the job repository
+implementations.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-15525
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-14275
+* https://issues.redhat.com/browse/WFLY-14946
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* JBeret Core,
+* Batch subsystem.
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+Make it possible to limit the number of job executions returned by job repository implementations. If this limitation behavior
+is active, the subset of records returned by the job repository must contain the youngest records, sorted from the youngest to
+the oldest. Older records which do not fit into the specified limit will be omitted.
+
+If the limit is not specified, current behavior will apply and all available records will be loaded.
+
+=== Nice-to-Have Requirements
+
+* If the limiting behavior comes to an effect, print a debug or a warning log message.
+* Add debug messages that would make it easier to identify where the JDBC job repository spends time when loading execution
+records.
+
+//=== Non-Requirements
+
+== Implementation Plan
+
+JBeret and Wildfly code bases need to be modified.
+
+=== JBeret Core
+
+Currently, the JobRepository interface has method `List<Long> getJobExecutionsByJob(String jobName)`, which returns a list
+of all job execution IDs for given jobName present in the repository.
+
+The proposal is to add a new method `List<Long> getJobExecutionsByJob(String jobName, Long maxRecords)`, that would return
+a list with maximum size of `maxRecords`.
+
+All `JobRepository` implementations would to implement the new method: `InMemoryRepository`, `InfinispanRepository`,
+`JdbcRepository`, `MongoRepository`. The original method would remain present.
+
+=== Wildfly
+
+* Consume new version of JBeret Core.
+* Add a new attribute `execution-records-limit` of the type `int` would be added to the `JdbcJobRepository` and
+`InMemoryJobRepository` resources. The attribute would be nillable and not required, i.e. by default it would be undefined.
+* New "batch-jberet" schema version needs to be released, containing above attribute.
+* If `execution-records-limit` attribute was set, the number would be passed to the
+`JobRepository#getJobExecutionsByJob(String jobName, Integer maxRecords)` call, if not set the original method can be called.
+
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+== Test Plan
+
+TODO
+
+== Community Documentation
+
+The feature will be documented in the `docs/` folder of the Wildfly repository, in the "Subsystem Configuration / Jakarta Batch"
+chapter.
+
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
+== Release Note Content
+
+TODO
+
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
