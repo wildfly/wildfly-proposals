@@ -1,0 +1,57 @@
+= Legacy security clean up
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+This RFE covers the implication of the removal of the legacy security subsystem and related management model.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1710[HAL-1758]
+* {issue-base-url}/EAP7-1552[EAP7-1828]
+
+=== Related Issues
+
+* {issue-base-url}/EAP7-1094[EAP7-1094]
+* {issue-base-url}/EAP7-1095[EAP7-1095]
+* {issue-base-url}/EAP7-1745[EAP7-1745]
+* {issue-base-url}/EAP7-1750[EAP7-1750]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:msvehla@redhat.com[Martin Svehla]
+
+=== Testing By
+
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+Code having a hard-coded reference to one of the removed resources / attributes need to be adjusted.
+
+== Test Plan
+
+Tests which cover the removed resources and attributes need to be removed from the test suite. No new tests are added.
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
