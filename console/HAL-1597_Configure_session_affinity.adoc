@@ -44,7 +44,13 @@ Configure the affinity resource of an Infinispan session management in the distr
 
 == Requirements
 
-Pending
+A user can configure the affinity of the Infinispan session in the distributable web subsystem. This requires thaty the user is able to perform the following steps in the console:
+
+. Open the distributable web subsystem (http://localhost:9990/console/index.html#distributable-web)
+. Select "Infinispan Session" in the left-hand side navigation
+. Select an entry from the table
+. Select tab "Affinity"
+. Select an affinity from the select box on the right-hand side
 
 == Test Plan
 
