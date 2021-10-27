@@ -9,7 +9,14 @@
 
 == Overview
 
-This RFE covers the implication of the removal of the legacy security subsystem and related management model.
+This RFE covers the implications of the removal of the legacy security subsystems and related resources:
+
+* Removal of `/subsystem=security`
+* Removal of `/subsystem=picketlink`
+* Removal of the `security-realm` attribute
+* Removal of support for PicketBox vaults
+
+The requirements and test plan sections will give more details how these changes affect the console and what is necessary to adopt the console.
 
 == Issue Metadata
 
@@ -46,11 +53,65 @@ This RFE covers the implication of the removal of the legacy security subsystem 
 
 == Requirements
 
-Code having a hard-coded reference to one of the removed resources / attributes need to be adjusted.
+=== Removal of `/subsystem=security`
+
+If the subsystem is no longer present in the management model, it won't show up in the console anymore. The code which is used to manage `/subsystem=security` is located under the following package: `org.jboss.hal.client.configuration.subsystem.security`. This code includes the presenter / view tuple and related UI code. The code won't be removed from the console. The reason for this is that the subsystem will not be removed completely, but will be converted to a skeleton subsystem to manage older servers in domain mode.
+
+The resource `/subsystem=security/security-domain=*` is used outside `org.jboss.hal.client.configuration.subsystem.security` in `org.jboss.hal.client.configuration.subsystem.ejb.EjbView`. This class has to be adjusted to use security domains from Elytron.
+
+Besides that, the code in `org.jboss.hal.client.configuration.subsystem.security` is self-contained and has no references to any other code in the console.
+
+=== Removal of `/subsystem=picketlink`
+
+Picketlink is not supported in the conosle. There used to be a Picketlink console extension for WildFly 12 and below, but it is not used anymore.
+
+=== Removal of the `security-realm` attribute
+
+The `security-realm` attribute is used in the following places in the console:
+
+`org.jboss.hal.client.shared.sslwizard.EnableSSLWizard`::
+The SSL wizard has to be converted to use the Elytron security subsystem and resources.
+
+`org.jboss.hal.client.management.ManagementInterfacePreview`::
+This class is no longer used and can be removed from the codebase.
+
+`org/jboss/hal/client/configuration/subsystem/undertow/FilterView.mbui.xml`::
+The attribute has to be removed from the UI.
+
+`org/jboss/hal/client/configuration/subsystem/remoting/RemotingView.mbui.xml`::
+The attribute has to be removed from the UI.
+
+`org.jboss.hal.client.configuration.subsystem.undertow.ServerPresenter`::
+The security domain is used to disable SSL for HTTPS listeners. This code has to be converted to use the Elytron security subsystem and resources.
+
+=== Removal of support for PicketBox vaults
+
+Anything related to vaults is only iused in `org.jboss.hal.client.configuration.subsystem.security` which won't be used when there's no `/subsystem=security` resource.
 
 == Test Plan
 
-Tests which cover the removed resources and attributes need to be removed from the test suite. No new tests are added.
+=== Removal of `/subsystem=security`
+
+No changes to the test suite necessary. Existing tests for the legacy security subsystem should be marked as deprecated and removed in the near future. The test for `/subsystem=security` are located in the maven module `tests-configuration-security-legacy`.
+
+=== Removal of `/subsystem=picketlink`
+
+No changes to the test suite necessary.
+
+=== Removal of the `security-realm` attribute
+
+The attribute `security-realm` is used in the following tests:
+
+* `org.jboss.hal.testsuite.test.configuration.undertow.server.hosts.HttpInvokerTest`
+* `org.jboss.hal.testsuite.test.configuration.undertow.server.hosts.HttpInvokerTest`
+* `org.jboss.hal.testsuite.test.configuration.management.ssl.HttpManagementInterfaceTest`
+* `org.jboss.hal.testsuite.test.configuration.undertow.server.listener.HTTPSListenerSSLTest`
+
+These tests need to be changed.
+
+=== Removal of support for PicketBox vaults
+
+No changes to the test suite necessary.
 
 == Community Documentation
 
