@@ -97,7 +97,7 @@ JBeret and Wildfly code bases need to be modified.
 Currently, the JobRepository interface has method `List<Long> getJobExecutionsByJob(String jobName)`, which returns a list
 of all job execution IDs for given jobName present in the repository.
 
-The proposal is to add a new method `List<Long> getJobExecutionsByJob(String jobName, Long maxRecords)`, that would return
+The proposal is to add a new method `List<Long> getJobExecutionsByJob(String jobName, Integer maxRecords)`, that would return
 a list with maximum size of `maxRecords`.
 
 All `JobRepository` implementations would to implement the new method: `InMemoryRepository`, `InfinispanRepository`,
@@ -108,6 +108,7 @@ All `JobRepository` implementations would to implement the new method: `InMemory
 * Consume new version of JBeret Core.
 * Add a new attribute `execution-records-limit` of the type `int` would be added to the `JdbcJobRepository` and
 `InMemoryJobRepository` resources. The attribute would be nillable and not required, i.e. by default it would be undefined.
+If set, the minimal possible value is 1.
 * New "batch-jberet" schema version needs to be released, containing above attribute.
 * If `execution-records-limit` attribute was set, the number would be passed to the
 `JobRepository#getJobExecutionsByJob(String jobName, Integer maxRecords)` call, if not set the original method can be called.
