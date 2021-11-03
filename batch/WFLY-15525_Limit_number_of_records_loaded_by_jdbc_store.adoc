@@ -111,17 +111,20 @@ All `JobRepository` implementations would to implement the new method: `InMemory
 If set, the minimal possible value is 1.
 * New "batch-jberet" schema version needs to be released, containing above attribute.
 * If `execution-records-limit` attribute was set, the number would be passed to the
-`JobRepository#getJobExecutionsByJob(String jobName, Integer maxRecords)` call, if not set the original method can be called.
+`JobRepository#getJobExecutionsByJob(String jobName, Integer maxRecords)` call, if not set the original method can be called
+or null can be passed as the maxRecords parameter.
 
-////
-Delete if not needed. The intent is if you have a complex feature which can 
-not be delivered all in one go to suggest the strategy. If your feature falls 
-into this category, please mention the Release Coordinators on the pull 
-request so they are aware.
-////
 == Test Plan
 
-TODO
+* Subsystem tests:
+** Standard subsystem test case in the batch subsystem - verifies that subsystem XML config can be read and serialized again
+(with and without the new attribute), and the serialized XML is identical to the original one.
+** Test that the new attribute can be set via a management operation. Test minimal value (1).
+* Integration tests:
+** Create a deployment with batch job. Execute the batch job number of times. Via the `JobOperator` instance, load job
+executions for executed job name and check the number of returned executions. This should be tested with the
+`execution-records-limit` attribute undefined and then with the attribute set to a low number. When set, number of returned
+executions should be limited to that number.
 
 == Community Documentation
 
@@ -133,7 +136,11 @@ Generally a feature should have documentation as part of the PR to wildfly maste
 ////
 == Release Note Content
 
-TODO
+New attribute `execution-records-limit` of type `int` has been added to the batch job repository resources (both in-memory and
+JDBC based). When set, the job repository will never return more than the specified limit of job execution instances.
+Setting this attribute is useful in situations when the job repository stores an unusually large number of job executions,
+which can cause delays during application deployments or out-of-memory errors when trying to display the list of executions in
+the Web Console.
 
 ////
 Draft verbiage for up to a few sentences on the feature for inclusion in the
