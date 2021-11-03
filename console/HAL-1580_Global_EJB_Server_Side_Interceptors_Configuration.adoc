@@ -1,4 +1,4 @@
-= Customise Browser Title
+= Configure Global EJB Server Side Interceptors 
 :author:            Harald Pehl
 :email:             hpehl@redhat.com
 :toc:               left
