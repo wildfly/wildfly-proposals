@@ -1,0 +1,131 @@
+= [Preview]Make ReuseXForwarded and RewriteHost configurable
+:author:            Bartosz Baranowski
+:email:             bbaranow@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+In some scenarios it is a requirement to reuse x forwarded or rewrite host header. Currently ProxyHandler flags controlling both are hardcoded to 'false', meaning mentioned functionality is not accessible.
+This RFE adress this by introduction of model values that control mentioned flags.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14255[WFLY-14255]
+
+=== Related Issues
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [X] Preview
+
+* [ ] Community
+
+* [ ] default
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:msvehla@redhat.com[Martin Svehla]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [x] QE
+
+=== Affected Projects or Components
+
+* Web/Undertow
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* Being able to configure both flags via model:
+   - reuse-x-forwarded-header
+   - rewrite-host-header
+
+[literal]
+<subsystem xmlns="urn:jboss:domain:undertow:14.0" default-server="some-server" default-servlet-container="myContainer" default-virtual-host="default-virtual-host" instance-id="some-id" statistics-enabled="true">
+    ....
+        <handlers>
+            <file case-sensitive="false" directory-listing="true" follow-symlink="true" name="welcome-content" path="${jboss.home.dir}" safe-symlink-paths="/path/to/folder /second/path"/>
+            <reverse-proxy ... reuse-x-forwarded-header="true" rewrite-host-header="false">
+            </reverse-proxy>
+        </handlers>
+    ....
+</subsystem>
+Parameters will be present in reverse-proxy element(for standalone: /subsystem=undertow/configuration=handler/reverse-proxy=my-handler):
+* reuse-x-forwarded-header
+** Default: false
+** Type: boolean
+** Description: if true append(reuse existing) remote hop to x-forwarded-* headers, if not, previous value is discarded and remote hop becomes the value, otherwise set it to remote host.
+* rewrite-host-header
+** Default: false
+** Type: boolean
+** Description: if true set host header to connection remote end and create x-forwarded-host header.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Backwards Compatibility
+
+Subsystem transformers should be able to handle it.
+
+=== Default Configuration
+
+No change.
+
+=== Importing Existing Configuration
+
+No steps, transformers should handle purging default value for previous configs.
+
+
+=== Deployments
+
+No. Default is still false for both, so there should be no change in behavior.
+
+=== Interoperability
+
+Not affected.
+
+== Security Considerations
+
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+
+== Test Plan
+
+== Community Documentation
+ 
+Should be part of model reference. Possibly could be documented in Undertow as well?
+ 
+== Release Note Content
+See Overview
