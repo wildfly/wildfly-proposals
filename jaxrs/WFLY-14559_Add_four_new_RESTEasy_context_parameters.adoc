@@ -1,4 +1,4 @@
-= WFLY-14559 Add new attribute to control the client's WebApplicationException handlin
+= WFLY-14559 Add new attributes to wildfly/jaxrs management model
 :author:            Ron Sigal
 :email:             rsigal@redhat.com
 :toc:               left
@@ -10,13 +10,16 @@
 
 == Overview
 
-The fix for https://issues.redhat.com/browse/RESTEASY-2782 "[CVE-2020-25633] JAX-RS RESTEasy and MP Client"
-introduced an altered behavior in populating WebApplicationExceptions and a new RESTEasy
-context parameter, resteasy.original.webapplicationexception.behavior, which allows restoring
-the original behavior.
+Since the RESTEasy context parameters were first exposed in the wildfly/jaxrs management model
+(https://github.com/wildfly/wildfly-proposals/blob/main/jaxrs/WFLY-12298_Change_RESTEASY_settings.adoc)
+several new parameters have been introduced, of which the following should be exposed to the user:
 
-The wildfly/jaxrs module currently exposes all of the user relevant context parameters, so it should be extended
-to expose this new parameter.
+ * resteasy-match-cache-enabled
+ * resteasy-match-cache-size
+ * resteasy-patch-filter-disabled
+ * resteasy-patch-filter-legacy
+
+The wildfly/jaxrs module should be extended to expose these new parameters.
 
 == Issue Metadata
 
@@ -46,20 +49,20 @@ Engineering
 
 == Requirements
 
-* Some simple modifications to the wildfly/jaxrs module will be necessary to add a new parameter.
+* Some simple modifications to the wildfly/jaxrs module will be necessary to add these new parameters.
 * This affects the web interface.
 
 === Test Plan
 
-The proper behavior of the existing parameters is already tested. The test just has to be extended.
+The proper behavior of the existing parameters is already tested. The tests in wildfly/jaxrs and
+wildfly/testsuite/integration/basic just have to be extended.
 
 == Community Documentation
 
-The new behavior and the context parameter are discussed
-
-* in the RESTEasy User Guide
+The new context parameters are discussed in the RESTEasy User Guide
 (https://docs.jboss.org/resteasy/docs/4.7.2.Final/userguide/html/Installation_Configuration.html#configuration_switches),
-and also 
+
+The jaxrs management model is discussed in
 
 * in the WildFly Admin Guide
 (https://github.com/wildfly/wildfly/blob/main/docs/src/main/asciidoc/_admin-guide/subsystem-configuration/Jakarta_RESTful_Web_Services.adoc).
