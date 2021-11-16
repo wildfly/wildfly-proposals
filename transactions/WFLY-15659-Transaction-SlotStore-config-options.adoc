@@ -1,0 +1,118 @@
+= Transaction SlotStore config options
+:author:            Jonathan Halliday
+:email:             jonathan.halliday@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The server's transaction engine, Narayana, has a configurable 'ObjectStore' for persistent storage of transaction recovery records. We seek to broaden the range of options available for configuring this, to provide alternatives suited to new and emerging deployment environments.
+
+The current options include filesystem based using file-per-transaction or append-only log (reusing code from HornetQ / ActiveMQ Artemis), or a JDBC database.
+
+Narayana upstream now also offers the SlotStore, a filesystem based store that employs an efficient memory mapping approach. Additionally and uniquely, this store can utilise Persistent Memory (pmem) hardware where available for very fast transaction logging.
+
+Extending the server's transaction management model to allow configuration of these options would allow users to access the new functionality of this component.
+
+Although the SlotStore code is part of Narayana, the mashona library used to support use on pmem is independent and may also be utilised by other components requiring similar hardware support e.g. Infinispan and messaging. For this reason, it may be suited to packaging as a separate module.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-15659
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/JBTM-3276
+* https://issues.redhat.com/browse/JBTM-3417
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+Wildfly
+
+=== Other Interested Projects
+
+Narayana, Infinispan, Mashona.
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+Extend the server management model to facilitate configuration of the new SlotStore transaction log type.
+
+=== Nice-to-Have Requirements
+
+Extend the sever dependency model to allow use of the Persistent Memory library, mashona, to support SlotStore use on pmem hardware. Optionally the components consuming it could simply bundle their own copies, trading version flexibility vs. footprint.
+
+=== Non-Requirements
+
+== Backwards Compatibility
+
+Existing store types remain available, existing configurations remain valid.
+Automatic data migration between store types is not supported, so no transactions should be in-flight when switching store types.
+
+=== Default Configuration
+
+The existing transaction store will remain the default. The SlotStore will be available only by explicit user selection. The SlotStore will provide defaults for its configuration properties where possible.
+
+=== Importing Existing Configuration
+
+=== Deployments
+
+=== Interoperability
+
+== Implementation Plan
+
+This will be a community-only feature for a few releases before being considered for support in EAP.
+
+== Security Considerations
+
+As with existing transaction store types the tx log files may, in certain cases, contain db connection information.
+
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+
+== Test Plan
+
+* Testing of the new server configuration options will require new tests, patterned on those for existing store configurations.
+
+* Testing of the SlotStore itself can be accomplished by using the same transaction tests that exercise existing store types, but changing the server config to use the new store type.
+
+* Testing of the pmem options will require appropriate hardware, though this can be simulated by system configuration (similar to a RAM disk)
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
+== Release Note Content
+
+Storage of transaction recovery logs can now be configured with additional options, which may be faster for some deployments. These include options tailored to efficient transaction logging on Persistent Memory hardware.
