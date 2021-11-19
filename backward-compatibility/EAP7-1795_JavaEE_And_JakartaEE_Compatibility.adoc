@@ -1,0 +1,89 @@
+= [EAP7-1795] EAP7 applications have to communicate with EAP8 apps successfully and vice versa
+:author:            Richard Opalka
+:email:             ropalka@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This feature will ensure bidirectional EJB, JNDI & HTTP remote protocols backward
+compatibility between Java EE 8- and Jakarta EE 9+ WildFly/EAP versions.
+
+== Issue Metadata
+
+=== Issue:
+
+* https://issues.redhat.com/browse/EAP7-1795[EAP7-1795]
+
+=== Related Issues:
+
+* https://issues.redhat.com/browse/EAP7-1453[EAP7-1453]
+
+=== Dev Contacts:
+
+* mailto:ropalka@redhat.com[Richard Opalka]
+
+=== QE Contacts:
+
+=== Affected Projects or Components:
+
+* JBoss Marshalling, JBoss EJB Client, WildFly Naming Client, WildFly Http Client
+
+== Requirements
+
+=== Hard requirements
+
+* Ability of Java EE 8- client/server to communicate with Jakarta EE 9+ server/client via EJB, JNDI and HTTP remote protocols.
+* Ability of Jakarta EE 9+ client/server to communicate with Java EE 8- server/client via EJB, JNDI and HTTP remote protocols.
+* Java EE 8- WildFly/EAP versions cannot be modified in order to be able to communicate with Jakarta EE9+ WildFly/EAP variants.
+* Backward compatibility mode is on by default.
+
+=== None requirements
+
+* Infinispan and Clustering protocols backward compatibility.
+* ABI compatibility for non existing mapping of classes/methods available in Java EE 8- but not in Jakarta EE 9+ and vice versa.
+  Users will need to migrate their clients/applications for such problematic scenarios manually.
+
+== Test Plan
+
+The test will be created for hard requirements scenarios. This test will reside in QE's testsuite and will become
+one of the must-execute tests for ensuring backward compatibility between EAP8+ and EAP7- variants.
+
+== Community Documentation
+
+If there will be some activation system properties defined we will need to provide documentation for them.
+
+== Design Notes
+
+We propose the following changes to the following libraries:
+
+=== JBoss Marshalling
+
+* Introduce new abstraction ClassNameTransformer that will allow to remap one java type to another java type.
+* Provide hooks for that abstraction to allow renaming java types before/after marshalling/unmarshalling them.
+* Provide default Java EE <-> Jakarta EE class name transformer implementation.
+
+=== JBoss EJB Client
+
+Since JBoss EJB protocol supports 'handshake' kind of messages it is possible to detect other side protocol version before exchanging messages. Because of this we propose to:
+
+* Introduce new major version 4 of remote EJB protocol to indicate EJB client/server is supporting Jakarta EE 9+.
+* Activate version 4 of EJB protocol if and only if JBoss EJB client/server is used in Jakarta EE9+ environment.
+* Install Java EE <-> Jakarta EE class name transformer if and only if Jakarta EE9+ environment is detected and other side is using version 1 or 2 or 3 of the protocol.
+
+=== WildFly Naming Client
+
+Since WildFly NAMING protocol supports 'handshake' kind of messages it is possible to detect other side protocol version before exchanging messages. Because of this we propose to:
+
+* Introduce new major version 3 of remote NAMING protocol to indicate NAMING client/server is supporting Jakarta EE 9+.
+* Activate version 3 of NAMING protocol if and only if WildFly NAMING client/server is used in Jakarta EE9+ environment.
+* Install Java EE <-> Jakarta EE class name transformer if and only if Jakarta EE9+ environment is detected and other side is using version 1 or 2 of the protocol.
+
+=== WildFly Http Client
+
+Since WildFly HTTP protocol doesn't support 'handshake' kind of messages it is not possible to detect other side protocol version in advance. Because of this we propose to:
+
+* Install Java EE <-> Jakarta EE class name transformer if and only if WildFly HTTP client/server is used in Jakarta EE9+ environment.
+* Always translate all Jakarta EE types to Java EE types regardless if other side supports Jakarta EE9+ environment.
