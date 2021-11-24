@@ -258,6 +258,9 @@ The following table identifies the tests in WildFly Core and WildFly affected by
 |org.jboss.as.security.service.SimpleSecurityServiceManagerMockTest
 |Removed
 
+|org.jboss.as.test.integration.security.jacc.context.PolicyContextTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15740[WFLY-15740]
+
 .Action Key
 |===
 |Action | Description
