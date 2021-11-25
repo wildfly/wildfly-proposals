@@ -58,6 +58,9 @@ The deployment preview should contain a section showing the deployment hash as p
 }
 ----
 
+Affected UI:: Deployments / Preview
+Affected Resources:: `/deployment=*`
+
 == Test Plan
 
 Additional tests are added to the test suite that verify that the hash is visible in the deployment preview.
