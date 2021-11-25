@@ -15,7 +15,7 @@ Add support for the pause operation in Runtime / JMS.
 
 === Issue
 
-* {issue-base-url}/HAL-1626[HAL-1626]
+* {issue-base-url}/HAL-1625[HAL-1625]
 * {issue-base-url}/EAP7-748[EAP7-748]
 
 === Related Issues
@@ -45,6 +45,9 @@ Add support for the pause operation in Runtime / JMS.
 == Requirements
 
 The finder for JMS topics must include a new action to pause JMS topics.
+
+Affected UI:: Runtime / Messaging / Server / Queue
+Affected Resources:: `/subsystem=messaging-activemq/server=\*/topic=*`
 
 == Test Plan
 
