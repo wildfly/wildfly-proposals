@@ -46,6 +46,9 @@ Add HTTP headers to the management console response.
 
 New HTTP headers can be added / removed to the HTTP management console responses.
 
+Affected UI:: Runtime / Server / Constant Headers
+Affected Resources:: `/core-service=management/management-interface=http-interface@constant-headers`
+
 == Test Plan
 
 Additional tests are added to the test suite that verify that new HTTP headers can be added to the HTTP management console responses.
