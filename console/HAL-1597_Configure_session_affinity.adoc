@@ -52,6 +52,9 @@ A user can configure the affinity of the Infinispan session in the distributable
 . Select tab "Affinity"
 . Select an affinity from the select box on the right-hand side
 
+Affected UI:: Configuration / Distributable Web / Infinisoan Session / Affinity
+Affected Resources:: `/subsystem=distributable-web/infinispan-session-management=\*/affinity=*`
+
 == Test Plan
 
 Additional tests are added to the test suite that verify that the affinity attribute of an Infinispan session management in the distributable web subsystem can be configured.
