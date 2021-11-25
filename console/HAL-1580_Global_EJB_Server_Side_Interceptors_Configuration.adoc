@@ -1,4 +1,4 @@
-= Configure Global EJB Server Side Interceptors 
+= Configure Global EJB Server Side Interceptors
 :author:            Harald Pehl
 :email:             hpehl@redhat.com
 :toc:               left
@@ -45,6 +45,9 @@ The goal of this issue is to provide support in HAL to configure system-wide ser
 == Requirements
 
 * Interceptors can be configured in the EJB3 subsystem.
+
+Affected UI:: Configuration / EJB / Container
+Affected Resources:: `/subsystem=ejb3@server-interceptors`
 
 == Test Plan
 
