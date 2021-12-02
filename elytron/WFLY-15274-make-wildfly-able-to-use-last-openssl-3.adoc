@@ -1,0 +1,82 @@
+= WFLY-15274 Make WildFly able to use latest OpenSSL 3.0.0 libraries
+:author:            Ricardo Martin Camarero
+:email:             rmartinc@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+OpenSSL released the https://www.openssl.org/blog/blog/2021/09/07/OpenSSL3.Final/[new version 3.0.0] on September 2021. Although it is a major re-design of the project, the API remains very similar and the impact is not so important to wildfly. The changes detected are the following:
+
+* Some functions has been removed: SSL_get_peer_certificate has been deprecated and it is a define to the new https://www.openssl.org/docs/man3.0/man3/SSL_get1_peer_certificate.html[SSL_get1_peer_certificate]; EVP_PKEY_bits is now https://www.openssl.org/docs/man3.0/man3/EVP_PKEY_get_bits.html[EVP_PKEY_get_bits].
+* Previously deprecated SSL option values have been removed and re-used for new added options (for example SSL_OP_NO_EXTENDED_MASTER_SECRET is now the same value that SSL_OP_MICROSOFT_SESS_ID_BUG used before).
+* https://github.com/openssl/openssl/blob/openssl-3.0.0/ssl/t1_lib.c#L1425-L1434[SHA1 and MD5 have reduced its security bits value] and therefore they are no longer accepted at security level 1. This makes TLSv1.1 and lower unavailable at default security level (default compilation and configuration).
+
+The detailed list of changes for OpenSSL 3.0.0 can be found in https://www.openssl.org/docs/man3.0/man7/migration_guide.html[the migration guide].
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-15274[WFLY-15274]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFSSL-80[WFSSL-80]
+* https://issues.redhat.com/browse/SSLNTV-13[SSLNTV-13]
+
+=== Dev Contacts
+
+* mailto:rmartinc@redhat.com[Ricardo Martin Camarero]
+
+=== QE Contacts
+
+
+=== Testing By
+
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly-security/wildfly-openssl/[Wildfly-OpenSSL]
+* https://github.com/wildfly-security/wildfly-openssl-natives/[Wildfly-OpenSSL-Natives]
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+Wildfly openssl provider should be able to use the new 3.0.0 libraries to configure and run a SSL context.
+
+....
+/subsystem=elytron/server-ssl-context=sslSSC:add(providers=openssl, key-manager=sslKM, protocols=[TLSv1.2, TLSv1.3], cipher-suite-names=TLS_AES_256_GCM_SHA384:TLS_AES_128_GCM_SHA256)
+....
+
+The elytron subsystem schema will remain the same and no modifications will be needed to incorporate the new version.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Backwards Compatibility
+
+The inclusion of the new OpenSSL 3.0.0 needs to be compatible with the previous supported versions.
+
+== Implementation Plan
+
+First wildfly-openssl-natives project should be modified to manage the API changes. Then the java wildfly-openssl will change its Test Suite to cover the usage of the new version and the absence of TLSv1.1 / TLSv1.0 in it by default.
+
+== Test Plan
+
+The wildfly-openssl Test Suite should work with the OpenSSL 3.0.0 libraries.
+
+....
+mvn clean install -Dorg.wildfly.openssl.path.ssl=/path/to/openssl-3.0.0/lib64/libssl.so -Dorg.wildfly.openssl.path.crypto=/path/to/openssl-3.0.0/lib64/libcrypto.so
+....
+
+Wildfly https connector should work with a SSL context configured to use the openssl provider and the 3.0.0 libraries.
