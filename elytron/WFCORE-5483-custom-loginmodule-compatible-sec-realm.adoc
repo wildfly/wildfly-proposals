@@ -1,0 +1,106 @@
+= WFCORE-5483 Provide a LoginModule compatible security realm.
+:author:            Diana Krepinska
+:email:             dvilkola@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+With the removal of the legacy security subsystem users will lose the ability to use their own custom login modules.
+This issue is for adding a security realm that will make use of custom login modules to authenticate users.
+
+If custom login modules extend PicketBox APIs or their implementations are dependent on PicketBox APIs, these are not part of this RFE as those APIs will not be present anymore. So custom login modules extending eg. `org.jboss.security.auth.spi.UsernamePasswordLoginModule` or other PicketBox login module implementations are out of scope of this RFE.
+
+In order to preserve ability to use flags and various stacking interactions between loginmodules it was decided that this security realm will use JAAS configuration file provided by the user to instantiate LoginContext which will use the underlying login modules configurations.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-5483[WFCORE-5483]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1741[EAP7-1741]
+
+=== Dev Contacts
+
+* mailto:dvilkola@redhat.com[Diana Krepinska]
+
+=== QE Contacts
+
+* TODO
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+* [x] QE
+
+=== Affected Projects or Components
+
+WildFly Core, WildFly Elytron
+
+=== Other Interested Projects
+
+
+== Requirements
+
+
+=== Hard Requirements
+
+* must be Java 17 compatible
+* New class implementing SecurityRealm will be added. This class will receive configuration path to https://docs.oracle.com/javase/7/docs/technotes/guides/security/jgss/tutorials/LoginConfigFile.html[JAAS Login Configuration File]. This file contains configurations of entries and Login Modules with the optional flags and optional LoginModule options. This approach was chosen because users using LoginModules rely on flags and the interconnectedness of LoginModules.
+* Provided JAAS Configuration file will be used to initialize LoginContext that will use the stack of custom LoginModules defined in this file. If no path to file is provided, security property `java.security file` will be used.
+* Subject's principal must be mapped to SecurityIdentity's attributes.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Implementation Plan
+
+Output of this RFE will be implementation of `org.wildfly.security.auth.server.SecurityRealm` that will take JAAS configuration file path, entry, module with custom LoginModule classes and Callbackhandler classname as a configuration attributes. This security realm will initialize LoginContext instance with these attributes and will call its `login()` method during the verification of credentials. Subject will be obtained if the login was successful and its principal set will be mapped to SecurityIdentity's attributes.
+
+Example of configuration:
+
+```
+/subsystem=elytron/jaas-realm=MyCustomLoginContextSecurityRealm:add(path="/path/to/jaas/config", entry="loginContextEntryname", module=module1, callback-handler="org.my.callback.handler")
+```
+ * *path* is the path to JAAS configuration file
+ * *entry*              reference name of the JAAS configuration file entry
+ * *callback-handler*    callbackHandler to pass to LoginContext and used by underlying LoginModules
+ * *module*        this module must contain implementations of LoginModule classes and CallbackHandler class
+
+* If no path is provided, LoginContext will use the java.security file or security properties like it is defined in the https://docs.oracle.com/javase/7/docs/technotes/guides/security/jgss/tutorials/LoginConfigFile.html[LoginContext documentation].
+* Custom callback handler can be configured through security property or `java.security` file as well. If custom callback handler is provided, then the method `public void setSecurityInfo(final Principal principal, final Object evidence)` will be called  (if it exists) before handling of the callback. This method can set security information and PicketBox required this method for custom CallbackHandlers.
+* The `auth.login.defaultCallbackHandler` security property can be specified to configure Callbackhandler class as well
+* The custom login module classes and custom callback handler class must be found in the provided module otherwise the exception will be thrown
+* If no CallbackHandler is configured the default callback handler of JAAS security realm will be used. This callback handler tries to obtain credentials on best effort basis.
+
+=== Credentials, Attributes and Roles mapping from subject
+
+LoginModules should configure the subject's principals and credentials. Principals will be mapped to SecurityIdentity's attributes. Private and public credentials will NOT be propagated from the subject and will be ignored. This realm will only be for verification of the credentials.
+
+Subject's principal list will be mapped to the attributes with the following rule:
+
+ * *key* of the attribute is principal's simple classname, so the value of `principal.getClass().getSimpleName()`)
+  * *value* is principal's name, so the result of `principal.getName()` call. For principals of the same type, the values will be meregd together under single attribute key.
+
+**Example:** Subject returned from LoginContext contains 2 principals of type `org.wildfly.security.auth.principal.NamePrincipal`. First principal has name `User1` and second `User2`. The result will be single SecurityIdentity's attribute with name `NamePrincipal` and its value is collection containing `User1` and `User2`.
+
+The default attribute name for roles in the Elytron subsystem is *Roles*. This means that users can create their own implementations of Principal interface that will be named *Roles*. The instance of this principal contains a name, which will be the role belonging to the authenticated user. To associate multiple roles with the authenticated user, multiple principals of type *Roles* have to be added to the subject.
+
+If other attribute should be used for role mapping, usual role decoders and role mappers can be used.
+
+It is not needed to specify which principal is the main caller principal. This is because the principal of the resulting SecurityIdentity will be the Principal passed in to the realm during the request for authentication.
+
+== Test Plan
+
+Funcional and unit tests will be added to wildfly-elytron and wildfly-core repositories.
+
+== Community Documentation
+
+Community documentation will be placed in WildFly repository. Documentation must be enhanced to specify new resource and also how the attributes and roles are mapped from the subject returned by the LoginContext.
