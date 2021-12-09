@@ -9,7 +9,22 @@
 
 == Overview
 
-Add support for gRPC to WildFly
+The goal of this RFE is to provide support for gRPC in WildFly. https://grpc.io/[gRPC] is a high-performance RPC framework. It can efficiently connect services implemented using various languages and frameworks. It is also applicable in the last mile of distributed computing to connect devices, mobile applications, and browsers to backend services.
+
+This RFE will add a gRPC subsystem to WildFly. It:
+
+* supports implementing gRPC services
+* supports consuming gRPC services
+* integrates with other WildFly components such as CDI, security or transaction
+* allows plain-text communication as well as TLS, and TLS with mutual authentication
+
+The gRPC subsystem provides a default configuration for gRPC services and clients. The major part of the gRPC subsystem is a deployment unit processor which scans deployments for gRPC services, clients and interceptos.
+
+=== Jakarta RPC Specification
+
+There's a Jakarta EE proposal for a specification called https://projects.eclipse.org/reviews/jakarta-rpc-creation-review[Jakarta RPC]. This specification aims to make gRPC services and clients easier to implement in Java. The specification proposes a programming model for gRPC similar to JAX-RS and MicroProfile REST Client. The proposal is not an official specification yet and very much wip.
+
+The scope of this RFE is not to implement Jakarta RPC. If it becomes a Jakarta EE specification at some point in time, there might be a follow-up RFE to support such a specification.
 
 == Issue Metadata
 
@@ -43,7 +58,89 @@ Add support for gRPC to WildFly
 
 == Requirements
 
+=== Default Configuration
+
 Pending
+
+=== gPRC Services
+
+Pending
+
+=== gRPC Clients
+
+Pending
+
+=== Deployment Descriptor
+
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<grpc xmlns="urn:wildfly:grpc:1.0">
+    <server>
+        <host>localhost</host>
+        <port>9001</port>
+        <security>
+            <plain-text>true</plain-text>
+            <key-manager>keyManager</key-manager>
+        </security>
+        <services>
+            <service>
+                <class>com.acme.GrpcService1</class>
+                <interceptors>
+                    <interceptor>
+                        <class>com.acme.GrpcInterceptor1</class>
+                        <priority>10</priority>
+                    </interceptor>
+                    <interceptor>
+                        <class>com.acme.GrpcInterceptor2</class>
+                        <priority>20</priority>
+                    </interceptor>
+                </interceptors>
+            </service>
+            <service>
+                <class>com.acme.GrpcService2</class>
+            </service>
+        </services>
+        <interceptors>
+            <interceptor>
+                <class>com.acme.GrpcInterceptor1</class>
+            </interceptor>
+            <interceptor>
+                <class>com.acme.GrpcInterceptor2</class>
+            </interceptor>
+        </interceptors>
+        <!--
+            Other setting like timeouts, message size,
+            compression and reflection service
+        -->
+    </server>
+    <clients>
+        <client>
+            <name>hello</name>
+            <host>localhost</host>
+            <port>9001</port>
+            <security>
+                <plain-text>true</plain-text>
+                <key-manager>keyManager</key-manager>
+            </security>
+            <interceptors>
+                <interceptor>
+                    <class>com.acme.GrpcInterceptor1</class>
+                    <priority>10</priority>
+                </interceptor>
+                <interceptor>
+                    <class>com.acme.GrpcInterceptor2</class>
+                    <priority>20</priority>
+                </interceptor>
+            </interceptors>
+            <!--
+                Other setting like timeouts, message size,
+                compression and reflection service
+            -->
+        </client>
+    </clients>
+</grpc>
+----
 
 == Test Plan
 
