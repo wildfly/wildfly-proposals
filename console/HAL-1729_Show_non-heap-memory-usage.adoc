@@ -1,0 +1,63 @@
+= Show non-heap-memory-usage in server preview
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+The memory information in the server status preview currently only shows information about the attribute `heap-memory-usage`, but the resource also provides non-heap memory usage via the attribute `non-heap-memory-usage`.
+
+This issue is about adding the attribute `non-heap-memory-usage` to the server status preview.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1729[HAL-1729]
+* {issue-base-url}/EAP7-1610[EAP7-1610]
+
+=== Related Issues
+
+* {issue-base-url}/EAPSUP-351[EAPSUP-351]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:msvehla@redhat.com[Martin Svehla]
+
+=== Testing By
+    
+[x] Engineering
+    
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+The server status preview of the console must contain an additional section about the non-heap memmory usage. 
+
+This new section must contains two values:
+
+1. used non-heap memory
+2. commited non-heap memory
+
+The unit for both values is MB. 
+
+== Test Plan
+
+Add a test to verify that both values are present in the server preview. 
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
