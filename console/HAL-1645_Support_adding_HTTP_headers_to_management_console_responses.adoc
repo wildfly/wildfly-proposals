@@ -1,0 +1,58 @@
+= Support adding of HTTP headers to management console responses
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+Add HTTP headers to the management console response.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1645[HAL-1645]
+* {issue-base-url}/EAP7-1411[EAP7-1411]
+
+=== Related Issues
+
+* {issue-base-url}/EAP7-1335[EAP7-1335]
+* {issue-base-url}/WFCORE-1110[WFCORE-1110]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:msvehla@redhat.com[Martin Svehla]
+
+=== Testing By
+
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+New HTTP headers can be added / removed to the HTTP management console responses.
+
+Affected UI:: Runtime / Server / Constant Headers
+Affected Resources:: `/core-service=management/management-interface=http-interface@constant-headers`
+
+== Test Plan
+
+Additional tests are added to the test suite that verify that new HTTP headers can be added to the HTTP management console responses.
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io

@@ -1,0 +1,220 @@
+= WildFly Maven Plugin to produce fully configured WildFly server
+:author:           Jean-Francois Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Introduce new Maven tooling to provision a WildFly installation, configure the server and deploy application into it. 
+The Maven tooling configuration points are similar to what WildFly Bootable JAR Maven plugin offers.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14934[WFLY-14934]
+
+=== Related Issues
+
+* Deprecation of some existing wildfly-maven-plugin features: https://issues.redhat.com/browse/WFMP-130[WFMP-130]
+
+* New WildFly S2I: https://issues.redhat.com/browse/WFLY-14936[WFLY-14936]
+
+* JKube evolved support: https://issues.redhat.com/browse/WFLY-14938[WFLY-14938]
+
+* WildFly Maven Plugin RFE: https://issues.redhat.com/browse/WFMP-138[WFMP-138]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:jkasik@redhat.com[Jan Kasik]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [X] QE
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly-maven-plugin/[WildFly Maven plugin]
+
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [ ] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Maven-controlled standalone server
+
+* [ ] Bootable jar
+
+== Context
+
+Although this feature is not limited to the cloud context, the cloud execution context is the main driver for this feature.
+
+Today, in order to execute WildFly in an Openshift context, we are relying on WildFly S2I (Source-to-Image) builder and runtime images to build 
+and execute an WildFly application image.
+There is a strong coupling inside this image between the server version and the docker image that implies 
+releasing a new image for each new WildFly release. This approach is not flexible. We should be able to build 
+an application image for any WildFly release (even for a locally built SNAPSHOT) without having to wait for the 
+WildFly builder image to be built/deployed. 
+
+In addition, the WildFly server located inside the builder image, enforces a set of configuration API (a set of environment variables)
+and bash launch scripts. At startup time, a complex CLI script generation that impacts the server startup time is mandatorily executed.
+Having this level of configurability should be a user choice and not be enforced by the WildFly s2i image.
+
+To solve these pain points, we are removing in WFLY-14936 the server installation and its configuration aspects from the image.
+
+The WildFly S2I image becomes a generic image allowing the installation and execution of any provisioned WildFly server.
+
+Due to this removal, we need a way for customers to provision the WildFly server to be installed inside the new image 
+when building their application. This WildFly server will run the built application inside the image.
+
+To do so we are defining Maven tooling that handles the Galleon provisioning of the server, the application deployment and the configuration aspects.
+
+== Requirements
+
+The existing https://github.com/wildfly/wildfly-maven-plugin/[WildFly Maven plugin] has been designed to interact (mainly) with a running server instance. 
+We are here proposing to evolve the capabilities of this plugin for one to be able to build a fully configured server containing application deployment.
+ 
+This proposal adds a new kind of installation that is operated and controlled by the pom.xml file.  The pom.xml file contains all the information needed
+to control the server and application content and versioning.
+
+=== Requirements for cloud integration
+
+* The new ``package`` goal that this proposal adds to the Maven plugin is the goal to use during s2i build. 
+Other goals (e.g.: ``provisioning``, ``execute-commands``, ...) are not expected to be used.
+
+* The plugin can be used in a "cloud build" context. In particular, the plugin must be usable with:
+** WildFly s2i V2 builder image for s2i in binary and source (see: https://issues.redhat.com/browse/WFLY-14936[WFLY-14934])
+** JKube s2i and docker binary builds (see https://issues.redhat.com/browse/WFLY-14938[WFLY-14938])
+* The generated server can be installed and run successfully inside a WildFly runtime image v2 defined 
+   in https://issues.redhat.com/browse/WFLY-14936[WFLY-14936].
+
+The integration of this plugin for cloud integration will affect other projects. NB: The changes in these projects (to benefit from the evolution 
+of the WildFly Maven plugin) are not part of this current proposal. These projects are:
+
+* https://github.com/eclipse/jkube[JKube]
+* https://github.com/wildfly/wildfly-s2i[WildFly s2i]
+* https://github.com/wildfly/quickstart[WildFly quickstarts]
+* ODO dev files.
+
+Eventually, other technologie such as BuildPacks will be able to leverage this plugin to build cloud images for WildFly.
+
+=== Hard Requirements
+
+==== Plugin requirements
+
+* The Maven plugin produces inside the project target dir a directory (named ```server``` by default) that contains the server and any deployment.
+
+==== WildFly Maven Plugin new goals
+
+* ```wildfly:package```: Galleon provisioning of a server, CLI script execution, copy content to the server, deploy application (if present). 
+* ```wildfly:provision```: Galleon provisioning of a server.
+
+In addition to these 2 new goals, we are replacing the existing automatic download and unzip of wildfly-dist by a Galleon provisioning of 
+WildFly. This change impacts ```run``` and ```start```goals).
+ 
+==== Galleon related Plugin configuration items
+
+These configuration items are common to the ```provision``` and ```package``` goals. They are used to configure 
+Galleon to provision a server.
+
+* feature-packs: A list of feature-pack to install.
+* log-provisioning-time: Whether to log provisioning time at the end.
+* offline-provisioning: Whether to use offline mode when the plugin resolves an artifact.
+* galleon-options: Arbitrary Galleon options used when provisioning the server.
+* provisioning-dir: The name of the directory relative to the Maven project build directory used when the server is provisioned. 
+It defaults to ``server`` and will result in the server being provisioned in ``${project.build.directory}/server`` (which is resolved to ``target/server`` by default)
+* provisioning-file: The path to the provisioning.xml file to use, by default ```<project base dir>/galleon/provisioning.xml``` is used. If some feature-packs have been set, 
+the provisioning file is being ignored.
+* record-provisioning-state: Whether to record provisioned state in .galleon directory. When false, the file ```.wildfly-maven-plugin-provisioning.xml``` is generated in the server home directory.
+It contains Galleon provisioning information used to provision this server.
+* layers: A set of layers to include when building-up a custom configuration.
+* excluded-layers: A set of layers to exclude when building-up a custom configuration.
+
+==== ```provision``` goal specific behavior
+
+Calling ```provision``` goal without any Galleon configuration items (no feature-pack provided nor provisioning.xml file) 
+will provision the same default server that we are provisioning when calling ```run``` and ```start``` goals.
+
+==== ```package``` goal specific configuration items and behavior
+
+A Galleon configuration is expected, if no galleon configuration is found, the goal execution fails.
+
+The configuration items names, when applicable, are re-using the names that are in use in existing WildFly Maven plugin goals.
+
+* packaging-scripts: A list of execution of CLI scripts and commands. Each execution can contain: a list of CLI scripts, a list of commands, a list of properties files, 
+a list of java options, the ability to resolve or not expressions located in CLI scripts locally (false by default) and system properties for the CLI forked process. 
+NB: CLI commands are automatically executed in the context of an embedded server.
+* extra-server-content-dirs: A list of directories to copy content to the provisioned server inside a forked process. 
+The content is copied into the provisioned server keeping the directory structure found inside 
+the extra directories. e.g.: ```my-extra-dir/standalone/configuration/foo.properties```, the file ```foo.properties``` will 
+be located inside the ```<provisioned server>/standalone/configuration/foo.properties```.
+* filename: The name of the artifact to deploy. A look-up is done inside the project build directory. 
+By default a lookup is done to retrieve the primary artifact to deploy. If no file is found, no deployment is operated.
+* name: The name of the deployment. By default the file name is used.
+* runtime-name: The runtime name of the deployment. By default the file name is used. NB: In order to deploy 
+the deployment inside the root context, ```ROOT.war``` runtime name is to be used.
+* server-config: The server config to use when executing CLI scripts and deploying artifact. Is ```standalone.xml``` by default.
+* stdout: Indicates how ```stdout``` and ```stderr``` should be handled for the forked CLI process. 
+By default the output is redirected to the current process. ```none``` to disable output, ```System.out``` or ```System.err``` to redirect to the current process. 
+Any other value is assumed to be the path to a file and the out/err will be written there. All CLI executions output is appended to the file.
+
+==== ```run``` and ```start``` goals impact
+
+* If jboss-home has not been set and no server if found in ```<buildDir>/<provisioning-dir>``` a server is provisioned.
+* The ``artifact``, ``groupId``, ``artifactId``, ``classifier``, ``packaging`` configuration items have been removed.
+* The ```version``` configuration item is kept allowing to identify a WildFly version to install.
+* The ```provisioning-dir``` allows to specify where to (find/provision) the server.
+
+==== ```execute-commands``` goal impact
+
+* The ability to provision a server if no server installation is found is removed.
+
+==== WildFly Maven plugin versioning
+
+A new major version would contain these new features.
+
+==== Impact on quickstarts 
+
+* A set of quickstarts should be refactored to use this plugin on the cloud. This should be covered by another proposal.
+
+=== Nice-to-Have Requirements
+
+* NONE
+
+=== Non-Requirements
+
+* No support for domain mode when packaging an application.
+
+== Test Plan
+
+* Add new Maven plugin tests in plugin source repository:
+** Add a test that packages an application based on a set of layers + CLI script + extra content. Check that the provisioned server is valid.
+** Add a test that provisions a server based on a set of layers. Check that the provisioned server is valid.
+* Add new integration tests in wildfly-s2i V2 image repository.
+
+== Community Documentation
+
+* The https://docs.jboss.org/wildfly/plugins/maven/latest/[WildFly Maven plugin communtity doc] will be updated.
+
+== Release Note Content
+
+The WildFly Maven plugin ```org.wildfly.plugins:wildfly-maven-plugin``` has been evolved to support Galleon provisioning. A new ```package```
+Maven plugin goal allows you to build a fully configured server containing your application. In addition, some deprecated features have been removed:
+
+* The ability to provision a server if no server installation is found has been removed from the ``execute-commands`` goal.
+* The ``artifact``, ``groupId``, ``artifactId``, ``classifier``, ``packaging`` configuration items have been removed from the ``run`` and ``start`` goals.
