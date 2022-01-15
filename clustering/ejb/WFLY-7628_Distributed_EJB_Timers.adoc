@@ -9,8 +9,10 @@
 == Overview
 
 Currently, WildFly supports 2 mechanisms for persistent EJB timers: a file-based implementation and a JDBC-based implementation.
-Of these, only the JDBC-based implementation is suitable for use in a cluster.   However, this implementation does not scale well to large to medium sized clusters and relies on a single point of failure.
-WildFly needs an persistent timer service implementation suitable for use in a cluster is both highly-available and reasonably scalable.
+Of these, only the JDBC-based implementation is suitable for use in a cluster.
+However, this implementation does not scale well in large to medium sized clusters and relies on a single point of failure due to the blocking nature of the mechanism use to determine which cluster member should schedule a given timer expiration.
+WildFly needs an persistent timer service implementation suitable for use in a cluster that is both highly-available and reasonably scalable.
+This feature will add a new timer service implementation that uses the consistent hash of an Infinispan cache to determine which timers a given cluster member should manage.
 
 == Issue Metadata
 
@@ -20,7 +22,7 @@ WildFly needs an persistent timer service implementation suitable for use in a c
 
 === Related Issues
 
-* https://issues.redhat.com/browse/WFLY-7628[WFLY-7628]
+* https://issues.redhat.com/browse/WFLY-14953[WFLY-14953]
 
 === Dev Contacts
 
@@ -29,21 +31,22 @@ WildFly needs an persistent timer service implementation suitable for use in a c
 === QE Contacts
 
 * mailto:msvehla@redhat.com[Martin Svehla]
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
 
 === Testing By
-// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
-// Discuss with QE during the Kickoff state to decide this
+
 * [ ] Engineering
 
 * [x] QE
 
 === Affected Projects or Components
 
+Clustering, EJB
+
 === Other Interested Projects
 
 === Relevant Installation Types
-// Remove the x next to the relevant field if the feature in question is not relevant
-// to that kind of WildFly installation
+
 * [x] Traditional standalone server (unzipped or provisioned by Galleon)
 
 * [x] Managed domain
@@ -56,87 +59,108 @@ WildFly needs an persistent timer service implementation suitable for use in a c
 
 === Hard Requirements
 
-* Introduce a proper SPI for a TimerService within org.jboss.as.ejb3.timerservice.spi, to facilitate multiple implementations.
-** Adapt the existing TimerResource runtime attributes/operations to use the TimerService SPI instead of referencing specific implementation classes.
-** Adapt existing TimerService implementation to this SPI.
-* Add a CompositeTimerService implementation that delegates to separate persistent and transient TimerService implementations.
-* Implement a distributed implementation of the TimerService SPI.
-** Add a org.wildfly.clustering.ejb.timer SPI to the wildfly-clustering-ejb-spi module to facilitate multiple distributed timer manager implementations.
-** Add a distributed TimerService implementation to the EJB subsystem that delegates to the wildfly-clustering-ejb-spi for timer management and scheduling.
-** Add an Infinispan implementation of the org.wildfly.clustering.ejb.timer API that assigns execution ownership of timers to cluster members based on consistent hashing of the timer identifier.
-*** Leverage the existing Scheduler implementation within wildfly-clustering-ee-cache for timer scheduling
-*** Leverage the existing PrimaryOwnerScheduler decorator that uses consistent hashing of the timer ID to distribute timer execution among cluster members
-* Add a management resource and capability to the distributable-ejb subsystem to configure the Infinispan TimerManagement implementation.
-* Add an persistent-timer-management attribute to the EJB subsystem timer-service resource (as a alternate to the timer-store attribute) that references a TimerManagementProvider capability from the distributable-ejb subsystem.
-** Modify the TimerService DUP to use a CompositeTimerService in the event that the server is configured with a persistent-timer-management, that delegates to the existing TimerServiceImpl for use with transient timers and the DistributedTimerService for use with persistent timers.
+* Create a `TimerService` implementation that delegates to separate persistent vs transient `TimerService` implementations.
+* Implement Infinispan-based `TimerService` for persistent timers that manages timer execution based on the consistent hash of the timer identifier.
+** Make existing ``default-data-store`` attribute of the timer service resource optional.  Use distributable implementation when this attribute is undefined.
+* Add default and named persistent timer management capabilities to distributable-ejb subsystem.
+** Add named Infinispan timer management resource that provides the above capability.
+* Add a distributable-ejb subsystem attribute to determine the server-wide default provider for persistent timer management.
+* Add ability to enable distributed timer management (in lieu of a timer store) within ejb3 subsystem for management of persistent timers.
+* Existing timer service resource operations must continue to work when executed against the distributable `TimerService`.
 
 === Nice-to-Have Requirements
 
-* Add an optional transient-timer-management attribute to the EJB subsystem timer-service resource
-** This would replace the existing TimerService implementation completely, by using a distributed timer service that uses a local, non-persistent cache.
+* Add default and named transient timer management capabilities to distributable-ejb subsystem.
+* Add a distributable-ejb subsystem attribute to determine the server-wide default provider for transient timer management.
+* Add ability to switch between distributed timer management or existing in-memory implementation for management of transient timers
 ** This has the advantage of supporting passivation of timer instances to support applications with a sufficiently large number of transient timers in excess of some configured maximum.
-* Add support to TimerServiceMetaData/TimerServiceMetaDataParser for overriding the persistent timer manager per EJB.
+* Add support to timer service deployment descriptor namespace for overriding persistent/transient timer management per EJB.
 
 === Non-Requirements
 
+* This feature will not change the default timer service behavior or deprecate any existing timer service mechanisms.
+
 == Backwards Compatibility
 
-* Servers started using an old version of the EJB subsystem configuration will continue to behave as normal, using the existing TimerServiceImpl for both transient and persistent timers.
+* Servers started using the default ejb3 subsystem configuration will continue to behave as normal, using the existing in-memory `TimerService` implementation for both transient and persistent timers.
 
 === Default Configuration
 
-The following caches will be added to the default ejb cache-container configuration with the Infinispan subsystem:
+The following caches will be added to the default `ejb` cache-container configuration with the Infinispan subsystem:
 
 For the HA profiles:
 
-	/subsystem=infinispan/cache-container=ejb/distributed-cache=persistent-timers:add()
-	/subsystem=infinispan/cache-container=ejb/distributed-cache=persistent-timers/component=locking:add(isolation=PESSIMISTIC)
-	/subsystem=infinispan/cache-container=ejb/distributed-cache=persistent-timers/component=transaction:add(mode=BATCH)
-	/subsystem=infinispan/cache-container=ejb/distributed-cache=persistent-timers/store=file:add(purge=false)
+	/subsystem=infinispan/cache-container=ejb/distributed-cache=persistent:add()
+	/subsystem=infinispan/cache-container=ejb/distributed-cache=persistent/component=locking:add(isolation=PESSIMISTIC)
+	/subsystem=infinispan/cache-container=ejb/distributed-cache=persistent/component=transaction:add(mode=BATCH)
+	/subsystem=infinispan/cache-container=ejb/distributed-cache=persistent/store=file:add(purge=false)
 
 And for non-HA profiles:
 
-	/subsystem=infinispan/cache-container=ejb/local-cache=persistent-timers:add()
-	/subsystem=infinispan/cache-container=ejb/local-cache=persistent-timers:component=locking:add(isolation=PESSIMISTIC)
-	/subsystem=infinispan/cache-container=ejb/local-cache=persistent-timers:component=transaction:add(mode=BATCH)
-	/subsystem=infinispan/cache-container=ejb/local-cache=persistent-timers/store=file:add(purge=false,passivation=false)
+	/subsystem=infinispan/cache-container=ejb/local-cache=persistent:add()
+	/subsystem=infinispan/cache-container=ejb/local-cache=persistent:component=locking:add(isolation=PESSIMISTIC)
+	/subsystem=infinispan/cache-container=ejb/local-cache=persistent:component=transaction:add(mode=BATCH)
+	/subsystem=infinispan/cache-container=ejb/local-cache=persistent/store=file:add(purge=false, passivation=false)
 
 The following timer management provider will be added to the default distributable-ejb subsystem configuration:
 
-	/subsystem=distributable-ejb/infinispan-timer-management=persistent:add(cache-container=ejb, cache=persistent-timers)
+	/subsystem=distributable-ejb/infinispan-timer-management=persistent:add(cache-container=ejb, cache=persistent)
 
-The default timer-service configuration of the EJB subsystem will be modified as follows:
+To enable use of the distributable timer service, a user will be required to modify the default timer-service configuration of the ejb3 subsystem as follows:
 
 	/subsystem=ejb3/service=timer-service:undefine-attribute(name=default-data-store)
-	/subsystem=ejb3/service=timer-service:write-attribute(name=persistent-timer-management, value=persistent-timers)
 
 === Importing Existing Configuration
 
+N/A
+
 === Deployments
+
+N/A
 
 === Interoperability
 
+N/A
+
 == Implementation Plan
 
-The feature requires WFLY-14953 in order to house the configuration for distributed timer management providers.
+The feature requires the distributable-ejb subsystem (WFLY-14953) in order to house the configuration for distributed timer management providers.
+
+The general implementation plan for this feature is as follows:
+
+* Introduce a proper SPI for a `TimerService` within `org.jboss.as.ejb3.timerservice.spi`, to facilitate multiple implementations.
+** Adapt the existing `TimerResource` runtime attributes/operations to use the `TimerService` SPI instead of referencing specific implementation classes.
+** Adapt existing `TimerService` implementation to this SPI.
+* Create `CompositeTimerService`, a `TimerService` implementation that delegates to separate persistent and transient `TimerService` implementations.
+* Implement an distributed implementation of the `TimerService` SPI.
+** Add a `org.wildfly.clustering.ejb.timer` SPI to the `wildfly-clustering-ejb-spi` module to facilitate multiple distributed timer manager implementations.
+** Create `DistributedTimerService`, a distributed `TimerService` implementation to the ejb3 subsystem that delegates to the `wildfly-clustering-ejb-spi` for timer management and scheduling.
+** Add an Infinispan implementation of the `org.wildfly.clustering.ejb.timer` SPI that assigns execution ownership of timers to cluster members based on consistent hashing of the timer identifier.
+*** Leverage the existing `LocalScheduler` implementation within `wildfly-clustering-ee-cache` for timer scheduling
+*** Leverage the existing `PrimaryOwnerScheduler` decorator that uses consistent hashing of the timer identifier to distribute timer execution among cluster members
+* Add a management resource and capability to the distributable-ejb subsystem to configure the Infinispan timer management implementation.
+* Make the `default-data-store` attribute of the timer service resource optional.
+** Require the default distributable timer management capability when undefined.
+** Modify the `TimerService` DUP to use a `CompositeTimerService` in the event that the server is configured to use persistent timer management, that delegates to the existing `TimerServiceImpl` for use with transient timers and the `DistributableTimerService` for use with persistent timers.
 
 == Security Considerations
 
-////
-Identification if any security implications that may need to be considered with this feature
-or a confirmation that there are no security implications to consider.
-////
+N/A
 
 == Test Plan
 
-* All existing TimerService tests must pass against the new persistent timer implementation, including the EJB TCK.
-* Existing distributed EJB timer tests that use the JDBC timer-store within an EAP cluster may need to be modified since timers may execute on different cluster members than expected by the tests.
-* New tests will be added to the clustering integration testsuite to validate correctness of behavior with a cluster, e.g. failover behavior, etc.
+* All existing `TimerService` tests must pass against the new persistent timer implementation, including the Jakarta Enterprise Beans TCK.
+* New tests will be added to the clustering integration testsuite to validate correctness of behavior of persistent timers with a cluster, including:
+** Validate that auto-timers are only ever created on a single cluster member.
+** Validate normal expiration of auto-timers and manually created single action, interval, and calendar persistent timers within stable cluster.
+** Validate that all timer types continue to trigger expirations without duplication after the cluster member that created them is stopped.
+** Validate that all timer types failback to original cluster member without duplication following restart.
 
 == Community Documentation
-////
-Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
-////
+
+* Add section to Jakarta Enterprise Bean documentation that describes the advantages of the distributed Jakarta Enterprise Bean `TimerService` and how to configure the ejb3 subsystem to use it.
+* Add documentation of distributable timer service resources to existing distributable-ejb subsystem documentation.
+
 == Release Note Content
 
 This release adds a new distributed EJB timer implementation that leverages Infinispan to distribute and schedule persistent timers within a cluster, capable of scaling to large clusters.
