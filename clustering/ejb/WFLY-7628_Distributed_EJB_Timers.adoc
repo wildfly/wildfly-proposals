@@ -10,7 +10,7 @@
 
 Currently, WildFly supports 2 mechanisms for persistent EJB timers: a file-based implementation and a JDBC-based implementation.
 Of these, only the JDBC-based implementation is suitable for use in a cluster.
-However, this implementation does not scale well in large to medium sized clusters and relies on a single point of failure due to the blocking nature of the mechanism use to determine which cluster member should schedule a given timer expiration.
+However, this implementation does not scale well in large to medium sized clusters and relies on a single point of failure due to the blocking nature of the mechanism employed to determine which cluster member should schedule a given timer expiration.
 WildFly needs an persistent timer service implementation suitable for use in a cluster that is both highly-available and reasonably scalable.
 This feature will add a new timer service implementation that uses the consistent hash of an Infinispan cache to determine which timers a given cluster member should manage.
 
