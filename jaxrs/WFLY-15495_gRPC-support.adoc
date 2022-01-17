@@ -9,22 +9,31 @@
 
 == Overview
 
-The goal of this RFE is to provide support for gRPC in WildFly. https://grpc.io/[gRPC] is a high-performance RPC framework. It can efficiently connect services implemented using various languages and frameworks. It is also applicable in the last mile of distributed computing to connect devices, mobile applications, and browsers to backend services.
+The goal of this RFE is to provide support for gRPC in WildFly. https://grpc.io/[gRPC] is a high-performance RPC framework.
+It can efficiently connect services implemented using various languages and frameworks.
+It is also applicable in the last mile of distributed computing to connect devices, mobile applications, and browsers to backend services.
 
-This RFE will add a gRPC subsystem to WildFly. It:
+This RFE will add a gRPC subsystem to WildFly.
+It:
 
 * supports implementing gRPC services
 * supports consuming gRPC services
-* integrates with other WildFly components such as CDI, security or transaction
+* integrates with other WildFly components such as CDI, MP health, security or transaction
 * allows plain-text communication as well as TLS, and TLS with mutual authentication
 
-The gRPC subsystem provides a default configuration for gRPC services and clients. The major part of the gRPC subsystem is a deployment unit processor which scans deployments for gRPC services, clients and interceptos.
+The gRPC subsystem provides a default configuration for all gRPC services and clients.
+The major part of the gRPC subsystem is a deployment unit processor which scans deployments for gRPC services, clients and interceptos.
 
 === Jakarta RPC Specification
 
-There's a Jakarta EE proposal for a specification called https://projects.eclipse.org/reviews/jakarta-rpc-creation-review[Jakarta RPC]. This specification aims to make gRPC services and clients easier to implement in Java. The specification proposes a programming model for gRPC similar to JAX-RS and MicroProfile REST Client. The proposal is not an official specification yet and very much wip.
+There's a Jakarta EE proposal for a specification called https://projects.eclipse.org/reviews/jakarta-rpc-creation-review[Jakarta RPC].
+This specification aims to make gRPC services and clients easier to implement in Java.
+The specification proposes a programming model for gRPC similar to JAX-RS and MicroProfile REST Client.
+As the time of writing, the proposal is not an official specification yet and very much wip.
 
-The scope of this RFE is not to implement Jakarta RPC. If it becomes a Jakarta EE specification at some point in time, there might be a follow-up RFE to support such a specification.
+The scope of this RFE is *not* to implement Jakarta RPC.
+If it becomes a Jakarta EE specification at some point in time, there might be a follow-up RFE to support such a specification.
+Instead, this RFE is about to bring gRPC support to WildFly.
 
 == Issue Metadata
 
@@ -58,19 +67,120 @@ The scope of this RFE is not to implement Jakarta RPC. If it becomes a Jakarta E
 
 == Requirements
 
+=== Hard Requirements
+
+* The gRPC subsystem provides a default configuration
+* gRPC services, clients and interceptors can be deployed independently of each other
+* gRPC services, clients and interceptors can be configured independently of each other
+* The gRPC subsystem integrates with the Elytron subsystem to provide TLS, and TLS with mutual authentication
+
+=== Nice-to-Have Requirements
+
+* WildFly quickstart for gRPC clients, services and interceptors
+* Support of https://github.com/grpc/grpc/blob/master/doc/health-checking.md[gRPC health check]
+* Support of https://github.com/grpc/grpc/blob/master/doc/server-reflection.md[gRPC relfection]
+* Support of https://smallrye.io/smallrye-mutiny/[Mutiny] API
+
+=== Non-Requirements
+
+* Support of Jakarta gPRC specification
+
 === Default Configuration
 
-Pending
+The gRPC subsystem provides a default configuration which is applied to all gRPC services and clients and which can be overriden on a deployment basis.
 
-=== gPRC Services
+==== Client
 
-Pending
+`plain-text`::
+Whether `plain-text` should be used instead of TLS.
+Enables by default, except it TLS/SSL is configured.
+In this case, `plain-text` is disabled.
 
-=== gRPC Clients
+`keep-alive-time`::
+The duration after which a keep alive ping is sent.
 
-Pending
+`flow-control-window`::
+The flow control window in bytes.
+Default is 1MiB.
 
-=== Deployment Descriptor
+`idle-timeout`::
+The duration without ongoing RPCs before going to idle mode.
+
+`keep-alive-timeout`::
+The amount of time the sender of a keep alive ping waits for an acknowledgement.
+
+`keep-alive-without-calls`::
+Whether keep-alive will be performed when there are no outstanding RPC on a connection.
+
+`max-hedged-attempts`::
+The max number of hedged attempts.
+
+`max-retry-attempts`::
+The max number of retry attempts.
+Retry must be explicitly enabled.
+
+`max-trace-events`::
+The maximum number of channel trace events to keep in the tracer for each channel or sub-channel.
+
+`max-inbound-message-size`::
+The maximum message size allowed for a single gRPC frame (in bytes).
+Default is 4 MiB.
+
+`max-inbound-metadata-size`::
+The maximum size of metadata allowed to be received (in bytes).
+Default is 8192B.
+
+`per-rpc-buffer-limit`::
+The per RPC buffer limit in bytes used for retry.
+
+`retry`::
+Whether retry is enabled.
+Note that retry is disabled by default.
+
+`retry-buffer-size`::
+The retry buffer size in bytes.
+
+`user-agent`::
+Use a custom user-agent.
+
+`compression`::
+The compression to use for each call.
+The accepted values are gzip and identity.
+
+==== Server
+
+`handshake-timeout`::
+The gRPC handshake timeout.
+
+`max-inbound-message-size`::
+The max inbound message size in bytes.
+
+`max-inbound-metadata-size`::
+The max inbound metadata size in bytes
+
+`ssl.client-auth`::
+Configures the engine to require/request client authentication.
+NONE, REQUEST, REQUIRED
+
+`plain-text`::
+Disables SSL, and uses plain text instead.
+If disabled, configure the ssl configuration.
+
+`alpn`::
+Whether ALPN should be used.
+
+`netty.keep-alive-time`::
+Sets a custom keep-alive duration.
+This configures the time before sending a keepalive ping when there is no read activity.
+
+`compression`::
+gRPC compression, e.g. "gzip"
+
+=== Deployment
+
+gRPC services, clients and interceptors are deployed to WildFly using Jakarta EE deployments. Configuration is applied using a deployment descriptor.
+
+==== Deployment Descriptor
 
 [source,xml]
 ----
@@ -111,7 +221,7 @@ Pending
         </interceptors>
         <!--
             Other setting like timeouts, message size,
-            compression and reflection service
+            compression (see above).
         -->
     </server>
     <clients>
@@ -135,17 +245,37 @@ Pending
             </interceptors>
             <!--
                 Other setting like timeouts, message size,
-                compression and reflection service
+                compression (see above).
             -->
         </client>
     </clients>
 </grpc>
 ----
 
+=== Development Model
+
+==== Services
+
+To implement a gRPC service, the class has to extend the generated gRPC implementation base and override the methods defined in the service interface. Finally, the class has to be marked with an `@GrpcService` annotation.
+
+If there's no access to the source code and one cannot place an annotation on the gRPC service implementation, the gRPC service has to be defined using the deployment descriptor.
+
+==== Server Interceptors
+
+A gRPC server interceptor has to implement `io.grpc.ServerInterceptor` and is applied to a gRPC service using an annotation or the deployment descriptor.
+
+==== Clients
+
+gRPC clients can be created using channels. The channel can be injected referencing the name given in the deployment descriptor. Using the channel both a blocking/synchronous clients and non-blocking/asynchronous clients can be created.
+
+==== Client Interceptors
+
+A gRPC client interceptor has to implement `io.grpc.ClientInterceptor` and is applied to a gRPC client using an annotation or the deployment descriptor.
+
 == Test Plan
 
-Pending
+TBD
 
 == Community Documentation
 
-Pending
+In a first step documentation will be provided as part of the repositories README.
