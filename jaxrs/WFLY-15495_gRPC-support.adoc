@@ -82,6 +82,7 @@ Instead, this RFE is about to bring gRPC support to WildFly.
 * Support of https://github.com/grpc/grpc/blob/master/doc/health-checking.md[gRPC health check]
 * Support of https://github.com/grpc/grpc/blob/master/doc/server-reflection.md[gRPC relfection]
 * Support of https://smallrye.io/smallrye-mutiny/[Mutiny] API
+* A gRPC chapter in the WildFly https://github.com/wildfly/wildfly/tree/main/docs/src/main/asciidoc/_developer-guide[developer guide]
 
 === Non-Requirements
 
