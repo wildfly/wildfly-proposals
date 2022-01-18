@@ -21,8 +21,9 @@ It:
 * integrates with other WildFly components such as CDI, MP health, security or transaction
 * allows plain-text communication as well as TLS, and TLS with mutual authentication
 
-The gRPC subsystem provides a default configuration for all gRPC services and clients.
-The major part of the gRPC subsystem is a deployment unit processor which scans deployments for gRPC services, clients and interceptos.
+The gRPC subsystem provides a default configuration for all gRPC services and clients. The major part of the gRPC subsystem is a deployment unit processor which scans deployments for gRPC services, clients and interceptos. The default configuration can be overriden on a deployment basis.
+
+The gRPC subsystem defines a https://docs.wildfly.org/galleon/#_layers[Galleon layer] which will be responsible for providing the gRPC subsystem.
 
 === Jakarta RPC Specification
 
@@ -70,6 +71,7 @@ Instead, this RFE is about to bring gRPC support to WildFly.
 === Hard Requirements
 
 * The gRPC subsystem provides a default configuration
+* The Galleon layer must provide the gRPC subsystem configuration.
 * gRPC services, clients and interceptors can be deployed independently of each other
 * gRPC services, clients and interceptors can be configured independently of each other
 * The gRPC subsystem integrates with the Elytron subsystem to provide TLS, and TLS with mutual authentication
