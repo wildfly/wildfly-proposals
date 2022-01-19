@@ -31,14 +31,16 @@ Although the SlotStore code is part of Narayana, the mashona library used to sup
 
 === Dev Contacts
 
-* mailto:{email}[{author}]
+* mailto:jonathan.halliday@redhat.com[Jonathan Halliday]
+* mailto:mmusgrov@redhat.com[Michael Musgrove]
+
 
 === QE Contacts
 
 === Testing By
 // Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
 // Discuss with QE during the Kickoff state to decide this
-* [ ] Engineering
+* [x] Engineering
 
 * [ ] QE
 
@@ -65,11 +67,12 @@ Narayana, Infinispan, Mashona.
 
 === Hard Requirements
 
-Extend the server management model to facilitate configuration of the new SlotStore transaction log type.
+Extend the server management model to facilitate configuration of the new SlotStore transaction log type. Minimally this will require the ability to select the store in preference to existing fs/journal/jdbc options. The SlotStore itself further requires a directory path to be set. Size tuning options also exist, but default values should suffice for most use cases.
 
 === Nice-to-Have Requirements
 
-Extend the sever dependency model to allow use of the Persistent Memory library, mashona, to support SlotStore use on pmem hardware. Optionally the components consuming it could simply bundle their own copies, trading version flexibility vs. footprint.
+Extend the sever dependency model to package the Persistent Memory library, mashona, as a separate module that components requiring it can depend on.
+Note that as mashona is small and doesn't have a service lifecycle of its own, it need not necessarily be an optional dependency if making it such introduces unwarranted complexity compared to having it always active.
 
 === Non-Requirements
 
@@ -106,13 +109,16 @@ or a confirmation that there are no security implications to consider.
 * Testing of the new server configuration options will require new tests, patterned on those for existing store configurations.
 
 * Testing of the SlotStore itself can be accomplished by using the same transaction tests that exercise existing store types, but changing the server config to use the new store type.
+Broadly, this is any tx test involving two resources e.g. an MDB writing a database. Single resource tests e.g. just using db, can be forced to use the store by setting appropriate configuration (disable 1PC optimization), potentially providing additional coverage at low effort if required.
 
 * Testing of the pmem options will require appropriate hardware, though this can be simulated by system configuration (similar to a RAM disk)
 
 == Community Documentation
-////
-Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
-////
+
+Update upstream Narayana docs with SlotStore config guide, probably reusing existing material from http://mashona.io/blog/2021/04/06/narayana-config
+Then likewise update https://docs.wildfly.org/25/Admin_Guide#Transactions_Subsystem
+Note that, as with many other Narayana components, the app server model may choose to expose only a subset of the available config options to the user and the respective docs may therefore have different scope.
+
 == Release Note Content
 
 Storage of transaction recovery logs can now be configured with additional options, which may be faster for some deployments. These include options tailored to efficient transaction logging on Persistent Memory hardware.
