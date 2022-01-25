@@ -1,0 +1,196 @@
+= WFLY-13126 Refactor EJB client affinity processing
+:author:            Richard Achmatowicz
+:email:             rachmato@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The EJB client library allows an application to access EJBs deployed on a Wildfly instance, where the application may be running
+in a standalone JVM or within a deployment on the server. An EJB client proxy is created for each deployed bean the application
+wishes to invoke on and the proxy is used to make those invocations.
+
+In an environment where multiple servers exist, with multiple deployments available and different HA and non-HA configurations,
+an EJB client proxy will need to specify which bean in which deployment on which server on which configuration it wishes to
+invoke on. The EJB client affinity mechanism was designed to allow an EJB client proxy to specify the target of its invocations.
+
+In addition to influencing individual invocations by a proxy, when HA clusters of nodes are involved, the affinity mechanism
+also affects the the operation of failover and load balancing.
+
+The EJB client affinity mechanism allows defining various types of affinity constraint on a proxy:
+* NONE: there is no constraint on which bean the proxy targets
+* node: the proxy only sends invocations to the named node
+* cluster: the proxy only sends invocations to a member node of the named cluster
+* URI: the proxy only sends invocations to the fixed node referenced by the URI
+* local: the proxy only sends invocations to beans deployed in the same JVM as the proxy
+
+EJB client affinity mechanism operation involves processing on the client side-application (via the EJB client library) as well as
+on the server side of the application where the bean is deployed. With each invocation, affinity metadata is sent from
+client to serer and from server back to client by way of the EJB client wire protocol, currently at version 3. What this
+implies generally is that for significant changes to EJB client affinity processing, this will involve changes to all
+three elements: the client-side libraries, the wire protocol and the server-side processing within Wildfly.
+
+=== The problem
+
+The EJB client affinity processing mechanism is currently client-based; in other words, initialization of a proxy's affinity
+as well as updates to the affinity during invocation processing happen mainly on the client in response to events happening
+both on the client and the server. This makes the EJB client affinity processing code very complicated and error prone, as
+the client must detect and respond to events arising from complex code paths that are followed during invocation processing.
+
+This issue will instead transform the affinity processing mechanism into one which is primarily server-based; in other words,
+the final arbiter on what the affinity setting for a proxy should be is the server on which the last successful invocation
+was made. The client acts as a passive recipient of any affinity changes for a proxy that are decided by the server.
+
+Moving processing from the client to the server has the following advantages:
+* elimination of a lot of code required by the client to deduce which events on both the client ans server may require an affinity change
+* cleaner calculation of the required affinity when considering non-HA and HA (clustered) environments
+* simplified handling of affinity in the server-side creation of proxies (c.f. https://issues.redhat.com/browse/WFLY-11833)
+
+=== Scope of changes involved
+
+This issue is effectively an internal refactoring, in the sense that no user-facing interfaces nor semantics will be changed.
+Therefore from the users point of view, operation of the affinity mechanism will not change (excepting the case of performance,
+which will most likely improve due to simplified affinity processing)
+
+This RFE will require changes to the following components:
+* EJB client libraries
+* EJB client wire protocol (moves from version 3 to version 4)
+* EJB subsystem on Wildfly and its HA and non-HA processing
+
+=== Design work already completed
+
+Some detailed consideration was given to this issue in [1].
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-13126 (Wildfly server part)
+* https://issues.redhat.com/browse/EJBCLIENT-367 (EJB client project part)
+
+=== Related Issues
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+EJB client project (https://github.com/wildfly/jboss-ejb-client)
+EJB subsystem component
+Clustering
+
+=== Other Interested Projects
+
+Remote Naming Client (marshals EJB proxies from server to client)
+
+=== Relevant Installation Types
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [ ] OpenShift s2i
+
+* [ ] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+The new EJB client affinity processing mechanism must:
+* preserve all current functionality available from the EJB client API (4.x branch) with the same semantics from the users point of view
+* be backward compatible with earlier versions of the EJB client wire protocol (1.x, 2.x and 3.x branches) (see section on Backward Compatabilty)
+* result in no loss of performance
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Backwards Compatibility
+
+For the EJB client libraries, backwards compatability refers to the ability of applications using earlier versions of
+the EJB client library to operate correctly with the current server implementation. These earlier versions of the EJB client
+may rely on earlier versions of:
+* the EJB client wire protocol (e.g. version 2, version 3)
+* the EJB client API (e.g. version 1.x API, version 2.x API or version 3.x API)
+* the EJB client client-side configuration files (i.e. jboss-ejb-client.properties vs wildfly-config.xml)
+
+Backwards compatability requirements for these specific aspects:
+* EJB client wire protocol: the new version of the protocol needs to become the default, but versions 3 and lower
+are still required to be supported with the same semantics
+* EJB client API: the full API must still be supported with the same semantics
+* EJB client configuration: legacy oonfiguration files should work with the same semantics
+
+=== Default Configuration
+
+The default configurations from the user's point of view will not change. This is an internal refactoring only.
+
+=== Importing Existing Configuration
+
+=== Deployments
+
+The EJB client libraries may be used from within deployments on the server, and in particular, with proxies marked
+as having affinity LOCAL. In fact, proxies with affinity LOCAL can only be tested using EJB client invovations
+which are initiated from within deployments.
+
+=== Interoperability
+
+The interoperation here is between applications using the various versions of the EJB client library and the current version
+of the Wildfly server. The server-side changes made to Wildfly need to be able to interoperate with the current and the legacy
+EJB client versions.
+
+== Implementation Plan
+
+The implementation will require that changes to the EJB client library and changes to the Wildfly code base will have to
+be merged at the same time, as they are co-dependent changes.
+
+== Security Considerations
+
+There are no security considerations involved in this feature request, as affinity processing and security are orthogonal
+concerns.
+
+== Test Plan
+
+As this is an internal refactoring, testing the feature involves running the usual EJB client project testsuite as well as
+the Wildfly integration testsuite. Additional tests will be required to check that use of legacy EJB client libraries
+still work correctly with the new server, if they are not in place already.
+
+Possible testing gaps:
+* testing of legacy EJB client versions against the new server (Wildfly integration testsuite, additional QE testsuites)
+with regard to the full feature set:
+** wire protocol compatability
+** EJB client APIs
+** EJB client client-side configuration
+** affinity processing
+** HA features such as load balancing and failover
+
+In general, the EJB client has a lot of quirky features resulting from changes to legacy configuration (c.f. clustering
+configuration), changes to interfaces and tight coupling with JNDI operation (e.g. looking up EJB client proxies and
+setting the affinity for such proxies based on JNDI configuration), so there are many edge cases when the aim is to test
+comprehensively.
+
+== Community Documentation
+
+This will require an update of the EJB client and Wildfly documentation, not because the user interfaces have changed,
+but because the EJB client / Wildfly documentation does not discuss affinity processing at all.
+This is a documentation testing gap. What is required:
+* the need for allowing a proxy to maintain an affinity for collections of servers in a multi-srever environment
+* how the affinity mechanism can help to do that
+* how to configure affinity for a proxy
+
+== Release Note Content
+A improved version of EJB client affinity processing used to allow an EJB client application to target specific server deployments.
+Internal refactoring only.
+
+== Appendix
+
+[1] Refactor Affinity Processing in EJB client (detailed design doc): https://drive.google.com/file/d/1xwOByMw3oJ8HN-ztadqI30nvWILzLMMX/view?usp=sharing
