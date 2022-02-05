@@ -1,0 +1,102 @@
+= ProtoStream marshalling of web session attributes
+:author:            Paul Ferraro
+:email:             paul.ferraro@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently, WildFly uses JBoss Marshalling to marshal user objects (HttpSession attributes, SFSB instances, etc.) for the purposes of replication and persistence.
+
+ProtoStream (developed by the Infinispan team) is a Java API for marshalling Google Protocol buffers (i.e. Protobuf).
+ProtoStream offers several advantages over JBoss Marshalling or Java serialization:
+
+* Inherently secure
+** No arbitrary code execution
+** ProtoStream can only read messages for which a Protobuf schema exists
+** Unmarshalling uses declared constructors
+* More efficient
+** Messages identified by unique FQN as opposed to serializing class descriptors
+** Nested messages are marshalled to individual buffers, preventing reallocation of progressively larger contiguous blocks of heap during marshalling
+** Null/default fields do not contribute to serialization payload
+** Native varint32/64 support for efficient int/long marshalling
+* Faster
+** Does not rely on reflection
+** Marshalling uses declared accessors; unmarshalling uses declared constructors/mutators.
+* More flexible
+** Message schemas are easy to evolve while maintaining serialization compatibility, which is essential for supporting rolling upgrades of a deployment.
+
+WFLY-13426 replaced usage of JBoss Marshalling with ProtoStream for WildFly's internal clustering modules.
+This feature seeks to make ProtoStream available to distributed web applications.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-13904
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-13077
+* https://issues.jboss.org/browse/WFLY-13426
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[X] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* Clustering
+
+=== Other Interested Projects
+
+* JSF
+* Weld
+
+== Requirements
+
+=== Hard Requirements
+
+* Expose the org.infinispan.protostream module to deployments
+* Add session management attribute to configure the marshaller for all deployments using a given distributable session management provider
+** Default behavior uses JBoss Marshalling (current behavior)
+* Add session management schema attribute to configure the marshaller for a given web application
+** Default behavior uses JBoss Marshalling (current behavior)
+* If configured to use ProtoStream, initialize the SerializationContext by dynamically loading SerializationContextInitializers from the deployment classloader.
+
+=== Nice-to-Have Requirements
+
+* Add ProtoStream marshallers for session attributes used by Weld (to handle @SessionScoped objects)
+* Add ProtoStream marshallers for session attributes used by JSF
+
+=== Non-Requirements
+
+* ProtoStream marshallers for session attributes used by web frameworks that WildFly does not distribute, e.g. SpringMVC, Tapestry, Wicket, Struts, etc.
+** These can be provided by modules in wildfly-extras, as needed/requested.
+
+== Test Plan
+
+* Update existing simple failover session test to use ProtoStream marshalling.
+* Update existing @SessionScoped CDI test in clustering testsuite to use ProtoStream marshalling
+* Update existing JSF test in clustering testsuite to use ProtoStream marshalling
+
+== Community Documentation
+
+Expand distributable-web subsystem documentation to include instructions for configuring a distributable web application to use ProtoStream.
+
+== Release Note Content
+
+* Support ProtoStream, as an alternative to JBoss Marshalling, for marshalling distributable HttpSession attributes.
