@@ -1,0 +1,65 @@
+= [WFCORE-5740] Add the ability to ignore unavailable realms for a distributed-realm
+:author:            Lukas Vydra
+:email:             lvydra@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+A distributed-realm is made up of a list of realms. Each realm in the list is attempted until we either find the user or run out of realms. 
+If a realm happens to be unavailable, we currently stop searching altogether. This is undesirable if the user could have been found in a subsequent realm.
+
+This enhancmend will add an ignore-unavailable-realms boolean attribute to a distributed-realm to allow users to specify that the search should continue on to the next realm if a realm happens to be unavailable.
+
+** Example configuration:
+
+```
+   /subsystem=elytron/distributed-realm=distributedRealm:add(realms=[realm1, realm2], ignore-unavailable-realms=true)
+```
+
+== Issue Metadata
+
+=== Issue
+* https://issues.redhat.com/browse/WFCORE-5740[WFCORE-5740]
+
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/ELY-2305[ELY-2305]
+* https://issues.redhat.com/browse/EAP7-1862[EAP7-1862]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+* mailto:{email}[{author}]
+
+=== Testing By
+[ ] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+* WildFly, Security, WildFly-Core, Elytron
+
+=== Other Interested Projects
+
+== Requirements 
+
+=== Hard Requirements
+
+* It should be possible to configure an ```distributed-realm``` with the optional attribute ```ignore-unavailable-realms``` which
+allow users to specify that the search should continue on to the next realm if a realm happens to be unavailable.
+
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+Tests will be added to the Elytron testsuite.
+
+== Community Documentation
+
