@@ -53,6 +53,9 @@ This enhancmend will add an ignore-unavailable-realms boolean attribute to a dis
 * It should be possible to configure an ```distributed-realm``` with the optional attribute ```ignore-unavailable-realms``` which
 allow users to specify that the search should continue on to the next realm if a realm happens to be unavailable.
 
+When ```ignore-unavailable-realms``` is set to true and realm happens to be unavailable, SecurityRealmUnavailableEvent will be emitted to the corresponding SecurityDomain.
+This can be turned off by adding `emit-events` attribute and setting it to `false`.
+
 
 === Nice-to-Have Requirements
 
