@@ -1,0 +1,107 @@
+= RESTEasy should be able to provide trace information about request
+:author:            Wei Nan Li
+:email:             weli@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+RESTEasy should be able to provide trace information about request in response headers. These trace information should be in headers if:
+
+it is required by global settings for all application (for example by EAP7-634)
+it is required by settings for one application (for example by EAP7-634)
+it is required in request header (for example: curl -v --header "RESTEasy-trace: true" http://localhost:8080/jaxrs-wf/some)
+
+Trace information should contains all necessary information and times about processing of current request, like used interceptors, used exception mappers, used end-points, used providers, etc. Example:
+
+[source,bash]
+----
+$ curl -v --header "RESTEasy-trace: true" http://localhost:8080/jaxrs-wf/some
+*   Trying ::1...
+* connect to ::1 port 8080 failed: Connection refused
+*   Trying 127.0.0.1...
+* Connected to localhost (127.0.0.1) port 8080 (#0)
+> GET /jaxrs-wf/some HTTP/1.1
+> Host: localhost:8080
+> User-Agent: curl/7.43.0
+> Accept: */*
+> RESTEasy-trace: true
+>
+< HTTP/1.1 200 OK
+< Connection: keep-alive
+< X-Powered-By: Undertow/1
+< Server: JBoss-EAP/7
+< Content-Type: application/octet-stream
+< Content-Length: 22
+< Date: Thu, 13 Apr 2017 08:02:44 GMT
+< RESTEasy-trace: 09:54:06,535 TRACE [org.jboss.resteasy.resteasy_jaxrs.whatever]  request was received, path: http://localhost:8080/jaxrs-wf/some
+< RESTEasy-trace: 09:54:06,735 TRACE [org.jboss.resteasy.resteasy_jaxrs.whatever]  MyCustomReaderInterceptor is used
+< RESTEasy-trace: 09:54:06,785 TRACE [org.jboss.resteasy.resteasy_jaxrs.whatever]  JAXB provider is used
+< RESTEasy-trace: 09:54:06,835 TRACE [org.jboss.resteasy.resteasy_jaxrs.whatever]  request is processed by MyCustomEndPointResource
+< RESTEasy-trace: 09:54:06,875 TRACE [org.jboss.resteasy.resteasy_jaxrs.whatever]  Jackson 2 provider is used
+< RESTEasy-trace: 09:54:06,935 TRACE [org.jboss.resteasy.resteasy_jaxrs.whatever]  MyCustomWriterInterceptor is used
+* Connection #0 to host localhost left intact
+{"x" : 5, "y" : "foo"}
+----
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/WFLY-16018[WFLY-16018]
+
+=== Related Issues:
+
+* {issue-base-url}/EAP7-627[EAP7-627]
+* {issue-base-url}/EAP7-634[EAP7-634]
+* {issue-base-url}/EAP7-627[EAP7-606]
+
+=== Dev Contacts:
+
+* mailto:{email}[{author}]
+* mailto:jperkins@redhat.com[James Perkins]
+
+=== QE Contacts:
+
+TBD
+
+=== Testing By
+
+* [ ] Engineering
+* [ ] QE
+
+=== Affected Projects or Components:
+
+* WildFly
+* RESTEasy
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+* [x] Managed domain
+* [x] OpenShift s2i
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+=== Test Plan
+
+The features are tested in RESTEasy codebase. Successfully running the latest RESTEasy release' testsuite against target WildFly container will be required.
+
+== Community Documentation
+
+The documentation is coming with the release of the RESTEasy.
+
+
