@@ -59,7 +59,7 @@ allow users to specify that the search should continue on to the next realm if a
 === Non-Requirements
 
 == Test Plan
-Tests will be added to the Elytron testsuite.
+WildFly integration tests will be added. Tests also will be added to the Elytron testsuite.
 
 == Community Documentation
 
