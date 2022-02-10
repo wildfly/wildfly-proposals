@@ -37,9 +37,9 @@ This enhancmend will add an ignore-unavailable-realms boolean attribute to a dis
 * mailto:{email}[{author}]
 
 === Testing By
-[ ] Engineering
+[x] Engineering
 
-[x] QE
+[ ] QE
 
 === Affected Projects or Components
 * WildFly, Security, WildFly-Core, Elytron
@@ -52,9 +52,11 @@ This enhancmend will add an ignore-unavailable-realms boolean attribute to a dis
 
 * It should be possible to configure an ```distributed-realm``` with the optional attribute ```ignore-unavailable-realms``` which
 allow users to specify that the search should continue on to the next realm if a realm happens to be unavailable.
+Default value for the ```ignore-unavailable-realms``` attribute will be `false`.
 
 When ```ignore-unavailable-realms``` is set to true and realm happens to be unavailable, SecurityRealmUnavailableEvent will be emitted to the corresponding SecurityDomain.
 This can be turned off by adding `emit-events` attribute and setting it to `false`.
+`emit-events` is a new optional attribute with a default value set to `true`.
 
 
 === Nice-to-Have Requirements
@@ -66,3 +68,8 @@ WildFly integration tests will be added. Tests also will be added to the Elytron
 
 == Community Documentation
 
+Documentation should be added under elytron/components in the WildFly documentation, describing there added ```ignore-unavailable-realms``` attribute.
+
+== Release Note Content
+
+* New Distributed Realm attribute ```ignore-unavailable-realms```enables user to switch to ignore unavailable realms during search and continue searching in subsequent realms.
