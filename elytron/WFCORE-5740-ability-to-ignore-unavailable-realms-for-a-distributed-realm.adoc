@@ -72,4 +72,4 @@ Documentation should be added under elytron/components in the WildFly documentat
 
 == Release Note Content
 
-* New Distributed Realm attribute ```ignore-unavailable-realms```enables user to switch to ignore unavailable realms during search and continue searching in subsequent realms.
+* New Distributed Realm attribute ```ignore-unavailable-realms``` enables user to switch to ignore unavailable realms during search and continue searching in subsequent realms.
