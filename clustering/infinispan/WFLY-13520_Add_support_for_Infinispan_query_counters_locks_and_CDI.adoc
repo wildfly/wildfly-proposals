@@ -1,0 +1,138 @@
+= WFLY-13520 Add support for Infinispan query, counters, locks, and CDI
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WildFly currently ships with the following modules:
+
+* `org.infinispan.client.hotrod`: Hot Rod client
+* `org.infinispan.commons`: Common API between the embedded and client modules
+* `org.infinispan`: Embedded library
+* `org.infinispan.persistence.jdbc`: JDBC Cache Store
+* `org.infinispan.persistence.remote`: Hot Rod Cache Store
+
+To achieve feature parity with Infinispan embedded we would need to add the following modules:
+
+* `org.infinispan.cdi`: CDI bindings
+* `org.infinispan.query`: Query support
+* `org.infinispan.counter`: Clustered counter support
+* `org.infinispan.lock`: Clustered lock support
+
+For all of the above modules, RHDG engineering will donate the existing modules, including tests, to EAP.
+RHDG support and engineering will provide support for all use-cases relating to the components mentioned above, excluding the subsystems which would continue to be handled by EAP clustering.
+
+RHDG will provide documentation for the Infinispan API which can either be included in its modularized form or linked from the EAP documentation.
+
+It is understood that EAP will only use productized builds of the Infinispan/JGroups components that have already received RHDG QE sign-off.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-13520[WFLY-13520] Add support for Infinispan query, counters, locks, and CDI
+* https://issues.redhat.com/browse/EAP7-1446[EAP7-1446] Add support for Infinispan query, counters, locks, and CDI
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-13519[WFLY-13519] Infinispan module attribute needs to support multiple values (already completed)
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* RHDG QE Team
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* N/A
+
+=== Other Interested Projects
+
+* Infinispan
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+=== Nice-to-Have Requirements
+
+* N/A
+
+=== Non-Requirements
+
+* N/A
+
+== Backwards Compatibility
+
+No implications on backwards compatibility. This will only be adding optional modules.
+
+=== Default Configuration
+
+* No changes to the default configuration. Users wanting to use certain modules will change the `modules='...'` attribute of the cache container.
+
+=== Importing Existing Configuration
+
+* N/A
+
+=== Deployments
+
+* N/A
+
+=== Interoperability
+
+* N/A
+
+== Implementation Plan
+
+No coordination needed; will be delivered in a single PR. Other prerequisites were already merged.
+
+== Security Considerations
+
+No security implications.
+
+== Test Plan
+
+Added modules will be covered by smoke tests located in the `testsuite/integration/clustering` space, in the `org.jboss.as.test.clustering.cluster.infinispan` package.
+
+== Community Documentation
+
+These features are completely documented by the Infinispan team.
+The WildFly documentation will be updated with references to Infinispan documentation and nuances of using the modules in WildFly.
+
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
+
+* TBD (upon completion)
