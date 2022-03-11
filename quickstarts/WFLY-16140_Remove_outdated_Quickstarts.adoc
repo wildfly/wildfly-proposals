@@ -1,0 +1,240 @@
+= WFLY-16140 - Remove Outdated Quickstarts
+:author:            Eduardo Martins
+:email:             emartins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The current set of Quickstarts is considered excessive (102), with multiple variants of the same Quickstart (e.g. 5 kitchensink, 11 helloworld); and very outdated, with many quickstarts covering old and/or no longer functionalities.
+
+Also, moving forward we are turning the focus to the Developer Guide, going for a major rework of it, and the main role of the Quickstarts is to simply provide the ready-to-try apps, which are referenced by such a document. The new guide structure is simple, the user starts by developing an hello world from scratch on bare metal, and same for OpenShift, what could be seen as the first part of the guide, which is for first timer/beginner developers. This first part also has sections to take the hello world to specific technologies, such as EJB, messaging, or web services. The second part of the guide is for advanced users, covering advanced topics for multiple technologies supported by EAP, where we think most of the existent content from the EAP Developer Guide and QuickStarts guides will go to. Taking into account this kind of guide structure, the quickstarts to keep/upgrade should mainly be the ones that are relevant/needed for the document.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-16140[WFLY-16140]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1839[EAP7-1839]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [x] QE
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/quickstart
+* https://github.com/jboss-developer/jboss-eap-quickstarts
+
+=== Other Interested Projects
+
+* None
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+
+* [x] Bootable jar (local and cloud deployment)
+* [x] OpenShift S2I
+
+== Requirements
+
+* The following Quickstarts were reviewed by the develoepr team and selected for removal:
+
+** app-client
+*** Description: The `app-client` quickstart demonstrates how to code and package a client app and use the WildFly/JBoss EAP client container to start the client `Main` program.
+*** Removal justification: We should not be encouraging the use of this outdated technology. Besides that it's not Openshift compatible and achieving that would not be practical.
+
+** bean-validation
+*** Description: The `bean-validation` quickstart provides Arquillian tests to demonstrate how to use CDI, JPA, and Bean Validation.
+*** Removal justification: The bean-validation-custom-constraint quickstart is better and we don't need two quickstarts with respect to Bean Validation.
+
+** ejb-asynchronous
+*** Description: The `ejb-asynchronous` quickstart demonstrates the behavior of asynchronous EJB invocations by a deployed EJB and a remote client and how to handle errors.
+*** Removal justification: We have too many EJB related quickstarts, and we don't feel this one provides enough value to keep. The asynchronous EJB functionality usage makes little sense, and besides that, this quickstart is not Openshift compatible.
+
+** ejb-in-ear
+*** Description: The `ejb-in-ear` quickstart demonstrates how to deploy an EAR archive that contains a *JSF* WAR and an EJB JAR.
+*** Removal justification: We have too many EJB related quickstarts, and we don't feel this one provides enough value to keep. The ejb-throws-exception quickstart covers the same basic EJB usage, and a bit more.
+
+** ejb-in-war
+*** Description: The `ejb-in-war` quickstart demonstrates how to package an EJB bean in a WAR archive and deploy it to WildFly/JBoss EAP. Arquillian tests are also provided.
+*** Removal justification: We have too many EJB related quickstarts, and we don't feel this one provides enough value to keep. The ejb-throws-exception quickstart covers the same basic EJB usage, and a bit more.
+
+** ejb-security
+*** Description: The `ejb-security` quickstart demonstrates the use of Jakarta EE declarative security to control access to EJBs in WildFly/JBoss EAP.
+*** Removal justification: The concept of securing EJBs is still relevant but we have other quickstarts providing that, and this particular quickstart does not show anything useful on the server side, because the required configuration is now present in the out of the box configuration.
+
+** ejb-security-jaas
+*** Description: The `ejb-security-jaas` quickstart demonstrates how legacy `JAAS` security domains can be used in conjunction with `Elytron`
+*** Removal justification: This quickstart is no longer relevant since it involved configuring a legacy security domain and delegating authentication and authorization decisions to this legacy domain. We should instead look at introducing a new quickstart that covers the new jaas-realm Elytron resource.
+
+** greeter
+*** Description: The `greeter` quickstart demonstrates the use of CDI, JPA, JTA, EJB and JSF in WildFly/JBoss EAP.
+*** Removal justification: This quickstart just shows technologies well covered by many other quickstarts, and thus we feel it's redundant and should be removed.
+
+** helloworld-html5
+*** Description: The `helloworld-html5` quickstart demonstrates the use of CDI 1.2 and JAX-RS 2.0 using the HTML5 architecture and RESTful services on the backend.
+*** Removal justification: This quickstart is just a REST helloworld variant, which uses HTML5 too. We believe that the jaxrs-client quickstart is better as a basic REST quickstart, and it's enough to just keep that one.
+
+** helloworld-mbean
+*** Description: The `helloworld-mbean` quickstart demonstrates the use of CDI and MBean in WildFly/JBoss EAP and includes JConsole instructions and Arquillian tests.
+*** Removal justification: Usage of MBeans on apps is no longer a feature we want to promote, it's outdated and it's not Openshift friendly.
+
+** helloworld-rs
+*** Description: The `helloworld-rs` quickstart demonstrates a simple Hello World application, bundled and deployed as a WAR, that uses JAX-RS to say Hello.
+*** Removal justification: This quickstart is just a REST helloworld variant. We believe that the jaxrs-client quickstart is better as a basic REST quickstart, and it's enough to just keep that one.
+
+** helloworld-ssl
+*** Description: The `helloworld-ssl` quickstart is a basic example that demonstrates server side SSL configuration in WildFly/JBoss EAP.
+*** Removal justification: The out of the box configuration already contains a key-store, key-manager, server-ssl-context and the Undertow https-listener is already configured to make use of this server-ssl-context. So this quickstart doesn’t actually demonstrate anything useful at this point.
+
+** inter-app
+*** Description: The `inter-app` quickstart shows you how to use a shared API JAR and an EJB to provide inter-application communication between two WAR deployments.
+*** Removal justification: The functionality demonstrated by this quickstart is proprietary, not cloud friendly, and thus we feel this quickstart is not worth to keep.
+
+** jaxws-addressing
+*** Description: The `jaxws-addressing` quickstart is a working example of the web service using WS-Addressing.
+*** Removal justification: We only need two basic quickstarts regarding JAXWS, one about the most common Annotations usage, and another one with respect to the alternative usage of WSDL  and we feel that the jaxws-ejb and jaxws-retail are the ones we should keep.
+
+** jaxws-pojo
+*** Description: The `jaxws-pojo` quickstart is a working example of the web service endpoint created from a POJO.
+*** Removal justification: We only need two basic quickstarts regarding JAXWS, one about the most common Annotations usage, and another one with respect to the alternative usage of WSDL  and we feel that the jaxws-ejb and jaxws-retail are the ones we should keep.
+
+** jts-distributed-crash-rec
+*** Description: The `jts-distributed-crash-rec` quickstart uses JTS and Byteman to demonstrate distributed crash recovery across multiple application servers.
+*** Removal justification: This quickstart is outdated and is not Openshift compatible, we feel this is worth the effort to fix and keep.
+
+** kitchensink-angularjs
+*** Description: The `kitchensink-angularjs` quickstart demonstrates a Jakarta EE application using AngularJS with JAX-RS, CDI, EJB, JPA, and Bean Validation.
+*** Removal justification: This quickstart just adds an angularjs frontend to the standard kitchensink quickstart, which is not worth to keep considering the focus on the Developer Guide.
+
+** kitchensink-ear
+*** Description: The `kitchensink-ear` quickstart demonstrates web-enabled database application, using JSF, CDI, EJB, JPA, and Bean Validation, packaged as an EAR.
+*** Removal justification: This quickstart just changes the application packaging type compared to the standard kitchensink quickstart, which is not worth to keep considering the focus on the Developer Guide.
+
+** kitchensink-jsp
+*** Description: The `kitchensink-jsp` quickstart demonstrates how to use JSP, JSTL, CDI, EJB, JPA, and Bean Validation in WildFly/JBoss EAP.
+*** Removal justification: This quickstart just adds JSP to the standard kitchensink quickstart, which is not worth to keep considering the focus on the Developer Guide.
+
+** kitchensink-ml
+*** Description: The `kitchensink-ml` quickstart demonstrates a localized Jakarta EE compliant application using JSF, CDI, EJB, JPA, and Bean Validation.
+*** Removal justification: This quickstart just adds localization to the standard kitchensink quickstart, which we will move to the standard quickstart.
+
+** logging-tools
+*** Description: The `logging-tools` quickstart shows how to use JBoss Logging Tools to create internationalized loggers, exceptions, and messages and localize them.
+*** Removal justification: This quickstart is redundant, the logging qukckstarts is better with respect to logging, and kitchensink covers better the localization functionality.
+
+** managed-executor-service
+*** Description: The `managed-executor-service` quickstart demonstrates how Jakarta EE applications can submit tasks for asynchronous execution.
+*** Removal justification: The thread-racing quickstart is more complete yet simpler demonstration of the usage of Concurrency Utilities, no need to keep this one too.
+
+** messaging-clustering
+*** Description: The `messaging-clustering` quickstart does not contain any code and instead uses the `helloworld-mdb` quickstart to demonstrate clustering using ActiveMQ Messaging.
+*** Removal justification: This is just a doc and CLI scripts with different way to use helloworld-mdb, we should move the doc content to the developer guide and move the CLI scripts to helloworld-mdb, no need to keep this on its own.
+
+** payment-cdi-event
+*** Description: The `payment-cdi-event` quickstart demonstrates how to create credit and debit CDI Events in WildFly/JBoss EAP, using a JSF front-end client.
+*** Removal justification: This quickstart is redundant, considering basic CDI usage on many other quickstarts we will keep. Also the CDI component lead want to focus in the future in showing more advanced CDI usage on new/upgraded quickstarts.
+
+** resteasy-jaxrs-client
+*** Description: The `resteasy-jaxrs-client` quickstart demonstrates an external JAX-RS RestEasy client, which interacts with a JAX-RS Web service that uses CDI and JAX-RS.
+*** Removal justification: This quickstart is just a client to use with the helloworld-rs quickstart, and we believe that the jaxrs-client quickstart is better as a basic REST quickstart, and it's enough to just keep that one.
+
+** spring-greeter
+*** Description: The `spring-greeter` quickstart is based on the `greeter` quickstart, but differs in that it uses Spring MVC for Mapping `GET` and `POST` requests.
+*** Removal justification: We just need one Spring related quickstart, and the spring-resteasy one is the best one to keep.
+
+** spring-kitchensink-basic
+*** Description: The `spring-kitchensink-basic` quickstart is an example of a Jakarta EE application using JSP, JPA and Spring 5.x.
+*** Removal justification: We just need one Spring related quickstart, and the spring-resteasy one is the best one to keep.
+
+** spring-kitchensink-springmvctest
+*** Description: The  `spring-kitchensink-springmvctest` quickstart demonstrates how to create an MVC application using JSP, JPA and Spring 5.x.
+*** Removal justification: We just need one Spring related quickstart, and the spring-resteasy one is the best one to keep.
+
+** tasks-rs
+*** Description: The `tasks-rs` quickstart demonstrates how to implement a JAX-RS service that uses JPA persistence.
+*** Removal justification: This quickstart is a JAXRS variant of the tasks-jsf quickstart, which (unlike this one) is OpenShift compatible and we will keep.
+
+** websocket-client
+*** Description: Demonstrates use of a Javascript WebSocket client, WebSocket configuration, programmatic binding, and secure WebSocket.
+*** Removal justification: This quickstart is redundant considering the websocket functionality covered, we will keep just the websocket-hello and websocket-endpoint quickstarts.
+
+** xml-jaxp
+*** Description: The `xml-jaxp` quickstart demonstrates how to use Servlet and JSF to upload an XML file to WildFly/JBoss EAP and validate and parse it using DOM or SAX.
+*** Removal justification: The topics covered by this quickstart are not really related with WildFly/EAP, and not worth to cover in developer guide (file upload, xml parsing).
+
+=== Hard Requirements
+
+* N/A
+
+=== Nice-to-Have Requirements
+
+* N/A
+
+=== Non-Requirements
+
+* N/A
+
+== Implementation Plan
+
+*
+
+== Test Plan
+
+* This particular task does not require any test plan as the Quickstarts are being removed, not added. The present test coverage is sufficient and will remain for the reduced set of Quickstarts
+
+== Community Documentation
+
+* The Quickstart's community documentation is automatically built, and the removal of quickstarts requires no manual update.
+
+== Release Note Content
+
+The following Quickstarts were removed, due to being outdated and/or redundant:
+** app-client
+** bean-validation
+** ejb-asynchronous
+** ejb-in-ear
+** ejb-in-war
+** ejb-security
+** ejb-security-jaas
+** greeter
+** helloworld-html5
+** helloworld-mbean
+** helloworld-rs
+** helloworld-ssl
+** inter-app
+** jaxws-addressing
+** jaxws-pojo
+** jts-distributed-crash-rec
+** kitchensink-angularjs
+** kitchensink-ear
+** kitchensink-jsp
+** kitchensink-ml
+** logging-tools
+** managed-executor-service
+** messaging-clustering
+** payment-cdi-event
+** resteasy-jaxrs-client
+** spring-greeter
+** spring-kitchensink-basic
+** spring-kitchensink-springmvctest
+** tasks-rs
+** websocket-client
+** xml-jaxp
+
