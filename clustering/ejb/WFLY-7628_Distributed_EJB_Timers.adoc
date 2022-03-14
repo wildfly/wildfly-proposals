@@ -91,14 +91,14 @@ The following caches will be added to the default `ejb` cache-container configur
 For the HA profiles:
 
 	/subsystem=infinispan/cache-container=ejb/distributed-cache=persistent:add()
-	/subsystem=infinispan/cache-container=ejb/distributed-cache=persistent/component=locking:add(isolation=PESSIMISTIC)
+	/subsystem=infinispan/cache-container=ejb/distributed-cache=persistent/component=locking:add(isolation=REPEATABLE_READ)
 	/subsystem=infinispan/cache-container=ejb/distributed-cache=persistent/component=transaction:add(mode=BATCH)
 	/subsystem=infinispan/cache-container=ejb/distributed-cache=persistent/store=file:add(purge=false)
 
 And for non-HA profiles:
 
 	/subsystem=infinispan/cache-container=ejb/local-cache=persistent:add()
-	/subsystem=infinispan/cache-container=ejb/local-cache=persistent:component=locking:add(isolation=PESSIMISTIC)
+	/subsystem=infinispan/cache-container=ejb/local-cache=persistent:component=locking:add(isolation=REPEATABLE_READ)
 	/subsystem=infinispan/cache-container=ejb/local-cache=persistent:component=transaction:add(mode=BATCH)
 	/subsystem=infinispan/cache-container=ejb/local-cache=persistent/store=file:add(purge=false, passivation=false)
 
@@ -109,7 +109,7 @@ The following timer management provider will be added to the default distributab
 To enable use of the distributable timer service, a user will be required to modify the default timer-service configuration of the ejb3 subsystem as follows:
 
 	/subsystem=ejb3/service=timer-service:undefine-attribute(name=default-data-store)
-	/subsystem=ejb3/service=timer-service:write-attribute(name=default-persistent-timer-management=persistent)
+	/subsystem=ejb3/service=timer-service:write-attribute(name=default-persistent-timer-management, value=persistent)
 
 === Importing Existing Configuration
 
