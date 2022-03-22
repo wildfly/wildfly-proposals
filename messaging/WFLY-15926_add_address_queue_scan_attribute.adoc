@@ -1,0 +1,69 @@
+= Add an attribute to be able to define the address_queue_scan period.
+:author:            Emmanuel hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:          messaging,jms
+:idseparator:       -
+
+== Overview
+
+Apache Artemis now deletes queues in an asynchronous way using a scheduled thread. Being able to define the frequency at which queues marked to be deleted are effectively deleted is something we need to be able to configure.
+So we are adding a new `address_queue_scan` attribute to be able to set the period between each deletion process.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-15926[WFLY-15926]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1884[EAP7-1884]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+[X] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* Wildfly
+
+=== Other Interested Projects
+
+== Requirements
+
+Add a new `address_queue_scan`attribute to the https://wildscribe.github.io/WildFly/26.0/subsystem/messaging-activemq/server/[/subsystem=messaging-activemq/server resource] to define the scan periodicity.
+
+=== Hard Requirements
+
+Create the attribute to be able to configure the Artemis broker.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Implementation Plan
+
+* Add a positive LONG `address_queue_scan` attribute, with a default value set to `30000` in milliseconds. It is not required.
+
+This attribute will be added to the https://wildscribe.github.io/WildFly/26.0/subsystem/messaging-activemq/server/[/subsystem=messaging-activemq/server resource]
+
+== Test Plan
+
+* Changes in Wildfly management model will be covered in WF testsuite.
+
+== Community Documentation
+
+* Covered by attribute description in management model.
