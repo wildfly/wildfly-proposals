@@ -1,0 +1,84 @@
+= EAP Jakarta EE8 BOMs Name and Content Changes
+:author:            Eduardo Martins
+:email:             emartins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The Jakarta EE8 BOM (including its Maven artifactId jboss-eap-jakartaee8) and children BOMs need to be renamed, since EAP 8 will introduce Jakarta EE 10. For the same reason, the content of such BOMs, i.e the managed Maven dependencies related with the Jakarta EE platform, may also change.
+Besides the changes in the builders of such BOMs, we also need to update EAP documentation and application migration tooling, to help customers dealing with the changes of this proposal.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/EAP7-1852[EAP7-1852]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* Jan Stourac
+
+=== Testing By
+
+[ ] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+
+* WildFly, JBoss EAP
+
+=== Other Interested Projects
+
+* Migration Toolkit for Applications
+
+== Requirements
+
+=== Hard Requirements
+
+* BOMs Name Changes
+** The JBoss EAP `Jakarta EE 8` BOM should be renamed to JBoss EAP `EE` BOM, and its Maven artifactId coordinate `jboss-eap-jakartaee8` should be renamed to `jboss-eap-ee`. Similarly, the  Wildfly `Jakarta EE 8` BOM should be renamed to WildFly `EE` BOM, and its Maven artifactId coordinate `wildfly-jakartaee8` should be renamed to `wildfly-ee`.
+** The JBoss EAP `Jakarta EE 8 with Tools` BOM should be renamed to JBoss EAP `EE With Tools` BOM, and its Maven artifactId coordinate `jboss-eap-jakartaee8-with-tools` should be renamed to `jboss-eap-ee-with-tools`.  Similarly, the  Wildfly `Jakarta EE 8 With Tools` BOM should be renamed to WildFly `EE With Tools` BOM, and its Maven artifactId coordinate `wildfly-jakartaee8-with-tools` should be renamed to `wildfly-ee-with-tools`.
+
+* BOMs Content Changes
+** The Maven artifacts related with Jakarta EE 8 platform, which are managed dependencies in the BOMs referenced by this proposal, should be replaced by their successors in the Jakarta EE 10 platform. The same applies to any JBoss EAP component related with such artifacts that changes Maven Coordinates other than `version`.
+
+* BOMs Documentation
+** A new `EAP Jakarta EE8 BOMs Name and Content Changes` section should be added to the `Application Migration` chapter of the `EAP Migration Guide`, guiding customers to manually do the needed changes in their Maven Projects:
+*** Change the Maven Coordinates of the BOMs in Maven dependency management imports.
+*** Change the Maven Coordinates of the Jakarta EE platform artifacts in Maven dependencies.
+** Any other EAP Documentation reference to the `Jakarta EE 8` and `Jakarta EE 8 with Tools` BOMs should be updated to reflect the new names and Maven coordinates.
+
+* Migration Toolkit for Applications
+** New rules `EAP Jakarta EE8 BOMs Name and Content Changes` rules should be added to the `Migration Toolkit for Applications`, to warn customers and automatically, when possible, do the needed changes in their Maven Projects:
+*** Change the Maven Coordinates of the BOMs in Maven dependency management imports.
+*** Change the Maven Coordinates of the Jakarta EE platform artifacts in Maven dependencies.
+
+=== Nice-to-Have Requirements
+
+* NONE
+
+=== Non-Requirements
+
+* NONE
+
+== Test Plan
+
+* TODO
+
+== Community Documentation
+
+* Any WildFly Documentation reference to the `Jakarta EE 8` and `Jakarta EE 8 with Tools` BOMs should be updated to reflect the new names and Maven coordinates.
+
+== Release Notes Content
+
+* The JBoss EAP "Jakarta EE 8" BOM was renamed to JBoss EAP "EE" BOM, and its Maven artifactId coordinate "jboss-eap-jakartaee8" was renamed to "jboss-eap-ee". Please note that the managed dependencies in the BOM may also have changed, due to the supported Jakarta EE platform is now Jakarta EE 10.
+* The JBoss EAP "Jakarta EE 8 with Tools" BOM was renamed to JBoss EAP "EE with Tools" BOM, and its Maven artifactId coordinate "jboss-eap-jakartaee8-with-tools" was renamed to "jboss-eap-ee-with-tools". Please note that the managed dependencies in the BOM may also have changed, due to the supported Jakarta EE platform is now Jakarta EE 10.
+
