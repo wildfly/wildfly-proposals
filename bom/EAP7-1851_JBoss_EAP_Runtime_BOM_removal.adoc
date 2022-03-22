@@ -1,0 +1,76 @@
+= EAP Runtime Artifacts BOM Removal
+:author:            Eduardo Martins
+:email:             emartins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The Runtime BOM provides all EAP runtime artifacts, including internal ones that customers apps should not depend on, so from a standard customer perspective this BOM should be removed, and while there may be layered products (or customers which extend EAP internal functionality) that rely on this BOM and that we are not aware, those should rely instead on the other EAP BOMs.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/EAP7-1851[EAP7-1851]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* Jan Stourac
+
+=== Testing By
+
+[ ] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+
+* JBoss EAP
+
+=== Other Interested Projects
+
+* Migration Toolkit for Applications
+
+== Requirements
+
+=== Hard Requirements
+
+* BOMs Removal
+** The `EAP Runtime Artifacts` BOM, with Maven groupId:artifactId coordinates `org.jboss.bom:eap-runtime-artifacts`, should be not provided with JBoss EAP 8.
+
+* BOMs Documentation
+** A new `EAP Runtime Artifacts BOM Removal` section should be added to the `Application Migration` chapter of the `EAP Migration Guide`, guiding customers to manually do the needed changes in their Maven Projects:
+*** Replace the Maven Coordinates of the `EAP Runtime Artifacts` BOM in Maven dependency management imports, with the coordinates of the `JBoss EAP EE` BOM, specified by EAP7-1852.
+** Any other EAP Documentation reference to the `EAP Runtime Artifacts` BOM should be updated to point customers to the `JBoss EAP EE` BOM instead.
+
+* Migration Toolkit for Applications
+** A new `EAP Runtime Artifacts BOM Removal` rule should be added to the `Migration Toolkit for Applications`, to warn customers and automatically, when possible, do the needed changes in their Maven Projects:
+*** Replace the Maven Coordinates of the `EAP Runtime Artifacts` BOM in Maven dependency management imports, with the coordinates of the `JBoss EAP EE` BOM, specified by EAP7-1852.
+*** Provide a link to the `EAP Runtime Artifacts BOM Removal` section of the EAP Migration Guide.
+
+=== Nice-to-Have Requirements
+
+* NONE
+
+=== Non-Requirements
+
+* NONE
+
+== Test Plan
+
+* TODO
+
+== Community Documentation
+
+* The EAP Runtime BOM is not available in WildFly, thus nothing to change on WildFly documentation.
+
+== Release Notes Content
+
+* The "EAP Runtime Artifacts" BOM was removed, Maven projects should instead use the "JBoss EAP EE" BOM.
