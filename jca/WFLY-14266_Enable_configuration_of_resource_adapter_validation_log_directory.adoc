@@ -1,0 +1,67 @@
+= WFLY-14266 Enable configuration of resource adapter validation log directory
+:author:            Tomasz Adamski
+:email:             tadamski@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          connector, validation
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse/
+
+== Overview
+
+Currently resource-adapter validation logs are not created because report-directory property that IronJacamar uses is always null. The goal of this RFE is to implement config of validator log directory so that customers can see result of the validation.
+
+== Configuration
+
+'report-directory' tag will be added to 'resource-adapters' subystem. The tag will contain a 'path' element which configures the location of a validation log.
+
+{code}
+<subsystem xmlns="urn:jboss:domain:resource-adapters:6.1">
+  <resource-adapters>
+  (...)
+  </resource-adapters>
+  <report-directory path="/foo/baz"/>
+</subsystem>
+{code}
+
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/WFLY-14266[WFLY-14266]
+
+=== Related Issues:
+
+* {issue-base-url}/EAP7-1867[EAP7-1867]
+
+=== Dev Contacts:
+
+* mailto:{email}[{author}]
+
+=== Testing by:
+
+* Engineering
+
+=== Affected Projects or Components:
+
+* IronJacamar, WildFly Connector
+
+== Requirements
+
+Customers should be able to configure report directory for resource adapter validation logs.
+
+== Proposed solution
+
+Extends resource adapters subsystem so that it contains report-directory configuration.
+
+
+=== Test Plan
+
+Resource adapters subsystem tests would verify whether report-directory configuration is parsed correctly.
+
+=== Community docs
+
+* None
+
