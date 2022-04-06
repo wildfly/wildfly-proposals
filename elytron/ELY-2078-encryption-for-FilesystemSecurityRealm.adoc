@@ -1,0 +1,166 @@
+= [ELY-2078] Add encryption and integrity support to FilesystemSecurityRealm
+:author:            Ashpan Raskar
+:email:             araskar@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This objective of this proposal is to securely encrypt the identities and credentials in the `FileSystemSecurityRealm` stored on the local filesystem. In the past, the default for storing identities was via property files, but in future versions of WildFly, the plan is to use a FileSystemSecurityRealm as the default out of the box configuration instead. The FileSystemSecurityRealm currently uses Base64 to encode clear passswords, hashed passwords, and attributes, but we want to add the ability to encrypt the credentials and attributes for an identity. In order to do this, we plan to add SecretKey support, which is a symmetric key to encrypt and decrypt data.
+
+The objective is to encrypt the password, and attributes (eg: roles) with a SecretKey, the result of that will be a Base64 encoded string. The encrypted fields will be stored in the identity xml file.
+
+To store the SecretKey, a credential store will be created and the FileSystem realm will utilize the credential store to access the SecretKey to encrypt the FileSystem realm.
+
+For the default out of box configuration for WildFly, the goal is for the FileSystemSecurityRealm to make use of ScramDigest with AES encryption and integriy enabled.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/ELY-2078[ELY-2078]
+* https://issues.redhat.com/browse/WFCORE-5530[WFCORE-5530]
+* https://issues.redhat.com/browse/WFLY-15075[WFLY-15075]
+
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1717[EAP7-1717]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+* [X] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+- Widlfly, Wildfly Elytron, Wildfly Core
+
+=== Other Interested Projects
+N/A
+
+== Requirements
+=== Filesystem Encryption
+==== Hard Requirements
+In the FileSystemSecurityRealm in Elytron, a new optional parameter is introduced to the constructor that accepts a SecretKey. Passing in that parameter indicates that the user wants to encrypt the FileSystem. Also to eliminate the number of overloaded constructors, a FileSystemSecurityRealmBuilder was introduced.
+This is an example of using the new FileSystemSecurityRealm builder.
+```java
+ FileSystemSecurityRealm.builder()
+                        .setRoot(getRootPath())
+                        .setLevels(3)
+                        .setSecretKey(key)
+                        .build();
+```
+This will create a new file system with 3 levels for the identity file, encrypted with the Secret Key "key".
+
+In WildFly Core, the filesystem-realm will include new attributes to specify the credential store and the alias within the store that holds the secret key that should be used to enable encryption for the filesystem realm.
+
+*Attributes*
+
+`credential-store` - a reference to the credential store that contains the secret key used to encrypt and decrypt the filesystem-realm. This is an optional attribute.
+
+`secret-key` - an alias to the secret key used to encrypt and decrypt the filesystem-realm. If the credential-store attribute is specified, this attribute is required. Otherwise this is an optional attribute.
+
+To create an encrypted FileSystem the following commands would be used
+
+```bash
+/subsystem=elytron/secret-key-credential-store=mycredstore:add(path=propcredstore.cs, relative-to=jboss.server.config.dir, create=true, populate=true)
+```
+```bash
+/subsystem=elytron/filesystem-realm=fsRealm:add(path=fs-realm-users, relative-to=jboss.server.config.dir, credential-store=mycredstore, secret-key=key)
+```
+The filename is stored as the the principal (also know as the username) encoded in base32, once an identity is created with encryption enabled.
+For example the identity with the username `plainUser` will be saved in a file named `OBWGC2LOKVZWK4Q.xml`.
+The identity file being encrypted with a SecretKey that contains a bcrypt hashed password along with 5 attributes would look like the following.
+
+```XML
+<?xml version="1.0" ?>
+<identity xmlns="urn:elytron:1.0">
+    <credentials>
+        <password algorithm="bcrypt" format="enc_base64">RUxZAUMQo2svngST8+WfAg6BoeBtBH0exXBlwAQvN4jCxEuDwPUkniZkgx/3mfetwDJK4rql0jfaigStMAW8mE9iNXG5QQ==</password>
+    </credentials>
+    <attributes>
+        <attribute name="RUxZAUMQUO9rq4PRc3BB61B5oZSepATonjzj1dlUriqbsy//5fw=" value="RUxZAUMQwbcAyojI0gsU0BFxeuBw/zJXR8Umy/jk9tnWrvpRxu0="></attribute>
+        <attribute name="RUxZAUMQ5iZ43cvM0x/RwPxwnqxXZisDmFX0Un+f3pLQz0WDC3o=" value="RUxZAUMQWUAYVdzpdv4sKGaFblcIMsso6x0j5J9oCSHQiDbjJE8="></attribute>
+        <attribute name="RUxZAUMQl1xAhDoJdsMnk7ggw66zyClhUzzB79p859BkQrXazzo=" value="RUxZAUMQCV32L5vunNfLMCISdjyn7myJ0saJdAWreKq1BjnGjfU="></attribute>
+        <attribute name="RUxZAUMQ7t3uOr63lNMwD+Ljsq68ONPwGYdtbVLtdmbY6stZIjg=" value="RUxZAUMQ41IKUmpazIiXd4wQa67I+y35TLtssweZ/1aci7w71ag="></attribute>
+        <attribute name="RUxZAUMQDIjiDvRMr9sOCHnCyh8/uwytBJZOfgCsH0k0itNwcNA=" value="RUxZAUMQi3C21O9+je0b9kXHIsQyoiuSYYafYAFKS3h7iPM9+OE="></attribute>
+    </attributes></identity>
+```
+
+==== Converting Plain Realms to Encrypted Realms
+
+An elytron tool command will be added to let users convert their old unencrypted realms to an realm encrypted with a Secret Key.
+
+The following command would convert a realm located at `standalone/configuration/fs-realm-plain` to an encrypted one at `standalone/configuration/fs-realm-enc` with a Secret Key stored in `mycredstore.cs`.
+
+```bash
+$ ./bin/elytron-tool.sh filesystem-realm-encrypt -i ./standalone/configuration/fs-realm-plain -o ./standalone/configuration/fs-realm-enc -c ./mycredstore.cs
+```
+
+There are 3 mandatory parameters:
+
+- `input-location` - Location of unencrypted realm
+- `output-location` - Location of new encrypted realm
+- `credential-store` - Location of credential store
+
+Along with that there are 7 optional parameters:
+
+- `realm-name` - Name of new encrypted filesystem realm resource. Set to `encrypted-filesystem-realm` by default.
+- `create` - Whether or not the credential store should be dynamically created if it doesn't exist. Set to `true` by default.
+- `secret-key` - The alias of the secret key stored in the credential store file. Set to `key` by default.
+- `hash-encoding` - The hash encoding for the existing filesystem realm. Set to `BASE64` by default.
+- `encoded` - If the original realm has encoded set to true. Set to `true` by default.
+- `levels` - The levels for the existing filesystem realm. Set to `2` by default.
+- `populate` - Whether or not the credential store should be populated with a Secret Key. Set to `true` by default.
+- `bulk-convert` - If multiple realms needs to be converted all at once, this can be set to a file which specifies all the parameters of each realm
+
+
+=== Nice-to-Have Requirements
+N/A
+
+=== Non-Requirements
+In a follow up RFE the default out of the box configuration will be changed to use the filesystem realm to replace the properties realm.
+
+== Implementation Plan
+=== Filesystem Encryption
+- Need to modify FilesystemSecurityRealm
+    * Add SecretKey to constructors of FilesystemSecurityRealm
+    ** Object of type SecretKey
+    * Implement the SecretKey functions with the use of the CipherUtil class to encrypt the identities and attributes.
+    * Use encrypted principal in the filename and the directory levels (`pathFor()`) instead of the clear text name.
+    * `nameFor` method would have to decrypt the file name differently based on the filename format.
+    * In the `setCredentials()` method, both the principal and the evidence need to be encoded with the SecretKey. In the `setAttributes()` method, the attributes/roles need to be encoded with the SecretKey too.
+    * The `loadIdentity` methods need to be modified to decrypt the identity data, with the same SecretKey.
+    * `parseCredentials()`, `parsePassword()`, and `parseAttributes()` will also have to incorporate the decryption
+- The storage of the principal and passwords are handled separately. The principal is stored as the filename and encoded in base32, whereas the password is stored within the file and encrypted with a secret key and encoded with base64.
+- At the moment the only encoding right now for the principal and password (if plaintext is the choice of storage) is a base64 encoding, but this is very easily decodeable, very quickly. The solution is to encrypt it with a SecretKey, and then encode it wih Base64 afterwards.
+- Due to design limitations, the principal/username cannot contain illegal file characters, it requires the same output for every input, and it must be possible to determine the username from the filename. Due to these requirements, hashing would not work. Along with that the CipherUtil SecretKey methods would also not work as it uses a sort of randomization that ensures not every identical input will have the same encrypted output. As a result it was decided to just encode the principal with a base32 encoding and just encrypt the remaining information.
+
+- There were 2 options considered for the SecretKey's. The first was to encrypt each parameter: password, roles/attributes, with a separate SecretKey each, and store all the different SecretKey's in one shared `PropertiesCredentialStore`. The other option was to encrypt the different parameters with the same SecretKey and store it in one `PropertiesCredentialStore`. The decision chosen was to use just one SecretKey and the reasoning for that was because if there was a breach in security and the password for the PropertiesCredentialStore was leaked, if all the SecretKey's were in one `PropertiesCredentialStore`, then getting access to 3 SecretKey's as opposed to 1 SecretKey is no different and has no advantages.
+
+
+- The execution of creating an encrypted FileSystem realm would be as follows
+    * Create a CredentialStore (used to store the SecretKey). This would create a credential store and store a secret key inside it with an alias "key"
+    * Then the user would create a FileSystemRealm and pass in the reference of the credential store as well as passing in the alias of the secret key defined in the Elytron subsystem.
+- It will be necessary to modify the `FileSystemRealmDefinition` to incorporate the option to add a path to the credential store as well as the alias for the SecretKey if the user want's to encrypt their FileSystemRealm. This would go under the `RealmAddHandler` class in the `performRuntime()` method. Also will need to add a `SimpleAttributeDefinition` to pass in a SecretKey into the FileSystemSecurityRealm builder. Need to also update the `ElytronDescriptionConstants` with the constants containing encryption information too.
+
+== Test Plan
+Elytron subsystem filesystem-realm tests will be added. Tests will be added to the Elytron testsuite and the Elytron subsystem tests.
+
+== Community Documentation
+Documentation will be added in the "FileSystem Security Realm" section under elytron/components in the WildFly documentation to indicate that it is possible to encrypt the filesystem-realm during the creation.
+
+== Release Note Content
+Support for adding filesystem realm encryption support with the use of a SecretKey.
+
+It is now possible to encrypt identities that are stored on the local filesystem when using an Elytron filesystem-realm.
+
+It is also possible to encrypt a filesystem realm that already exists to be compatible with these new changes.
