@@ -132,18 +132,24 @@ WildFly. This change impacts ```run``` and ```start```goals).
 These configuration items are common to the ```provision``` and ```package``` goals. They are used to configure 
 Galleon to provision a server.
 
-* feature-packs: A list of feature-pack to install.
+* feature-packs: A list of feature-pack to install. This can be configured with the system property ``wildfly.provisioning.feature-packs`` containing 
+a comma separated list of feature-pack locations in the form of Maven coordinates GroupId:ArtifactId:Version or producer reference.
 * log-provisioning-time: Whether to log provisioning time at the end.
 * offline-provisioning: Whether to use offline mode when the plugin resolves an artifact.
 * galleon-options: Arbitrary Galleon options used when provisioning the server.
-* provisioning-dir: The name of the directory relative to the Maven project build directory used when the server is provisioned. 
+* provisioning-dir: The path to the directory where to provision the server. Can be an absolute path or a path relative to the Maven project build directory. 
+When absolute and outside the project build directory, the provisioned server will be not deleted when clean occurs.
 It defaults to ``server`` and will result in the server being provisioned in ``${project.build.directory}/server`` (which is resolved to ``target/server`` by default)
 * provisioning-file: The path to the provisioning.xml file to use, by default ```<project base dir>/galleon/provisioning.xml``` is used. If some feature-packs have been set, 
 the provisioning file is being ignored.
 * record-provisioning-state: Whether to record provisioned state in .galleon directory. When false, the file ```.wildfly-maven-plugin-provisioning.xml``` is generated in the server home directory.
 It contains Galleon provisioning information used to provision this server.
-* layers: A set of layers to include when building-up a custom configuration.
-* excluded-layers: A set of layers to exclude when building-up a custom configuration.
+* layers: A set of layers to include when building-up a custom configuration. This can be configured with the system property ``wildfly.provisioning.layers`` containing a comma separated list of layers.
+* excluded-layers: A set of layers to exclude when building-up a custom configuration.  This can be configured with the system property ``wildfly.provisioning.layers.excluded`` containing a comma separated list of layers.
+* layers-configuration-file-name: The name of the configuration file generated from layers. Default value is ``standalone.xml``. 
+If no ``layers`` have been configured, setting this parameter is invalid.
+* overwrite-provisioned-server: By default if the server referenced from the ``provisioning-dir`` exists when provision/package goals are called, the provisioning/packaging is disabled. By setting
+this parameter to true, the provisioned server will get deleted and provisioning/packaging will occur.
 
 ==== ```provision``` goal specific behavior
 
@@ -168,7 +174,9 @@ By default a lookup is done to retrieve the primary artifact to deploy. If no fi
 * name: The name of the deployment. By default the file name is used.
 * runtime-name: The runtime name of the deployment. By default the file name is used. NB: In order to deploy 
 the deployment inside the root context, ```ROOT.war``` runtime name is to be used.
-* server-config: The server config to use when executing CLI scripts and deploying artifact. Is ```standalone.xml``` by default.
+* server-config: The server config to use when executing CLI scripts and deploying artifact. Is ```standalone.xml``` by default. 
+If ``layers-configuration-file-name`` has been set, this property is ignored and the deployment is deployed inside the 
+configuration referenced from ``layers-configuration-file-name``.
 * stdout: Indicates how ```stdout``` and ```stderr``` should be handled for the forked CLI process. 
 By default the output is redirected to the current process. ```none``` to disable output, ```System.out``` or ```System.err``` to redirect to the current process. 
 Any other value is assumed to be the path to a file and the out/err will be written there. All CLI executions output is appended to the file.
@@ -183,6 +191,28 @@ Any other value is assumed to be the path to a file and the out/err will be writ
 ==== ```execute-commands``` goal impact
 
 * The ability to provision a server if no server installation is found is removed.
+
+==== Incremental development workflow on bare-metal
+
+A user should be able to provision/package and start the server then incrementally make change to his application and do some manual testing (eg: using 
+a web browser to interact with the application).
+
+Typical sequence of steps for an application in which the pom.xml contains a configured wildfly:package goal:
+
+* ``mvn package``: deployment deployed to trimmed WildFly server in path referenced by ``provisioning-dir``.
+* ``mvn wildfly:start``: server started
+* Developper makes change
+* ``mvn wildfly:deploy``: deployment re-deployed 
+* ``mvn wildfly:shutdown``: server shutdown
+
+Typical sequence of steps for an application in which the pom.xml doesn't contain a configured wildfly:package goal:
+
+* ``mvn package wildfly:package``: deployment deployed + provision default WildFly server in path referenced by ``provisioning-dir``.
+In order to trim the server, one can provide: ``-Dwildfly.provisioning.layers=cloud-server -Dwildfly.provisioning.feature-packs=org.wildfly:wildfly-galleon-pack:26.0.1.Final``
+* ``mvn wildfly:start``: server started
+* Developper makes change
+* ``mvn wildfly:deploy``: deployment deployed 
+* ``mvn wildfly:shutdown``: server shutdown 
 
 ==== WildFly Maven plugin versioning
 
