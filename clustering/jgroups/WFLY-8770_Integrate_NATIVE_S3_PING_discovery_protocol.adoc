@@ -1,25 +1,23 @@
-= Integrate NATIVE_S3_PING discovery protocol
+= WFLY-8770 Integrate NATIVE_S3_PING discovery protocol
 :author:            Radoslav Husar
 :email:             rhusar@redhat.com
 :toc:               left
 :icons:             font
-:keywords:          aws,ec2,s3,jgroups,ping,clustering
 :idprefix:
 :idseparator:       -
 
 == Overview
 
 `NATIVE_S3_PING` is a discovery protocol designed for JGroups cluster nodes running in AWS EC2.
-While there are other protocols that can be used in such an environment (TCPPING, JDBC_PING),
-the NATIVE_S3_PING is an ideal fit.
+While there are other protocols that can be used in such an environment (`TCPPING`, `JDBC_PING`), the `NATIVE_S3_PING` is an ideal fit.
 Discovery is performed by writing and reading from an S3 bucket.
 Protocol is automatically configured from system properties.
 
 Historically all protocols were bundled within main `jgroups-<version>.jar`.
-Since the main JGroups project does not allow runtime dependencies, protocols had to include a lot of unmaintainable copy-pasted and trimmed library code.
+Since the main JGroups project does not allow runtime dependencies, protocols had to include a lot of embedded unmaintainable copy-pasted and trimmed library code.
 This hinders supportability.
-Protocols needing to fetch dependencies now reside in separate repository in the https://github.com/jgroups-extras repository.
-As such, `NATIVE_S3_PING` resides in https://github.com/jgroups-extras/native-s3-ping repository.
+Protocols needing to fetch dependencies now reside in separate repositories in the https://github.com/jgroups-extras organization.
+As such, `NATIVE_S3_PING` resides in the https://github.com/jgroups-extras/native-s3-ping repository.
 
 == Issue Metadata
 
@@ -29,15 +27,20 @@ As such, `NATIVE_S3_PING` resides in https://github.com/jgroups-extras/native-s3
 
 === Related Issues
 
-* https://issues.redhat.com/browse/WFLY-9563[WFLY-8770] Integrate NATIVE_S3_PING discovery protocol (upstream issue)
+* https://issues.redhat.com/browse/WFLY-8770[WFLY-8770] Integrate NATIVE_S3_PING discovery protocol (upstream issue)
 
 === Dev Contacts
 
-* mailto:rhusar@redhat.com[Radoslav Husar]
+* mailto:{email}[{author}]
 
 === QE Contacts
 
-* mailto:TBD[TBD]
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [x] QE
 
 === Affected Projects or Components
 
@@ -46,7 +49,18 @@ As such, `NATIVE_S3_PING` resides in https://github.com/jgroups-extras/native-s3
 
 === Other Interested Projects
 
-* N/A
+* Infinispan Server already bundles this protocol.
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
 
 == Requirements
 
@@ -57,8 +71,42 @@ As such, `NATIVE_S3_PING` resides in https://github.com/jgroups-extras/native-s3
 
 === Nice-to-Have Requirements
 
-* N/A
-
 === Non-Requirements
 
 * Existing protocol properties (endpoint, region_name, bucket_name, bucket_prefix, check_if_bucket_exists) could be optionally exposed as model attributes.
+
+== Backwards Compatibility
+
+* N/A
+
+=== Default Configuration
+
+* N/A
+
+=== Importing Existing Configuration
+
+* N/A
+
+=== Deployments
+
+* N/A
+
+=== Interoperability
+
+* N/A
+
+== Security Considerations
+
+* No security implications to consider.
+
+== Test Plan
+
+Run existing QE AWS tests with updated protocol.
+
+== Community Documentation
+
+Documentation to be included in upstream.
+
+== Release Note Content
+
+The `NATIVE_S3_PING` JGroups discovery protocol is now available for usage for discovery in AWS EC2 out-of-box.
