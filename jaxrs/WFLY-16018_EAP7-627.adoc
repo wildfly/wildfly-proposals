@@ -79,6 +79,8 @@ TBD
 
 === Other Interested Projects
 
+* Any consumer that uses the tracing feature.
+
 === Relevant Installation Types
 
 * [x] Traditional standalone server (unzipped or provisioned by Galleon)
@@ -90,9 +92,13 @@ TBD
 
 === Hard Requirements
 
+* The tracing feature may expose RESTEasy internal engine information, which may contain security sensitive information, so please use it with caution.
+
 === Nice-to-Have Requirements
 
 === Non-Requirements
+
+* The tracing feature can be turned off by configuration.
 
 === Test Plan
 
