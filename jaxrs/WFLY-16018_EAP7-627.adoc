@@ -98,8 +98,6 @@ TBD
 
 === Non-Requirements
 
-* The tracing feature can be turned off by configuration.
-
 === Test Plan
 
 The features are tested in RESTEasy codebase. Successfully running the latest RESTEasy release' testsuite against target WildFly container will be required.
