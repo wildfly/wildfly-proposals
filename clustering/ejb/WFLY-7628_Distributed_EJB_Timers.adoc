@@ -23,6 +23,7 @@ This feature will add a new timer service implementation that uses the consisten
 === Related Issues
 
 * https://issues.redhat.com/browse/WFLY-14953[WFLY-14953]
+* https://issues.redhat.com/browse/WFLY-16270[WFLY-16270]
 
 === Dev Contacts
 
