@@ -65,7 +65,7 @@ Clustering, EJB
 ** Make existing ``default-data-store`` attribute of the timer service resource optional.  Use distributable implementation when this attribute is undefined.
 * Add default and named persistent timer management capabilities to distributable-ejb subsystem.
 ** Add named Infinispan timer management resource that provides the above capability.
-* Add an attribute to the timer service resource within the ejb3 subsystem to determine the server-wide default provider for transient timer management.
+* Add an attribute to the timer service resource within the ejb3 subsystem to determine the server-wide default provider for persistent timer management.
 * Add ability to enable distributed timer management (in lieu of a timer store) within ejb3 subsystem for management of persistent timers.
 * Existing timer service resource operations must continue to work when executed against the distributable `TimerService`.
 
