@@ -23,7 +23,7 @@ As such, `NATIVE_S3_PING` resides in the https://github.com/jgroups-extras/nativ
 
 === Issue
 
-* https://issues.redhat.com/browse/EAP7-863[EAP7-861] Integrate NATIVE_S3_PING discovery protocol
+* https://issues.redhat.com/browse/EAP7-863[EAP7-863] Integrate NATIVE_S3_PING discovery protocol
 
 === Related Issues
 
