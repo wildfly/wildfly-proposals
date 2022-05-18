@@ -35,9 +35,10 @@ As such, `NATIVE_S3_PING` resides in the https://github.com/jgroups-extras/nativ
 
 === QE Contacts
 
+* mailto:spriadka@redhat.com[Simon Priadka]
+
 === Testing By
-// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
-// Discuss with QE during the Kickoff state to decide this
+
 * [ ] Engineering
 
 * [x] QE
@@ -52,15 +53,14 @@ As such, `NATIVE_S3_PING` resides in the https://github.com/jgroups-extras/nativ
 * Infinispan Server already bundles this protocol.
 
 === Relevant Installation Types
-// Remove the x next to the relevant field if the feature in question is not relevant
-// to that kind of WildFly installation
+
 * [x] Traditional standalone server (unzipped or provisioned by Galleon)
 
 * [x] Managed domain
 
-* [x] OpenShift s2i
+* [ ] OpenShift s2i
 
-* [x] Bootable jar
+* [ ] Bootable jar
 
 == Requirements
 
@@ -101,7 +101,7 @@ As such, `NATIVE_S3_PING` resides in the https://github.com/jgroups-extras/nativ
 
 == Test Plan
 
-Run existing QE AWS tests with updated protocol.
+Run existing QE AWS tests with the new protocol.
 
 == Community Documentation
 
