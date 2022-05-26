@@ -8,7 +8,7 @@
 
 == Overview
 
-The server can be installed as a Lunix service by using two types of init daemon services:
+The server can be installed as a Linux service by using two types of init daemon services:
 
 * Init, also known as System V init, or SysVinit: The server is shipped with the required files to install it as an Init daemon service at $SERVER_HOME/docs/contrib/scripts/init.d
 * Systemd (System daemon): The server is shipped with the required files to install it as a System daemon service at $SERVER_HOME/docs/contrib/scripts/systemd
@@ -23,7 +23,7 @@ When the server is installed as a service, two parameters can be used to control
 
 The Shutdown Timeout always wins, if the graceful shutdown timeout is bigger than the shutdown timeout, you could be in the situation where your server is killed in the middle of a suspension.
 
-The initial goal of this RFE was to standardize the configuration of both timeouts on both types of scripts by using environment variables. However, that's not possible for the `TimeoutStopSec` directive, because systemd directives don't allow variable expansions. To accomplish the goal for this directive we would need to stop the server by supplying a new bash script to be executed on the `ExecStop` directive. It is better to use the out-of-the-box directive instead of reimplementing a similar feature by us. In addition, systemd services only would accept command line variables when these variables are configured as global variables. Those global variables are made available to all the systemd services, so changes could affect to any other service installation or had side effects out of its purpose.
+The initial goal of this RFE was to standardize the configuration of both timeouts on both types of scripts by using environment variables. However, that's not possible for the `TimeoutStopSec` directive, because systemd directives don't allow variable expansions. To accomplish the goal for this directive we would need to stop the server by supplying a new bash script to be executed on the `ExecStop` directive. It is better to use the out-of-the-box directive instead of reimplementing a similar feature by us. In addition, systemd services only would accept command line variables when these variables are configured as global variables. Those global variables are made available to all the systemd services, so changes could affect to any other service installation or have side effects out of its purpose.
 
 The goal of this RFE is to make available the configuration of the Graceful Shutdown Timeout by using a more simple variable that can be configured by the user instead of `-Dorg.wildfly.sigterm.suspend.timeout=<timeout>`.
 
