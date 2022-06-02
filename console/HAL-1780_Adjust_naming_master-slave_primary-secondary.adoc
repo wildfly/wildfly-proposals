@@ -1,0 +1,96 @@
+= Adjust naming in console "master/slave" → "primary/secondary"
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+Adjust the naming in the console introduced by EAP7-1558[https://issues.redhat.com/browse/EAP7-1558].
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1780[HAL-1780]
+* {issue-base-url}/EAP7-1895[EAP7-1895]
+
+=== Related Issues
+
+* EAP7-1558[https://issues.redhat.com/browse/EAP7-1558]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:spriadka@redhat.com[Simon Priadka]
+
+=== Testing By
+
+[x] Engineering
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+Replace all usage of `master`, `slave`, `blacklist` and `whitelist` both in resource addresses and UI elements.
+
+These following elements are affected in the console:
+
+* Bootstrap tasks:
+** `org.jboss.hal.client.bootstrap.tasks.FindDomainController`
+
+* Messaging subsystem
+** `org.jboss.hal.client.configuration.subsystem.messaging.AddressTemplates`
+** `org.jboss.hal.client.configuration.subsystem.messaging.DestinationPresenter`
+** `org.jboss.hal.client.configuration.subsystem.messaging.HaPolicyView`
+** `org.jboss.hal.client.configuration.subsystem.messaging.HaPolicyWizard`
+** `org.jboss.hal.client.configuration.subsystem.messaging.HaPolicy`
+
+* Patching
+** `org.jboss.hal.client.patching.HostPatchesPreview`
+
+* HAL API
+** `org.jboss.hal.core.runtime.host.Host.isDomainController()`
+** `org.jboss.hal.dmr.ModelDescriptionConstants.MASTER`
+** `org.jboss.hal.dmr.ModelDescriptionConstants.SLAVE`
+** `org.jboss.hal.dmr.ModelDescriptionConstants.REPLICATION_MASTER`
+** `org.jboss.hal.dmr.ModelDescriptionConstants.REPLICATION_SLAVE`
+** `org.jboss.hal.dmr.ModelDescriptionConstants.SHARED_STORE_MASTER`
+** `org.jboss.hal.dmr.ModelDescriptionConstants.SHARED_STORE_SLAVE`
+** `org.jboss.hal.resources.Ids.MESSAGING_HA_REPLICATION_COLOCATED_MASTER`
+** `org.jboss.hal.resources.Ids.MESSAGING_HA_REPLICATION_COLOCATED_SLAVE`
+** `org.jboss.hal.resources.Ids.MESSAGING_HA_REPLICATION_MASTER`
+** `org.jboss.hal.resources.Ids.MESSAGING_HA_REPLICATION_SLAVE`
+** `org.jboss.hal.resources.Ids.MESSAGING_HA_SHARED_STORE_COLOCATED_MASTER`
+** `org.jboss.hal.resources.Ids.MESSAGING_HA_SHARED_STORE_COLOCATED_SLAVE`
+** `org.jboss.hal.resources.Ids.MESSAGING_HA_SHARED_STORE_MASTER`
+** `org.jboss.hal.resources.Ids.MESSAGING_HA_SHARED_STORE_SLAVE`
+** `org.jboss.hal.resources.Messages.blacklist()`
+** `org.jboss.hal.resources.Messages.replicationMaster()`
+** `org.jboss.hal.resources.Messages.replicationSlave()`
+** `org.jboss.hal.resources.Messages.sharedStoreMaster()`
+** `org.jboss.hal.resources.Messages.sharedStoreSlave()`
+** `org.jboss.hal.resources.Names.MASTER`
+** `org.jboss.hal.resources.Names.SLAVE`
+** `org.jboss.hal.resources.Names.REPLICATION_MASTER`
+** `org.jboss.hal.resources.Names.REPLICATION_SLAVE`
+** `org.jboss.hal.resources.Names.SHARED_STORE_MASTER`
+** `org.jboss.hal.resources.Names.SHARED_STORE_SLAVE`
+
+== Test Plan
+
+Adjust all tests in the test suite that use `master`, `slave`, `blacklist` and `whitelist` as part of their resource addresses.
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
