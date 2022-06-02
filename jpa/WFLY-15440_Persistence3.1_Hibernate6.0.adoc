@@ -1,0 +1,46 @@
+= Hibernate ORM 6.0 Jakarta Persistence 3.1
+:author:            Scott Marlow
+:email:             smarlow@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Support Persistence 3.1 by including Hibernate ORM 6.0.x https://issues.redhat.com/browse/WFLY-15440/[WFLY-15440] + https://issues.redhat.com/browse/EAP7-1815[EAP7-1815].  Also update the WildFly Persistence Container to support Jakarta Persistence 3.1.
+
+Hibernate Search needs to be upgraded to 6.1 as per https://issues.redhat.com/browse/WFLY-15838/[WFLY-15838] + https://issues.redhat.com/browse/EAP7-1816[EAP7-1816]
+
+The new libraries will be added so that Jakarta EE 10 compatibility certification can happen.
+
+Migration notes for transition from Hibernate ORM 5.3 to 6.0 can be viewed via, these pages will be used as input for the EAP 8 documentation updates:
+
+* https://github.com/hibernate/hibernate-orm/blob/5.4/migration-guide.adoc
+* https://github.com/hibernate/hibernate-orm/blob/5.5/migration-guide.adoc
+* https://github.com/hibernate/hibernate-orm/blob/5.6/migration-guide.adoc
+* https://github.com/hibernate/hibernate-orm/blob/6.0/migration-guide.adoc
+
+== Issue Metadata
+
+=== Dev Contacts
+
+* mailto:{Scott Marlow}[{smarlow@redhat.com}] JPA / WildFly integration lead
+* mailto:{Paul Ferraro}[{pferraro@redhat.com}] WildFly clustering lead
+* mailto:{Steve Ebersole}[{steve@hibernate.org}] Hibernate ORM, project lead
+* mailto:{Sanne Grinovero}[{sanne@hibernate.org}] Hibernate team lead
+
+
+=== Other Interested Projects
+
+Infinispan project will support the Hibernate ORM 6.0 second level cache interfaces (SPI) which are compatible with the Hibernate ORM 5.3 second level cache interfaces (SPI) so that EAP 8 users can use a Persistence 2nd Level Cache.
+
+== Requirements
+
+Included JPA 3.1, Hibernate ORM 6.0+, Hibernate Search 6.1+.
+
+== Test Plan
+
+The Jakarta EE 10 TCKs must be passed with the upgraded Hibernate ORM version.
+
+The Hibernate ORM tests in the WildFly testsuite must be passed.
