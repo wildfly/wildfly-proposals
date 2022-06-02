@@ -1,0 +1,61 @@
+= Configure Enhanced Audit Logging
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+Add supprt for attributes `reconnect-attempts` and `syslog-format` of resource `/subsystem=elytron/syslog-audit-log=*`.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1592[HAL-1592]
+* {issue-base-url}/EAP7-1274[EAP7-1274]
+
+=== Related Issues
+
+* n/a
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:spriadka@redhat.com[Simon Priadka]
+
+=== Testing By
+
+[x] Engineering
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+The attributes `reconnect-attempts` and `syslog-format` are configurable for resource `/subsystem=elytron/syslog-audit-log=*`.
+
+=== Affected UI
+
+* Configuration / Subsystems / Security / Other Settings / Logs / Syslog Audit Log
+
+=== Affected Resources
+
+* `/subsystem=elytron/syslog-audit-log=*`
+
+== Test Plan
+
+The test for testing `/subsystem=elytron/syslog-audit-log=*` is extended to test the new attributes.
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
