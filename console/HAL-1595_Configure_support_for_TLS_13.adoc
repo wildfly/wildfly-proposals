@@ -9,7 +9,7 @@
 
 == Overview
 
-Add supprt for attribute `cipher-suite-names` of resource `/subsystem=elytron/server-ssl-context=*`.
+Add supprt for attribute `cipher-suite-names` for resources `/subsystem=elytron/client-ssl-context=*` and `/subsystem=elytron/server-ssl-context=*`.
 
 == Issue Metadata
 
@@ -46,10 +46,12 @@ The attribute `cipher-suite-names` is configurable in the Elytron configuration.
 
 === Affected UI
 
+* Configuration / Subsystems / Security / Other Settings / SSL / Client SSL Context
 * Configuration / Subsystems / Security / Other Settings / SSL / Server SSL Context
 
 === Affected Resources
 
+* `/subsystem=elytron/client-ssl-context=*`
 * `/subsystem=elytron/server-ssl-context=*`
 
 == Test Plan
