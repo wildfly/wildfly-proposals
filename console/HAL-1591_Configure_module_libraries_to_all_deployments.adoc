@@ -1,0 +1,61 @@
+= Configure module libraries to all deployments running in a server
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+Provide ability to configure a global directory or directories which puts the contents in the classpath for all deployments without needing to list the contents of the directory (ie not a module.xml)
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1591[HAL-1591]
+* {issue-base-url}/EAP7-1272[EAP7-1272]
+
+=== Related Issues
+
+* n/a
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:spriadka@redhat.com[Simon Priadka]
+
+=== Testing By
+
+[x] Engineering
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+Provide a view in the UI to configure the new EE resource `/subsystem=ee/global-directory=*`.
+
+=== Affected UI
+
+* Configuration / Subsystems / EE / Globals
+
+=== Affected Resources
+
+* `/subsystem=ee/global-directory=*`
+
+== Test Plan
+
+Add new CRUD tests to the test suite that test the new resource.
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
