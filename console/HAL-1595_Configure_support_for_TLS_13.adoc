@@ -1,0 +1,61 @@
+= Configure support for TLS 1.3
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+Add supprt for attribute `cipher-suite-names` of resource `/subsystem=elytron/server-ssl-context=*`.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1595[HAL-1595]
+* {issue-base-url}/EAP7-1280[EAP7-1280]
+
+=== Related Issues
+
+* n/a
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:spriadka@redhat.com[Simon Priadka]
+
+=== Testing By
+
+[x] Engineering
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+The attribute `cipher-suite-names` is configurable in the Elytron configuration.
+
+=== Affected UI
+
+* Configuration / Subsystems / Security / Other Settings / SSL / Server SSL Context
+
+=== Affected Resources
+
+* `/subsystem=elytron/server-ssl-context=*`
+
+== Test Plan
+
+The test for testing `/subsystem=elytron/server-ssl-context=*` is extended to test the attribute `cipher-suite-names`.
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
