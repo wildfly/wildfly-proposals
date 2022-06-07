@@ -10,6 +10,8 @@
 
 Support Persistence 3.1 by including Hibernate ORM 6.0.x https://issues.redhat.com/browse/WFLY-15440/[WFLY-15440] + https://issues.redhat.com/browse/EAP7-1815[EAP7-1815].  Also update the WildFly Persistence Container to support Jakarta Persistence 3.1.
 
+Consider including Hibernate https://github.com/hibernate/hibernate-orm/releases/tag/6.1.0[ORM 6.1.0] instead of Hibernate ORM 6.0.x.
+
 Hibernate Search needs to be upgraded to 6.1 as per https://issues.redhat.com/browse/WFLY-15838/[WFLY-15838] + https://issues.redhat.com/browse/EAP7-1816[EAP7-1816]
 
 The new libraries will be added so that Jakarta EE 10 compatibility certification can happen.
