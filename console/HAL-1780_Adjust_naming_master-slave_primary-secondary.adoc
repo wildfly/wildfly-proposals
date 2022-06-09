@@ -42,7 +42,12 @@ Adjust the naming in the console introduced by EAP7-1558[https://issues.redhat.c
 
 == Requirements
 
-Replace all usage of `master`, `slave`, `blacklist` and `whitelist` both in resource addresses and UI elements.
+Replace all usage of `master`, `slave`, `blacklist` and `whitelist` both in resource addresses and UI elements:
+
+* `master` → `primary`
+* `slave` → `secondary`
+* `blacklist` → `blocklist`
+* `whitelist` → `allowlist`
 
 These following elements are affected in the console:
 
