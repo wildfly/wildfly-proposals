@@ -1,0 +1,128 @@
+= <INSERT TITLE HERE>
+:author:            Kabir Khan
+:email:             kkhan@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+The scope of this RFE is to enhance the MicroProfile Reactive Messaging integration to include the AMQP connector in order to be able to send and receive data from AMQP message brokers.
+
+This is similar to the work already done to integrate with Kafka, and to be able to connect to an SSL secured AMQP broker we will leverage the same concepts to be able to use an SSLContext provided by the Elytron subsystem (see https://issues.redhat.com/browse/WFLY-14987[WFLY-14987]).
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-15405[WFCORE-15405]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-14987[WFLY-14987 - Securing the Kafka connector with an Elytron SSLContext]
+
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:{jstourac@redhat.com}[{Jan Stourac}]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [x] QE
+
+=== Affected Projects or Components
+The changes will be made in the MicroProfile Reactive Messaging subsystem modules in the WildFLy codebase. SmallRye Reactive Messaging provides an AMQP Connector which will be included, and in turn relies on clients from Vert.x.
+
+The AMQPConnector uses the Vert.x clients, which in turn are based on Netty. This is designed on the concept of configuring an SSLContext by specifying paramters for protocols, truststore parameters etc. On inspection, there was no way to pass in a pre-defined SSLContext to this stack. After discussion with the relevant team leads, PRs have been opened to the following projects to allow for this:
+
+* https://github.com/smallrye/smallrye-reactive-messaging/pull/1741
+* https://github.com/vert-x3/vertx-amqp-client/pull/80
+* https://github.com/vert-x3/vertx-proton/pull/129
+* https://github.com/eclipse-vertx/vert.x/pull/4375
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+// Unchecking this since it was done for e.g. https://github.com/wildfly/wildfly-proposals/blob/main/microprofile/WFLY-14987_reactive_messaging-ssl-context-kafka-connector.adoc#issue and https://github.com/wildfly/wildfly-proposals/blob/main/microprofile/WFLY-14798-upgrade-reactive-messaging-2.0.adoc
+* [ ] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* A separate Galleon layer will be provided for the AMQP connector. It is called `microprofile-reactive-messaging-amqp` and depends on the `microprofile-reactive-messaging` providing the core Reactive Messaging functionality.
+* It must be possible to send and receive messages from an AMQP message broker by using the standard MicroProfile Reactive Messaging constructs (@Incoming/@Outgoing annotated methods, as well as @Channel annotated Emitter and Publisher)
+* Version 1.0 of the AMQP protocol will be supported
+* MicroProfile Config using the properties documented by the https://smallrye.io/smallrye-reactive-messaging/4.5.0/amqp/amqp/[SmallRye Reactive Messaging AMQP Connector] (note the docs are spread over a few pages) are used to map the MicroProfile Reactive Messaging channels to an AMQP broker
+* If an SSLContext is needed (for example to configure truststores to connect to a secured broker which does not have a signed certificate), that is configured in a MicroProfile Config property referencing an SSLContext set up in the Elytron subsystem.
+** The format of the property is `<prefix>.wildfly.elytron.ssl.context=<Elytron SSLContext name>`. For example, to have an `@Outgoing` annotated method sending to the `source` channel secured via the `amqp-ssl-test` SSLContext from Elytron the property entry would look like `mp.messaging.outgoing.source.wildfly.elytron.ssl.context=amqp-ssl-test`.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+* Other AMQP protocol versions than 1.0 will not be supported at this time
+* SmallRye Reactive Messaging's AMQP Connector has a https://smallrye.io/smallrye-reactive-messaging/4.5.0/amqp/client-customization/[CDI mechanism] to do additional configuration of secured connections. This will not be supported. After discussions with the SmallRye team, it seems this mechanism was added in order to have something in this area, but the main polished work has been for their Kafka connector.
+** Although we won't support this, no steps will be taken to stop people from using this mechanism apart from the fact that the classes needed to implement this mechanism are in private modules. Also, we will not, at present, expose the involved jars in our BOMs
+*** Whether this mechanism works or not is unknown, untested. We should document this.
+** Rather than using this mechanism we should encourage users to use an SSLContext from the Elytron subsystem
+
+
+== Backwards Compatibility
+
+No backwards compatibility issues. This is an addition to the existing functionality, and does not replace or modify what is already there in any way. The feature as a whole, assuming that the MicroProfile Reactive Messaging subsystem is enabled, is driven by the presence of the modules provided by the `microprofile-reactive-messaging-amqp` Galleon layer.
+
+//=== Default Configuration
+//
+//=== Importing Existing Configuration
+//
+//=== Deployments
+//
+//=== Interoperability
+
+
+== Security Considerations
+
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+Configuration of connections to a secure AMQP broker is done via an SSLContext set up in the Elytron subsystem.
+
+== Test Plan
+
+Tests will be added to the microprofile module in the WildFly testsuite. It will check that messages can be sent to and from an AMQP broker (provided by an embedded Artemis instance).
+
+The tests will also check that both secured and unsecured AMQP brokers can be used.
+
+For the secure case we will reuse the keys generated in https://github.com/wildfly/wildfly-proposals/blob/main/microprofile/WFLY-14987_reactive_messaging-ssl-context-kafka-connector.adoc#generating-the-key-truststores[WFLY-14987], which also contains instructions on how to set up an SSLContext in the Elytron subsystem.
+
+
+== Community Documentation
+The WildFly documentation will be updated to cover this use case.
+
+== Release Note Content
+The MicroProfile Reactive subsystem now allows exchanging of messages with an AMQP broker via version 1.0 of the AMQP protocol.
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature.
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list
+of features containing a few words on each, use "Bullet point: <The few words>"
+////
