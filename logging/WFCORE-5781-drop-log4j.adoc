@@ -1,0 +1,87 @@
+= Remove log4j 1.x Module and Support
+:author:            James R. Perkins
+:email:             jperkins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Apache log4j 1.x became https://logging.apache.org/log4j/1.2/[end of life] on August 5, 2015. It has been the subject of
+CVE's recently and there is no more support for it. WildFly currently supports allowing users to include a log4j
+configuration file to configure log4j on deployments. It also adds a forked version of the dependency to each deployment.
+
+Due to the nearly 7 years of no more fixes and the CVE's, we should drop support for log4j 1.x. A user would still be
+able to include it in their deployment if they chose to use log4j 1.x, but WildFly would no longer provide support out
+of the box.
+
+Apache log4j 1.x also includes some support for appenders that use Java EE API's. This is a blocker for Jakarta EE 9+
+support.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-4355[WFCORE-45781]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1196[EAP7-1920]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TBD
+
+=== Testing By
+
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+* WildFly and WildFly Core
+* Any module that depends on `org.apache.log4j`
+* Migration tools
+
+== Requirements
+
+=== Hard Requirements
+
+* Modules which depend on the `org.apache.log4j` module need to be updated
+* Support for configuring a log manager if a deployment includes a log4j.xml`, `log4j.properties` or `jboss-log4j.xml`
+  configuration file will be removed.
+* Support for using a `org.apache.log4j.Appender` as a `custom-handler` will be removed.
+* A log4j module will no longer be added as a dependency to deployments.
+* Migration rules will be required to look for configuration files and possibly appenders used in the logging subsystem
+  configuration.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+* Any support for log4j 1.x
+
+== Implementation Plan
+
+== Test Plan
+
+Since this is a removal of a module and feature no tests will be added. Tests will only be removed.
+
+== Community Documentation
+
+Support for Apache log4j 1.x has been removed. You can no longer use a `org.apache.log4j.Appender` as a `custom-handler`.
+If you use Apache log4j in your deployment you *MUST* include a log4j library in your deployment. It is currently
+suggested to use https://reload4j.qos.ch/[reload4j]. Do note however, this will no longer process messages through the
+logging subsystem. A log4j configuration file will be required if you choose to continue using Apache log4j or a fork of
+it.
+
+With this removal if you include a `log4j.xml`, `log4j.properties` or `jboss-log4j.xml` configuration file in your
+deployment, the container will no longer configure a log4j log manager for you.
