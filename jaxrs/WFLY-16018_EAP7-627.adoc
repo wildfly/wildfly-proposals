@@ -100,7 +100,7 @@ TBD
 
 === Test Plan
 
-The features are tested in RESTEasy codebase. Successfully running the latest RESTEasy release' testsuite against target WildFly container will be required.
+The features are tested in RESTEasy codebase and also with the Arquillian test in WildFly. Successfully running the test in WildFly is required.
 
 == Community Documentation
 
