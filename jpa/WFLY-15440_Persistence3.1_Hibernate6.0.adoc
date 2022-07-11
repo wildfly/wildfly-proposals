@@ -10,6 +10,8 @@
 
 Support Persistence 3.1 by including Hibernate ORM 6.0.x https://issues.redhat.com/browse/WFLY-15440/[WFLY-15440] + https://issues.redhat.com/browse/EAP7-1815[EAP7-1815].  Also update the WildFly Persistence Container to support Jakarta Persistence 3.1.
 
+The list of databases to test with are in comments on https://issues.redhat.com/browse/EAP7-1820.
+
 Consider including Hibernate https://github.com/hibernate/hibernate-orm/releases/tag/6.1.0[ORM 6.1.0] instead of Hibernate ORM 6.0.x.
 
 Hibernate Search needs to be upgraded to 6.1 as per https://issues.redhat.com/browse/WFLY-15838/[WFLY-15838] + https://issues.redhat.com/browse/EAP7-1816[EAP7-1816]
@@ -46,3 +48,15 @@ Included JPA 3.1, Hibernate ORM 6.0+, Hibernate Search 6.1+.
 The Jakarta EE 10 TCKs must be passed with the upgraded Hibernate ORM version.
 
 The Hibernate ORM tests in the WildFly testsuite must be passed.
+
+The Hibernate ORM tests in the Hibernate ORM project must be passed against the following database servers for EAP 8:
+* IBM DB2 version 11.5
+* Oracle version 21c
+* MySQL version 8.0
+* MariaDB version version 10.8
+* MariaDB Galera Cluster versions Galera 4 + MariaDB 10.8
+* Microsoft SQL Server version 2019
+* PostgreSQL version 14.4
+* EnterpriseDB Advanced Server version 14.4
+* SAP (Sybase) ASE (Adaptive Server Enterprise version 16.0
+
