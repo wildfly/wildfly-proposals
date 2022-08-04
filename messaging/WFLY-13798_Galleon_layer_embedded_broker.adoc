@@ -1,0 +1,131 @@
+= Galleon layer for embedded broker messaging
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The Jakarta Messaging Service (JMS) provides an API for sending messages between two or more clients and a programming model to handle the producer-consumer messaging problem.
+Users wishing to use JMS in their applications need a mechanism to be able to connect to a message broker which is responsible for accepting messages from producers and making them available
+to consumers. The WildFly server is responsible for providing that mechanism to applications in accordance with the JMS specification. There are a number of ways the server
+can be configured to provide the necessary facilities. An easy practice is use an embedded broker, even if in a cloud environment it would be better to use a remote broker.
+So, WildFly should make it easy for users to provision a server that can embed an ActiveMQ broker.
+
+The goal of this feature is to supply a https://docs.wildfly.org/galleon/#_layers[Galleon layer] which will be responsible for providing the necessary embedded ActiveMQ Artemis broker integration.
+
+The following is a configuration example of the WildFly bootable JAR Maven plugin to provision a server with the `embedded-activemq` layer:
+
+[source,xml]
+----
+<plugin>
+    <groupId>org.wildfly.plugins</groupId>
+    <artifactId>wildfly-jar-maven-plugin</artifactId>
+    <configuration>
+        <feature-pack-location>wildfly@maven(org.jboss.universe:community-universe)#${version.wildfly}</feature-pack-location>
+        <layers>
+            <layer>embedded-activemq</layer>
+        </layers>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>package</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+----
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-13798[WFLY-13798 Add a Galleon layer for embedded broker messaging]
+* https://issues.redhat.com/browse/EAP7-1918[EAP7-1918 Add a Galleon layer for messaging integration with an embedded ActiveMQ Artemis broker]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-13354[WFLY-13354]
+* https://issues.jboss.org/browse/WFLY-13797[WFLY-13797]
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:jbliznak@redhat.com[Jan Bliznak]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [X] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+WildFly
+
+=== Other Interested Projects
+
+Apache Artemis
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* The Galleon layer must provide a messaging-activemq subsystem that provides the following resources:
+** /subsystem=messaging-activemq/server=default and its configuration.
+** /subsystem=messaging-activemq/pooled-connection-factory=activemq-ra using an in-vm connector.
+** /subsystem=messaging-activemq/pooled-connection-factory=RemoteConnectionFactory using a http connector.-
+* The Galleon layer must depend on the 'resource-adapters' layer in order to ensure that the necessary resource adapter support is provided.
+* The Galleon layer must depend on the 'cdi' layer in order to ensure that the necessary injection support is provided.
+* The Galleon layer must depend on the 'ee' layer in order to ensure that the necessary Jakarta EE support is provided.
+* The Galleon layer must depend on the 'naming' layer in order to ensure that the necessary JNDI support is provided.
+* The Galleon layer must depend on the 'elytron' layer in order to ensure that the necessary security support is provided.
+* The Galleon layer must depend on the 'remoting' layer in order to ensure that the necessary remoting support is provided.
+* The Galleon layer must depend on the 'resource-adaptersundertow' layer in order to ensure that the necessary http remoting support is provided.
+
+* The Galleon layer must configure the 'jms-connection-factory' attribute of the '/subsystem=ee/service=default-bindings' resource to use the 'java:jboss/DefaultJMSConnectionFactory' JNDI binding provided by the pooled-connection-factory=activemq-ra resource.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+
+The test coverage of the Galleon layer added by this proposal is divided in three main groups:
+
+. Testing the Galleon layer provisioning. This testing is done by https://github.com/wildfly/wildfly/blob/master/testsuite/layers/src/test/java/org/jboss/as/test/layers/LayersTestCase.java[LayersTestCase]. The testsuite will be modified to add a new server provisioned with this layer in isolation and with this layer combined with all the layers. For each kind of provisioning, this test does the following:
+
+.. Verifies the provisioned modules are the expected ones.
+.. Verifies the provisioned server starts successfully.
+
+. Execution of existing WildFly tests available in the WildFly test suite, which are directly testing this layer's functionalities, and execute them on a server installation provisioned with this layer.
+
+. Execution of existing WildFly tests related to interaction with an embedded messaging broker. Most such tests do assume an embedded broker, as WildFly's standard configuration historical includes one.
+
+Note that some of the coverage in the 3rd category of tests will be delivered as part of this feature but will require other features, e.g. Galleon layers for EJB (WFLY-13354). Tests of EJB interaction with a broker require both an EJB layer and a broker layer.
+
+== Community Documentation
+
+Community documentation plan is adding the layer to https://docs.wildfly.org/20/Admin_Guide.html#wildfly-galleon-layers[WildFly Galleon layers] in the section it belongs to.
+
+== Release Note Content
+
+A Galleon layer to provide support for Jakarta Messaging Service (JMS) integration with an embedded ActiveMQ Artemis broker.
