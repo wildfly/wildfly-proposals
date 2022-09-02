@@ -10,42 +10,32 @@
 
 == Overview
 
-RESTEasy should be able to provide trace information about request in response headers. These trace information should be in headers if:
+Tracing feature is a way for the users of the RESTEasy to understand what's going on internally in the container when a request is processed. It's different from the pure logging system or profiling feature, which provides more general information about the request and response.
 
-it is required by global settings for all application (for example by EAP7-634)
-it is required by settings for one application (for example by EAP7-634)
-it is required in request header (for example: curl -v --header "RESTEasy-trace: true" http://localhost:8080/jaxrs-wf/some)
+The RESTEasy tracing feature supports three logging mode:
 
-Trace information should contains all necessary information and times about processing of current request, like used interceptors, used exception mappers, used end-points, used providers, etc. Example:
+* OFF
+* ON_DEMAND
+* ALL
+
+"ALL" will enable the tracing feature. "ON_DEMAND" mode will give the control to client side: A client can send a tracing request via HTTP header and get the tracing info back from response headers. "OFF" mode will disable the tracing feature, and this is the default mode.
+
+Trace information should contain all necessary information and times about processing of current request, like used interceptors, used exception mappers, used end-points, used providers, etc. Example:
 
 [source,bash]
 ----
-$ curl -v --header "RESTEasy-trace: true" http://localhost:8080/jaxrs-wf/some
-*   Trying ::1...
-* connect to ::1 port 8080 failed: Connection refused
-*   Trying 127.0.0.1...
-* Connected to localhost (127.0.0.1) port 8080 (#0)
-> GET /jaxrs-wf/some HTTP/1.1
-> Host: localhost:8080
-> User-Agent: curl/7.43.0
-> Accept: */*
-> RESTEasy-trace: true
->
-< HTTP/1.1 200 OK
-< Connection: keep-alive
-< X-Powered-By: Undertow/1
-< Server: JBoss-EAP/7
-< Content-Type: application/octet-stream
-< Content-Length: 22
-< Date: Thu, 13 Apr 2017 08:02:44 GMT
-< RESTEasy-trace: 09:54:06,535 TRACE [org.jboss.resteasy.resteasy_jaxrs.whatever]  request was received, path: http://localhost:8080/jaxrs-wf/some
-< RESTEasy-trace: 09:54:06,735 TRACE [org.jboss.resteasy.resteasy_jaxrs.whatever]  MyCustomReaderInterceptor is used
-< RESTEasy-trace: 09:54:06,785 TRACE [org.jboss.resteasy.resteasy_jaxrs.whatever]  JAXB provider is used
-< RESTEasy-trace: 09:54:06,835 TRACE [org.jboss.resteasy.resteasy_jaxrs.whatever]  request is processed by MyCustomEndPointResource
-< RESTEasy-trace: 09:54:06,875 TRACE [org.jboss.resteasy.resteasy_jaxrs.whatever]  Jackson 2 provider is used
-< RESTEasy-trace: 09:54:06,935 TRACE [org.jboss.resteasy.resteasy_jaxrs.whatever]  MyCustomWriterInterceptor is used
-* Connection #0 to host localhost left intact
-{"x" : 5, "y" : "foo"}
+$ curl -i http://localhost:8081/foo
+...
+X-RESTEasy-Tracing-026: org.jboss.resteasy.plugins.server.servlet.Servlet3AsyncHttpRequest@5e84478b MBW         [ ---- /  5.95 ms |  ---- %] [org.jboss.resteasy.plugins.providers.FileProvider @37a3c619] is skipped
+X-RESTEasy-Tracing-027: org.jboss.resteasy.plugins.server.servlet.Servlet3AsyncHttpRequest@5e84478b MBW         [ ---- /  5.96 ms |  ---- %] [org.jboss.resteasy.plugins.providers.ByteArrayProvider @646b8da5] is skipped
+X-RESTEasy-Tracing-028: org.jboss.resteasy.plugins.server.servlet.Servlet3AsyncHttpRequest@5e84478b MBW         [ ---- /  5.97 ms |  ---- %] [org.jboss.resteasy.plugins.providers.StreamingOutputProvider @3b2a4bf4] is skipped
+X-RESTEasy-Tracing-029: org.jboss.resteasy.plugins.server.servlet.Servlet3AsyncHttpRequest@5e84478b MBW         [ ---- /  5.98 ms |  ---- %] [org.jboss.resteasy.plugins.providers.ReaderProvider @24729366] is skipped
+X-RESTEasy-Tracing-030: org.jboss.resteasy.plugins.server.servlet.Servlet3AsyncHttpRequest@5e84478b MBW         [ ---- /  5.99 ms |  ---- %] [org.jboss.resteasy.plugins.providers.DataSourceProvider @d481aff] is skipped
+X-RESTEasy-Tracing-031: org.jboss.resteasy.plugins.server.servlet.Servlet3AsyncHttpRequest@5e84478b MBW         [ ---- /  6.00 ms |  ---- %] [org.jboss.resteasy.plugins.providers.AsyncStreamingOutputProvider @35f6b856] is skipped
+X-RESTEasy-Tracing-032: org.jboss.resteasy.plugins.server.servlet.Servlet3AsyncHttpRequest@5e84478b MBW         [ ---- /  6.01 ms |  ---- %] [org.jboss.resteasy.plugins.providers.FileRangeWriter @5cea30f7] is skipped
+X-RESTEasy-Tracing-033: org.jboss.resteasy.plugins.server.servlet.Servlet3AsyncHttpRequest@5e84478b MBW         [ ---- /  6.02 ms |  ---- %] [org.jboss.resteasy.plugins.providers.InputStreamProvider @6c3361af] is skipped
+X-RESTEasy-Tracing-034: org.jboss.resteasy.plugins.server.servlet.Servlet3AsyncHttpRequest@5e84478b MBW         [ ---- /  6.02 ms |  ---- %] WriteTo by org.jboss.resteasy.plugins.providers.StringTextStar
+...
 ----
 
 == Issue Metadata
