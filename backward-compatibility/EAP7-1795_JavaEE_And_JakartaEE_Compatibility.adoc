@@ -1,6 +1,6 @@
 = [EAP7-1795] EAP7 applications have to communicate with EAP8 apps successfully and vice versa
-:author:            Richard Opalka
-:email:             ropalka@redhat.com
+:author:            Richard Opalka; Flavia Rainone
+:email:             ropalka@redhat.com; frainone@@redhat.com
 :toc:               left
 :icons:             font
 :idprefix:
@@ -20,10 +20,12 @@ compatibility between Java EE 8- and Jakarta EE 9+ WildFly/EAP versions.
 === Related Issues:
 
 * https://issues.redhat.com/browse/EAP7-1453[EAP7-1453]
+* https://issues.redhat.com/browse/EAP7-1960[EAP7-1960]
 
 === Dev Contacts:
 
 * mailto:ropalka@redhat.com[Richard Opalka]
+* mailto:frainone@redhat.com[Flavia Rainone]
 
 === QE Contacts:
 
@@ -38,7 +40,11 @@ compatibility between Java EE 8- and Jakarta EE 9+ WildFly/EAP versions.
 * Ability of Java EE 8- client/server to communicate with Jakarta EE 9+ server/client via EJB, JNDI and HTTP remote protocols.
 * Ability of Jakarta EE 9+ client/server to communicate with Java EE 8- server/client via EJB, JNDI and HTTP remote protocols.
 * Java EE 8- WildFly/EAP versions cannot be modified in order to be able to communicate with Jakarta EE9+ WildFly/EAP variants.
-* Backward compatibility mode is on by default.
+* Backward compatibility mode is off by default, and can be enabled by setting the `org.wildfly.ee.interoperable` system
+property to `true`.
+* If the property is set to `true` on a Java EE 8- server/client, it is ignored, as those clients and servers are not
+responsible for handling interoperability.
+
 
 === None requirements
 
@@ -53,11 +59,17 @@ one of the must-execute tests for ensuring backward compatibility between EAP8+ 
 
 == Community Documentation
 
-If there will be some activation system properties defined we will need to provide documentation for them.
+Community documentation will be provided for how to enable EE interoperability among remote EE clients and servers.
+It will be based on this analysis document as reference.
 
 == Design Notes
 
-We propose the following changes to the following libraries:
+The EE interoperability can be enabled in the server or client only when it supports Jakarta EE 9+. If that is the case,
+and the server or client is started with the system property `org.wildfly.ee.interoperable` set to `true`, the server
+and client becomes compatible with other Java EE servers/clients. We say that
+the server or client is running on EE interoperable mode.
+
+To implement that, we propose the following changes to the following libraries:
 
 === JBoss Marshalling
 
@@ -71,7 +83,8 @@ Since JBoss EJB protocol supports 'handshake' kind of messages it is possible to
 
 * Introduce new major version 4 of remote EJB protocol to indicate EJB client/server is supporting Jakarta EE 9+.
 * Activate version 4 of EJB protocol if and only if JBoss EJB client/server is used in Jakarta EE9+ environment.
-* Install Java EE <-> Jakarta EE class name transformer if and only if Jakarta EE9+ environment is detected and other side is using version 1 or 2 or 3 of the protocol.
+* Install Java EE <-> Jakarta EE class name transformer if and only if the client/server is running on EE interoperable
+mode, and the other side is using version 1 or 2 or 3 of the protocol.
 
 === WildFly Naming Client
 
@@ -79,11 +92,83 @@ Since WildFly NAMING protocol supports 'handshake' kind of messages it is possib
 
 * Introduce new major version 3 of remote NAMING protocol to indicate NAMING client/server is supporting Jakarta EE 9+.
 * Activate version 3 of NAMING protocol if and only if WildFly NAMING client/server is used in Jakarta EE9+ environment.
-* Install Java EE <-> Jakarta EE class name transformer if and only if Jakarta EE9+ environment is detected and other side is using version 1 or 2 of the protocol.
+* Install Java EE <-> Jakarta EE class name transformer if and only if the client/server is running on EE interoperable
+mode, and the other side is using version 1 or 2 of the protocol.
 
 === WildFly Http Client
 
-Since WildFly HTTP protocol doesn't support 'handshake' kind of messages it is not possible to detect other side protocol version in advance. Because of this we propose to:
+Since WildFly HTTP protocol doesn't support 'handshake' kind of messages it is not possible to detect other side
+protocol version in advance. Because of this we propose to:
 
-* Install Java EE <-> Jakarta EE class name transformer if and only if WildFly HTTP client/server is used in Jakarta EE9+ environment.
-* Always translate all Jakarta EE types to Java EE types regardless if other side supports Jakarta EE9+ environment.
+* implement a handshake based on a HTTP header
+* Install Java EE <-> Jakarta EE class name transformer only if the server is on EE interoperable mode if the handshake
+indicates the connection requires such transformer
+
+The handshaking between two Jakarta client and servers, both running on EE interoperable mode, works as follows:
+
+* whenever the client side opens a new connection to a server, the first request it sends via that connection contains
+the `x-wf-ee-api: interop` HTTP header, and that first request is marshalled
+with the Java EE <-> Jakarta EE class transformer, transforming the request to Java EE format
+* the server receives the request, verifies it has the `x-wf-ee-api: interop` header, and enables the class name
+transformer to transform the request back to Jakarta. The server though sends the response without the tranformer, with
+the Jakarta classes intact, and adds the `x-wf-ee-api: jakarta` header to the response
+* the client receives such response and reads the header. It indicates that this connection is a
+Jakarta EE connection at both ends, and the client is not supposed to transform the classes contained in the response
+data.
+* from that point on, whenever the client uses the same connection, no transformation is done on its side. Furhtermore,
+all requests sent by the client through this connection contain the
+`x-wf-ee-api: jakarta` header
+* whenever the server receives a request with the `x-wf-ee-api: jakarta` header, it knows that the client is a
+Jakarta EE client running on EE interoperable mode. So, it does not use any class file transformer
+for reading the request and writing the response.
+
+Here is how the handshaking works when an EE interoperable client sends a request to a Java EE server:
+
+* as in the previous case, the client side opens a new connection to a server, and the first request it sends via that
+connection contains the `x-wf-ee-api: interop` HTTP header. Also, that first request is marshalled
+with the Java EE <-> Jakarta EE class transformer, transforming the request to Java EE format
+* the Java EE server receives the request in Java EE format and handles the request normally, ignoring the
+`x-wf-ee-api: interop` header.
+* the client receives the server response and checks it does not contain the `x-wf-ee-api` header. So, it enables the
+Java EE <-> Jakarta EE class name transformer for that connection.
+* from that point on, whenever the client uses the same connection, no extra header is added, and the
+class name transformer is always enabled, guaranteeing that the Jakarta EE classes are translated to Java EE classes
+on every request, and transformed back on every response
+
+The final handshake scenario is a Java EE client sending a request to a EE interoperable server:
+
+* client sends the request to the server in the standard way, and the request  naturally can contain Java EE
+classes
+* the server receives the request and verifies it does not contain the `x-wf-ee-api` header. The server interprets
+this as an indication that the client is Java EE, and it enables the class name transformer for both reading the request
+and writing the response back to the client.
+
+=== Communication Across Multiple Endpoints
+The following table summarizes the possible scenarios where a client can
+communicate with a server remotely:
+
+|===
+|                                   |Java EE 8- client | Jakarta EE 9+ client | Jakarta EE 9+ interoperable client
+|Java EE 8- server                  | Yes              | No                   | Yes
+|Jakarta EE 9+ server                | No               | Yes                  | No
+|Jakarta EE 9+ interoperable server | Yes              | No                   | Yes
+|===
+
+Notice that, in order for a Jakarta EE client to be able to communicate with a Jakarta EE server,
+they both need to be run under the same EE interoperability mode, either
+interoperability is enabled for them both, or disabled.
+
+The code could, in the future, be smarter and detect when the other end is
+on EE interoperability mode or a Java EE instance, and print a warning
+indicating that the EE interoperability must be enabled at this server/client
+so they can establish proper communication. However, this will require catching a ClassCastException
+when marshalling/unmarshalling and checking if the exception message contains
+`"javax"`.
+
+====
+*Note*: all servers and clients are interoperable if the communication does not involve any EE class.
+This might lead a user to mistakenly believe that no such configuration was needed _"before, when my code was doing one thing, but
+now it has changed and it no longer works"_. However, *full interoperability among the clients and servers with mixed
+different EE libraries (i.e, Java EE vs Jakarta EE) is only guaranteed when all Jakarta elements of that communication
+are running on EE interoperable mode*.
+====
