@@ -23,15 +23,29 @@ compatibility between Java EE 8- and Jakarta EE 9+ WildFly/EAP versions.
 * https://issues.redhat.com/browse/EAP7-1960[EAP7-1960]
 
 === Dev Contacts:
-
 * mailto:ropalka@redhat.com[Richard Opalka]
 * mailto:frainone@redhat.com[Flavia Rainone]
 
 === QE Contacts:
+TODO!!!
+
+=== Testing By
+* [ ] Engineering
+
+* [x] QE
 
 === Affected Projects or Components:
 
 * JBoss Marshalling, JBoss EJB Client, WildFly Naming Client, WildFly Http Client
+
+=== Relevant Installation Types
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
 
 == Requirements
 
@@ -60,7 +74,10 @@ one of the must-execute tests for ensuring backward compatibility between EAP8+ 
 == Community Documentation
 
 Community documentation will be provided for how the aforementioned compatibility among remote EE clients and servers.
-It will be based on this analysis document as reference.
+It will be added to the WildFly documentation, and it will be based on this analysis document as reference.
+
+== Release Note Content
+Bullet point: support interoperability between Jakarta EE 9 servers and Java EE 8 or older servers
 
 == Design Notes
 
