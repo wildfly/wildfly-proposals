@@ -76,6 +76,9 @@ one of the must-execute tests for ensuring backward compatibility between EAP8+ 
 Community documentation will be provided for how the aforementioned compatibility among remote EE clients and servers.
 It will be added to the WildFly documentation, and it will be based on this analysis document as reference.
 
+Also, the wildfly-http-client project documentation must also be updated describing the changes applied to the WildFly
+HTTP Client protocol.
+
 == Release Note Content
 Bullet point: support interoperability between Jakarta EE 9 servers and Java EE 8 or older servers
 
