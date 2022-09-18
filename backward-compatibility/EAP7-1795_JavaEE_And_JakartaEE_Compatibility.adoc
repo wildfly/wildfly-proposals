@@ -125,7 +125,8 @@ interoperable mode, and the other side is using version 1 or 2 of the protocol.
 === WildFly Http Client
 
 Since WildFly HTTP protocol doesn't support 'handshake' kind of messages it is not possible to detect other side
-protocol version in advance. Because of this we propose to:
+protocol version in advance. The version number is in the URL of the particular service provided by the server, and the request
+is sent directly to that particular URL, without prior negotiation. Because of this we propose to:
 
 * implement a handshake based on a HTTP header
 * Install Java EE <-> Jakarta EE class name transformer if and only if the server is on EE namespace interoperable mode
@@ -171,6 +172,12 @@ namespace classes
 this as an indication that the client is Java EE 8-, and it enables the class name transformer for both reading the request
 and writing the response back to the client.
 
+If a Jakarta EE9+ server receives a request from an EE namespace interoperable client, even if the server is not on
+interoperable mode it will be able to respond, because it will check the presence of the `x-wf-ee-ns: interop`
+header. In this case, it will apply the class name transformation to the request on read, and it will add the
+`x-wf-ee-ns: jakarta` header to the response on write. This allows the non-interoperable server to be able to serve
+requests from interoperable clients.
+
 === Communication Across Multiple Endpoints
 The following table summarizes the possible scenarios where a client can
 communicate with a server remotely:
@@ -178,15 +185,15 @@ communicate with a server remotely:
 |===
 |                                             |Java EE 8- client | Jakarta EE 9+ client | Jakarta EE 9+ namespace interoperable client
 |Java EE 8- server                            | Yes              | No                   | Yes
-|Jakarta EE 9+ server                         | No               | Yes                  | No
+|Jakarta EE 9+ server                         | No               | Yes                  | Yes
 |Jakarta EE 9+ namespace interoperable server | Yes              | No                   | Yes
 |===
 
-Notice that, in order for a Jakarta EE 9+ client to be able to communicate with a Jakarta EE 9+ server,
-they both need to be run under the same EE namespace interoperability mode. Either interoperability is enabled for them
-both, or disabled for them both.
+Notice that, in order for a Jakarta EE 9+ client to be able to communicate with a Jakarta EE 9+ interoperable server,
+the client must be also running on EE namespace interoperable mode.
 
-The code could, in the future, be smarter and detect potential mismatches between the endpoints that will cause the
+Regarding handling cases where a server is non interoperable and receives a Javax EE namespace request, the code could,
+in the future, be smarter and detect potential mismatches between the endpoints that will cause the
 communication to fail. Such as current endpoint is not EE namespace interoperable while the other end is otherwise, or
 even if the other end is a Java EE 8- instance. If we do so, we could print a warning indicating that the EE namespace
 interoperability must be enabled at this server/client, so it can establish proper communication with the remote
@@ -195,11 +202,10 @@ endpoint. However, there are two options to print this warning:
 * verifying if the message indicates the remote endpoint is running on EE namespace interoperability mode
 * or catching a ClassCastException when marshalling/unmarshalling and checking if the exception message contains `"javax"`
 
-While the former option sounds more elegant, it would not work for all scenarios. A non EE interoperable Jakarta EE9+
-server with an HTTP connection could check if the request contains the `x-wf-ee-ns` header and print the warning. But the client would not have
-a way of detecting if it is invoking an incompatible server, unless we change the protocol to apply a `x-wf-ee-ns:javax` header to
+While the former option sounds more elegant. The client would not have a way of detecting if it is invoking an incompatible
+server, unless we change the protocol to apply a `x-wf-ee-ns:javax` header to
 Java 8- clients requests. Both extra actions at the two ends will result in a performance penalty. The solution
-we propose at this comment was designed in a way to prevent by all means any kind of overhead in the standard
+we propose at this moment was designed in a way to prevent by all means any kind of overhead in the standard
 communication between two Jakarta EE 9+ endpoints, leaving the extra overhead to the special case of an Java EE 9+
 endpoint needing to communicate with Java EE8- endpoints.
 
