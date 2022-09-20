@@ -15,10 +15,11 @@ compatibility between Java EE 8- and Jakarta EE 9+ WildFly/EAP versions.
 
 === Issue:
 
-* https://issues.redhat.com/browse/EAP7-1795[EAP7-1795]
+* https://issues.redhat.com/browse/WFLY-16296[WFLY-16296]
 
 === Related Issues:
 
+* https://issues.redhat.com/browse/EAP7-1795[EAP7-1795]
 * https://issues.redhat.com/browse/EAP7-1453[EAP7-1453]
 * https://issues.redhat.com/browse/EAP7-1960[EAP7-1960]
 
