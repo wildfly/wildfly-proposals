@@ -1,0 +1,326 @@
+= WFLY-16863, express standalone default configurations with Galleon Layers, phase 1
+:author:           Jean-Francois Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Standalone default configurations are wildly used. These configurations allow to start using WildFly without having to customize the server.
+
+Today standalone configurations, due to the Galleon internal structure they are based on, require that a complete installation of the server be installed
+to be usable. They are not benefiting from Galleon trimming capabilities that tooling based on Galleon offers.
+
+Tuning a default configuration to add/remove subsystems is a complex task (mainly due to capability dependencies checks). 
+
+So today, standalone configurations are hard to customize and require a full server to be usable. Although being generated using Galleon they are
+not benefiting from Galleon full capabilities, such as:
+
+* Ability to reduce the server installation size and number of binary artifacts. 
+* Ability to easily add/remove subsystems (and dependencies).
+
+We are here proposing to partially solve these issues by changing the internal Galleon structure they depend on.
+
+Galleon Layers feature has been introduced in Galleon in order to solve this kind of issues. 
+But until now, the standalone default configurations have not been benefiting from it.
+
+We plan to handle this RFE in 2 iterations. 
+
+* A first iteration (this WFLY-16863) that targets WF28 that would re-implement default standalone configuration using the set of existing Galleon layers.
+ Such refactoring should be treated as an implementation detail that doesn't require community documentation, examples, ...
+This iteration would put in place the basic blocks allowing to expand on it. Nevertheless, ability to trim down the size of a valid standalone config 
+should be made possible.
+
+* A second iteration (TBD) that would target WF TBD that would focus on trimming and tuning standalone default configurations 
+to include/exclude Galleon layers in/from a default configuration.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-16863[WFLY-16863]
+
+=== Related Issues
+
+* NONE
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [X] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly[WildFly]
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+The 3 feature-packs defined in the wildfly source repository: `wildfly-ee-galleon-pack`, `wildfly-galleon-pack` and `wildfly-preview-feature-pack` 
+must have their standalone default configurations expressed with Galleon Layers.
+
+We are here re-implementing the following standalone default configs with Galleon layers:
+
+* standalone.xml
+* standalone-ha.xml
+* standalone-full.xml
+* standalone-full-ha.xml
+
+We are not expecting the default configurations to be 100% expressed with Galleon layers. 
+Some configuration adjustments can be operated outside of Galleon layers (eg: in feature-group). 
+Nevertheless, all subsystems are provisioned by Galleon layers. This means that the required JBoss Modules modules for the subsystems are provisioned. 
+Only some subsystem configuration adjustment would be applied to the configuration.  Such adjustment should not imply the provisioning of extra 
+JBoss Modules modules.
+
+NB: If it appears that some JBoss Modules modules not provisioned by Galleon layers would make sence for a 
+default standalone config, such modules would be explicitely included in the default configs that require them. This analysis has been made in 
+the chapter 'Not provisioned JBoss Modules analysis'.
+
+=== Hard Requirements
+
+==== Backward compatibility
+
+* Default standalone configurations should be semantically identical (or with clearly explained differences) to WF 27 standalone default configurations.
+
+==== Observed differences with WF27 default configurations
+
+These changes apply to both standalone default configurations and example configurations.
+
+* `jberet` subsystem `security-domain` attribute is set to `ApplicationDomain`.
+* The order of some list of resources is different. For example, in elytron subsystem: permissions, security-domains, sasl and http factories orders are different. 
+In infinispan subsystem, the order of cache-container is different.
+
+==== Not provisioned JBoss Modules analysis
+
+The analysis has been made for JBoss Modules modules that are not provisioned. 
+The data can be found https://gist.github.com/jfdenise/c1dab1bf8451335f6cd936d22f20538a[there]:
+
+[QUESTION] Some JBoss Modules modules could be expected to be provisioned with default configs:
+
+* modules/system/layers/base/org/apache/activemq/artemis/protocol/* [optional artemis protocols]
+* modules/system/layers/base/org/eclipse/persistence [jipijapa-eclipselink-jakarta]
+* modules/system/layers/base/org/hornetq/client [org.wildfly.extension.messaging-activemq, legacy connection factory resource]
+* modules/system/layers/base/org/wildfly/security/jakarta/client/resteasy|webservices [SPIs from RESTEasy or JBoss WS but no integration point]
+
+==== Observed differences with WF27 example configurations
+
+The example config standalone-minimalistic.xml now contains access-control and audit-log. 
+With the existence of Galleon layers this configuration is perhaps meaningless.
+
+==== Implementation notes
+
+===== Internal aggregators Galleon layers
+
+In order to help remove duplication and allow for simple extension of standalone configurations between wildfly-ee-galleon-pack and wildfly-galleon-pack,
+we are introducing 2 internal (an internal Galleon layer is not expected to be used directly to provision a server) Galleon layers aggregators:
+
+* `internal-standalone-profile`: Aggregate all Galleon layers that would form the base for the standalone.xml and base for the standalone-ha.xml . In addition 
+to Galleon Layers that build-up the configuration, 2 layers that only bring JBoss Modules modules are included: `web-console` and `hibernate-search`.
+
+[source,xml]
+----
+<dependencies>
+    <!-- Base layer -->
+    <layer name="jaxrs-server"/>
+    
+    <layer name="batch-jberet" optional="true"/>
+    <layer name="ee-security" optional="true"/>
+    <layer name="ejb" optional="true"/>
+    <layer name="ejb-http-invoker" optional="true"/>
+    <layer name="elytron-oidc-client" optional="true"/>
+    <layer name="h2-default-datasource" optional="true"/>
+    <layer name="health" optional="true"/>
+    <layer name="hibernate-search" optional="true"/>
+    <layer name="jdr" optional="true"/>
+    <layer name="jsf" optional="true"/>
+    <layer name="mail" optional="true"/>
+    <layer name="metrics" optional="true"/>
+    <layer name="pojo" optional="true"/>
+    <layer name="remoting" optional="true"/>
+    <layer name="resource-adapters" optional="true"/>
+    <layer name="sar" optional="true"/>
+    <layer name="undertow-https" optional="true"/>
+    <layer name="web-console" optional="true"/>
+    <layer name="web-passivation" optional="true"/>
+    <layer name="webservices" optional="true"/>    
+</dependencies>
+----
+
+* `internal-standalone-full-profile`: Depends on `internal-standalone-profile` and add Galleon layers needed to form the base of standalone-full.xml and standalone-full-ha.xml.
+
+[source,xml]
+----
+<dependencies>
+    <layer name="internal-standalone-profile"/>
+    <layer name="embedded-activemq" optional="true"/>
+    <layer name="iiop-openjdk" optional="true"/>
+</dependencies>
+----
+
+These Galleon layers are defined in `wildfly-ee-galleon-pack` (and currently redefined in `wildfly-preview-feature-pack`).
+
+===== Changes to existing Galleon layers
+
+Some changes will be applied to some existing Galleon layers to reduce the configuration adjustments done in default standalone configurations.
+
+This proposal would bring the following changes:
+
+* `remoting` Galleon layer. Unset the endpoint worker `default` value. This would make the worker attribute to rely on its default value that is `default`.
+* `ejb` Galleon layer. Make dependency on `messaging-activemq` optional.
+
+
+===== Default configs defined in wildfly-ee-galleon-pack are inherited by wildfly-galleon-pack
+
+There is no re-definition of configurations in `wildfly-galleon-pack`. The configs are inherited from its dependency on `wildfly-ee-galleon-pack`.
+In order for `wildfly-galleon-pack` to include some microprofile related configuration items, the `internal-standalone-profile` 
+Galleon layer is redefined in `wildfly-galleon-pack` to include microprofile content.
+
+===== Default configs defined in wildfly-preview-feature-pack are fully redefined
+
+The wildfly-preview-galleon-pack currently fully redefine the default configurations , `internal-standalone-profile` layer 
+and `internal-standalone-full-profile` layer. 
+
+===== EE Standalone default configurations included Galleon Layers adjustments
+
+These adjustments are subject to evolve according to what changes can be done during WF28 life cycle. 
+They are the one that would be required for WF 27.
+
+* standalone.xml
+** Include `undertow-default-config` feature-group. Doesn't depend on extra JBoss Modules modules. 
+** Include `infinispan-local-server` feature-group. Doesn't depend on extra JBoss Modules modules. 
+** Unset `subsystem.ejb3` feature `default-resource-adapter-name` and `default-mdb-instance-pool` attributes.
+
+* standalone-ha.xml
+** Include `undertow-default-config` feature-group
+** Unset `subsystem.ejb3` feature `default-resource-adapter-name` and `default-mdb-instance-pool` attributes.
+
+* standalone-full.xml
+** Include `undertow-default-config` feature-group. Doesn't depend on extra JBoss Modules modules. 
+** Include `infinispan-local-server` feature-group. Doesn't depend on extra JBoss Modules modules. 
+** Include `subsystem.ejb3.service.iiop` feature. Doesn't depend on extra JBoss Modules modules. 
+
+* standalone-full-ha.xml
+** Include `undertow-default-config` feature-group. Doesn't depend on extra JBoss Modules modules. 
+** Include `messaging-activemq-ha` feature-group. Doesn't depend on extra JBoss Modules modules. 
+
+====== Full Standalone default configurations adjustments
+
+In addition to the adjustments done in wildfly-ee-galleon-pack, 
+the WF27 existing adjustments to handle microprofile are done in all default configurations:
+
+* Include `microprofile-jwt` Galleon layer
+* Include `microprofile-opentracing` Galleon layer
+* Include `microprofile-opentracing-jaeger` feature-group. Doesn't depend on extra JBoss Modules modules. 
+
+====== Preview Standalone default configurations adjustments
+
+In addition to the adjustments done in wildfly-ee-galleon-pack, 
+the WF27 existing adjustments to handle microprofile are done in all default configurations:
+
+* Include `microprofile-jwt` Galleon layer
+* Include `microprofile-opentracing` Galleon layer
+* Include `micrometer` Galleon layer
+* Include `microprofile-opentracing-jaeger` feature-group. Doesn't depend on extra JBoss Modules modules. 
+
+===== Standalone HA adaptation of Galleon layers
+
+This adaptation is in charge to exclude any local configuration and include distributed ones. 
+This is done in standalone-ha.xml and standalone-full-ha.xml config files:
+
+* Exclusion of `jpa`, inclusion of `jpa-distributed`      
+* Exclusion of `ejb-local-cache`, inclusion of `ejb-dist-cache`
+* Exclusion of `web-passivation`, inclusion of `web-clustering`
+
+===== Misc
+
+* All un-used Galleon feature-groups are removed.
+* Example configurations are partially expressed with layers to avoid to duplicate configuration content.
+
+==== Galleon Provisioning
+
+Using Galleon CLI, Galleon maven-plugin, Bootable JAR maven-plugin and WildFly maven-plugin, one need to define a provisioning.xml file that would be consumed 
+by the Maven plugin.
+
+Here is an example of a Galleon provisioning.xml file. A trimmed default standalone.xml configuration is provisioned.
+
+[source,xml]
+----
+<installation xmlns="urn:jboss:galleon:provisioning:3.0">
+    <feature-pack location="wildfly@maven(org.jboss.universe:community-universe):current">
+        <default-configs inherit="false">
+            <include model="standalone" name="standalone.xml"/> [1]
+        </default-configs>
+        <packages inherit="false"/> [2]
+    </feature-pack>
+    <options>
+        <option name="optional-packages" value="passive+"/> [3]
+    </options>
+</installation>
+----
+
+Annotated XML items:
+
+* [1] standalone.xml is a default config that we want to see included in the provisioning.
+* [2] All packages are not provisioned, just use the set of required one.
+* [3] Configure Galleon to just provision the set of required JBoss Modules modules.
+
+==== Some numbers
+
+* Full server: 280MB
+* standalone-full-ha.xml:  201MB
+* standalone-full.xml:  201MB
+* standalone-ha.xml:  190MB
+* standalone.xml:  189MB
+
+
+==== Impact on quickstarts 
+
+* NONE
+
+=== Nice-to-Have Requirements
+
+* NONE
+
+=== Non-Requirements
+
+* Documenting the set of layers that compose a default standalone configuration is out of scope.
+* Documenting the internal Galleon layers us out of scope.
+* Domain default configurations are out of scope.
+* Ability to exclude Galleon layers from a default config is out of scope.
+* Example configurations in docs, although redefined partially with Galleon layers, don't benefit from trimming capabilities. 
+An effort would be needed to introduce Galleon Layers that are specific to these default configurations (eg: xts, rts, ...). 
+
+
+== Test Plan
+
+* Add new tests to cover trimmed standalone configurations execution.
+
+== Community Documentation
+
+* NONE
+
+== Release Note Content
+
+* NONE
