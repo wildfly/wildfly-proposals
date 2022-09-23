@@ -1,4 +1,4 @@
-= [EAP7-1795] EAP6 and EAP7 applications have to communicate with EAP8 apps successfully and vice versa
+= Jakarta EE based WildFly have to communicate successfully with previous Java EE based WildFly
 :author:            Richard Opalka; Flavia Rainone
 :email:             ropalka@redhat.com; frainone@@redhat.com
 :toc:               left
@@ -9,19 +9,13 @@
 == Overview
 
 This feature will ensure bidirectional EJB, JNDI & HTTP remote protocols backward
-compatibility between Java EE 8- and Jakarta EE 9+ WildFly/EAP versions.
+compatibility between Java EE 8- and Jakarta EE 9+ WildFly versions.
 
 == Issue Metadata
 
 === Issue:
 
 * https://issues.redhat.com/browse/WFLY-16296[WFLY-16296]
-
-=== Related Issues:
-
-* https://issues.redhat.com/browse/EAP7-1795[EAP7-1795]
-* https://issues.redhat.com/browse/EAP7-1453[EAP7-1453]
-* https://issues.redhat.com/browse/EAP7-1960[EAP7-1960]
 
 === Dev Contacts:
 * mailto:ropalka@redhat.com[Richard Opalka]
@@ -54,7 +48,7 @@ TODO!!!
 
 * Ability of Java EE 8- client/server to communicate with Jakarta EE 9+ server/client via EJB, JNDI and HTTP remote protocols.
 * Ability of Jakarta EE 9+ client/server to communicate with Java EE 8- server/client via EJB, JNDI and HTTP remote protocols.
-* Java EE 8- WildFly/EAP versions cannot be modified in order to be able to communicate with Jakarta EE9+ WildFly/EAP variants.
+* Java EE 8- WildFly versions cannot be modified in order to be able to communicate with Jakarta EE9+ WildFly variants.
 * Backward compatibility mode is off by default, and can be enabled by setting the `org.wildfly.ee.namespace.interop` system
 property to `true`.
 * If the property is set to `true` on a Java EE 8- server/client, it is ignored, as those clients and servers are not
@@ -70,7 +64,7 @@ responsible for handling interoperability.
 == Test Plan
 
 The test will be created for hard requirements scenarios. This test will reside in QE's testsuite and will become
-one of the must-execute tests for ensuring backward compatibility between EAP8+ and EAP7- variants.
+one of the must-execute tests for ensuring backward compatibility between Java EE based WildFly and Jakarta EE based WildFly variants.
 
 == Community Documentation
 
