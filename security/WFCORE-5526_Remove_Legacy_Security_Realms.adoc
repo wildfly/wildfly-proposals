@@ -29,7 +29,7 @@ use WildFly Elytron exclusively where security realms were previously used.
 * https://issues.redhat.com/browse/EAP7-1095[EAP7-1095 - Remove the legacy SecurityRealms]
 * https://issues.redhat.com/browse/WFLY-15001[WFLY-15001 - Update feature packs to remove use of legacy security realms]
 * https://issues.redhat.com/browse/WFLY-15067[WFLY-15067 - Prepare for removal of legacy security realm support]
-* https://issues.redhat.com/browse/WFLY-15067[WFLY-15068 - Final stage for the removal of legacy security realms.]
+* https://issues.redhat.com/browse/WFLY-15068[WFLY-15068 - Final stage for the removal of legacy security realms.]
 * https://issues.redhat.com/browse/WFCORE-5522[WFCORE-5522 - The CLI security SSL commands are too tied to the default configuration]
 
 === Dev Contacts
@@ -48,8 +48,8 @@ TBD
 * [x] QE
 
 As a removal RFE this does not require new feature test development, however both teams will need
-to review existing testsuites for tests dependent on the Vault integration.  Identified tests will
-either need deleting or converting to a credential store equivalent.
+to review existing testsuites for tests dependent on the legacy security realms.  Identified tests will
+either need deleting or converting to a WildFly Elytron based configuration.
 
 === Affected Projects or Components
 
@@ -180,8 +180,8 @@ security realms becoming unavailable in an upcomming WildFly Core release.
 https://issues.redhat.com/browse/WFCORE-5526[WFCORE-5526] will then proceed to completely remove
 the security realms from WildFly Core.
 
-A final task https://issues.redhat.com/browse/WFLY-15067[WFLY-15068] will complete the removal in
-WildFly and update the documentation to reflet the removal.
+A final task https://issues.redhat.com/browse/WFLY-15068[WFLY-15068] will complete the removal in
+WildFly and update the documentation to reflect the removal.
 
 During this task follow up activities will be identified, these should not block the progress
 of the initial PRs being merged.
@@ -450,7 +450,6 @@ The following table identifies the tests in WildFly Core and WildFly affected by
 |WildFly 
 |org.jboss.as.test.integration.management.cli.SecurityCommandsTestCase
 |Evolved https://issues.redhat.com/browse/WFLY-15057[WFLY-15057]
-|===
 
 |WildFly
 |org.jboss.as.test.integration.ws.wsse.trust.WSBearerSecurityPropagationTestCase
@@ -515,26 +514,8 @@ The following table identifies the tests in WildFly Core and WildFly affected by
 |WildFly
 |org.jboss.as.test.manualmode.jms.resourceadapter.LegacySecurityDomainRATestCase
 |Removed
+|===
 
-|WildFly
-|
-|Removed
-
-|WildFly
-|
-|Removed
-
-|WildFly
-|
-|Removed
-
-|WildFly
-|
-|Removed
-
-|WildFly
-|
-|Removed
 
 .Action Key
 |===
@@ -564,7 +545,7 @@ The article will contain some simple examples but a complete like for like compa
 impractical.
 
 At the end of all of the removals we will come back to the issue 
-https://issues.redhat.com/browse/WFLY-15067[WFLY-15068] to perform a final clean up and refactor
+https://issues.redhat.com/browse/WFLY-15068[WFLY-15068] to perform a final clean up and refactor
 of the documentation in relation to legacy security.
 
 The CLI SSL security commands examples in WildFly community doc are adjusted. 
