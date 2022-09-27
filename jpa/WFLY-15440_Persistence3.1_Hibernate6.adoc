@@ -48,7 +48,10 @@ Included JPA 3.1, Hibernate ORM 6.1+, Hibernate Search 6.1+.
 
 The Jakarta EE 10 TCKs must be passed with the upgraded Hibernate ORM version.
 
-The Hibernate ORM tests in the WildFly testsuite must be passed.
+* The Hibernate ORM testsuite must be passed against each supported database listed in https://issues.redhat.com/browse/EAP7-1820
+* Note that (SAP) Sybase SQL Server cannot be tested currently in the community since there is no (community) JDBC driver for Sybase SQL Server (Adaptive Server Enterprise) so this should be tested as soon as possible.
+* TCK testing needs to pass.
+
 
 The Hibernate ORM tests in the Hibernate ORM project must be passed against the following database servers for EAP 8:
 * IBM DB2 version 11.5
