@@ -3,6 +3,7 @@
 :email:             rhusar@redhat.com
 :toc:               left
 :icons:             font
+:keywords:          clustering,infinispan,datagrid
 :idprefix:
 :idseparator:       -
 
@@ -39,7 +40,9 @@ It is understood that EAP will only use productized builds of the Infinispan/JGr
 
 === Related Issues
 
-* https://issues.redhat.com/browse/WFLY-13519[WFLY-13519] Infinispan module attribute needs to support multiple values (already completed)
+* https://issues.redhat.com/browse/WFLY-13519[WFLY-13519] Infinispan module attribute needs to support multiple values (done)
+* https://issues.redhat.com/browse/WFLY-16726[WFLY-16726] Enabling global state (required for locks - done)
+* https://issues.redhat.com/browse/ISPN-13960[ISPN-13960] Distribute Jakarta EE 9+ module variants of Infinispan CDI modules (done, laster reworked with -jakarta suffix)
 
 === Dev Contacts
 
@@ -50,8 +53,7 @@ It is understood that EAP will only use productized builds of the Infinispan/JGr
 * RHDG QE Team
 
 === Testing By
-// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
-// Discuss with QE during the Kickoff state to decide this
+
 * [x] Engineering
 
 * [ ] QE
@@ -65,8 +67,7 @@ It is understood that EAP will only use productized builds of the Infinispan/JGr
 * Infinispan
 
 === Relevant Installation Types
-// Remove the x next to the relevant field if the feature in question is not relevant
-// to that kind of WildFly installation
+
 * [x] Traditional standalone server (unzipped or provisioned by Galleon)
 
 * [x] Managed domain
@@ -89,15 +90,16 @@ It is understood that EAP will only use productized builds of the Infinispan/JGr
 
 == Backwards Compatibility
 
-No implications on backwards compatibility. This will only be adding optional modules.
+No implications on backwards compatibility. This will only be adding new optional modules.
 
 === Default Configuration
 
-* No changes to the default configuration. Users wanting to use certain modules will change the `modules='...'` attribute of the cache container.
+No changes to the default configuration. Users wanting to use certain modules will change the `modules='...'` attribute of the cache container,
+and optionally provision the 'infinispan' layer when wanting to use these.
 
 === Importing Existing Configuration
 
-* N/A
+* No implications.
 
 === Deployments
 
@@ -109,7 +111,7 @@ No implications on backwards compatibility. This will only be adding optional mo
 
 == Implementation Plan
 
-No coordination needed; will be delivered in a single PR. Other prerequisites were already merged.
+No coordination needed any more; it will be delivered in a single PR since other prerequisites were already merged beforehand.
 
 == Security Considerations
 
@@ -117,7 +119,10 @@ No security implications.
 
 == Test Plan
 
-Added modules will be covered by smoke tests located in the `testsuite/integration/clustering` space, in the `org.jboss.as.test.clustering.cluster.infinispan` package.
+Added modules will be covered by integration tests located in the `testsuite/integration/clustering` module:
+
+* in the `org.jboss.as.test.clustering.cluster.infinispan` package (run by the Arquillian in manual mode),
+* in the `org.jboss.as.test.clustering.single.infinispan` package (run using testable deployments).
 
 == Community Documentation
 
@@ -125,14 +130,7 @@ These features are completely documented by the Infinispan team.
 The WildFly documentation will be updated with references to Infinispan documentation and nuances of using the modules in WildFly.
 
 == Release Note Content
-////
-Draft verbiage for up to a few sentences on the feature for inclusion in the
-Release Note blog article for the release that first includes this feature. 
-Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
-This content will be edited, so there is no need to make it perfect or discuss
-what release it appears in.  "See Overview" is acceptable if the overview is
-suitable. For simple features best covered as an item in a bullet-point list 
-of features containing a few words on each, use "Bullet point: <The few words>" 
-////
 
-* TBD (upon completion)
+The Infinispan APIs for distributed query, counters and locks are now bundled with the distribution.
+Furthermore, users can use the Infinispan CDI module for creating and injecting caches.
+Head over to WildFly documentation under 'High Availability Guide'.
