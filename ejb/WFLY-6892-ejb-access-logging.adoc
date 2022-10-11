@@ -1,0 +1,309 @@
+= EJB Access Logging
+:author:            Cheng Fang
+:email:             cfang@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-6892 (Access logging for EJBs)
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFCORE-4355 (Add utility for event logging such as audit and access logging)
+* https://issues.jboss.org/browse/EAP7-523 (Access logging for EJBs)
+* https://issues.jboss.org/browse/EAP7-699 (Enhanced Audit Logging - RFC support and reliability/speed customization)
+* https://issues.jboss.org/browse/WFLY-11031 (Json encoding of Access Log Events)
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:szhantem@redhat.com[Sultan Zhantemirov]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[x] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+
+* ejb3
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* implement the access logging feature similar to WildFly web access logging.
+
+* add access-logging definition to wildfly-ejb3 schema (see next section below)
+
+* configure ejb access logging with CLI
+
+* enable and disable ejb access logging
+
+* configure how to rotate ejb access logs if applicable
+
+** default should be OFF for performance consideration
+
+* configure output location and format
+
+** directory/file
+
+** stdout
+
+** JSON
+
+* choose from pre-defined logging formats (need to adapt for ejb invocation):
+
+** short: date time ip user ejb method
+
+*** For example: 2019-05-05 12:23:27,003 127.0.0.1 admin hello/helloBean hello
+
+** long : date time ip user ejb method invocation event
+
+*** For example: 2019-05-05 12:23:27,003 127.0.0.1 user1 hello/helloBean hello 1234 received
+                 2019-05-05 12:23:30,003 127.0.0.1 user1 hello/helloBean hello 1234 finished
+
+** default: short
+
+* for more customization, define which attributes to include in ejb access logging with the following attributes:
+
+** date:
+** time:
+** timezone:
+** ip: client ip address
+** user: authenticated caller user name
+** ejb: ejb name (may need to prefix with application name)
+** method: ejb method
+** invocation: invocation id
+** event: event type ("received", "failed", "completed"; subject to available events from ejb container)
+** host: client host name
+** port: client port number
+** protocol: protocol used for this invocation
+** thread: thread name for this invocation
+** server: local server name
+
+* For example, one may configure the following custom pattern, which can be applied to both pattern formatter or
+JSON formatter:
+
+** pattern="date time client ejb method server thread"
+
+
+=== New elements in wildfly-ejb3_6_0.xsd schema
+ejb30 subsystem is extended with a new top-level element access-logging, defined as follows:
+[source,xml]
+----
+    <xs:element name="access-log" type="accessLogType" minOccurs="0" maxOccurs="1" />
+
+    <xs:complexType name="accessLogType">
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="console-handler" type="consoleHandlerType"/>
+                <xs:element name="file-handler" type="fileHandlerType"/>
+                <xs:element name="periodic-rotating-file-handler" type="periodicFileHandlerType"/>
+                <xs:element name="server-log-handler" type="serverLogHandlerType"/>
+                <xs:element name="formatter" type="formatterType"/>
+            </xs:choice>
+        </xs:complexType>
+
+        <xs:complexType name="consoleHandlerType">
+            <xs:annotation>
+                <xs:documentation>
+                    Defines an access log which writes to the console.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:all>
+                <xs:element name="formatter" type="namedFormatterType" minOccurs="0"/>
+            </xs:all>
+            <xs:attribute name="name" type="xs:string" use="required"/>
+            <xs:attribute name="encoding" type="xs:string" use="optional"/>
+            <xs:attribute name="autoflush" type="xs:boolean" use="optional" default="true"/>
+        </xs:complexType>
+
+        <xs:complexType name="serverLogHandlerType">
+            <xs:annotation>
+                <xs:documentation>
+                    Defines an access log which writes to the server log.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:all>
+                <xs:element name="formatter" type="namedFormatterType" minOccurs="0"/>
+            </xs:all>
+            <xs:attribute name="name" type="xs:string" use="required"/>
+        </xs:complexType>
+
+        <xs:complexType name="fileHandlerType">
+            <xs:annotation>
+                <xs:documentation>
+                    Defines an access log which writes to a file.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:all>
+                <xs:element name="formatter" type="namedFormatterType" minOccurs="0"/>
+            </xs:all>
+            <xs:attribute name="name" type="xs:string" use="required"/>
+            <xs:attribute name="encoding" type="xs:string" use="optional"/>
+            <xs:attribute name="autoflush" type="xs:boolean" use="optional" default="true"/>
+            <xs:attribute name="append" type="xs:boolean" use="optional" default="true"/>
+            <xs:attribute name="path" type="xs:string" use="required" />
+            <xs:attribute name="relative-to" type="xs:string" use="optional" default="jboss.server.log.dir"/>
+
+        </xs:complexType>
+
+        <xs:complexType name="periodicFileHandlerType">
+            <xs:annotation>
+                <xs:documentation>
+                    Defines an access log which writes to a file, rotating the log after a time period derived from the given
+                    suffix string, which should be in a format understood by java.text.SimpleDateFormat.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:all>
+                <xs:element name="formatter" type="namedFormatterType" minOccurs="0"/>
+            </xs:all>
+            <xs:attribute name="name" type="xs:string" use="required"/>
+            <xs:attribute name="encoding" type="xs:string" use="optional"/>
+            <xs:attribute name="autoflush" type="xs:boolean" use="optional" default="true"/>
+            <xs:attribute name="append" type="xs:boolean" use="optional" default="true"/>
+            <xs:attribute name="path" type="xs:string" use="required" />
+            <xs:attribute name="relative-to" type="xs:string" use="optional" default="jboss.server.log.dir"/>
+            <xs:attribute name="suffix" type="xs:string" use="required" />
+        </xs:complexType>
+
+        <xs:complexType name="valueType">
+            <xs:attribute name="value" use="required" type="xs:string"/>
+        </xs:complexType>
+
+        <xs:complexType name="propertiesType">
+            <xs:annotation>
+                <xs:documentation>
+                    A collection of free-form properties.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:choice minOccurs="0" maxOccurs="unbounded">
+                <xs:element name="property">
+                    <xs:complexType>
+                        <xs:attribute name="name" type="xs:string" use="required"/>
+                        <xs:attribute name="value" type="xs:string" use="optional"/>
+                    </xs:complexType>
+                </xs:element>
+            </xs:choice>
+        </xs:complexType>
+
+        <xs:complexType name="formatterType">
+            <xs:annotation>
+                <xs:documentation>
+                    A formatter that can be assigned to an access log.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:choice minOccurs="1" maxOccurs="1">
+                <xs:element name="pattern-formatter" type="patternFormatterType" maxOccurs="1"/>
+                <xs:element name="json-formatter" type="jsonFormatterType">
+                </xs:element>
+            </xs:choice>
+            <xs:attribute name="name" type="xs:string" use="required"/>
+        </xs:complexType>
+
+        <xs:complexType name="patternFormatterType">
+            <xs:annotation>
+                <xs:documentation>
+                    Defines a simple pattern formatter.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:attribute name="name" type="xs:string" use="required"/>
+            <xs:attribute name="pattern" type="xs:string" use="required"/>
+        </xs:complexType>
+
+        <xs:complexType name="namedFormatterType">
+            <xs:annotation>
+                <xs:documentation>
+                    The name of a defined formatter that will be used to format the log message.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:attribute name="name" type="xs:string" use="required"/>
+        </xs:complexType>
+
+        <xs:complexType name="jsonFormatterType">
+            <xs:annotation>
+                <xs:documentation>
+                    Defines a JSON pattern formatter.
+                </xs:documentation>
+            </xs:annotation>
+            <xs:all>
+                <xs:element name="record-delimiter" type="valueType" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>
+                            The value to be used to indicate the end of a record. If set to null no delimiter will be used
+                            at the end of the record. The default value is a line feed.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+                <xs:element name="meta-data" type="propertiesType" minOccurs="0">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Sets the meta data to use in the structured format. Properties will be added to each log message.
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:element>
+            </xs:all>
+            <xs:attribute name="name" type="xs:string" use="required"/>
+            <xs:attribute name="pattern" type="xs:string" use="required"/>
+            <xs:attribute name="date-format" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The date/time format pattern. The pattern must be a valid
+                        java.time.format.DateTimeFormatter.ofPattern() pattern.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="pretty-print" type="xs:boolean" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        Indicates whether or not pretty printing should be used when formatting.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+            <xs:attribute name="zone-id" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The zone ID for formatting the date and time. The system default is used if left undefined.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:attribute>
+        </xs:complexType>
+
+----
+
+=== Nice-to-Have Requirements
+
+* users should be able to configure condition/filter to determine which requests to log
+
+=== Non-Requirements
+
+* configure ejb access logging from management console
+
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+== Test Plan
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
