@@ -1,0 +1,64 @@
+= Configure enhanced mapping of X509Certificate to the underlying identity
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+This RFE adds support for new Elytron resources. See affected UI and affected resources.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1594[HAL-1594]
+* {issue-base-url}/EAP7-1278[EAP7-1278]
+
+=== Related Issues
+
+* n/a
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:spriadka@redhat.com[Simon Priadka]
+
+=== Testing By
+
+[x] Engineering
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+The Elytron configuration UI provides CRUD operations for the new elytron resources.
+
+=== Affected UI
+
+* Configuration / Subsystems / Security / Mappers & Decoders / Evidence Decoder
+
+=== Affected Resources
+
+* `/subsystem=elytron/aggregate-evidence-decoder=*`
+* `/subsystem=elytron/custom-evidence-decoder=*`
+* `/subsystem=elytron/x500-subject-evidence-decoder=*`
+* `/subsystem=elytron/x509-subject-alt-name-evidence-decoder=*`
+
+== Test Plan
+
+New tests are added to the test suite that test the new resources.
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
