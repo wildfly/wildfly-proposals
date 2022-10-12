@@ -1,0 +1,185 @@
+= MicroProfile aligned with Jakarta EE 10
+:author:            Kabir Khan
+:email:             kkhan@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+This issue is about upgrading to most parts of MicroProfile Platform 6, which is aligned with Jakarta EE 10. 'most' is used since a decision has been made to not include the new MicroProfile Metrics version, as the inclusion of Micrometer tracked by https://issues.redhat.com/browse/EAP7-1686[EAP7-1686] provides our observability strategy.
+
+The below table shows the versions of each specification in MicroProfile Platform 5, the current versions included in WildFly, and the planned version for MicroProfile Platform 6. Only the minor versions are included, we will use the latest micro versions of each at the time of release. It also contains a column indicating whether something changes the functionality provided by a specification.
+
+[cols="1,1,1,1,1"]
+|===
+|Spec | MP 5 Version | Current WildFly Version | MP 6 Version | Updated Functionality (y/n)
+
+|Config
+|3.0
+|3.0
+|3.0
+|n
+
+|Fault Tolerance
+|4.0
+|4.0
+|4.0
+|n
+
+|Health
+|4.0
+|4.0
+|4.0
+|n
+
+|JWT
+|2.0
+|2.0
+|2.1 (14 Oct 2022 - not passed ballot yet, but will likely soon)
+|TODO: ??? (depends on what 2.1 brings)
+
+|+++<s>Metrics</s>+++ +
+Will not include
+|+++<s>4.0</s>+++
+|+++<s>4.0</s>+++
+|+++<s>5.0</s>+++
+|+++<s>y</s>+++
+
+|OpenAPI
+|3.0
+|3.0
+|3.1
+|TODO: ??
+
+|OpenTracing +
+Dropped in MP 6
+|3.0
+|3.0
+|-
+|-
+
+|Rest Client
+|3.0
+|3.0
+|3.0
+|n
+
+|Telemetry +
+New in MP 6
+|-
+|-
+|1.0
+|y -
+
+|===
+
+There will be a separate RFEs for:
+
+* Removal of MicroProfile Metrics (https://issues.redhat.com/browse/WFLY-17138[WFLY-17138])
+* Addition of MicroProfile Telementry (https://issues.redhat.com/browse/WFLY-17156[WFLY-17156])
+
+== Issue Metadata
+
+* https://issues.redhat.com/browse/WFLY-17137[WFLY-17137] - Provide Support for MicroProfile.Next version that Aligns with Jakarta EE 10
+* https://issues.redhat.com/browse/EAP7-1861[EAP7-1861] - Provide Support for MicroProfile.Next version that Aligns with Jakarta EE 10
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE[WFCORE-XXXX]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-17138[WFLY-17138] - Convert MP Metrics subsystem to Legacy Mode
+* https://issues.redhat.com/browse/WFLY-17156[WFLY-17156] - Implement Support for MicroProfile Telemetry
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+WildFly will be updated to pull in the corresponding versions of the Eclipse Microprofile specification jars, as well as the SmallRye jars and dependencies needed to implement each version.
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* All components will be upgraded to the latest micro versions of versions of the Eclipse Microprofile specification jars, as well as the SmallRye jars and dependencies needed to implement each version, as indicated in the table in the link:#overview[Overview].
+** Upgrading the components will provide the latest TCKs
+* The MicroProfile Metrics subsystem will be converted to 'legacy mode', containing a `migrate` operation to remove it.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+* MP Metrics will no longer be included, and thus not upgraded be to MP Metrics 5.0
+
+== Backwards Compatibility
+
+* Users will no longer be able to use MicroProfile Metrics APIs and annotations
+
+=== Default Configuration
+
+* MicroProfile Metrics will be removed from shipped configurations that currently include it
+
+=== Importing Existing Configuration
+
+* A user will not be able to use a configuration containing MP Metrics
+
+=== Deployments
+
+* Deployments will no longer expose data via MicroProfile Metrics
+
+== Test Plan
+
+* TCKs will be updated to the latest corresponding version
+* Existing tests in the WildFly testsuite/integration/microprofile module will be used for additional test coverage
+
+TODO: Will we need to add some tests for specs that are updated?
+
+
+== Community Documentation
+
+* Community documentation for the subsystems in question will be updated to reflect the new versions
+
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
+== Release Note Content
+
+MicroProfile specifications have been updated to the versions that are part of MicroProfile Platform 6, with the exception of MicroProfile Metrics which has been droppped. MicroProfile Metrics has been dropped in favour of integration with Micrometer, which offers improved observability functionality.
+
+TODO MP Telemetry?
+
+
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
