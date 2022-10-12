@@ -258,6 +258,11 @@ This is done in standalone-ha.xml and standalone-full-ha.xml config files:
 * All un-used Galleon feature-groups are removed.
 * Example configurations are partially expressed with layers to avoid to duplicate configuration content.
 
+==== Security considerations
+
+The generated default standalone configurations are at least as secured as the WF 27 ones. 
+We are observing that the jberet subsystem will become secure using an elytron security domain (that the layer configures).
+
 ==== Galleon Provisioning
 
 Using Galleon CLI, Galleon maven-plugin, Bootable JAR maven-plugin and WildFly maven-plugin, one need to define a provisioning.xml file that would be consumed 
