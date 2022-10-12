@@ -64,3 +64,4 @@ The Hibernate ORM tests in the Hibernate ORM project must be passed against the 
 * EnterpriseDB Advanced Server version 14.4
 * (Sybase) SAP ASE (Adaptive Server Enterprise version) 16.0
 
+Hibernate Search must pass all of the https://github.com/hibernate/hibernate-search project tests and QE testing as well. 
