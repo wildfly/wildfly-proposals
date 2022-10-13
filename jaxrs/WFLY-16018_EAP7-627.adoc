@@ -82,7 +82,9 @@ TBD
 
 === Hard Requirements
 
-* The tracing feature may expose RESTEasy internal engine information, which may contain security sensitive information, so please use it with caution.
+* Add the `org.jboss.resteasy.resteasy-tracing-api` module.
+* Introduce resteasy-extensions as dependency
+
 
 === Nice-to-Have Requirements
 
