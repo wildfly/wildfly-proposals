@@ -20,7 +20,7 @@ The RESTEasy tracing feature supports three logging mode:
 
 "ALL" will enable the tracing feature. "ON_DEMAND" mode will give the control to client side: A client can send a tracing request via HTTP header and get the tracing info back from response headers. "OFF" mode will disable the tracing feature, and this is the default mode.
 
-Trace information should contain all necessary information and times about processing of current request, like used interceptors, used exception mappers, used end-points, used providers, etc. Example:
+Tracing information should contain all necessary information and times about processing of current request, like used interceptors, used exception mappers, used end-points, used providers, etc. Example:
 
 [source,bash]
 ----
@@ -83,7 +83,7 @@ TBD
 === Hard Requirements
 
 * Add the `org.jboss.resteasy.resteasy-tracing-api` module.
-* Introduce resteasy-extensions as dependency
+* Introduce `resteasy-extensions` as dependency.
 
 
 === Nice-to-Have Requirements
@@ -93,6 +93,8 @@ TBD
 === Test Plan
 
 The features are tested in RESTEasy codebase and also with the Arquillian test in WildFly. Successfully running the test in WildFly is required.
+
+Currently, the tracing feature does not support configuration from WildFly management API.
 
 == Community Documentation
 
