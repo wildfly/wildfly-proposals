@@ -1,0 +1,79 @@
+= Expose JMS bridge statistics about messages that have been processed
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+The JMS bridge provides statistics about messages that have been processed through the bridge:
+
+* number of messages successfully committed
+* number of messages aborted
+
+The goal of this RFE is to display these statistics in the runtime section of the management console.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1596[HAL-1596]
+* {issue-base-url}/EAP7-1282[EAP7-1282]
+
+=== Related Issues
+
+* n/a
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:msvehla@redhat.com[Martin Svehla]
+
+=== Testing By
+
+[x] Engineering
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+The runtime section of the console adds a column to show statistics for JMS bridges.
+
+Current columns: Runtime / <Server> / Messaging / <Messaging Server>
+New Columns: Runtime / <Server> / Messaging / JMS Bridge / <JMS Bridge>
+
+When selecting a JMS bridge the statistics for
+
+* Message Count
+* Aborted Message Count
+
+are displayed in the preview section.
+
+=== Affected UI
+
+* Runtime / <Server> / Messaging
+
+=== Affected Resources
+
+* `/subsystem=messaging-activemq/jms-bridge=*`
+
+== Test Plan
+
+New tests will be added to verify that the preview of a JMS bridge in the runtime section shows the statistics for
+
+* Message Count
+* Aborted Message Count
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
