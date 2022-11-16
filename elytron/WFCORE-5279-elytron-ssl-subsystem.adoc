@@ -110,9 +110,10 @@ A Maven artifact for ``ssl-base`` will also need to be created and uploaded to r
 
 ==== WildFly Core
 
-Many of the definitions and other required packages required by Elytron TLS are already present in WildFly Core, within
-`wildfly-elytron-integration` module. However, these classes are package-private, and therefore not accessible to the new
-subsystem. Furthermore, only a subset of the classes are needed (for example, decoders). To resolve this, two changes are proposed:
+Many of the definitions and other classes (ex. [WildFlyAcmeClient.java](https://github.com/wildfly/wildfly-core/blob/main/elytron/src/main/java/org/wildfly/extension/elytron/_private/WildFlyAcmeClient.java))
+required by Elytron TLS are already present in WildFly Core, within `wildfly-elytron-integration` module. However,
+these classes are package-private, and therefore not accessible to the new subsystem. Furthermore, only
+a subset of the classes are needed (for example, decoders). To resolve this, two changes are proposed:
 
 * Move the required definitions to a common class, similar to the split above in Elytron.
 * Modify the existing classes to be public, and provide a small set of public methods to supply definitions. The implementation would mirror that of the https://github.com/wildfly/wildfly-core/blob/main/controller/src/main/java/org/jboss/as/controller/security/CredentialReference.java[CredentialReference class].
@@ -166,6 +167,22 @@ with the same capability and we can wire it in by referencing its name. The init
 this concept is present in https://github.com/wildfly-security-incubator/elytron-tls/pull/3[this fork of Elytron TLS],
 and will be expanded to other features implemented in the Elytron subsystem.
 
+> NOTE: The current implementation (as of 2022-11-16) is missing a few features, which have not yet been
+> added to the subsystem's XML schema and/or relevant class files are missing:
+> 
+> - All permission mappers and direct security domain components removed
+> - Some authentication features have been removed, but unsure if there is a need to add them in a purely TLS subsystem:
+>     - JASPI
+>     - JACC
+>     - SASL
+>     - JACC policy
+>     - Custom policies
+> - Some core elements that _will be added_ are not present yet:
+>     - Filtering and LDAP key stores
+>     - Server SNI context support
+>     - Custom component configuration and attributes (need to understand this one a bit better)
+> - Object equivalents for some references (see next paragraph) are not added yet
+
 Unlike Elytron, we want the configuration to be as simple as possible - ideally one CLI command.
 Currently there are implemented basic building blocks - TrustManager and KeyManager related factory functions,
 which lead into KeyStore and credential store builders, etc. The schema of the subsystem follows that of
@@ -203,7 +220,7 @@ that enable Elytron's security domains and other components not needed in a basi
 on Elytron is already underway in https://github.com/wildfly-security/wildfly-elytron/pull/1729[ELY-2084].
 * A new ``elytron-tls-tool`` needs to be designed based on decisions made for the new subsystem, and may not be appropriate
 if it already exists in ``elytron-tool``.
-* Updated Galleon layers need to be created with appropriate default values, and potentially one including Undertow.
+* Updated Galleon layers need to be created with appropriate default values, and potentially one including Undertow ([some early work here](https://github.com/cam-rod/elytron-tls/tree/WFCORE-5279-undertow-ex)).
 * Terminology changes have not been discussed yet, and remain a lower priority.
 
 == Test Plan
