@@ -3,10 +3,8 @@
 :email:             weli@redhat.com
 :toc:               left
 :icons:             font
-:keywords:          comma,separated,tags
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.redhat.com/browse
 
 == Overview
 
@@ -55,7 +53,7 @@ X-RESTEasy-Tracing-034: org.jboss.resteasy.plugins.server.servlet.Servlet3AsyncH
 
 === QE Contacts:
 
-TBD
+* mailto:msvehla@redhat.com[Martin Svehla]
 
 === Testing By
 
@@ -84,6 +82,28 @@ TBD
 
 * Add the `org.jboss.resteasy.resteasy-tracing-api` module.
 * Introduce `resteasy-extensions` as dependency.
+* Add subsystem attributes to control turning this feature on/off. The description *must* note that this feature is not
+  meant for production.
+* When enabled, a WARN level log message will be log indicating this feature has been enabled. This is currently not
+  done in RESTEasy, but could be considered there. Currently this would result in very verbose logging with the way
+  enablement is checked. Please note "enabled" means the "resteasy.server.tracing.type" to "ALL" or "ON_DEMAND".
+  ** Admittedly doing this in RESTEasy likely makes the most sense as it would know if the feature is enabled/disabled.
+     That will require a RESTEasy fix and upgrade to enable. However, doing so would currently result in very verbose
+     logging.
+  ** The following checks will be required in WildFly to know if tracing is enabled and log a warning if found:
+    ** Check the `web.xml` context parameters
+    ** Check the subsystem attributes
+    ** Check the system properties
+* Enabling in the subsystem should be constrained via the management model.
+  ** Users can see and read the value. However, in order to write the value they must have permissions to do so.
+  ** There will be an RBAC sensitivity-classification named `tracing-management` applied to both attributes added to
+     the subsystem.
+
+== Security Considerations
+
+This should be considered security sensitive in that, when enabled data could be exposed that is not meant to be seen
+by a client. This includes fully qualified class names which could be the source of an attack vector. However, this
+feature is designed for development only when trying to understand the paths processed via REST endpoints.
 
 
 === Nice-to-Have Requirements
@@ -92,12 +112,15 @@ TBD
 
 === Test Plan
 
-The features are tested in RESTEasy codebase and also with the Arquillian test in WildFly. Successfully running the test in WildFly is required.
+The features are tested in RESTEasy codebase and also with the Arquillian test in WildFly. Successfully running the test
+in WildFly is required.
 
-Currently, the tracing feature does not support configuration from WildFly management API.
+The tests should also test turning this features settings with both the subsystem settings and as context parameters.
+Ensuring the context parameters in a `web.xml` take precedence.
 
 == Community Documentation
 
-The documentation is coming with the release of the RESTEasy.
+The general documentation is in the RESTEasy documentation. Some documentation on what the subsystem attributes do
+should be noted in the WildFly documentation. It should also be made clear these features are not meant for production.
 
 
