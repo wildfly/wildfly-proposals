@@ -17,7 +17,7 @@ The Hibernate ORM 6.2 https://github.com/hibernate/hibernate-orm/releases/tag/6.
 * https://github.com/hibernate/hibernate-orm/discussions/5105[Common table expression] via https://hibernate.atlassian.net/browse/HHH-15328[HHH-15328].  https://en.wikipedia.org/wiki/Hierarchical_and_recursive_queries_in_SQL[Also see Hierarchical_and_recursive_queries_in_SQL].
 * https://hibernate.atlassian.net/browse/HHH-15175[Remove support for database versions that are unsupported by vendors via HHH-15175.]
 
-Hibernate Search needs to be upgraded to 6.1 as per https://issues.redhat.com/browse/WFLY-15838/[WFLY-15838] + https://issues.redhat.com/browse/EAP7-1816[EAP7-1816]
+Hibernate Search needs to be upgraded to 6.1.8+ https://hibernate.atlassian.net/browse/HSEARCH-4735[via HSEARCH-4735 for testing with Hibernate ORM 6.2.]
 
 The new libraries were added for Jakarta EE 10 compatibility (https://jakarta.ee/compatibility/certification/10).
 
@@ -28,7 +28,9 @@ Migration notes for transition from Hibernate ORM 5.3 to 6.1 can be viewed via, 
 * https://github.com/hibernate/hibernate-orm/blob/5.6/migration-guide.adoc
 * https://github.com/hibernate/hibernate-orm/blob/6.0/migration-guide.adoc
 * https://github.com/hibernate/hibernate-orm/blob/6.1/migration-guide.adoc
-* https://github.com/hibernate/hibernate-orm/blob/main/migration-guide.adoc (work in progress)
+* https://github.com/hibernate/hibernate-orm/blob/main/migration-guide.adoc (work in progress towards producing https://github.com/hibernate/hibernate-orm/blob/6.2/migration-guide.adoc).
+
+We expect that for https://issues.redhat.com/browse/EAP7-1985[EAP7-1985 we will collect Telemetry] from Hibernate ORM 6.2 via the JipiJapa Persistence integration layer to be consumed by a common client.
 
 == Issue Metadata
 
