@@ -30,8 +30,6 @@ Migration notes for transition from Hibernate ORM 5.3 to 6.1 can be viewed via, 
 * https://github.com/hibernate/hibernate-orm/blob/6.1/migration-guide.adoc
 * https://github.com/hibernate/hibernate-orm/blob/main/migration-guide.adoc (work in progress towards producing https://github.com/hibernate/hibernate-orm/blob/6.2/migration-guide.adoc).
 
-We expect that for https://issues.redhat.com/browse/EAP7-1985[EAP7-1985 we will collect Telemetry] from Hibernate ORM 6.2 via the JipiJapa Persistence integration layer to be consumed by a common client.
-
 == Issue Metadata
 
 === Dev Contacts
@@ -55,7 +53,7 @@ Hibernate ORM 6.2+, Hibernate Search 6.1.8+.
 The Jakarta EE 10 TCKs must be passed with the upgraded Hibernate ORM version.
 
 * The Hibernate ORM testsuite must be passed against each supported database listed in https://issues.redhat.com/browse/EAP7-1820
-* Note that (SAP) Sybase SQL Server cannot be tested currently in the community since there is no (community) JDBC driver for Sybase SQL Server (Adaptive Server Enterprise) so this should be tested as soon as possible.
+* Note that SAP Adaptive Server Enterprise is currently tested in the Hibernate ORM community with the https://github.com/hibernate/hibernate-orm/blob/main/settings.gradle#L203[jTDS JDBC driver] which is not maintained anymore, instead we should test with a recent SAP Adaptive Server Enterprise JDBC driver.
 * TCK testing needs to pass.
 
 
@@ -68,6 +66,6 @@ The Hibernate ORM tests in the Hibernate ORM project must be passed against the 
 * Microsoft SQL Server version 2019
 * PostgreSQL version 14.4
 * EnterpriseDB Advanced Server version 14.4
-* (Sybase) SAP ASE (Adaptive Server Enterprise version) 16.0
+* SAP Adaptive Server Enterprise version (ASE) 16.0
 
 Hibernate Search must pass all of the https://github.com/hibernate/hibernate-search project tests and QE testing as well. 
