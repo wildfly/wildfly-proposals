@@ -1,0 +1,161 @@
+= WFLY-17156 - MicroProfile Telemetry
+:author:            Jason Lee
+:email:             jasondlee@redhat.com
+:mptel_proj:        https://github.com/eclipse/microprofile-telemetry
+:sr_otel:           https://github.com/smallrye/smallrye-opentelemetry
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+MicroProfile 6 introduces a new specification, {mptel_proj}[MicroProfile Telemetry]. This spec replaces MicroProfile OpenTracing in the platform.
+
+This RFE will add support for this new specification as part of the MicroProfile configurations.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-17156 - Implement Support for MicroProfile Telemetry
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1976 - Implement Support for MicroProfile Telemetry
+* https://issues.redhat.com/browse/WFLY-17510 - Convert MicroProfile OpenTracing subsystem to Admin-Only Mode
+https://issues.redhat.com/browse/EAP7-2002 - Remove MicroProfile OpenTracing
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
+
+=== Testing By
+
+* [x] Engineering
+* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* Observability
+* OpenTelemetry
+* MicroProfile
+
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+* [ ] Managed domain
+* [x] OpenShift s2i
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+This feature will add support for MicroProfile Telemetry, which adds very little to OpenTelemetry. Specifically, the main thrust of the spec is specify that and how OpenTelemetry is configured via MicroProfile Config. Given that, this feature will build on top of the existing OpenTelemetry support. 
+
+The MicroProfile specification does dictate that certain objects be injectable that currently are not in WildFly's existing OpenTelemetry support (such as `Baggage` injection), so those objects will be made available. Rather than adding this support just for MicroProfile Telemetry, however, that support will be pushed up into the OpenTelemetry module to make them available to non-MicroProfile deployments as well.
+
+To avoid duplication with other Red Hat projects, as much of the implementation details of OpenTelemetry and MicroProfile Telemetry will be replaced with the {sr_otel}[SmallRye OpenTelemetry library].
+
+To be explicit here, the full MicroProfile Telemetry spec must be supported. This includes:
+
+* Automatic instrumentation of REST and REST client requests
+* Manual instrumentation via the `@WithSpan` annotation
+* WildFly must support all injectable components as required in the MicroProfile Telemetry specification.
+* WildFly must be able to pass the MP Telemetry TCK.
+* The OTLP exporter will be the default exporter.
+
+This project will not remove the support for the existing (and deprecated/removed) OpenTracing specification, as that will be handled in a related JIRA.
+
+=== Relationship with OpenTelemetry Support in Standard WildFly
+
+Standard WildFly has supported OpenTelemetry since WildFly 25, so it already has support of much of what is required by MicroProfile Telemetry, with the missing features being `@WithSpan` support,`Baggage` injection, and MicroProfile Config support. To simplify integration and maintenance, MicroProfile Telemetry will build on that support, with the support for most of these missing features being pushed into the standard WildFly implementation. This will be accomplished by replacing the OpenTelemetry implementation in standard WildFly with the SmallRye OpenTelemetry library.
+
+Standard WildFly, however, can not depend on MicroProfile Config being present, so the MicroProfile Telemetry extension's primary purpose will be to integrate support for this additional specification to complete the compatibility requirements. This will centralize all OpenTelemetry support into one location, and help insure consistent behavior regardless of which configuration is booted.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+* Support for agent instrumentation
+* Removal of MicroProfile OpenTracing extension (this will be handled via another JIRA, with proper product considerations handle then)
+
+
+=== Dependencies
+
+* CDI/Weld
+* MicroProfile Config
+* OpenTelemetry
+
+== Backwards Compatibility
+
+As a new system, there are no direct backwards compatibility concerns. However, as this extension, and the spec it covers, replaces an existing extension (and spec), care will need to be taken in documenting the migration concerns of end users' applications that are making use of MicroProfile OpenTracing.
+
+=== Default Configuration
+
+[IMPORTANT]
+=====
+As per the spec, this extension, while loaded and enabled, will default to `disabled`, and must be enabled on a per-application basis via MicroProfile Config:
+
+.microprofile-config.properties
+[source]
+-----
+otel.sdk.disabled=false
+-----
+=====
+
+=== Interoperability
+
+MicroProfile Telemetry and MicroProfile OpenTracing _can_ be in use simultaneously, though this will result in near duplicate traces being produced and (possibly, depending on configuration) exported. This duplication of data would negatively impact the value of the telemetry data, so the MicroProfile OpenTracing extension should be removed from the server configurations.
+
+[NOTE]
+=====
+There is a JIRA (linked above) to remove OpenTracing from the system. This change should ship concurrently with this one, so this may be a non-issue for administrators, but should be noted here in case schedules shift.
+=====
+
+== Implementation Plan
+
+SmallRye has created an implementation of MicroProfile Telemetry at {sr_otel}.
+
+Engineering will use this library first to reimplement the existing OpenTelemetry support in standard WildFly. This shared base will both minimize the amount of code that must be directly maintained in WildFly, while also helping to insure consistent behavior for OpenTeletry-enabled applications for both "normal" and MicroProfile configurations.
+
+The primary value add of MicroProfile Telemetry over the "vanilla" OpenTelemetry specification is the requirement to use MicroProfile Config to configure the library on a per-application basis. The to-be-added `microprofile-telemetry` module, then, will only add support for such a configuration. The OpenTelemetry configuration found in the server configs will be the default configuration for all applications (with the lone caveat that the `enabled` value will switch to off, per spec requirements), but applications will be able to override those values with their MicroProfile Config settings.
+
+To summarize, the following modules will be added or modified as part of this effort:
+
+* `org.wildfly.extension.opentelemetry` (modified)
+* `org.wildfly.extension.opentelemetry-api` (modified)
+* `org.wildfly.extension.microprofile.telemetry` (added)
+* `org.wildfly.extension.microprofile.telemetry-api` (added)
+
+== Security Considerations
+
+* It is possible that users can intercept exported trace data if WildFly blindly starts exporting to the default OTLP endpoint so, as is the case with the existing OpenTelemetry support, tracing functionality will be disabled if an endpoint is not configured.
+* There is no native notion of security when pushing data to the OpenTelemetry Collector. It is expected that access to the collector itself (and any downstream aggregators) are properly secured. No attempt, then, can or will be made to authenticate with the collector or in any other way secure the exported trace data.
+
+== Test Plan
+
+* Much of the functionality of MP Telemetry will be tested using the existing OpenTelemetry tests since so much of the functionality resides there.
+* The MP Telemetry TCK will be added to `testsuite/integration/microprofile-tck` to verify and insure compliance
+
+== Community Documentation
+
+Within the community documentation the focus will cover the following topics.
+
+ * Installation of the extension / subsystem.
+ * The removal/disablement of the MicroProfile OpenTracing extension / subsystem (unless/until this content is removed with the OpenTracing extension itself).
+ * The MicroProfile Config properties as defined in the MicroProfile Telemetry specification.
+
+An appropriate Quickstart will be handled under it's own RFE, the Quickstart will be where a full end to end example is described.
+
+Beyond this the MicroProfle Telemetry specification should be the definitive source of relevent information.
+
+== Release Note Content
+
+Support has been added for the https://github.com/eclipse/microprofile-telemetry/[MicroProfile Telemetry] 1.0 specification with the addition of a new subsystem `microprofile-telemetry`. MicroProfile Telemetry provides tracing functionality for applications based on the widely adopted OpenTelemetry project. This extension and subsystem replaces the long-deprecated MicroProfile OpenTracing extension.
