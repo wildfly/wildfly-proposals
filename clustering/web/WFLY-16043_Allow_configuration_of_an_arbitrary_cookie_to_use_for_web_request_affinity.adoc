@@ -1,0 +1,127 @@
+= WFLY-16043 Allow configuration of an arbitrary cookie to use for web request affinity
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently, WildFly only supports the ability to encode session affinity information into the JSESSIONID cookie, which is already used to uniquely identify a session.
+This plays nicely with the httpd family of load balancer modules (e.g. mod_cluster, mod_proxy_balancer, mod_jk) for which this mechanism was designed.
+
+However, many load balancers rely on a separate cookie for implementing sticky sessions (e.g. HAProxy, IIS, etc.),
+and thus lack the ability to allow WildFly to guide requests for a given session to the server that can most efficiently handle it.
+
+To resolve this, we are adding a configuration attribute within the Undertow subsystem to allow the use of a configurable cookie to store session affinity information.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-16043[WFLY-16043] Allow configuration of an arbitrary cookie to use for web request affinity
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1979[EAP7-1979] Allow configuration of an arbitrary cookie to use for web request affinity
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:msvehla@redhat.com[Martin Svehla]
+
+=== Testing By
+
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* Clustering
+* Undertow
+
+=== Other Interested Projects
+
+* mod_cluster – can be updated to support separate cookie for session routing
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* Configuration is exposed to set the routing cookie name.
+* Once configured, routing information is sent by the server in a separate cookie.
+
+=== Nice-to-Have Requirements
+
+* Functionality validation with various load-balancers (e.g. HAP, AAS).
+
+=== Non-Requirements
+
+None.
+
+== Backwards Compatibility
+
+None – this is a new feature enabled on-demand, thus there is no backwards compatibility to consider.
+
+=== Default Configuration
+
+None – no changes to default configuration.
+
+=== Importing Existing Configuration
+
+None – no effects on imported new configurations.
+
+=== Deployments
+
+None.
+
+=== Interoperability
+
+We need to verify that load-balancers using separate cookie for routing can work with this implementation.
+
+== Implementation Plan
+
+The implementation can look as the following:
+
+```xml
+<servlet-container name="...">
+    <session-cookie name="JSESSIONID" affinity-cookie-name="ARR" ... />
+</servlet>
+```
+
+If undefined, the route will be encoded into the session identifier via the existing CodecSessionConfig SessionConfig decorator.
+
+If defined, we create a separate SessionConfig implementation for the route cookie (a copy of the session's SessionConfig, but with a distinct cookie name).
+We can then implement session affinity via a SessionConfig decorator.
+This decorator should be compatible with any future SessionConfig implementations we decide to support in WildFly (e.g. SSL, path parameters, etc.).
+
+== Security Considerations
+
+None – no security considerations to be address, this is representing same routing data only in a different way.
+
+== Test Plan
+
+Add tests to upstream WildFly testsuite, testing that enabling the property encodes the routing information as expected.
+
+== Community Documentation
+
+Expand community documentation to include a section on configuration of this feature in the
+
+== Release Note Content
+
+WildFly can now be configured to encode session routing information in a separate cookie rather than appending the routing information to the JSESSIONID cookie.
