@@ -1,0 +1,245 @@
+= WFLY-14735 FORM authentication for the management console with MFA
+:author:            Darran Lofthouse
+:email:             darran.lofthouse@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The development of this RFE is delivering a subset of functionality from a much larger planned change,
+this RFE will start with two features:
+ * Enabling FORM authentication for admin console access to the application server.
+ * Where custom security realms are in use supporting MFA authentication on the login form to 
+ request additional attributes.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14735[WFLY-14735]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1696[EAP7-1696]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+The main development for this RFE will be a new `elytron-authentication` subsystem 
+in the https://github.com/wildfly/wildfly[WildFly] project.
+
+Changes will also be made within https://github.com/wildfly/wildfly-core[WildFly Core] to
+enable and support the activation of FORM authentication.
+
+Updates will be required to the https://github.com/hal/console[Admin Console] to support
+possibly being required to redirect to the login form and to make use of the logout endpoint.
+
+Security components developed for this RFE will be contained within the
+https://github.com/wildfly-security/wildfly-elytron[WildFly Elytron] project.
+
+=== Other Interested Projects
+
+None
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+==== General Flow
+
+On the HTTP management interface a new context will be made available at the path `/authentication`,
+when a user connects to the root `/` context of the application server they will be redirected to the
+`/authentication` context.  The `/authentication` context will display a login form for the user 
+to authenticate themselves.
+
+The look and feel of the login FORM will make use of `PatternFly` for consistent with the look and
+feel of the web console.
+
+Under the `/authentication` context there will be two sub contexts `/login` and `/logout`, after 
+a user has input their username and password these will be passed to the first of the sub contexts to
+perform the authentication.  Where authentication is successful a cryptographically signed JWT token 
+will be generated and passed back to the client as a cookie, the login form will then redirect the 
+user to the admin console.
+
+The admin console context is unauthenticated so will load as normal, the `/management` enpoint will 
+use a different HTTP authentication mchanism configuration which will use the `BEARER` HTTP 
+authentication mechanism which will be configured to use the JWT token from the incoming request cookie.
+
+When the user has finished managing the application server they can click the usual Logout link in 
+the admin console which will redirect them to `/authentication/logout`, this context will clear 
+the cookie containing the JWT token.
+
+==== Other Flows
+
+If after the username and password is sent to the `/authentication/login` context the authentication 
+fails the user will remain on the login page and a suitably vague error will be delayed to indicate
+that authentication has failed.
+
+If a user has previously been authenticated and their cookie has expired or the user is using the 
+admin console to connect to a different server it is possible the admin console may sent an invocation
+to the `/management` context without an appropriate cookie, in this case the admin console will need
+to be "notified to" and handle a redirect to the `/authentication` context.
+
+==== elytron-authentication
+
+A new subsystem `elytron-authentication` will be developed, the primary role of this subsystem
+will be to make a HTTP context available to be published.  This subsystem will also be responsible for
+the generation of the cryptographically signed JWT token and also provide a configured BEARER HTTP
+authentication mechanism which can validate the tokens produced by this server only.
+
+The generation and signing of the JWT tokens will largely be internal to the subsystem and will
+not be configurable.  The subsystem will manage a dynamically generated key pair for token signing
+and validation, this will live as long as the application server process and will not survive restarts.
+The key pair however will survive reloads as it is common when managing an application server to reload
+the configuration.
+
+Although this subsystem is only being used for the security of the management HTTP interface at this
+time later it will be expanded to be used for deployment security as well.
+
+The HTTP context configuration will cross reference a `security-domain` for the authentication 
+requirements.
+
+This subsystem will also support the definition of arbitrary attributes which can be requested from
+the user at the time of authentication, as an example this could be used to request a single use
+password in addition to the regular password.  A new evidence type will be defined within WildFly Elytron
+which will accept an arbitrary set of attributes during authentication.  The existing security realms
+within WildFly Elytron that handle username/password based authentication will be updated to support
+this new dynamic evidence type.
+
+==== core-management
+
+The number of attributes related to security on the management interfaces has grown with different
+permutations needed for different situations.  To reduce the complexity a new resource `policy=security`
+will be added to the `core-management` subsystem, this will allow references to the sasl or http 
+authentication factories as well as to ssl-contexts to be used.  This new policy resouce will also be
+able to reference the new context made available from the `elytron-authentication` subsystem.
+
+==== Management Interfaces
+
+On the management interfaces a new attribute `use-core-management-security-policy` will be added,
+this will be a boolean and when set to `true` the configuration defined on the `policy=security`
+resource will be used instead of the individual attributes on the management interface.
+
+==== Out Of Scope
+
+The RFE will not be making changes to the SASL authentication for native access, the out of the
+box configuration will still default to supporting the JBOSS_LOCAL_USER and DIGEST SASL mechanisms.
+
+This RFE will also not be changing the getting started experience adding the initial users to the
+server using the add-user utility and this RFE will not be changing the properties files used to
+contain the initial users.
+
+=== Nice-to-Have Requirements
+
+Should the management interfaces have TLS enabled by default, we may be able to also generate a 
+wildfly-config.xml for clients to use poining at a Keystore for the server's certificate.
+
+This could however be high risk breaking various clients.
+
+=== Non-Requirements
+
+The architecture chosen for this RFE will form the basis for future development which will not be covered by
+this RFE.
+
+It is envisaged that the form authentication provided by the `elytron-authentication` subsystem will be 
+enhanced further with capabilities such as:
+
+ * Support for MFA authentication using OTP such as HOTP / TOTP.
+ * Dynamic decisions based on username such as recognising a user is registered for SSO.
+ * Fido2 / WebAuth authentication with or without a username.
+ * Multi factor authentication using push notifications.
+ * Customisation of the look and feel of the form.
+ 
+In addition to using the form for the management interfaces it will be possible to use configurations
+to secure deployments making all of these options available.
+
+These additional features are broadly the reason for placing the initial configuration for the form 
+into a new subsystem.
+
+== Backwards Compatibility
+
+=== Default Configuration
+
+Prior to this change the default configuration for the management interfaces referenced 
+`*-authentication-factory` resources to provide the SASL and HTTP authentication which was 
+DIGEST based, this change updates  the configuration to use a security policy withing the 
+core-management subsystem as well as changing  the default authentication of the HTTP management
+interface to use FORM authentication.
+
+Unless we also enable TLS for the management interfaces clients which connect to the native 
+interface either  directly or via HTTP Upgrade will be unaffected as this will still be using 
+SASL authentication which will be unchanged by this RFE.
+
+=== Importing Existing Configuration
+
+Existing configuration will be imported "as-is" and will continue to use the previously 
+defined behaviour, users who want to add form authentication to the HTTP management interface will 
+need to manually add it themselves.
+
+=== Deployments
+
+This RFE only affects authentication for the management interfaces so does not affect deployments.
+
+=== Interoperability
+
+The main interoperability risk is clients connecting to the HTTP management interface and assuming
+they will be authenticating using DIGEST authentication, modifications will be needed to the new default
+configuration to add additional authentication mechanisms to the HTTP management interface when accessed
+directly using HTTP.
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+
+== Security Considerations
+
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+
+== Test Plan
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
