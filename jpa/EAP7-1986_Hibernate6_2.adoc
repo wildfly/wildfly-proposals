@@ -21,14 +21,14 @@ Hibernate Search needs to be upgraded to 6.1.8+ https://hibernate.atlassian.net/
 
 The new libraries were added for Jakarta EE 10 compatibility (https://jakarta.ee/compatibility/certification/10).
 
-Migration notes for transition from Hibernate ORM 5.3 to 6.1 can be viewed via, these pages will be used as input for the EAP 8 documentation updates:
+Migration notes for transition from Hibernate ORM 5.3 to 6.2 can be viewed via, these pages will be used as input for the EAP 8 documentation updates:
 
 * https://github.com/hibernate/hibernate-orm/blob/5.4/migration-guide.adoc
 * https://github.com/hibernate/hibernate-orm/blob/5.5/migration-guide.adoc
 * https://github.com/hibernate/hibernate-orm/blob/5.6/migration-guide.adoc
-* https://github.com/hibernate/hibernate-orm/blob/6.0/migration-guide.adoc
-* https://github.com/hibernate/hibernate-orm/blob/6.1/migration-guide.adoc
-* https://github.com/hibernate/hibernate-orm/blob/main/migration-guide.adoc (work in progress towards producing https://github.com/hibernate/hibernate-orm/blob/6.2/migration-guide.adoc).
+* https://docs.jboss.org/hibernate/orm/6.0/migration-guide/migration-guide.html
+* https://docs.jboss.org/hibernate/orm/6.1/migration-guide/migration-guide.html
+* https://docs.jboss.org/hibernate/orm/6.2/migration-guide/migration-guide.html
 
 == Issue Metadata
 
