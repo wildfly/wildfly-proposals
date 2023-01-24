@@ -8,7 +8,11 @@
 
 == Overview
 
-When no management user was added to the management realm and user tried to access the UI console, the wildfly redirected to the error page that advised to add a management user with `ad-user.sh` script. This redirection took effect only when realm could be checked for users, eg. the default properties realm. Legacy LDAP realm and others were always assumed to contain users. This issue seeks to add similar fuctionality to Elytron.
+When no management user was added to the management realm and user tried to access the UI console, 
+WildFly would redirect to an error page that advised the user to add a management user with the 
+`add-user.sh` script. This redirection took effect only when realm could be checked for users, eg. 
+the default properties realm. Legacy LDAP realm and others were always assumed to contain users. 
+This issue seeks to add similar fuctionality to WildFly Elytron.
 
 == Issue Metadata
 
@@ -19,10 +23,12 @@ When no management user was added to the management realm and user tried to acce
 === Related Issues
 
 * https://issues.redhat.com/browse/EAP7-1098[EAP7-1098] - EAP issue tracker
+* https://issues.redhat.com/browse/EAP7-1696[EAP7-1696] - Prerequisite requirement
+* https://issues.redhat.com/browse/WFLY-14735[WFLY-14735]
 
 === Dev Contacts
 
-* TODO
+* mailto:{darran.lofthouse@jboss.com}[{Darran Lofthouse}]
 
 === QE Contacts
 
@@ -31,7 +37,7 @@ When no management user was added to the management realm and user tried to acce
 === Testing By
 // Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
 // Discuss with QE during the Kickoff state to decide this
-[x] Engineering
+[ ] Engineering
 
 [ ] QE
 
@@ -39,13 +45,18 @@ When no management user was added to the management realm and user tried to acce
 
 * https://github.com/wildfly/wildfly-core[WildFly Core project]
 * https://github.com/wildfly/wildfly[WildFly project]
+* https://github.com/wildfly-security/wildfly-elytron[WildFly Elytron]
 
 == Requirements
 
 === Hard Requirements
 
-* When realm associated with management interface is empty and user tries to access management console, wildfly will redirect to the error page advising user to use add-user script
-* Above is true only for some types of realms which allow to check if it is empty. Example of such realm is properties realm, identity realm and filesystem realm. LDAP realm, JAAS realm will never redirect to error page because those realms do not provide possibility to check for existence of users
+* When realm associated with management interface is empty and user tries to access management 
+console, WildFly will redirect to the error page advising user to use add-user script
+* Above is true only for some types of realms which allow to check if it is empty. Example 
+of such realm is properties realm, identity realm and filesystem realm. LDAP realm, JAAS realm 
+will never redirect to error page because those realms do not provide possibility to check 
+for existence of users
 * When realm is not empty it will provide a challenge
 
 === Nice-to-Have Requirements
@@ -58,11 +69,30 @@ N/A
 
 == Implementation Plan
 
-Add new method eg. `isReadyForAuthentication`/`canResultInSuccessfulAuthentication` to SecurityRealm interface, similar to legacy method `isReadyForHttpChallenge()`, that can be used to find out if at least 1 user was added to the realm. New method will be added to security domain that will check its map of realms to find out whether the domain contains users.
 
-LDAP realm, JAAS realm and others that do not provide possibility to check how many users are present will default to true, and the error page advising user to add management user will never be shown. But filesystem realm can check if the realm's folder has no files or call the FilesystemRealm#getRealmIdentityIterator method to see if there are existing users. Properties realm can check properties file for existence of users. This new method will be used in the `createReadyFunction(Builder builder)` method of `ManagementHttpServer`. The current security domain can be obtained in `createReadyFunction(Builder builder)` method from builder's httpAuthenticationFactory, or the realm will default to "ManagementRealm". The security domain will internally check the map of its realms to check for existence of users in management domain. For the CLIENT_CERT authentication mechanism, we can check whether that is possible by checking also the mechanism names obtained from the builder's httpAuthenticationFactory.
 
-The error page that prompts to add a user and the redirection is already implemented, so wildfly-elytron changes and updating of the `createReadyFunction(Builder builder)` method of `ManagementHttpServer` in wildfly-core should suffice. The error page must be updated when the default out of the box configuration makes use of a filesystem realm instead of the properties realm and different CLI commands should be used to add users.
+Add new method eg. `isReadyForAuthentication`/`canResultInSuccessfulAuthentication` to 
+SecurityRealm interface, similar to legacy method `isReadyForHttpChallenge()`, that can be used to 
+find out if at least 1 user was added to the realm. New method will be added to security domain that 
+will check its map of realms to find out whether the domain contains users.
+
+LDAP realm, JAAS realm and others that do not provide possibility to check how many users are present 
+will default to true, and the error page advising user to add management user will never be shown. 
+But filesystem realm can check if the realm's folder has no files or call the 
+FilesystemRealm#getRealmIdentityIterator method to see if there are existing users. 
+Properties realm can check properties file for existence of users. This new method will be used in the 
+`createReadyFunction(Builder builder)` method of `ManagementHttpServer`. The current security 
+domain can be obtained in `createReadyFunction(Builder builder)` method from builder's 
+httpAuthenticationFactory, or the realm will default to "ManagementRealm". The security domain will 
+internally check the map of its realms to check for existence of users in management domain. For the 
+CLIENT_CERT authentication mechanism, we can check whether that is possible by checking also the 
+mechanism names obtained from the builder's httpAuthenticationFactory.
+
+The error page that prompts to add a user and the redirection is already implemented, so 
+wildfly-elytron changes and updating of the `createReadyFunction(Builder builder)` method of 
+`ManagementHttpServer` in wildfly-core should suffice. The error page must be updated when the 
+default out of the box configuration makes use of a filesystem realm instead of the properties 
+realm and different CLI commands should be used to add users.
 
 == Test Plan
 
@@ -70,7 +100,8 @@ The error page that prompts to add a user and the redirection is already impleme
 
 == Community Documentation
 
-Note about the possibility to check whether the security domain and security realm contains users will be added to Wildfly docs.
+Note about the possibility to check whether the security domain and security realm contains users 
+will be added to Wildfly docs.
 
 == Release Note Content
 
