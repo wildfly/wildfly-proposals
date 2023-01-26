@@ -1,6 +1,8 @@
 = WFCORE-5532 Provide an Elytron equivalent for realm readiness checking
 :author:            Diana Krepinska
+:author2:           Darran Lofthouse
 :email:             dvilkola@redhat.com
+:email2:            darran.lofthouse@jboss.com
 :toc:               left
 :icons:             font
 :idprefix:
@@ -23,7 +25,7 @@ This issue seeks to add similar fuctionality to WildFly Elytron.
 === Related Issues
 
 * https://issues.redhat.com/browse/EAP7-1098[EAP7-1098] - EAP issue tracker
-* https://issues.redhat.com/browse/EAP7-1696[EAP7-1696] - Prerequisite requirement
+* https://issues.redhat.com/browse/EAP7-1696[EAP7-1696]
 * https://issues.redhat.com/browse/WFLY-14735[WFLY-14735]
 
 === Dev Contacts
@@ -58,6 +60,11 @@ of such realm is properties realm, identity realm and filesystem realm. LDAP rea
 will never redirect to error page because those realms do not provide possibility to check 
 for existence of users
 * When realm is not empty it will provide a challenge
+* Where a `SecurityDomain` contains many realms if any of the realms are available it will challenge.
+
+It is worth noting this requirement is specifically for new server installations where an
+administrator or user may not be familiar with how to define a user, once they have started
+customising the server we can assume they have progressed beyond needing this information.
 
 === Nice-to-Have Requirements
 
@@ -69,24 +76,31 @@ N/A
 
 == Implementation Plan
 
+The application server may have access to any of the following API classes.
 
+ * `SecurityRealm`
+ * `SecurityDomain`
+ * `SaslAuthenticationFactory`
+ * `HttpAuthenticationFactory`
 
-Add new method eg. `isReadyForAuthentication`/`canResultInSuccessfulAuthentication` to 
-SecurityRealm interface, similar to legacy method `isReadyForHttpChallenge()`, that can be used to 
-find out if at least 1 user was added to the realm. New method will be added to security domain that 
-will check its map of realms to find out whether the domain contains users.
+For each of these we will add new a method eg. `isReadyForAuthentication` similar to the legacy 
+method `isReadyForHttpChallenge()`, that can be used to  find out if at least 1 user was added to 
+the realm. New method will be added to security domain that will check its map of realms to find out 
+whether the domain contains users.
+
+For a `SecurityDomain` with multiple `SecurityRealm` references the `isReadyForAuthentication`
+method will return `true` if any of the individual realms return `true`.
 
 LDAP realm, JAAS realm and others that do not provide possibility to check how many users are present 
-will default to true, and the error page advising user to add management user will never be shown. 
+will default to true.
+
 But filesystem realm can check if the realm's folder has no files or call the 
 FilesystemRealm#getRealmIdentityIterator method to see if there are existing users. 
-Properties realm can check properties file for existence of users. This new method will be used in the 
-`createReadyFunction(Builder builder)` method of `ManagementHttpServer`. The current security 
-domain can be obtained in `createReadyFunction(Builder builder)` method from builder's 
-httpAuthenticationFactory, or the realm will default to "ManagementRealm". The security domain will 
-internally check the map of its realms to check for existence of users in management domain. For the 
-CLIENT_CERT authentication mechanism, we can check whether that is possible by checking also the 
-mechanism names obtained from the builder's httpAuthenticationFactory.
+Properties realm can check properties file for existence of users. 
+
+This requirement will need to be operational for legacy configurations where the management interfaces
+are secured using HTTP authentication mechanisms and also when they are secured using FORM authentication
+being added under WFLY-14735.
 
 The error page that prompts to add a user and the redirection is already implemented, so 
 wildfly-elytron changes and updating of the `createReadyFunction(Builder builder)` method of 
