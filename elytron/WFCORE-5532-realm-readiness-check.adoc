@@ -68,7 +68,11 @@ customising the server we can assume they have progressed beyond needing this in
 
 === Nice-to-Have Requirements
 
-N/A
+Advanced realms such as distributed, aggregate and fail over could have logic added related to 
+their relevant behaviour but it is not essential for this enhancement and they may default to 
+`true`.  This enhancement is to help users get started after a clean WildFly installation, once
+users have applied configuration changes their knowedge is past the point where they need
+guidance to add their first users.
 
 === Non-Requirements
 
