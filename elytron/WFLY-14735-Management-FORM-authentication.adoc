@@ -10,6 +10,7 @@
 
 The development of this RFE is delivering a subset of functionality from a much larger planned change,
 this RFE will start with two features:
+
  * Enabling FORM authentication for admin console access to the application server.
  * Where custom security realms are in use supporting MFA authentication on the login form to 
  request additional attributes.
@@ -87,7 +88,7 @@ will be generated and passed back to the client as a cookie, the login form will
 user to the admin console.
 
 The admin console context is unauthenticated so will load as normal, the `/management` enpoint will 
-use a different HTTP authentication mchanism configuration which will use the `BEARER` HTTP 
+use a different HTTP authentication mechanism configuration which will use the `BEARER` HTTP 
 authentication mechanism which will be configured to use the JWT token from the incoming request cookie.
 
 When the user has finished managing the application server they can click the usual Logout link in 
@@ -143,7 +144,12 @@ able to reference the new context made available from the `elytron-authenticatio
 
 On the management interfaces a new attribute `use-core-management-security-policy` will be added,
 this will be a boolean and when set to `true` the configuration defined on the `policy=security`
-resource will be used instead of the individual attributes on the management interface.
+resource will be used instead of the individual attributes on the management interface.  This attribute
+will default to `false` and will need to be explicitly configured.
+
+The existing attributes, `ssl-context`, `sasl-authentication-factory`, and 
+`http-authentication-factory` will not be mutually exclusive / `altertives` to the new attribute,
+instead individual capabilities can override the capabilities from the security policy.
 
 ==== Out Of Scope
 
@@ -154,17 +160,36 @@ This RFE will also not be changing the getting started experience adding the ini
 server using the add-user utility and this RFE will not be changing the properties files used to
 contain the initial users.
 
+==== Existing Configuration
+
+This RFE only adds a new capability that can be used to provide an alternative approach to securing
+HTTP access to the management interfaces, existing configurations using Elytron capabiltiies 
+directly to secure the management interfaces will continue to work as they always did.  There are no
+current plans to disable securing the management interfaces as they have been secured previously.
+
+==== Default Configuration
+
+The new subsystem will be present in the default configuration with a FORM configuration to make
+use of the existing `ManagementDomain` for authentication.
+
+The management interfaces however will not use FORM authentication out of the box.  The reason is 
+that when activating FORM authentication TLS should also be enabled for the management interfaces
+at the same time, this way we can document the steps and considerations to take when activating
+this feature.
+
 === Nice-to-Have Requirements
 
-Should the management interfaces have TLS enabled by default, we may be able to also generate a 
-wildfly-config.xml for clients to use poining at a Keystore for the server's certificate.
-
-This could however be high risk breaking various clients.
+The CLI will have a new security command adding to activate FORM authentication for the HTTP management
+interface, this will largely be the case of setting `use-core-management-security-policy` to `true`
+and clearing the other attributes.  
 
 === Non-Requirements
 
-The architecture chosen for this RFE will form the basis for future development which will not be covered by
-this RFE.
+The integration within the admin console such as how to handle the need for authentication and how to
+activate FORM authentication will be handled under a separate RFE so are not a requirement of this RFE.
+
+The architecture chosen for this RFE will form the basis for future development which will not be 
+covered by this RFE.
 
 It is envisaged that the form authentication provided by the `elytron-authentication` subsystem will be 
 enhanced further with capabilities such as:
@@ -187,7 +212,7 @@ into a new subsystem.
 
 Prior to this change the default configuration for the management interfaces referenced 
 `*-authentication-factory` resources to provide the SASL and HTTP authentication which was 
-DIGEST based, this change updates  the configuration to use a security policy withing the 
+DIGEST based, this change updates the configuration to use a security policy within the 
 core-management subsystem as well as changing  the default authentication of the HTTP management
 interface to use FORM authentication.
 
@@ -228,6 +253,16 @@ or a confirmation that there are no security implications to consider.
 ////
 
 == Test Plan
+
+Testing will need to be performed in a couple of different locations.
+
+ * Within WildFly Elytron any new components will have their own set of unit tests.
+ * Tests will be added to either WildFly Core or WildFly to test the new authentication flows once activated.
+ * The WildFly testsuite is not a good location to test the appearance of the FORM so that may be delegated
+to the admin console testsuite.
+ * The use of MFA will require a custom security realm, a test will be developed in the WildFly testsuite
+for this scenario.  This test will also be the base example for users looking to use this feature.
+
 
 == Community Documentation
 ////
