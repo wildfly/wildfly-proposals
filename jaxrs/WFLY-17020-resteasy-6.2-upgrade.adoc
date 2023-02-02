@@ -1,0 +1,132 @@
+= Upgrade RESTEasy from 4.x to 6.2
+:author:            James R. Perkins
+:email:             jperkins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+RESTEasy 6.2 is Jakarta REST 3.1 (Jakarta EE 10) compliant. The MicroProfile REST Client, MicroProfile REST Config
+Sources and Spring were moved out of the project and into new projects in RESTEasy 5.x. This was due to the project
+dependencies not being Jakarta EE 10 compliant.
+
+One new module will be introduced for the `org.jboss.resteasy.microprofile:microprofile-config`.
+
+Two new projects:
+
+* https://github.com/resteasy/resteasy-microprofile
+* https://github.com/resteasy/resteasy-spring
+
+|===
+|Old GA |New GA
+
+|`org.jboss.resteasy:resteasy-client-microprofile`
+|`org.jboss.resteasy.microprofile:microprofile-rest-client`
+
+|`org.jboss.resteasy:resteasy-client-microprofile-base`
+|`org.jboss.resteasy.microprofile:microprofile-rest-client-base`
+
+|`org.jboss.resteasy:resteasy-spring`
+|`org.jboss.resteasy.spring:resteasy-spring`
+|===
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-17020[WFLY-17020]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1832[EAP7-1832]
+* https://issues.redhat.com/browse/WFLY-15436[WFLY-15436]
+* https://issues.redhat.com/browse/WFLY-15286[WFLY-15286]
+* https://issues.redhat.com/browse/RESTEASY-1925[RESTEASY-1925]
+* https://issues.redhat.com/browse/RESTEASY-2975[RESTEASY-2975]
+* https://issues.redhat.com/browse/RESTEASY-2976[RESTEASY-2976]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:jbliznak@redhat.com[Jan Blizňák]
+
+=== Testing By
+
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly, and sub-projects
+* Quickstarts
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* Replace the RESTEasy MicroProfile client in WildFly
+* Do not change any runtime module names.
+* Add the `org.jboss.resteasy.microprofile:microprofile-config` module.
+* As part of the 5.x upgrade, WildFly Preview will be upgraded to RESTEasy 6.x for native Jakarta EE 9.1 support of
+Jakarta RESTful Web Services.
+* Quickstarts, especially for Spring, will require some changes. This needs to be done in conjunction with this change.
+** The quickstarts that use Spring should change to include RESTEasy Spring in the deployment.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+The current test suite and Jakarta EE TCK should be sufficient for testing. The MicroProfile TCK is run as part of the
+resteasy-microprofile project. RESTEasy itself runs against the Jakarta REST 3.1 TCK nightly and with each PR.
+
+== Community Documentation
+
+Community documentation will need to be updated to show the changes for the Maven group id's and artifact id's.
+
+== Release Note Content
+
+RESTEasy has migrated the Eclipse MicroProfile support out of RESTEasy core into a
+https://github.com/resteasy/resteasy-microprofile[new project]. Functionally nothing has changed. The only requirement
+is a change to the Maven group id and artifact id required to use the MicroProfile REST Client and MicroProfile Config
+sources.
+
+RESTEasy Spring has been removed from WildFly. This was done as there is no current release of Spring which supports
+the `jakarta` namespace change.
+
+|===
+|Old GA |New GA
+
+|`org.jboss.resteasy:resteasy-client-microprofile`
+|`org.jboss.resteasy.microprofile:microprofile-rest-client`
+
+|`org.jboss.resteasy:resteasy-client-microprofile-base`
+|`org.jboss.resteasy.microprofile:microprofile-rest-client-base`
+
+|`org.jboss.resteasy:resteasy-spring`
+|`org.jboss.resteasy.spring:resteasy-spring`
+|===
+
+The following features have been added to 6.2:
+
+* https://issues.redhat.com/browse/RESTEASY-2880[RESTEASY-2880]: Threshold before writing to disk should be configurable
+* https://issues.redhat.com/browse/RESTEASY-3021[RESTEASY-3021]: Create a way to propagate the RESTEasy context for new threads
+* https://issues.redhat.com/browse/RESTEASY-1925[RESTEASY-1925]: Implement the Jakarta RESTful Web Services Specification
