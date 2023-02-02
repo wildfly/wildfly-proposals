@@ -1,0 +1,92 @@
+= Replace 'discovery-group' and 'broadcast-group' resources
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+In EAP 7.3, the `discovery-group` resource in the messaging subsystem was deprecated and substituted by `jgroups-discovery-group` and `socket-discovery-group` resources. (The same goes also for broadcast groups.)
+
+This was done to streamline validation requirements in the management model - the old resources required exactly one of the `jgroups-channel` and `socket-binding` attributes to be set, while the other had to be `null`. The management model is not expressive enough for that. In the new resources these attributes are split into their respective resources.
+
+As that was done, the original `discovery-group` and `broadcast-group` resources still exist, but functionally they delegate all operations to their socket- or jgroups- resource variants.
+
+It is now being contemplated to remove the original deprecated resources in EAP 8. This will affect Web Console, because it still relies on them.
+
+This RFE is about to fully replace the old UI parts relying on `discovery-group` and `broadcast-group` with a new UI based on the new resources.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1779[HAL-1779]
+* {issue-base-url}/EAP7-1886[EAP7-1886]
+
+=== Related Issues
+
+* n/a
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:msvehla@redhat.com[Martin Svehla]
+
+=== Testing By
+
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+There are different places in the UI which are affected by this change.
+
+=== Configuration / Subsystems / Messaging / Remote ActiveMQ Server
+
+Replace the static entry "Discovery Group" in the left-hand side navigation with a sub-menu "Discovery Group" showing two entries:
+
+* "JGroups": Configures `/subsystem=messaging-activemq/jgroups-discovery-group=*`
+* "Socket Binding": Configures `/subsystem=messaging-activemq/socket-discovery-group=*`
+
+=== Configuration / Subsystems / Messaging / Server / <Server> / Clustering
+
+Replace the static entry "Broadcast Group" in the left-hand side navigation with a sub-menu "Broadcast Group" showing two entries:
+
+* "JGroups": Configures `/subsystem=messaging-activemq/server=<server>/jgroups-broadcast-group=*`
+* "Socket Binding": Configures `/subsystem=messaging-activemq/server=<server>/socket-broadcast-group=*`
+
+Replace the static entry "Discovery Group" in the left-hand side navigation with a sub-menu "Discovery Group" showing two entries:
+
+* "JGroups": Configures `/subsystem=messaging-activemq/server=<server>/jgroups-discovery-group=**`
+* "Socket Binding": Configures `/subsystem=messaging-activemq/server=<server>/socket-discovery-group=*`
+
+=== Affected UI
+
+* Configuration / Subsystems / Messaging / Remote ActiveMQ Server
+* Configuration / Subsystems / Messaging / Server / <Server> / Clustering
+
+=== Affected Resources
+
+* `/subsystem=messaging-activemq/discovery-group=*`
+* `/subsystem=messaging-activemq/server=default/broadcast-group=*`
+* `/subsystem=messaging-activemq/server=default/discovery-group=*`
+
+== Test Plan
+
+Existing tests are removed and replaced by tests which test the new resources.
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
