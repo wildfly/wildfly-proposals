@@ -1,0 +1,79 @@
+= Opt Out Local Storage
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+HAL uses the browser local storage to store various settings and data:
+
+- management endpoints (for HAL standalone mode)
+- pinned items in the finder
+- local server URLs
+- JavaScript extensions
+- macros
+- 2nd level cache for r-r-d metadata (memory being the 1st level cache)
+
+This RFE is about to disable local storage for sensitive data. This affects management endpoints, local server URLs, JavaScript extensions, macros and the 2nd level cache.
+
+The RFE adds an additional option to the settings to turn on/off local storage. By default local storage wil be enabled. The settings are saved as a cookie and are not affected by turning on/off local storage.
+
+Part of this RFE has to be a clear documentation about local storage, for what it's used and the consequences when turning off local storage.
+
+=== Consequences
+
+Turning off local storage will have some effects on the features in HAL:
+
+- management endpoints: The endpoints won't survive a browser restart and have to be added again each time.
+- pinned items in the finder: This feature won't be available
+- local server URLs: This feature won't be available
+- JavaScript extensions: This feature won't be available
+- macros: This feature won't be available
+- 2nd level cache for r-r-d metadata: r-r-d metadata will be stored in memory only. After a browser restart the r-r-d operations will be executed again.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1614[HAL-1614]
+
+=== Related Issues
+
+* {issue-base-url}/EAP7-1308[EAP7-1308]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:jkasik@redhat.com[Jan Kasik]
+
+=== Testing By
+    
+[x] Engineering
+    
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+- Add an entry in the user setting to turn on/off local storage.
+- Default is to use local storage.
+- Document how local storage is used and what it means to turn it off.
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
