@@ -1,0 +1,74 @@
+= Bootable jar support for MicroProfile Quickstarts
+:author:            Eduardo Martins
+:email:             emartins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This feature should add support for running the MicroProfile Quickstarts applications without the need to archive it as a deployment, and without the need to deploy it in a running application server, leveraging the bootable functionality provided by WFLY-13305.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-13713[WFLY-13713]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1538[EAP7-1538]
+* https://issues.redhat.com/browse/WFLY-13305[WFLY-13305]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:szhantem@redhat.com[Sultan Zhantemirov]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[ ] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+
+* WildFly Quickstarts
+
+=== Other Interested Projects
+
+* NONE
+
+== Requirements
+
+=== Hard Requirements
+
+* The Maven project for each MicroProfile Quickstart should include:
+** a Maven profile to build a WildFly bootable jar, with the Quickstart application
+** in case the Quickstart is compatible with OpenShift, a Maven profile to build a WildFly bootable jar, with the Quickstart application, and deploy it on OpenShift
+
+* The README.adoc for each MicroProfile Quickstart should include a new section:
+** describing how to build and run the Quickstart with a bare-metal bootable jar
+** describing how to build and deploy the Quickstart with a bootable jar on OpenShift, in case the Quickstart is OpenShift compatible
+
+=== Nice-to-Have Requirements
+
+* NONE
+
+=== Non-Requirements
+
+* NONE
+
+== Test Plan
+
+* TODO
+
+== Community Documentation
+
+* The new asciidoc section should be added to the 'shared-docs' directory of the WildFly Quickstarts repository.
