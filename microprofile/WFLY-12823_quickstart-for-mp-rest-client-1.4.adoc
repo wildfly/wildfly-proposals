@@ -1,0 +1,81 @@
+= WFLY-12823 Quickstart for MP REST-client 1.4
+:author:            Martin Stefanko
+:email:             mstefank@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This RFE provides a new quickstart and guide for MicroProfile REST client 1.4 use in
+WildFly / JBoss EAP. The example will cover all basic functionalities of MicroProfile
+REST Client 1.4, namely: definitions of REST client interfaces, definitions of custom
+exception mappers, CDI injection of the client interfaces, and programmatic lookup of
+the client interfaces.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-12823[WFLY-12823]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1375[EAP7-1375] (internal)
+
+=== Dev Contacts
+
+* mailto:mstefank@redhat.com[Martin Stefanko]
+
+=== QE Contacts
+
+* mailto:jkasik@redhat.com[Jan Kasik]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* Quickstarts
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* individual steps that the users will go through:
+** deploy the server application providing a REST API
+** create a model JSON class used to consume JSONs from the server API
+** create a simple REST client interface utilizing the above model class
+** configuration of the REST client in the `@RegisterRestClient` annotation
+** injection of the REST client interface with the `@RestClient` qualifier
+** configuration of the REST client through the MicroProfile Config properties
+in the microprofile-config.properties file
+** custom configuration keys defined in the `@RegisterRestClient` annotation
+** programmatic lookup of REST client through `RestClientBuilder`
+** Asynchronous requests demonstration with the `CompletionStage` return value
+** create a custom `ResponseExceptionMapper` provider and register it with
+`@RegisterProvider` annotation
+
+=== Non-Requirements
+
+* https://github.com/eclipse/microprofile-rest-client/blob/1.4.0/spec/src/main/asciidoc/async.asciidoc#asyncinvocationinterceptors[AsyncInvocationInterceptors]
+* https://github.com/eclipse/microprofile-rest-client/blob/1.4.0/spec/src/main/asciidoc/ssl.asciidoc[SSL configuration]
+
+== Test Plan
+
+* The quickstart will have
+http://arquillian.org/guides/getting_started/?utm_source=cta#write_an_arquillian_test[Arquillian]
+tests verifying the responses codes from the
+exposed endpoints as well as the returned JSON objects. The endpoints will be
+invoked through the JAX-RS client (resteasy-client test dependency).
+
+== Community Documentation
+
+Covered by the quickstart README file in https://github.com/wildfly/quickstart.
