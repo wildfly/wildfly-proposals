@@ -82,15 +82,13 @@ There will be a separate RFEs for:
 
 == Issue Metadata
 
-* https://issues.redhat.com/browse/WFLY-17137[WFLY-17137] - Provide Support for MicroProfile.Next version that Aligns with Jakarta EE 10
-* https://issues.redhat.com/browse/EAP7-1861[EAP7-1861] - Provide Support for MicroProfile.Next version that Aligns with Jakarta EE 10
-
 === Issue
 
-* https://issues.redhat.com/browse/WFCORE[WFCORE-XXXX]
+* https://issues.redhat.com/browse/WFLY-17137[WFLY-17137] - Provide Support for MicroProfile.Next version that Aligns with Jakarta EE 10
 
 === Related Issues
 
+* https://issues.redhat.com/browse/EAP7-1861[EAP7-1861] - Provide Support for MicroProfile.Next version that Aligns with Jakarta EE 10
 * https://issues.redhat.com/browse/WFLY-17138[WFLY-17138] - Convert MP Metrics subsystem to Legacy Mode
 * https://issues.redhat.com/browse/WFLY-17156[WFLY-17156] - Implement Support for MicroProfile Telemetry
 * https://issues.redhat.com/browse/WFLY-17510/[WFLY-17510] - Removal of MicroProfile OpenTracing
@@ -141,7 +139,7 @@ WildFly will be updated to pull in the corresponding versions of the Eclipse Mic
 === Non-Requirements
 
 * MP Metrics will no longer be included, and thus not upgraded be to MP Metrics 5.0 (https://issues.redhat.com/browse/WFLY-17138[WFLY-17138])
-* As MicroProfile OpenTracing is remove from MicroProfile Platform 6, it will be dropped (https://issues.redhat.com/browse/WFLY-17510[WFLY-17510])
+* As MicroProfile OpenTracing is removed from MicroProfile Platform 6, it will be dropped (https://issues.redhat.com/browse/WFLY-17510[WFLY-17510])
 
 == Backwards Compatibility
 
@@ -174,7 +172,7 @@ WildFly will be updated to pull in the corresponding versions of the Eclipse Mic
 
 == Community Documentation
 
-* Community documentation for the subsystems in question will be updated to reflect the new versions
+* Community documentation for the subsystems in question will be updated to reflect the new versions, and any potential differences in behaviour.
 
 ////
 Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
