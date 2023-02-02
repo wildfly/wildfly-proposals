@@ -1,0 +1,126 @@
+= EAP8 Beta Quickstarts
+:author:            Eduardo Martins
+:email:             emartins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This proposal specifies which Quickstarts will be delivered on EAP 8 Beta, and which Cloud, Provisioning and Automated Testing enhancements, planned for EAP 8 GA, will be demonstrated by such Quickstarts.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/EAP7-1891[EAP7-1891]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1839[EAP7-1839]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [x] QE
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/quickstart
+* https://github.com/jboss-developer/jboss-eap-quickstarts
+
+=== Other Interested Projects
+
+* None
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+
+* [x] Bootable jar (local and cloud deployment)
+* [x] OpenShift S2I
+
+== Requirements
+
+=== Hard Requirements
+
+* The Quickstarts to deliver with EAP 8 Beta should:
+** Cover EAP 8 Beta main functional areas, such as Web apps, Web Services/REST, Database/JPA, Messaging and EJBs.
+** Be compatible with OpenShift.
+
+* The following EAP 8 Cloud/Provisioning/Testing enhancements should be delivered by at least one of the EAP 8 Beta Quickstarts
+** Provisioning
+*** The WildFly Maven Plugin is now capable of provisioning a server with specific features (through Galleon layers), configure it using CLI scripts, and package it with an application deployed. Each EAP 8 Beta Quickstart should demonstrate how to use this new WildFly Maven Plugin functionality to provision a server with the needed Galleon layers, configure it using a CLI script if required, and package it with Quickstart’s application deployed.
+** Cloud
+*** Helm charts may be used to build and deploy an application on OpenShift, with improved user experience compared with the previous S2i usage. Each EAP 8 Beta Quickstart should demonstrate how to use Helm Charts to build and deploy the Quickstart’s application on OpenShift.
+** Testing
+*** The Quickstarts should demonstrate how users may test their applications with JBoss EAP 8, on baremetal and OpenShift environments. Regarding the JBoss EAP 8 Beta release the delivered Quickstarts should include integration tests, abstract from the environment where the server is running, and take advantage of Arquillian and the other Quickstarts enhancements to run such tests.
+**** On baremetal the WildFly Maven Plugin should be used to locally provision the server with the application deployed, and use the Arquillan managed container to run the tests.
+**** On OpenShift the Helm Charts should be used to build and deploy the server with the application, and use Arquillian remote container to run the tests.
+
+* The following Quickstarts were reviewed by the developer team and selected for being delivered with EAP 8 Beta:
+** cmt
+*** Main EAP 8 Beta functionality covered: Transactions, Messaging
+** Ee-security
+Main EAP 8 Beta functionality covered: EE Security
+** Helloworld
+Main EAP 8 Beta functionality covered: Servlets
+** Helloworld-ws
+Main EAP 8 Beta functionality covered: Web Services
+** Jaxrs-client
+Main EAP 8 Beta functionality covered: REST
+** Kitchensink
+Main EAP 8 Beta functionality covered: Multiple (JSF, CDI, EJB, JPA, and Bean Validation)
+** Numberguess
+Main EAP 8 Beta functionality covered: CDI, JSF
+** Servlet-security
+Main EAP 8 Beta functionality covered: Servlet, Elytron
+** Temperatureconverter
+Main EAP 8 Beta functionality covered: EJB
+** Thread-racing
+Main EAP 8 Beta functionality covered: Batch, EE Concurrency, Messaging, REST
+** Todo-backend
+Main EAP 8 Beta functionality covered: Datasource, Openshift
+** Websocket-hello
+Main EAP 8 Beta functionality covered: Web Socket
+
+=== Nice-to-Have Requirements
+
+* N/A
+
+=== Non-Requirements
+
+* N/A
+
+== Test Plan
+
+* TODO
+
+== Community Documentation
+
+* New shared asciidoc sections should be added to the Quickstarts repository, with respect to the enhancements delivered with JBoss EAP 8 Beta, and include these in the READMEs.
+
+== Release Note Content
+
+* The following Quickstarts are fully compatible and included with JBoss EAP 8 Beta:
+** cmt
+** ee-security
+** helloworld
+** helloworld-ws
+** jaxrs-client
+** kitchensink
+** numberguess
+** servlet-security
+** temperature-converter
+** thread-racing
+** todo-backend
+** websocket-hello
