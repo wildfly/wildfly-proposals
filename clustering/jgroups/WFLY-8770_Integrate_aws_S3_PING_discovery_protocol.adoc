@@ -1,0 +1,114 @@
+= WFLY-8770 Integrate aws.S3_PING discovery protocol
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          jgroups,clustering,aws,ec2,discovery
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+`org.jgroups.protocols.aws.S3_PING` is a discovery protocol designed for JGroups cluster nodes running in AWS EC2.
+While there are other protocols that can be used in such an environment (`TCPPING`, `JDBC_PING`), the `org.jgroups.protocols.aws.S3_PING` is an ideal fit.
+Discovery is performed by writing and reading from an S3 bucket.
+Protocol is automatically configured from system properties.
+
+Historically all protocols were bundled within main `jgroups-<version>.jar`.
+Since the main JGroups project does not allow runtime dependencies, protocols had to include a lot of embedded unmaintainable copy-pasted and trimmed library code.
+This hinders supportability.
+Protocols needing to fetch dependencies now reside in separate repositories in the https://github.com/jgroups-extras organization.
+As such, `org.jgroups.aws.S3_PING` resides in the https://github.com/jgroups-extras/jgroups-aws repository.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/EAP7-863[EAP7-863] Integrate aws.S3_PING discovery protocol
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-8770[WFLY-8770] Integrate aws.S3_PING discovery protocol (upstream issue)
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:spriadka@redhat.com[Simon Priadka]
+
+=== Testing By
+
+* [ ] Engineering
+
+* [x] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* JBoss EAP
+
+=== Other Interested Projects
+
+* Infinispan Server already bundles this protocol.
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [ ] OpenShift s2i
+
+* [ ] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* `org.jgroups.protocols.aws.S3_PING` discovery protocol can be configured in the application server out of the box.
+* Protocol must be configured with `module="org.jgroups.aws"` attribute.
+* The required AWS (and its dependencies) modules are labeled private.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+* Existing protocol properties (endpoint, region_name, bucket_name, bucket_prefix, check_if_bucket_exists) could be optionally exposed as model attributes.
+
+== Backwards Compatibility
+
+* N/A
+
+=== Default Configuration
+
+* N/A
+
+=== Importing Existing Configuration
+
+* N/A
+
+=== Deployments
+
+* N/A
+
+=== Interoperability
+
+* N/A
+
+== Security Considerations
+
+* No security implications to consider.
+
+== Test Plan
+
+Update existing QE AWS tests with the new protocol and provide appropriate environmental properties for the AWS access and run the test.
+
+== Community Documentation
+
+Documentation is included in upstream PR.
+
+== Release Note Content
+
+The `org.jgroups.protocols.aws.S3_PING` JGroups discovery protocol is now available out-of-box for usage for discovery in AWS EC2.
