@@ -191,19 +191,21 @@ limited to TLS
     ** Filtering and LDAP key stores
     ** Server SNI context support
     ** Support for custom components (ex.`custom-security-event-logger` and `custom-credential-security-factory`)
+* Object equivalents for some reference attributes need to be removed
+    ** An earlier version of this RFE proposed storing some elements (like key stores) as either object or reference
+    attributes, depending on command syntax used. This has been improved, and the updated concept is described below.
 ====
 
-Unlike Elytron, we want the configuration to be as simple as possible - ideally one CLI command.
-Currently there are implemented basic building blocks - TrustManager and KeyManager related factory functions,
-which lead into KeyStore and credential store builders, etc. The schema of the subsystem follows that of
-an Elytron subsystem, however the attributes for creating SSL contexts (managers, stores) are
-defined both as a reference and a direct object attributes. Since the operations are effectively identical, code
-duplication could likely be reduced with updated factories, working for both types of attributes, in Elytron.
-This would, for example, replace the need for ``createKeyManager`` method to exist for both referenced resources
-and objects created by an SSLContext command.
+Unlike Elytron, the configuration should be as simple as possible - ideally one CLI command to create the SSL context.
+The context is assembled with some basic blocks - TrustManager and KeyManager related factory functions,
+which lead into KeyStore and credential store builders, etc. Currently, the schema of the Elytron TLS subsystem follows that of
+an Elytron subsystem, however the attributes for creating TLS contexts (ex. `key-store`, `trust-manager`) are
+defined in the XML as both reference and direct object attributes. The plan is for this to be simplified to use references,
+allowing for cross compatibility with Elytron.
 
-Object attributes enable configuration to optionally be completed in a single command. For example, a
-server SSL context referencing a single key pair could encompass all previous commands into a single one:
+However, the CLI and shell tool scripts can use "objects" to provide more flexibility, like object attributes. Below,
+Elytron TLS could create a server SSL context from scratch, referencing a single key pair and encompassing
+all commands into a single one:
 
 [source,shell]
 ----
@@ -211,17 +213,16 @@ server SSL context referencing a single key pair could encompass all previous co
 ----
 
 While effective, this command is rather lengthy, so the subsystem would ideally offer simpler attributes
-as alternatives. One potential configuration abstracts away the key-manager, using a new object similar
-to ``org.wildfly.security.key-store``, but directly within the SSLContext:
+as alternatives. One potential command abstracts away the key-manager, using a new object similar
+to ``org.wildfly.security.key-store``, but that also forms the key manager:
 
 [source,shell]
 ----
 /subsystem=elytron-tls/server-ssl-context=appSSC:add(key-store={path=tlsServer.keystore,relative-to=jboss.server.config.dir,credential-reference={clear-text=serverKeySecret}},cipher-suite-names=TLS_AES_128_GCM_SHA256)
 ----
 
-A major task is determining whether this design or another is clearer to the end user. The fully expanded configuration, as
-references or object attributes, would remain available to enable advanced TLS options. Other features like certificate 
-authority integration also need to be added to the Elytron TLS working branch.
+Effectively, suppliers would be created for key stores and managers, similar to https://github.com/wildfly/wildfly-core/blob/main/controller/src/main/java/org/jboss/as/controller/security/CredentialReference.java[CredentialReference],
+and would be used for manipulating an SSLContext. When the configuration is stored, it would match that of the main Elytron subsystem.
 
 ==== Other Tasks
 
