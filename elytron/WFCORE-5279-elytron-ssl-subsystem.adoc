@@ -76,7 +76,7 @@ https://github.com/wildfly-security-incubator/elytron-tls[elytron-tls], a standa
 In order to reduce the required configuration, dependencies, and system resources, Elytron TLS targets
 one major collection of use-cases: authentication of a server (and optionally client) using HTTPS. By limiting the
 scope to HTTP over TLS, we can remove most of the alternative authentication and authorization tools available in
-Elytron, including security domains, principal transformers, SASL support, and HTTP authentication mechanisms. This
+Elytron, including security domains, principal transformers, and HTTP authentication mechanisms. This
 reduces the subsystem size, and therefore that of Galleon layers, bootable JARs and OpenShift deployments.
 
 To achieve these goals, the Elytron TLS subsystem would include all dependencies it needs, and not require the
