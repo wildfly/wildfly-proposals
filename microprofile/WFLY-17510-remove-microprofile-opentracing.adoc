@@ -1,0 +1,103 @@
+= WFLY-17510: Remove MicroProfile OpenTracing
+:author:            Jason Lee
+:email:             jasondlee@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WildFly has long offered MicroProfile OpenTracing as part of its overall MicroProfile support. Since its inclusion in WildFly, however, OpenTracing has merged with OpenCensus to form https://opentelemetry.io[OpenTelemetry]. Because of this merger, the OpenTracing project itself has been abandoned, and the MicroProfile Working Group has decided to remove OpenTracing from the platform specification, replacing it with MicroProfile Telemetry, which wraps and exposes https://opentelemetry.io[OpenTelemetry]. The effort under this JIRA will cover only the effort to remove MicroProfile OpenTracing (MicroProfile OpenTracing) from the server and migrate installations to MicroProfile Telemetry.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-17510[WFLY-17510]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-17156[WFLY-17156]
+* https://issues.redhat.com/browse/EAP7-2002[EAP7-2002]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
+
+=== Testing By
+* [x] Engineering
+* [ ] QE
+
+=== Affected Projects or Components
+
+All the code changes will be confined to the MicroProfile OpenTracing extension and subsystem, which includes the Java code, Galleon modules/layers, etc.
+
+=== Other Interested Projects
+
+* WildFly
+* OpenTelemetry/MicroProfile Telemetry are involved but unchanged.
+
+=== Relevant Installation Types
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+* [ ] Managed domain
+* [x] OpenShift s2i
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+MicroProfile OpenTracing will be migrated to an admin-only module and removed from standard configs.
+
+A `MigrateOperation` will be added to remove the extension from existing server configs upon server startup (in admin-only mode). For systems with MicroProfile OpenTracing configured, OpenTelemetry will be configured using default values.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+Converting MicroProfile OpenTracing config to OpenTelemetry config. The configuration options and default values vary enough that a meaningful conversion is not possible.
+
+== Backwards Compatibility
+
+This represents the removal of a subsystem, so any application the depends on these APIs will fail to deploy. Likewise, any installation that is expecting (Jaeger) tracing data to be exported will see a behavior change that may or may not impact any external monitoring solutions.
+
+All other subsystems should be unaffected by this removal.
+
+=== Default Configuration
+
+The default configuration for MicroProfile configurations will be altered to remove the MicroProfile OpenTracing subsystem. Likewise, the relevant Galleon layers will also have the extension removed from their definitions.
+
+=== Importing Existing Configuration
+
+With the change of the subsystem to admin-only, existing configurations will fail to start in normal standalone modes. Such configurations will need to be started in admin mode to allow for the altering of the configuration, or the extension and subsystem will need to be removed manually.
+
+=== Deployments
+
+Deployments that use MicroProfile OpenTracing APIs directly will fail to deploy. These applications will need to modified to remove this dependency.
+
+Applications that do not use the affected API directly should deploy and run without modification or issue.
+
+Any deployment environments that are expecting implicit tracing information to be exported will be affected. Since OpenTracing and OpenTelemetry differ in the means by which traces are exported, and the trace data itself differs, administrators will need to make the appropriate adjustments to both the configuration of WildFly, as well as any systems are consuming the exported trace data.
+
+=== Interoperability
+
+See the section of above for a discussion of trace data formats and exports.
+
+== Test Plan
+
+Tests will be added to verify that MicroProfile OpenTracing has been removed, and parsing tests will be modified as needed to verify that the system can continue to read/parse the subsystem config during migration.
+
+Tests for MP OpenTracing under `testsuite/integration/microprofile`, `testsuite/integration/microprofile-tck`, https://github.com/jboss-eap-qe/eap-microprofile-test-suite/tree/master/microprofile-opentracing will be removed.
+
+== Community Documentation
+
+Any documentation related to MicroProfile OpenTracing will be removed as part of the feature implementation PR.
+
+== Release Note Content
+
+MicroProfile OpenTracing has been removed by the MicroProfile Working Group, so this feature has been removed from WildFly as well. Applications that depend on OpenTracing APIs will no longer deploy and will need to be migrated to another tracing solution such as OpenTelemetry.
