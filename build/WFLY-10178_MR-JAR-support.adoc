@@ -1,0 +1,77 @@
+= MR JAR Support in JBoss Parent
+:author:            David Lloyd
+:email:             david.loyd@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          build,java9,java10,mr-jar
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Add support for building MR JARs to the JBoss parent POM for Maven builds, which all JBoss projects can seamlessly utilize.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-10178[WFLY-10178]
+
+=== Related Issues
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Affected Projects or Components
+
+* WildFly Common
+* JBoss Marshalling
+* JBoss Modules
+* JBoss Log Manager
+
+=== Other Interested Projects
+
+* All projects using ``jboss-parent`` which need MR JAR support
+
+== Requirements
+
+=== Hard Requirements
+
+* Provide a means to automatically build MR (multi-release) JARs on demand as specified by http://openjdk.java.net/jeps/238[JEP 238]
+* Provide a simple, Maven-style structure for source overlay directories
+** For example, ``src/main/java9``, ``src/main/java10``, etc.
+** Each source overlay directory must correspond to an output directory e.g. ``META-INF/versions/9``, ``META-INF/versions/10``, etc.
+* Add ``Multi-Release`` to the JAR manifest when building MR JARs
+* Only enable MR JAR functionality when source overlay directories are present
+* Provide a means to automatically run unit tests on each supported JDK
+* Allow each layer to automatically depend on the layers below it
+* Do not require any additional configuration beyond upgrading the parent POM
+* Allow the "baseline" Java version to be Java 8 or any available Java version later than Java 8
+** For example, a project may require Java 10 as its minimum version; in this case, ``src/main/java`` would contain Java 10 sources
+* Allow overlay Java versions to be Java 9 or any available Java version later than Java 9
+** For example, a project requiring Java 10 as its minimum version may have a Java 11 ``src/main/java11`` overlay
+* Only require overlay source directories for Java versions beyond the baseline version
+* Do not interfere with ``maven-compiler-plugin`` customized configurations
+* Provide basic developer documentation in support of the feature
+
+=== Nice-to-Have/Optional Requirements
+
+* Include overlay sources in the source JAR
+** This is not presently supported in any reasonable way with the ``maven-source-plugin`` so either that plugin would have to be enhanced, or a custom plugin written to perform this task
+* Include a mechanism to prevent artifact deployment unless all layers are unit tested during the same build
+
+=== Non-Requirements
+
+* It is not a requirement to support building variations of projects with a JDK whose version is earlier than the latest supported JDK of the project
+* It is not a requirement at this time to support multiple layers of test source directories (though this may be revisited in a future iteration)
+* It is not a requirement to provide any special support for JavaDoc
+** By spec, only the baseline directory may contain API elements, i.e. it is not allowed to introduce classes which only "exist" when running under certain JDK versions
+* It is not a requirement to provide any special support for changes in a project's minimum version
+** For example, if a Java 8 project with a ``java9`` overlay were to change to require Java 9 as a minimum version, it is the developer's responsibility to flatten the Java 9 sources over the old Java 8 sources
+
+== Test Plan
+
+* Build above projects with new parent POM in place of existing per-project configuration; verify output
