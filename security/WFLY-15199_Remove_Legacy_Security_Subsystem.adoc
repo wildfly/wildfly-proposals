@@ -66,10 +66,14 @@ it's capabilities.
 The following subsystems will require additional configuration to default to WildFly Elytron
 security:
 
- * ejb2
+ * ejb3
  * iiop-openjdk
  * messaging-activemq
  * undertow
+ 
+For all subsystems that use a reference to a legacy security resource, these will remain usable in 
+`Stage.MODEL`  but will be flagged as deprecated. Where they are used in `Stage.RUNTIME` they 
+will result in an `OperationFailedException` as they can only be used on older hosts.
 
 === Nice-to-Have Requirements
 
@@ -260,6 +264,7 @@ The following table identifies the tests in WildFly Core and WildFly affected by
 
 |org.jboss.as.test.integration.security.jacc.context.PolicyContextTestCase
 |Ignored https://issues.redhat.com/browse/WFLY-15740[WFLY-15740]
+|===
 
 .Action Key
 |===
