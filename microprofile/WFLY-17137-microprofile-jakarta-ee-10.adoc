@@ -76,9 +76,10 @@ New in MP 6
 
 There will be a separate RFEs for:
 
-* Removal of MicroProfile Metrics (https://issues.redhat.com/browse/WFLY-17138[WFLY-17138])
-* Removal of MicroProfile OpenTracing (https://issues.redhat.com/browse/WFLY-17510/[WFLY-17510])
+* Removal of MicroProfile Metrics (https://issues.redhat.com/browse/WFLY-17138[WFLY-17138]). The functional replacement is Micrometer, listed below.
+* Removal of MicroProfile OpenTracing (https://issues.redhat.com/browse/WFLY-17510/[WFLY-17510]). The functional replacement is Micrometer, listed below.
 * Addition of MicroProfile Telemetry (https://issues.redhat.com/browse/WFLY-17156[WFLY-17156])
+* Addition of Micrometer (https://issues.redhat.com/browse/WFLY-14947[WFLY-14947])
 
 == Issue Metadata
 
@@ -92,8 +93,8 @@ There will be a separate RFEs for:
 * https://issues.redhat.com/browse/WFLY-17138[WFLY-17138] - Convert MP Metrics subsystem to Legacy Mode
 * https://issues.redhat.com/browse/WFLY-17156[WFLY-17156] - Implement Support for MicroProfile Telemetry
 * https://issues.redhat.com/browse/WFLY-17510/[WFLY-17510] - Removal of MicroProfile OpenTracing
-
-
+* https://issues.redhat.com/browse/WFLY-14947[WFLY-14947] - Addition of Micrometer
+*
 
 
 === Dev Contacts
@@ -147,6 +148,7 @@ WildFly will be updated to pull in the corresponding versions of the Eclipse Mic
 ** MicroProfile Metrics APIs and annotations
 ** MicroProfile OpenTracing APIs and annotations
 
+
 === Default Configuration
 
 * MicroProfile Metrics and MicroProfile OpenTracing will be removed from shipped configurations that currently include it.
@@ -165,7 +167,10 @@ WildFly will be updated to pull in the corresponding versions of the Eclipse Mic
 
 == Test Plan
 
-* TCKs will be updated to the latest corresponding version. Having checked the upgrades to the individual specifications, the respective TCKs tests cover the added/changed functionality
+* TCKs will be updated to the latest corresponding version. Having checked the upgrades to the individual specifications, the respective TCKs tests cover the added/changed functionality, apart from the exceptions listed below:
+** MicroProfile JWT:
+*** The TCK does not cover the use of the new `mp.jwt.verify.clock.skew` property. A test will be provided in the `jwt` module of `testsuite/integration/microprofile` in the WildFly testsuite. This is tracked in https://issues.redhat.com/browse/WFLY-17661[WFLY-17661]. The TCK covers use of the other new property, `mp.jwt.verify.token.age` and its coverage is deemed satisfactory.
+** Micrometer (https://issues.redhat.com/browse/WFLY-14947[WFLY-14947]) and MicroProfile Telemetry (https://issues.redhat.com/browse/WFLY-17156[WFLY-17156]) will add test coverage beyond what is in their TCKs to ensure that we have a similar level of coverage as in the tests removed in order to remove MicroProfile Metrics (https://issues.redhat.com/browse/WFLY-17138[WFLY-17138]) and MicroProfile OpenTracing (https://issues.redhat.com/browse/WFLY-17510/[WFLY-17510]). See the Micrometer and MicroProfile Telemetry analysis documents and test plans for further details.
 // Not needed since the TCKs cover this
 //* Existing tests in the WildFly testsuite/integration/microprofile module will be used for additional test coverage
 
@@ -181,7 +186,7 @@ Generally a feature should have documentation as part of the PR to wildfly maste
 
 MicroProfile specifications have been updated to the versions that are part of MicroProfile Platform 6, with the exception of MicroProfile Metrics which has been droppped. MicroProfile Metrics has been dropped in favour of integration with Micrometer, which offers improved observability functionality.
 
-MicroProfile OpenTelemetry has been removed from the MicroProfile 6 platform, in favour of MicroProfile Telemetry.
+MicroProfile OpenTracing has been removed from the MicroProfile 6 platform, in favour of MicroProfile Telemetry.
 
 
 ////
