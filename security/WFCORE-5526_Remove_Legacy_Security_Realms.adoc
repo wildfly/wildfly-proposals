@@ -1,0 +1,557 @@
+= WFCORE-5526 Remove Legacy Security Realms
+:author:            Darran Lofthouse
+:email:             darran.lofthouse@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+At the start of development for JBoss AS7 a custom security solution in the way of security realms
+was developed to secure the management interfaces, the use of these realms has grown in a number of
+areas across the application server.
+
+During WildFly 11 with the addition of support for WildFly Elytron an alternative solution was
+added providing all of the capabilities provided by the security realms.
+
+This task is focused on the removal of the legacy security realms and converting the configuration to
+use WildFly Elytron exclusively where security realms were previously used.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-5526[WFCORE-5526 - Remove legacy security realm support]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1095[EAP7-1095 - Remove the legacy SecurityRealms]
+* https://issues.redhat.com/browse/WFLY-15001[WFLY-15001 - Update feature packs to remove use of legacy security realms]
+* https://issues.redhat.com/browse/WFLY-15067[WFLY-15067 - Prepare for removal of legacy security realm support]
+* https://issues.redhat.com/browse/WFLY-15068[WFLY-15068 - Final stage for the removal of legacy security realms.]
+* https://issues.redhat.com/browse/WFCORE-5522[WFCORE-5522 - The CLI security SSL commands are too tied to the default configuration]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [x] QE
+
+As a removal RFE this does not require new feature test development, however both teams will need
+to review existing testsuites for tests dependent on the legacy security realms.  Identified tests will
+either need deleting or converting to a WildFly Elytron based configuration.
+
+=== Affected Projects or Components
+
+* WildFly Core
+* WildFly
+
+=== Other Interested Projects
+
+* [x] External Testsuites
+
+* [x] Quickstarts
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+As a removal task, this section is describing the steps being undertaken rather than a set of
+"requirements".
+
+=== Hard Requirements
+
+The next version of the management model is updated to remove all security-realm resources.  Any use of
+security-realm resources in the latest version will result in a usual unexpected element error.
+
+References to security realms will also be removed from the core domain management model as this is not
+transferred to remote hosts in domain mode.
+
+Where an older configuration is being parsed we will fail parsing and abort boot.  We can not quietly drop
+the references to security realms as this would lead to unsecured servers.
+
+For all subsystems that use a `security-realm` reference, these will remain usable in `Stage.MODEL` but will
+be flagged as deprecated.  Where they are used in `Stage.RUNTIME` they will result in an
+`OperationFailedException` as they can only be used on older hosts.
+
+All code implementing the security realms will be removed from WildFly Core, all security realm related APIs
+and SPIs will be removed.
+
+The following table shows how existing references to security realms will be updated across all configurations.
+
+.Capability References
+|===
+|Old Reference |Purpose |New Reference
+
+|ManagementRealm
+|HTTP Authentication
+|management-http-authentication
+
+|ManagementRealm
+|SASL Authentication
+|management-sasl-authentication
+
+|ApplicationRealm
+|HTTP Authentication
+|application-http-authentication
+
+|ApplicationRealm
+|SASL Authentication
+|application-sasl-authentication
+
+|ApplicationRealm
+|SSL
+|applicationSSC
+
+|===
+
+The aim within this enhancement is to end up with a default configuration using Elytron capabilities which is
+almost identical to the legacy configuration using `security-realms`.  By "almost identical" this work may
+trigger follow up activities.
+
+The following changes will be made to the Galleon layers:
+
+ * All layers which define security realms removed.
+ * Any layers specifically to reference security realms removed.
+ * Remaining layers adjusted to reference Elytron capabilites.
+ * New layers added for specifically referencing Elytron capabilities.
+
+By the end of this RFE there will be no use for `PicketBox` in WildFly Core so the dependency can
+be moved to WildFly.
+
+The `RealmDirectLoginModule` will be removed from WildFly as without security realms there will be
+nothing for this module to authenticate against.
+
+The client processing the EJBs will not be able to reference a security realm to obtain an outbound
+credential, the `security-realm` and `username` attributes will be removed from a new version of 
+the schema and parsing these against older versions of the schema will result in an error being thrown.
+
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+Later enhancements will be looking at how we can evolve the default configuration further, this enhancement
+is specifcially covering the removal.
+
+The following issues have been raised for follow up activities to be considered later:
+
+ * https://issues.redhat.com/browse/WFCORE-5532[WFCORE-5532 Elytron Realm Readiness Check.]
+ * https://issues.redhat.com/browse/WFCORE-5533[WFCORE-5533 Simplify slave host controller configuration.]
+ * https://issues.redhat.com/browse/WFCORE-5514[WFCORE-5514 The management layer should depend on "just enough" Elytron to secure it.]
+ * https://issues.redhat.com/browse/WFCORE-5555[WFCORE-5555 CLIEmbedServerTestCase.testBuildServerConfig() needs rewriting to use Elytron]
+ * https://issues.redhat.com/browse/WFCORE-5544[WFCORE-5544 Servers unable to connect in domain mode with Elytron without local auth]
+ * https://issues.redhat.com/browse/WFCORE-5554[WFCORE-5554 Reduce management security testing to a single suite.]
+ * https://issues.redhat.com/browse/WFLY-15159[WFLY-15159 Web subsystem migration needs updating to migrate to Elytron.]
+
+== Implementation Plan
+
+This task will need to be developed in stages, logically the first step is to remove the
+integration from WildFly Core then move to WildFly, however this would break CI for any WildFly
+use of security realms.
+
+A first set of changes is prepared under https://issues.redhat.com/browse/WFLY-15001[WFLY-15001],
+this just updates the feature packs to remove the use of security realms but at this point tests
+may still be defining their own security realms.
+
+A second issue https://issues.redhat.com/browse/WFLY-15067[WFLY-15067] will prepare WildFly for the
+security realms becoming unavailable in an upcomming WildFly Core release.
+
+https://issues.redhat.com/browse/WFCORE-5526[WFCORE-5526] will then proceed to completely remove
+the security realms from WildFly Core.
+
+A final task https://issues.redhat.com/browse/WFLY-15068[WFLY-15068] will complete the removal in
+WildFly and update the documentation to reflect the removal.
+
+During this task follow up activities will be identified, these should not block the progress
+of the initial PRs being merged.
+
+Follow up tasks may include:
+
+* Re-purposing test cases or developing new test cases where Elytron coverage is required.
+* Additional enhancements for feature parity in relation to removed features.
+
+== Impact on WildFly CLI command line
+
+The CLI security ```ssl-{enable|disable}-http-server``` commands are impacted by this change and are evolving as described:
+
+* The commands are backward compatible. The CLI commands behavior is not impacted when the CLI interacts
+ with a server that still supports security-realms.
+
+* The CLI commands had been designed to switch from legacy to elytron security. Now that this switches 
+is meaningless, we are introducing new options for the command to still operates with a valid meaning. 
+
+=== disable-ssl-http-server
+
+* New ```--remove-https-listener``` to remove the HTTPS listener. That is the only way to fully disable SSL on the HTTPS listener.
+By default backward compatibility is kept, the HTTPS listener is not removed.
+
+* New ```--https-listener-name=<listener name>``` to name the HTTPS listener to remove or update. 
+The completer of this option proposes the list of existing HTTPS listeners. Default value is ```https```
+
+* New ```--default-server-ssl-context=<ssl-context>```. This allow to set the ssl-context to use when replacing 
+the current ssl-context with the default one. Default value is ```applicationSSC``` that is expected to be found in default config.
+
+* The CLI help command is evolved to contain new options.
+
+When CLI detects a legacy config:
+
+* If the HTTPS listener is not asked to be removed, Keep the current logic: remove the SSL context, set back 
+the security-realm. Fails if it doesn't exist.
+
+* If the HTTPS listener is asked to be removed just remove it.
+
+When CLI detects a new server config:
+
+* If the HTTPS listener is not asked to be removed, replace the SSL context with the value of the ```--default-server-ssl-context```. 
+The command fails if if doesn't exist.
+
+* If the HTTPS listener is asked to be removed just remove it.
+
+=== enable-ssl-http-server
+
+* New ```--add-https-listener``` to add a new HTTPS listener. By default backward compatibility is kept, the HTTPS listener is not added.
+
+* New ```--https-listener-name=<listener name>``` to name the HTTPS listener to add and/or update. 
+The completer of this option proposes the list of existing HTTPS listeners when not adding a new 
+HTTPS listener (when ```--add-https-listener``` is not used). Default value is ```https```
+
+* New ```--https-listener-socket-bindig=<socker binding>``` with completer to complete socket binding. 
+This option is only available when adding a new https-listener (```--add-https-listener``` is present). Default value is ```https```.
+
+* New ```--override-ssl-context``` option to override an existing SSL context. By default backward compatibility is kept, 
+the SSL context is not overwritten and the command will fail if an SSL context already exists.
+
+* Existing option ```--no-override-security-realm``` used to not erase the existing security-realm is hidden 
+for new config and only available for legacy config that supports security-realm.
+
+* The CLI help command is evolved to contain new options.
+
+When CLI detects a legacy config:
+
+* Keep the current logic update the HTTPS listener (new one or existing) with a new SSL context, erase the existing security-realm
+
+When CLI detects a new config:
+
+* Update the HTTPS listener (new one or existing) with a new SSL context.
+
+== Test Plan
+
+The following table identifies the tests in WildFly Core and WildFly affected by the removal.
+
+.Test Case Updates
+|===
+|Project |Test Case |Action
+
+|WildFly Core
+|org.jboss.as.domain.management.security.realms.GroupLoadingReferralsSuiteTest
+|Removed
+
+|WildFly Core
+|org.jboss.as.domain.management.security.realms.BaseLdapSuiteAuthenticationReferralsTest
+|Removed
+
+|WildFly Core
+|org.jboss.as.domain.management.security.realms.LdapAuthenticationSuiteTest
+|Removed
+
+|WildFly Core
+|org.jboss.as.domain.management.security.realms.LdapGroupAssignmentBaseSuiteTest
+|Removed
+
+|WildFly Core
+|org.jboss.as.domain.management.security.realms.PrincipalToGroupLdapSuiteTest
+|Removed
+
+|WildFly Core
+|org.jboss.as.domain.management.security.realms.PrincipalToGroupMissingNameLdapSuiteTest
+|Removed
+
+|WildFly Core
+|org.jboss.as.domain.management.security.realms.PropertiesAuthenticationDigestedTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.domain.management.security.SecurityRealmServiceUtilTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.domain.management.security.KeytabIdentityFactoryServiceTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.domain.management.security.LdapCacheServiceMockTest
+|Removed
+
+|WildFly Core
+|org.wildfly.extension.elytron.SubsystemParsingTestCase.testGetCredentialSourceSupplier()
+|Removed (Replacement Needed)
+
+|WildFly Core
+|org.jboss.as.core.model.test.mgmt_interfaces.StandaloneMgmtInterfacesTestCase.testConfiguration_Legacy()
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.access.RoleMappingTestCase.testIncludeByUsernameAndRealm()
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.access.RoleMappingTestCase.testIncludeByGroupAndRealm()
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.access.RoleMappingTestCase.testExcludeByUsernameAndRealm()
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.access.RoleMappingTestCase.testExcludeByGroupAndRealm()
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.access.RoleMappingTestCase.testDuplicateGroupRealmLess()
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.access.RoleMappingTestCase.testIncludeAll()
+|Tweaked
+
+|WildFly Core
+|org.jboss.as.core.model.test.security.StandaloneKerberosTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.security.StandaloneLdapTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.security.StandaloneSSLTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.security.HostKerberosTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.security.HostLdapTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.security.HostSSLTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.host.HostModelTestCase.testHostXmlWithServerSSL()
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.host.HostModelTestCase.testWFLY2870()
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.mgmt_interfaces.HostMgmtInterfacesTestCase.testConfiguration_Legacy()
+|Removed
+
+|WildFly Core
+|org.wildfly.core.test.standalone.mgmt.api.core.ReadConfigAsFeaturesStandaloneTestCase.coreManagementTest()
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.integration.credential.store.ManagementAuthenticationUsersTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.integration.mgmt.access.LdapRoleMappingG2UTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.integration.mgmt.access.LdapRoleMappingU2GTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.integration.domain.KerberosServerIdentityTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.integration.domain.management.LegacySecurityRealmPropagationTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.integration.domain.HTTPSManagementInterfaceTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.integration.domain.suites.ServerAuthenticationTestCase
+|Ignored https://issues.redhat.com/browse/WFCORE-5549[WFCORE-5549]
+
+|WildFly Core
+|org.jboss.as.test.integration.domain.SSLMasterSlaveOneWayTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.integration.domain.SSLMasterSlaveTwoWayTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.integration.domain.SlaveHostControllerAuthenticationTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.integration.domain.slavereconnect.SlaveReconnectTestCase.test02_RBAC_user_and_model_out_of_sync()
+|Ignored https://issues.redhat.com/browse/WFCORE-5549[WFCORE-5549]
+
+|WildFly Core
+|org.wildfly.core.test.standalone.mgmt.RemoveManagementInterfaceTestCase
+|Removed
+
+|WildFly Core
+|org.wildfly.core.test.standalone.mgmt.HTTPSManagementInterfaceTestCase
+|Removed (Replacement needed?)
+
+|WildFly Core
+|org.wildfly.core.test.standalone.mgmt.HTTPSConnectionWithCLITestCase
+|Removed (Replacement needed?)
+
+|WildFly Core
+|org.wildfly.core.test.standalone.mgmt.HTTPSManagementInterfacePKCS12TestCase
+|Removed (Replacement needed?)
+
+|WildFly Core
+|org.jboss.as.test.manualmode.management.cli.ReloadRedirectTestCase
+|Removed (Replacement needed?)
+
+|WildFly Core
+|org.jboss.as.test.manualmode.management.cli.CLIAuthenticationTestCase
+|Ignored https://issues.redhat.com/browse/WFCORE-5522[WFCORE-5522]
+
+|WildFly Core
+|org.jboss.as.test.manualmode.management.cli.CLIEmbedHostControllerTestCase
+|Ignored https://issues.redhat.com/browse/WFCORE-5522[WFCORE-5522]
+
+|WildFly 
+|org.jboss.as.test.integration.management.cli.SecurityCommandsTestCase
+|Evolved https://issues.redhat.com/browse/WFLY-15057[WFLY-15057]
+
+|WildFly
+|org.jboss.as.test.integration.ws.wsse.trust.WSBearerSecurityPropagationTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.integration.ejb.security.LdapLegacyTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.integration.ejb.security.securitydomain.EJBContextMultipleSDTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.integration.ejb.client.descriptor.EJBClientDescriptorTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15171[WFLY-15171]
+
+|WildFly
+|org.jboss.as.test.integration.ejb.container.interceptor.security.api.SwitchIdentityTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.integration.management.api.web.ListenerTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15172[WFLY-15172]
+
+|WildFly
+|org.jboss.as.test.integration.security.loginmodules.RemotingLoginModuleTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.integration.security.loginmodules.RemotingLoginModuleUseNewClientCertTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.manualmode.web.ssl.HTTPSWebConnectorTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15177[WFLY-15177]
+
+|WildFly
+|org.jboss.as.test.manualmode.web.ssl.CertificateRolesLoginModuleTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.manualmode.web.ssl.DatabaseCertLoginModuleTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.manualmode.parse.ParseAndMarshalModelsTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15178[WFLY-15178]
+
+|WildFly
+|org.jboss.as.test.manualmode.ejb.ssl.SSLEJBRemoteClientTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15179[WFLY-15179]
+
+|WildFly
+|org.jboss.as.test.manualmode.security.OutboundLdapConnectionTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.manualmode.security.OutboundLdapConnectionClientCertTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.manualmode.jms.resourceadapter.LegacySecurityDomainRATestCase
+|Removed
+|===
+
+
+.Action Key
+|===
+|Action | Description
+
+|Ignored
+|Ignored to revisit.
+
+|Removed
+|Test case removed entirely.
+
+|Reduced
+|Removed vault specific testing from case.
+
+|Tweaked
+|Minor changes needed for vault removal.
+|===
+
+== Community Documentation
+
+This task will include a pass through of all existing community documentation and remove all
+references to the security realms.
+
+A migration "article" will be added to the documentation, this article will identify where
+security-realm integration has been removed with some high level examples of alternatives.
+The article will contain some simple examples but a complete like for like comparison would be
+impractical.
+
+At the end of all of the removals we will come back to the issue 
+https://issues.redhat.com/browse/WFLY-15068[WFLY-15068] to perform a final clean up and refactor
+of the documentation in relation to legacy security.
+
+The CLI SSL security commands examples in WildFly community doc are adjusted. 
+
+== Release Note Content
+
+The legacy security realms have now been removed from WildFly, please refer to
+https://docs.wildfly.org/25/Migration_Guide.html#Migration_Security_Realms for information on 
+alternatives available utilising the WildFly Elytron capabilities.
