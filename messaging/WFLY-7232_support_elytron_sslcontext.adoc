@@ -1,0 +1,80 @@
+= Add support for Elytron provided SSLContexts in Artemis
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:          messaging,jms,ssl,security
+:idseparator:       -
+
+== Overview
+
+When using SSLContext to accept SSL connections from a client or to open connections to a remote broker, Artemis should be able to use or reuse SSLContext provided and managed by the Elytron subsystem.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-7232[WFLY-7232]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-13226[ WFLY-13226 ]
+* https://issues.apache.org/jira/browse/ARTEMIS-2704[ ARTEMIS-2704 ]
+* https://issues.redhat.com/browse/ELY-2334[ ELY-2334 ] 
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+* [X] Engineering
+* [ ] QE
+
+=== Affected Projects or Components
+
+The integration should be done via *artemis-wildfly-integration*.
+
+=== Other Interested Projects
+
+== Requirements
+
+Use SSLContexts provided by Elytron in acceptors / connectors instead of SSL parameters.
+Since SSLContext are meant to be reused, instead of creating new intance in the borker we should use the ones provided by Elytron.
+
+=== Hard Requirements
+
+* Use SSLContexts provided by Elytron
+* SSLContext 'name' from the acceptor (remote) MUST be the same for the connector. So the SSLContext name in Elytron should be the same on both instances.
+* Changes in the SSLContext configuration requires a restart of the broker thus of the server.
+* The SSLContext must be defined on the server where the connector is being used.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+ * Support for standalone client: this is covered by https://issues.redhat.com/browse/ELY-2334[ ELY-2334 ] 
+ * Support for WildFly server obtaining the connectio factory from remote JNDI call without having the elytron SSLContext defined locally.
+
+== Implementation Plan
+
+How SSLContexts are provided is done via an implementation of `org.apache.activemq.artemis.spi.core.remoting.ssl.SSLContextFactory` which is found and loaded by ServiceLoader. 
+The plan is to provide an implementation via `artemis-wildfly-integration` which will have access to all the SSLContexts provided by the Elytron subsystem.
+
+The following attribute will be added to the `http-acceptor`, `remote-acceptor`, `http-connector`, `remote-connector` resources in the `server` resource` in the `messaging-activemq` subsystem :
+  * `ssl-context` an optional string referencing the SSLContext provided by Elytron.
+
+
+== Test Plan
+
+Use the new test in the test suite that will configure an Elytron SSLContext and try to connect to a remote broker using SSL.
+
+== Community Documentation
+* The attributes will be documented in https://docs.wildfly.org/27/wildscribe/subsystem/messaging-activemq/index.html[WildScribe] as other management attributes.
+* There will be a note in WildFly Admin documentation for the `messaging-activemq` subsystem about the support this.
+
+== Release Note Content
+
+With this new feature you don't have to configure your SSLContext in several places and just rely on Elytron to instantiate and manage it for you.
+Please note that for connectors the SSLContext must be defined on the elytron subsystem of the client WildFly server. That means also that you can't define it form a standalone messaging client application.
