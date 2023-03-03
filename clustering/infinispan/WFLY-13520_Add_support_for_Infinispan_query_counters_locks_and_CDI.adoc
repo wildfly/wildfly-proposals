@@ -1,0 +1,136 @@
+= WFLY-13520 Add support for Infinispan query, counters, locks, and CDI
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          clustering,infinispan,datagrid
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WildFly currently ships with the following modules:
+
+* `org.infinispan.client.hotrod`: Hot Rod client
+* `org.infinispan.commons`: Common API between the embedded and client modules
+* `org.infinispan`: Embedded library
+* `org.infinispan.persistence.jdbc`: JDBC Cache Store
+* `org.infinispan.persistence.remote`: Hot Rod Cache Store
+
+To achieve feature parity with Infinispan embedded we would need to add the following modules:
+
+* `org.infinispan.cdi`: CDI bindings
+* `org.infinispan.query`: Query support
+* `org.infinispan.counter`: Clustered counter support
+* `org.infinispan.lock`: Clustered lock support
+
+For all of the above modules, RHDG engineering will donate the existing modules, including tests, to EAP.
+RHDG support and engineering will provide support for all use-cases relating to the components mentioned above, excluding the subsystems which would continue to be handled by EAP clustering.
+
+RHDG will provide documentation for the Infinispan API which can either be included in its modularized form or linked from the EAP documentation.
+
+It is understood that EAP will only use productized builds of the Infinispan/JGroups components that have already received RHDG QE sign-off.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-13520[WFLY-13520] Add support for Infinispan query, counters, locks, and CDI
+* https://issues.redhat.com/browse/EAP7-1446[EAP7-1446] Add support for Infinispan query, counters, locks, and CDI
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-13519[WFLY-13519] Infinispan module attribute needs to support multiple values (done)
+* https://issues.redhat.com/browse/WFLY-16726[WFLY-16726] Enabling global state (required for locks - done)
+* https://issues.redhat.com/browse/ISPN-13960[ISPN-13960] Distribute Jakarta EE 9+ module variants of Infinispan CDI modules (done, laster reworked with -jakarta suffix)
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* RHDG QE Team
+
+=== Testing By
+
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* N/A
+
+=== Other Interested Projects
+
+* Infinispan
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+=== Nice-to-Have Requirements
+
+* N/A
+
+=== Non-Requirements
+
+* N/A
+
+== Backwards Compatibility
+
+No implications on backwards compatibility. This will only be adding new optional modules.
+
+=== Default Configuration
+
+No changes to the default configuration. Users wanting to use certain modules will change the `modules='...'` attribute of the cache container,
+and optionally provision the 'infinispan' layer when wanting to use these.
+
+=== Importing Existing Configuration
+
+* No implications.
+
+=== Deployments
+
+* N/A
+
+=== Interoperability
+
+* N/A
+
+== Implementation Plan
+
+No coordination needed any more; it will be delivered in a single PR since other prerequisites were already merged beforehand.
+
+== Security Considerations
+
+No security implications.
+
+== Test Plan
+
+Added modules will be covered by integration tests located in the `testsuite/integration/clustering` module:
+
+* in the `org.jboss.as.test.clustering.cluster.infinispan` package (run by the Arquillian in manual mode),
+* in the `org.jboss.as.test.clustering.single.infinispan` package (run using testable deployments).
+
+== Community Documentation
+
+These features are completely documented by the Infinispan team.
+The WildFly documentation will be updated with references to Infinispan documentation and nuances of using the modules in WildFly.
+
+== Release Note Content
+
+The Infinispan APIs for distributed query, counters and locks are now bundled with the distribution.
+Furthermore, users can use the Infinispan CDI module for creating and injecting caches.
+Head over to WildFly documentation under 'High Availability Guide'.
