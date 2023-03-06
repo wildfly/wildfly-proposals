@@ -94,7 +94,7 @@ There will be a separate RFEs for:
 * https://issues.redhat.com/browse/WFLY-17156[WFLY-17156] - Implement Support for MicroProfile Telemetry
 * https://issues.redhat.com/browse/WFLY-17510/[WFLY-17510] - Removal of MicroProfile OpenTracing
 * https://issues.redhat.com/browse/WFLY-14947[WFLY-14947] - Addition of Micrometer
-*
+* https://issues.redhat.com/browse/WFLY-17144[WFLY-17144] - Add Micrometer to WildFly
 
 
 === Dev Contacts
@@ -102,6 +102,8 @@ There will be a separate RFEs for:
 * mailto:{email}[{author}]
 
 === QE Contacts
+
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
 
 === Testing By
 // Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
