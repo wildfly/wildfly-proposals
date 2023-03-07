@@ -1,0 +1,126 @@
+= RESTEasy should be able to provide trace information about request
+:author:            Wei Nan Li
+:email:             weli@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Tracing feature is a way for the users of the RESTEasy to understand what's going on internally in the container when a request is processed. It's different from the pure logging system or profiling feature, which provides more general information about the request and response.
+
+The RESTEasy tracing feature supports three logging mode:
+
+* OFF
+* ON_DEMAND
+* ALL
+
+"ALL" will enable the tracing feature. "ON_DEMAND" mode will give the control to client side: A client can send a tracing request via HTTP header and get the tracing info back from response headers. "OFF" mode will disable the tracing feature, and this is the default mode.
+
+Tracing information should contain all necessary information and times about processing of current request, like used interceptors, used exception mappers, used end-points, used providers, etc. Example:
+
+[source,bash]
+----
+$ curl -i http://localhost:8081/foo
+...
+X-RESTEasy-Tracing-026: org.jboss.resteasy.plugins.server.servlet.Servlet3AsyncHttpRequest@5e84478b MBW         [ ---- /  5.95 ms |  ---- %] [org.jboss.resteasy.plugins.providers.FileProvider @37a3c619] is skipped
+X-RESTEasy-Tracing-027: org.jboss.resteasy.plugins.server.servlet.Servlet3AsyncHttpRequest@5e84478b MBW         [ ---- /  5.96 ms |  ---- %] [org.jboss.resteasy.plugins.providers.ByteArrayProvider @646b8da5] is skipped
+X-RESTEasy-Tracing-028: org.jboss.resteasy.plugins.server.servlet.Servlet3AsyncHttpRequest@5e84478b MBW         [ ---- /  5.97 ms |  ---- %] [org.jboss.resteasy.plugins.providers.StreamingOutputProvider @3b2a4bf4] is skipped
+X-RESTEasy-Tracing-029: org.jboss.resteasy.plugins.server.servlet.Servlet3AsyncHttpRequest@5e84478b MBW         [ ---- /  5.98 ms |  ---- %] [org.jboss.resteasy.plugins.providers.ReaderProvider @24729366] is skipped
+X-RESTEasy-Tracing-030: org.jboss.resteasy.plugins.server.servlet.Servlet3AsyncHttpRequest@5e84478b MBW         [ ---- /  5.99 ms |  ---- %] [org.jboss.resteasy.plugins.providers.DataSourceProvider @d481aff] is skipped
+X-RESTEasy-Tracing-031: org.jboss.resteasy.plugins.server.servlet.Servlet3AsyncHttpRequest@5e84478b MBW         [ ---- /  6.00 ms |  ---- %] [org.jboss.resteasy.plugins.providers.AsyncStreamingOutputProvider @35f6b856] is skipped
+X-RESTEasy-Tracing-032: org.jboss.resteasy.plugins.server.servlet.Servlet3AsyncHttpRequest@5e84478b MBW         [ ---- /  6.01 ms |  ---- %] [org.jboss.resteasy.plugins.providers.FileRangeWriter @5cea30f7] is skipped
+X-RESTEasy-Tracing-033: org.jboss.resteasy.plugins.server.servlet.Servlet3AsyncHttpRequest@5e84478b MBW         [ ---- /  6.02 ms |  ---- %] [org.jboss.resteasy.plugins.providers.InputStreamProvider @6c3361af] is skipped
+X-RESTEasy-Tracing-034: org.jboss.resteasy.plugins.server.servlet.Servlet3AsyncHttpRequest@5e84478b MBW         [ ---- /  6.02 ms |  ---- %] WriteTo by org.jboss.resteasy.plugins.providers.StringTextStar
+...
+----
+
+== Issue Metadata
+
+=== Issue:
+
+* https://issues.redhat.com/browse/WFLY-16018[WFLY-16018]
+
+=== Related Issues:
+
+* https://issues.redhat.com/browse/EAP7-627[EAP7-627]
+
+=== Dev Contacts:
+
+* mailto:{email}[{author}]
+* mailto:jperkins@redhat.com[James Perkins]
+
+=== QE Contacts:
+
+* mailto:msvehla@redhat.com[Martin Svehla]
+
+=== Testing By
+
+* [x] Engineering
+* [ ] QE
+
+=== Affected Projects or Components:
+
+* WildFly
+* RESTEasy
+
+=== Other Interested Projects
+
+* Any consumer that uses the tracing feature.
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+* [x] Managed domain
+* [x] OpenShift s2i
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* Add the `org.jboss.resteasy.resteasy-tracing-api` module.
+* Introduce `resteasy-extensions` as dependency.
+* Add subsystem attributes to control turning this feature on/off. The description *must* note that this feature is not
+  meant for production.
+* When enabled, a WARN level log message will be log indicating this feature has been enabled. This is currently not
+  done in RESTEasy, but could be considered there. Currently this would result in very verbose logging with the way
+  enablement is checked. Please note "enabled" means the "resteasy.server.tracing.type" to "ALL" or "ON_DEMAND".
+  ** Admittedly doing this in RESTEasy likely makes the most sense as it would know if the feature is enabled/disabled.
+     That will require a RESTEasy fix and upgrade to enable. However, doing so would currently result in very verbose
+     logging.
+  ** The following checks will be required in WildFly to know if tracing is enabled and log a warning if found:
+    ** Check the `web.xml` context parameters
+    ** Check the subsystem attributes
+    ** Check the system properties
+* Enabling in the subsystem should be constrained via the management model.
+  ** Users can see and read the value. However, in order to write the value they must have permissions to do so.
+  ** There will be an RBAC sensitivity-classification named `tracing-management` applied to both attributes added to
+     the subsystem.
+
+== Security Considerations
+
+This should be considered security sensitive in that, when enabled data could be exposed that is not meant to be seen
+by a client. This includes fully qualified class names which could be the source of an attack vector. However, this
+feature is designed for development only when trying to understand the paths processed via REST endpoints.
+
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+=== Test Plan
+
+The features are tested in RESTEasy codebase and also with the Arquillian test in WildFly. Successfully running the test
+in WildFly is required.
+
+The tests should also test turning this features settings with both the subsystem settings and as context parameters.
+Ensuring the context parameters in a `web.xml` take precedence.
+
+== Community Documentation
+
+The general documentation is in the RESTEasy documentation. Some documentation on what the subsystem attributes do
+should be noted in the WildFly documentation. It should also be made clear these features are not meant for production.
+
+
