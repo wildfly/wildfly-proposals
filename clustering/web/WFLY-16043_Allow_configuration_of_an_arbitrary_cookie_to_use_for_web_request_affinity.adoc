@@ -9,9 +9,9 @@
 == Overview
 
 Currently, WildFly only supports the ability to encode session affinity information into the JSESSIONID cookie, which is already used to uniquely identify a session.
-This plays nicely with the httpd family of load balancer modules (e.g. mod_cluster, mod_proxy_balancer, mod_jk) for which this mechanism was designed.
+This plays nicely with the httpd family of load balancer modules (e.g. `mod_cluster`, `mod_proxy_balancer`, `mod_jk`) for which this mechanism was designed.
 
-However, many load balancers rely on a separate cookie for implementing sticky sessions (e.g. HAProxy, IIS, etc.),
+However, many load balancers rely on a separate cookie for implementing sticky sessions (e.g. HAProxy, IIS, Nginx, etc.),
 and thus lack the ability to allow WildFly to guide requests for a given session to the server that can most efficiently handle it.
 
 To resolve this, we are adding a configuration attribute within the Undertow subsystem to allow the use of a configurable cookie to store session affinity information.
@@ -32,7 +32,7 @@ To resolve this, we are adding a configuration attribute within the Undertow sub
 
 === QE Contacts
 
-* mailto:msvehla@redhat.com[Martin Svehla]
+* mailto:msimka@redhat.com[Martin Simka]
 
 === Testing By
 
@@ -47,7 +47,7 @@ To resolve this, we are adding a configuration attribute within the Undertow sub
 
 === Other Interested Projects
 
-* mod_cluster – can be updated to support separate cookie for session routing
+* mod_cluster – can be updated to support separate cookie for session routing (tracked by https://issues.redhat.com/browse/MODCLUSTER-780[MODCLUSTER-780])
 
 === Relevant Installation Types
 
@@ -96,13 +96,21 @@ We need to verify that load-balancers using separate cookie for routing can work
 
 == Implementation Plan
 
-The implementation can look as the following:
+The resource can be configured with the following CLI script:
 
-```xml
-<servlet-container name="...">
-    <session-cookie name="JSESSIONID" affinity-cookie-name="ARR" ... />
+[source]
+----
+/subsystem=undertow/servlet-container=default/setting=affinity-cookie:add(name="INGRESSCOOKIE")
+----
+
+which is persisted in the XML such as:
+
+[source,xml]
+----
+<servlet-container name="default">
+    <affinity-cookie cookie-name="INGRESSCOOKIE" ... />
 </servlet>
-```
+----
 
 If undefined, the route will be encoded into the session identifier via the existing CodecSessionConfig SessionConfig decorator.
 
