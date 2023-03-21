@@ -72,7 +72,7 @@ All other subsystems should be unaffected by this removal.
 
 === Default Configuration
 
-The default configuration for MicroProfile configurations will be altered to remove the MicroProfile OpenTracing subsystem. Likewise, the relevant Galleon layers will also have the extension removed from their definitions.
+The default configuration for MicroProfile configurations will be altered to remove the MicroProfile OpenTracing subsystem. Likewise, the `micropfile-opentracing` layer will be removed, and the references to it in the layers `microprofile-plaform` and `observability` will be removed.
 
 === Importing Existing Configuration
 
