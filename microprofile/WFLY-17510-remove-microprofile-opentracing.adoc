@@ -1,4 +1,4 @@
-= WFLY-17510: Remove MicroProfile OpenTracing
+= WFLY-17510: Convert MicroProfile OpenTracing subsystem to Admin-Only Mode
 :author:            Jason Lee
 :email:             jasondlee@redhat.com
 :toc:               left
@@ -19,6 +19,8 @@ WildFly has long offered MicroProfile OpenTracing as part of its overall MicroPr
 === Related Issues
 
 * https://issues.redhat.com/browse/WFLY-17156[WFLY-17156]
+* https://issues.redhat.com/browse/WFLY-17679[WFLY-17679]
+* https://issues.redhat.com/browse/EAP7-2002[EAP7-1975]
 * https://issues.redhat.com/browse/EAP7-2002[EAP7-2002]
 
 === Dev Contacts
