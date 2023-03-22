@@ -23,7 +23,7 @@ This RFE will add support for this new specification as part of the MicroProfile
 
 * https://issues.redhat.com/browse/EAP7-1976 - Implement Support for MicroProfile Telemetry
 * https://issues.redhat.com/browse/WFLY-17510 - Convert MicroProfile OpenTracing subsystem to Admin-Only Mode
-https://issues.redhat.com/browse/EAP7-2002 - Remove MicroProfile OpenTracing
+* https://issues.redhat.com/browse/EAP7-2002 - Remove MicroProfile OpenTracing
 
 === Dev Contacts
 
