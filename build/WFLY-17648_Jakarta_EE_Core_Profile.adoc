@@ -1,0 +1,184 @@
+= Add a Galleon Layer for the Jakarta EE 10 Core Profile
+:author:            James Perkins
+:email:             jperkins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+One of the driving factors behind Red Hat’s participation in Jakarta EE 10 was our interest in a new, lighter weight
+https://jakarta.ee/specifications/coreprofile/10/jakarta-coreprofile-spec-10.0.html[“Core Profile”] that is better
+suited to cloud native applications and microservices.
+
+The Jakarta EE 10 Core Profile does not introduce any new specifications (other than the profile itself); rather it
+defines a subset of the full set of Jakarta EE specifications and a TCK for validating an implementation of that subset.
+It does not restrict implementations from shipping additional functionality (EE or otherwise) in their core profile
+implementation. This is all very similar to the Jakarta EE Web Profile that was introduced many years ago.
+
+This RFE is intended to cover how WildFly will present the core profile to its end users. This will consist of two key aspects:
+
+1. A supported Galleon layer or combination of layers that allows the user to produce a slimmed installation that provides
+standard core WildFly server functionality (Elytron, logging etc) along with the Jakarta EE APIs that comprise the Jakarta
+EE Core Profile.
+2. Example configurations in the full server installation that match what would be produced by the Galleon slimming from #1.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-17648[WFLY-17648]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-17598[WFLY-17598]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+* mailto:bstansbe@redhat.com[Brian Stansberry]
+* mailto:smarlow@redhat.com[Scott Marlow]
+
+=== QE Contacts
+
+* mailto:msvehla@redhat.com[Martin Svehla]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [x] QE
+
+=== Affected Projects or Components
+
+* RESTEasy
+* Weld
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+Managed domain is not checked above, because layer based provisioning is not relevant to domain mode, and there is no
+plan to add new WildFly configuration profiles to the standard domain.xml for Jakarta EE 10 Core Profile or to create
+an example domain.xml with such a profile. So there is nothing about this RFE that is directly relevant to domain mode.
+However, users could easily enough create such a profile on their own based on the example standalone configurations.
+This would be supported the same as any customized domain.xml profile is.
+
+== Requirements
+
+=== Hard Requirements
+
+. Slimmed server provisioning
+    .. Conceptually/technically, a compliant Jakarta EE 10 Core profile server can be provisioned by specifying the
+    following Galleon layers:
+        * core-server
+        * cdi
+        * jaxrs
+        * TODO validate no others are required
+    .. There are two options we can choose from for how we wish to support customer provisioning of a Core Profile
+        server. In terms of the actual implementation there is little difference in effort between them.
+        * Create a new `[ee-]core-profile-server` “base layer” that basically just aggregates the needed layers. So an
+            additional base layer beyond `datasources-web-server`, `jaxrs-server` and `cloud-server`
+            ** PROS:
+                *** Simple to document and use
+                *** All existing supported decorator layers can be used with this base layer
+            ** CONS:
+                *** A new layer whose long term content is somewhat dictated by Jakarta. Possible future disconnect
+                        between what Jakarta defines as Jakarta EE 10 Core Profile and what we want to provide.
+                *** All existing supported decorator layers can be used with this base layer (possible testing cost.)
+        * Create a new category of layers besides “base” and “decorator” and create an `[ee-]core-profile-server`
+          as the sole layer in this category. Layers in this category cannot have decorators applied.
+            ** PROS:
+                *** All existing supported decorator layers can be used with this base layer
+            ** CONS:
+                *** A new layer whose long term content is somewhat dictated by Jakarta. Possible future disconnect
+                    between what Jakarta defines as EE 10 Core Profile and what we want to provide.
+                *** Another concept in the already confusing story about what layers WildFly supports in which contexts.
+    .. Adding either the web-passivation or the web-clustering decorator layers will be supported.
+        * For sure web-clustering, as that allows an HA variant
+        * TODO should web-passivation be an optional part of `[ee-]core-profile-server`?
+    .. The `cloud` settings provided by the bootable jar will work correctly when the core profile layers are used.
+    .. S2i behavior in the cloud feature pack will work correctly when the core profile layers are used
+. Example configurations
+    .. Add a docs/examples/standalone-ee-core.xml file the contents of which match what would be generated using the
+       layers listed in item 1.a.
+    .. Add a docs/examples/standalone-ee-core-ha.xml file the contents of which match what would be generated using the
+       layers listed in item 1.a, plus the web-clustering layer.
+. Certification at Jakarta
+    .. Run the TCK using docs/examples/standalone-ee-core.xml and use the results to formally certify EE 10 Core Profile compatibility.
+        * Run and certify with both SE 11 and 17
+
+=== Nice-to-Have Requirements
+
+* Add an ee-concurrency layer (not necessarily supported) and exclude it when defining any  `[ee-]core-profile-server`
+  base layer.
+    ** This will likely be difficult to accomplish in time.
+
+=== Non-Requirements
+* Addition of new profiles in the standard domain.xml.
+* Exclusion of the undertow subsystem and its servlet container from the supported `[ee-]core-profile` layer or from
+  the example configuration files. Neither the Jakarta RESTFul WebServices spec nor the EE 10 Core Profile mandate that
+  an implementation support the Servlet specification, and an implementation like WildFly could be made slimmer by not
+  including such support. But doing the engineering work to validate that option is not in scope for this RFE.
+    ** If in the future we wished to support a Core Profile config without Servlet, the likely approach would be to
+       allow user exclusion of the Galleon layer that provides it; i.e. the default option would include Servlet. So
+       including Servlet now is unlikely to lead to any incompatible future change.
+* A slimmed weld subsystem that only provides CD I 4.0 CDI Lite, instead of full CDI. Jakarta EE 10 Core Profile only
+  requires CDI Lite, but it is legal to provide full CDI. WildFly do not have any weld integration that is limited to
+  CDI Lite; adding one would be a separate RFE.
+* Similarly to the Servlet point above, exclusion of other functionality that is transitively added due to the use of
+  `core-server`, `cdi` or `jaxrs` layers is not required.
+    ** TODO enumerate ones of interest, e.g. JTA, EE Concurrency
+* No new Quickstart or adaptation of any existing Quickstart.
+
+== Backwards Compatibility
+
+=== Default Configuration
+
+No default configuration changes will be made related to this issue.
+
+=== Importing Existing Configuration
+
+No incompatibility. New configuration; does not affect any processing of existing configurations.
+
+=== Deployments
+
+No incompatibility. Deployments intended for use with this profile will need to be written to not use other capabilities,
+but that is not an incompatibility.
+
+=== Interoperability
+
+The Core Profile will not include any interoperability specifications (IIOP, remote EJB) beyond support for REST.
+
+== Security Considerations
+
+The standard WildFly security layer will be provided, along with its standard integration with the other subsystems
+(undertow, weld, jaxrs) that are included in the profile. There will be nothing novel here.
+
+
+== Test Plan
+
+The test plan is that the `standalone-core.xml` will be tested in the `ExampleParseAndMarshalModelsTestCase`. The layer
+will be tested with the Jakarta EE 10 Core TCK. A CI job will be setup to run the TCK against both the layer and the
+`standalone-core.xml` configuration file.
+
+== Community Documentation
+
+The layer will be documented with the rest of the known layers. It will include the layers it consists of.
+
+== Release Note Content
+
+A new `ee-core-profile-server` layer has been added which will provision a server for the
+https://jakarta.ee/specifications/coreprofile/10/jakarta-coreprofile-spec-10.0.html[Jakarta EE 10 Core Profile]. You can
+also see an example configuration in the `docs/examples/configs/standalone-core.xml` configuration file. The
+Core Profile is well suited for cloud native applications and microservices.
