@@ -1,0 +1,126 @@
+= HAL-1827 Update the server installation using the Web Console
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+EAP 8 introduces a new way of updating the server. Details about this feature are out of the scope of this document. They can be found in the analysis documents of {issue-base-url}/EAP7-1917[EAP7-1917] and {issue-base-url}/EAP7-1984[EAP7-1984].
+
+This document describes how the console will support the new update feature.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1827[HAL-1827]
+
+=== Related Issues
+
+* {issue-base-url}/EAP7-1984[EAP7-1984]
+* {issue-base-url}/EAP7-1917[EAP7-1917]
+* {issue-base-url}/WFCORE-6206[WFCORE-6206]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:jjedlick@redhat.com[Jakub Jedlicka]
+
+=== Testing By
+
+* [ ] Engineering
+* [x] QE
+
+=== Affected Projects or Components
+
+This RFE affects the management console. It depends on the management operations added by {issue-base-url}/EAP7-1917[EAP7-1917].
+
+=== Other Interested Projects
+
+None
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+* [x] Managed domain
+* [ ] OpenShift s2i
+* [ ] Bootable jar
+
+== Requirements
+
+The console must support the new update mechanism while still supporting patching in mixed domain mode with older hosts (7.4.x and below). The UI will show the old patching UI if such a host is selected in a mixed domain. In all other scenarios, the new update UI will be used. This is especially true for standalone mode, where only the new update UI is supported.
+
+Decision matrix:
+
+Standalone mode
+
+* only updates/channels are supported
+* patching is *not* supported
+
+Domain mode
+
+* depends on the selection of the host
+** `/core-service=installer` is present -> show update UI
+** `/core-service=patching` is present -> show patching UI
+
+=== Hard Requirements
+
+The console must support the new management operations introduced by {issue-base-url}/EAP7-1917[EAP7-1917]:
+
+* Update a Server installation
+* Revert an update
+* View updates history
+* List subscribed channels
+* Subscribe to a new channel
+* Edit a channel subscription
+* Unsubscribe from a channel
+* Export server snapshot
+* Restart to apply an update/revert
+* Upload a custom patch
+* Clean the installer
+
+See the implementation plan below on how these features are implemented in the console.
+
+=== Nice-to-Have Requirements
+
+Promote a Domain Controller to be an artifacts server
+
+=== Non-Requirements
+
+None
+
+== Implementation Plan
+
+This section only describes the new update UI. The old patching UI remains unchanged and is out of the scope of this document.
+
+=== Homepage
+
+In domain mode the homepage has a section about patching. This section is renamed to "Update", and the content is updated to reflect the basic steps for applying an update. This section is now also visible for standalone mode.
+
+=== Update
+
+The old patching top level category is replaced by a new top level category named "Update". This new top level category contains a https://hal.github.io/documentation/concepts/#finder[finder] with the following columns:
+
+* Hosts (domain mode only): Lists all hosts. Selecting a host shows the update column
+* Update: Lists two static items:
+    1. History
+    2. Channels
+* History: Shows the updates history
+* Channels: Shows channels
+
+== Open Questions
+
+== Test Plan
+
+Additional tests are added to the https://github.com/hal/berg[hal/berg] test suite to verify the update features.
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
