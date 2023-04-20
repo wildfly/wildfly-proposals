@@ -1,0 +1,56 @@
+= Hibernate ORM 6.2
+:author:            Scott Marlow
+:email:             smarlow@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Include Hibernate ORM 6.2.x https://issues.redhat.com/browse/WFLY-17558[WFLY-17558].
+
+The Hibernate ORM 6.2 https://github.com/hibernate/hibernate-orm/releases/tag/6.2.0[ORM 6.2.0] https://github.com/hibernate/hibernate-orm/wiki/Roadmap-6.2[roadmap] lists the expected new features:
+* https://github.com/hibernate/hibernate-orm/discussions/5104[Support mapping composite/struct types] via https://hibernate.atlassian.net/browse/HHH-15327[HHH-15327].
+* https://github.com/hibernate/hibernate-orm/discussions/5105[Common table expression] via https://hibernate.atlassian.net/browse/HHH-15328[HHH-15328].  https://en.wikipedia.org/wiki/Hierarchical_and_recursive_queries_in_SQL[Also see Hierarchical_and_recursive_queries_in_SQL].
+* https://hibernate.atlassian.net/browse/HHH-15175[Remove support for database versions that are unsupported by vendors via HHH-15175.]
+
+Hibernate Search needs to be upgraded to 6.1.8+ https://hibernate.atlassian.net/browse/HSEARCH-4735[via HSEARCH-4735 for testing with Hibernate ORM 6.2.]
+
+The new libraries were added for Jakarta EE 10 compatibility (https://jakarta.ee/compatibility/certification/10).
+
+Migration notes for transition from Hibernate ORM 5.3 to 6.2 can be viewed via:
+
+* https://github.com/hibernate/hibernate-orm/blob/5.4/migration-guide.adoc
+* https://github.com/hibernate/hibernate-orm/blob/5.5/migration-guide.adoc
+* https://github.com/hibernate/hibernate-orm/blob/5.6/migration-guide.adoc
+* https://docs.jboss.org/hibernate/orm/6.0/migration-guide/migration-guide.html
+* https://docs.jboss.org/hibernate/orm/6.1/migration-guide/migration-guide.html
+* https://docs.jboss.org/hibernate/orm/6.2/migration-guide/migration-guide.html
+
+== Issue Metadata
+
+=== Dev Contacts
+
+* mailto:{Scott Marlow}[{smarlow@redhat.com}] JPA / WildFly integration lead
+* mailto:{Paul Ferraro}[{pferraro@redhat.com}] WildFly clustering lead
+* mailto:{Steve Ebersole}[{steve@hibernate.org}] Hibernate ORM, project lead
+* mailto:{Sanne Grinovero}[{sanne@hibernate.org}] Hibernate team lead
+
+
+=== Other Interested Projects
+
+Infinispan project will support the Hibernate ORM 6.2 second level cache interfaces (SPI) so that users can use a Persistence 2nd Level Cache.
+
+== Requirements
+
+Hibernate ORM 6.2+, Hibernate Search 6.1.8+.
+
+== Test Plan
+
+The Jakarta EE 10 TCKs must be passed with the upgraded Hibernate ORM version.
+
+* TCK testing needs to pass.
+* WildFly testsuite needs to pass.
+
+Hibernate Search must pass all of the https://github.com/hibernate/hibernate-search project tests. 
