@@ -89,12 +89,11 @@ See the implementation plan below on how these features are implemented in the c
 
 === Nice-to-Have Requirements
 
-Promote a Domain Controller to be an artifacts server
-Export server snapshot
+* Export server snapshot
 
 === Non-Requirements
 
-Promote a Domain Controller to be an artifacts server
+* Promote a Domain Controller to be an artifacts server
 
 == Implementation Plan
 
