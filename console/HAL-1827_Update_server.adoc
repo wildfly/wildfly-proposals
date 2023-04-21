@@ -55,7 +55,7 @@ None
 
 == Requirements
 
-The console must support the new update mechanism while still supporting patching in mixed domain mode with older hosts (7.4.x and below). The UI will show the old patching UI if such a host is selected in a mixed domain. In all other scenarios, the new update UI will be used. This is especially true for standalone mode, where only the new update UI is supported.
+The console must support the new update mechanism while still supporting patching in mixed domain mode with older hosts (7.4.x and below). The UI will show the old patching UI if such a host is selected in a mixed domain. In all other scenarios, the new update UI will be used. This is especially true for the standalone mode, where only the new update UI is supported.
 
 Decision matrix:
 
@@ -74,14 +74,13 @@ Domain mode
 
 The console must support the new management operations introduced by {issue-base-url}/EAP7-1917[EAP7-1917]:
 
-* Update a Server installation
+* Update a server installation
 * Revert an update
 * View updates history
 * List subscribed channels
 * Subscribe to a new channel
 * Edit a channel subscription
 * Unsubscribe from a channel
-* Export server snapshot
 * Restart to apply an update/revert
 * Upload a custom patch
 * Clean the installer
@@ -91,10 +90,11 @@ See the implementation plan below on how these features are implemented in the c
 === Nice-to-Have Requirements
 
 Promote a Domain Controller to be an artifacts server
+Export server snapshot
 
 === Non-Requirements
 
-None
+Promote a Domain Controller to be an artifacts server
 
 == Implementation Plan
 
@@ -102,20 +102,108 @@ This section only describes the new update UI. The old patching UI remains uncha
 
 === Homepage
 
-In domain mode the homepage has a section about patching. This section is renamed to "Update", and the content is updated to reflect the basic steps for applying an update. This section is now also visible for standalone mode.
+In domain mode the homepage has a section about patching. This section is renamed to "Update", and the content is updated to reflect the basic steps for applying an update. This section is now also available in standalone mode.
 
-=== Update
+=== Update Top Level Category
 
-The old patching top level category is replaced by a new top level category named "Update". This new top level category contains a https://hal.github.io/documentation/concepts/#finder[finder] with the following columns:
+The old patching top level category is replaced by a new top level category named "Update". This new top level category contains a https://hal.github.io/documentation/concepts/#finder[finder] with columns to manage updates and channels.
 
-* Hosts (domain mode only): Lists all hosts. Selecting a host shows the update column
-* Update: Lists two static items:
-    1. History
-    2. Channels
-* History: Shows the updates history
-* Channels: Shows channels
+==== Update Column
+
+When the new top level category is selected, the update column is displayed as the initial column. It contains two static items:
+
+. <<history-column,History>>
+. <<channels-column,Channels>>
+
+The preview area gives an overview of the update features and how they work in the console.
+
+.Update column in standalone mode
+image::HAL-1827_update_column.png[]
+
+[#history-column]
+==== History Column
+
+The history column shows the installations, updates and rollbacks returned by the `/core-service=installer:history()` operation. The list of entries is sorted by timestamp, with the newest entry appearing first.
+
+The column provides the following actions ❶:
+
+* Update Server: Updates a server installation using the three-phase process described in the analysis document of {issue-base-url}/EAP7-1917[EAP7-1917]. The three steps are implemented using a wizard.
+    . Check if there are available updates
+    . Prepare the update
+    . Apply the update
+* Upload ZIP: Updates the server installation by uploading a ZIP file. This action is implemented using a wizard.
+* Refresh: Refreshes the list of items.
+* Clean: Cleans the installer. A confirmation dialog is shown, before cleaning the installer.
+
+The preview area describes the available features.
+
+.History column
+image::HAL-1827_history_column.png[]
+
+==== History Item
+
+A history item represents one model node of the `result` array returned by `/core-service=installer:history()`. The console uses the following information to render the item:
+
+* Hash: The revision hash
+* Timestamp: The timestamp of the commit
+* Type: The type of the commit: `rollback`, `update` or `install`
+* An icon representing the type
+
+The item provides the following actions ❶:
+
+* Revert: Revert the update or the rollback. Only available if the type is `rollback` or `update`.
+
+The preview shows the following information:
+
+* Hash: The revision hash
+* Timestamp: The timestamp of the commit
+* Type: The type of the commit: `rollback`, `update` or `install`
+* The artifact changes
+* The channel changes
+
+.History item
+image::HAL-1827_history_item.png[]
+
+[#channels-column]
+==== Channels Column
+
+The channels column shows the subscribed channels as returned by `/core-service=installer:read-resource(include-runtime=true)`.
+
+The column provides the following actions ❶:
+
+* Subscribe: Subscribes to a channel using a modal dialog.
+* Refresh: Refreshes the list of items.
+
+The preview area describes the available features.
+
+.Channels column
+image::HAL-1827_channel_column.png[]
+
+==== Channel Item
+
+The console uses the following information to render a subscribed channel:
+
+* Name of the channel
+* Type of the manifest: GAV or URL
+* An icon representing the type of the manifest
+
+The item provides the following actions ❶:
+
+* View: View the channel in an https://hal.github.io/documentation/concepts/#applications[application] view. The channel can be modified using this view.
+* Unsubscribe: Unsubscribes the channel. A confirmation dialog is shown, before performing the action.
+
+The preview shows the following information:
+
+* Name of the channel
+* Repositories
+* Manifest
+
+.Channel item
+image::HAL-1827_channel_item.png[]
 
 == Open Questions
+
+None
 
 == Test Plan
 
