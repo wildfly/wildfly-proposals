@@ -9,9 +9,9 @@
 
 == Overview
 
-EAP 8 introduces a new way of updating the server. Details about this feature are out of the scope of this document. They can be found in the analysis documents of {issue-base-url}/EAP7-1917[EAP7-1917] and {issue-base-url}/EAP7-1984[EAP7-1984].
+EAP 8 introduces a new way of updating the server. These features are references in this RFE as the "installer". Details about the installer are out of the scope of this document. They can be found in the analysis documents of {issue-base-url}/EAP7-1917[EAP7-1917] and {issue-base-url}/EAP7-1984[EAP7-1984].
 
-This document describes how the console will support the new update feature.
+This document describes how the console will support the installer.
 
 == Issue Metadata
 
@@ -55,19 +55,19 @@ None
 
 == Requirements
 
-The console must support the new update mechanism while still supporting patching in mixed domain mode with older hosts (7.4.x and below). The UI will show the old patching UI if such a host is selected in a mixed domain. In all other scenarios, the new update UI will be used. This is especially true for the standalone mode, where only the new update UI is supported.
+The console must support the installer while still supporting patching in mixed domain mode with older hosts (7.4.x and below). The UI will show the old patching UI if such a host is selected in a mixed domain. In all other scenarios, the new installer UI will be used. This is especially true for the standalone mode, where only the new UI is supported.
 
 Decision matrix:
 
 Standalone mode
 
-* only updates/channels are supported
+* only the installer is supported
 * patching is *not* supported
 
 Domain mode
 
 * depends on the selection of the host
-** `/core-service=installer` is present -> show update UI
+** `/core-service=installer` is present -> show installer UI
 ** `/core-service=patching` is present -> show patching UI
 
 === Hard Requirements
@@ -75,6 +75,8 @@ Domain mode
 The console must support the new management operations introduced by {issue-base-url}/EAP7-1917[EAP7-1917]:
 
 * Update a server installation
+    * online
+    * using a ZIP file
 * Revert an update
 * View updates history
 * List subscribed channels
@@ -97,32 +99,32 @@ See the implementation plan below on how these features are implemented in the c
 
 == Implementation Plan
 
-This section only describes the new update UI. The old patching UI remains unchanged and is out of the scope of this document.
+This section only describes the new installer UI. The old patching UI remains unchanged and is out of the scope of this document.
 
 === Homepage
 
-In domain mode the homepage has a section about patching. This section is renamed to "Update", and the content is updated to reflect the basic steps for applying an update. This section is now also available in standalone mode.
+In domain mode the homepage has a section about patching. This section is renamed to "Installer", and the content is updated to reflect the basic steps for using the installer. This section is now also available in standalone mode.
 
-=== Update Top Level Category
+=== Installer Top Level Category
 
-The old patching top level category is replaced by a new top level category named "Update". This new top level category contains a https://hal.github.io/documentation/concepts/#finder[finder] with columns to manage updates and channels.
+The old patching top level category is replaced by a new top level category named "Installer". This new top level category contains a https://hal.github.io/documentation/concepts/#finder[finder] with columns to manage updates and channels.
 
-==== Update Column
+==== Installer Column
 
-When the new top level category is selected, the update column is displayed as the initial column. It contains two static items:
+When the new top level category is selected, the installer column is displayed as the initial column. It contains two static items:
 
-. <<history-column,History>>
+. <<updates-column,Updates>>
 . <<channels-column,Channels>>
 
-The preview area gives an overview of the update features and how they work in the console.
+The preview area gives an overview of the installer and how it works in the console.
 
-.Update column in standalone mode
-image::HAL-1827_update_column.png[]
+.Installer column in standalone mode
+image::HAL-1827_installer_column.png[]
 
-[#history-column]
-==== History Column
+[#updates-column]
+==== Updates Column
 
-The history column shows the installations, updates and rollbacks returned by the `/core-service=installer:history()` operation. The list of entries is sorted by timestamp, with the newest entry appearing first.
+The updates column shows the installations, updates and rollbacks returned by the `/core-service=installer:history()` operation. The list of entries is sorted by timestamp, with the newest entry appearing first.
 
 The column provides the following actions ❶:
 
@@ -136,12 +138,12 @@ The column provides the following actions ❶:
 
 The preview area describes the available features.
 
-.History column
-image::HAL-1827_history_column.png[]
+.Updates column
+image::HAL-1827_updates_column.png[]
 
-==== History Item
+==== Updates Item
 
-A history item represents one model node of the `result` array returned by `/core-service=installer:history()`. The console uses the following information to render the item:
+An update item represents one model node of the `result` array returned by `/core-service=installer:history()`. The console uses the following information to render the item:
 
 * Hash: The revision hash
 * Timestamp: The timestamp of the commit
@@ -150,7 +152,7 @@ A history item represents one model node of the `result` array returned by `/cor
 
 The item provides the following actions ❶:
 
-* Revert: Revert the update or the rollback. Only available if the type is `rollback` or `update`.
+* Revert: Revert the update or the rollback. Only available if the type is `update`.
 
 The preview shows the following information:
 
@@ -160,8 +162,8 @@ The preview shows the following information:
 * The artifact changes
 * The channel changes
 
-.History item
-image::HAL-1827_history_item.png[]
+.Update item
+image::HAL-1827_updates_item.png[]
 
 [#channels-column]
 ==== Channels Column
@@ -176,7 +178,7 @@ The column provides the following actions ❶:
 The preview area describes the available features.
 
 .Channels column
-image::HAL-1827_channel_column.png[]
+image::HAL-1827_channels_column.png[]
 
 ==== Channel Item
 
@@ -198,7 +200,7 @@ The preview shows the following information:
 * Manifest
 
 .Channel item
-image::HAL-1827_channel_item.png[]
+image::HAL-1827_channels_item.png[]
 
 == Open Questions
 
