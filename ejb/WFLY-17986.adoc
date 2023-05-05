@@ -40,7 +40,7 @@ are available. A route is a per-deployment load balancer which is accessible ext
 An ingress controller is a load balancer external to the cluster which can be shared by multiple deployments.
 
 NOTE: External access points for a deployment may be set up automatically (as in the case of a `route`,
-when the application is deployed using the Wildfly operator) or may need to be set up manually.
+when the application is deployed using the WildFly operator) or may need to be set up manually.
 
 This implies that, for the case of an external EJB client using http, client access to the OpenShift cluster must be
 via a route or ingress controller configured for the EAP deployment in some way. This fits well with the fact that
@@ -77,7 +77,7 @@ fails, and the affinity will be updated
 
 A major part of this issue is to ensure that these key features work in OpenShift as they do in bare metal.
 
-=== The Wildfly operator
+=== The WildFly operator
 The OpenShift environment differs from a bare metal environment in many key ways; for example, in OpenShift, Pod IP
 addresses and storage volume references are transient, whereas on bare metal they are persistent; in OpenShift,
 Pods which fail can be restarted automatically, whereas on bare metal, they are under the control of a system
@@ -89,19 +89,19 @@ deployment in OpenShift if stricter guarantees were not imposed. For example, di
 EAP cluster and affinity management of SFSBs would be next to impossible without an assumption persistent Pod
 IP addresses.
 
-The `Wildfly operator` can be used to deploy an EAP application in OpenShift and provide the following guarantees:
+The `WildFly operator` can be used to deploy an EAP application in OpenShift and provide the following guarantees:
 
 * persistent IP addresses for Pods
 * persistent storage references for storage used by EAP
 * scaling up or scaling down of services which are transaction-aware
 
-In what follows, we assume that deployments are made using the Wildfly operator and that the EJB client may depend
-on these additional guarantees. For more information on the Wildfly operstor, see
-https://operatorhub.io/operator/wildfly[Wildfly Operator on operatorhub.io]
+In what follows, we assume that deployments are made using the WildFly operator and that the EJB client may depend
+on these additional guarantees. For more information on the WildFly operator, see
+https://operatorhub.io/operator/WildFly[WildFly Operator on operatorhub.io]
 
 === Scope
 As mentioned earlier, the scope of this issue is limited to `external` EJB clients using the `http` protocol to
-access `Wildfly-operator-based` EAP deployments on OpenShift. Within this limited use case scenario, the aim is to
+access `WildFly-operator-based` EAP deployments on OpenShift. Within this limited use case scenario, the aim is to
 provide the same set of features to the application programmer on OpenShift as are available on bare metal.
 
 == Issue Metadata
@@ -127,12 +127,12 @@ provide the same set of features to the application programmer on OpenShift as a
 
 === Affected Projects or Components
 
-* https://github.com/wildfly/wildfly[Wildfly]
-* https://github.com/wildfly/wildfly-http-client[Wildfly HTTP Client]
+* https://github.com/WildFly/WildFly[WildFly]
+* https://github.com/WildFly/WildFly-http-client[WildFly HTTP Client]
 
 === Other Interested Projects
 
-* https://github.com/wildfly-security/wildfly-elytron[Wildfly Elytron]
+* https://github.com/WildFly-security/WildFly-elytron[WildFly Elytron]
 
 === Relevant Installation Types
 // Remove the x next to the relevant field if the feature in question is not relevant
@@ -147,11 +147,11 @@ provide the same set of features to the application programmer on OpenShift as a
 
 == Requirements
 The requirements for this issue center around the key features of the EJB client mentioned previously.
-We assume that the deployments are deployed using the Wildfly operator.
+We assume that the deployments are deployed using the WildFly operator.
 
 === Hard Requirements
 
-* the key features of the EJB clent should work on OpenShift as they do on bare metal, those features being:
+* the key features of the EJB client should work on OpenShift as they do on bare metal, those features being:
 ** lookup via JNDI or programmatic creation of proxies for EJBs in a deployment (non-HA and HA)
 ** client-specific security and discovery configuration (non-HA and HA)
 ** transactional scoping of invocations on EJBs in a deployment (non-HA and HA)
@@ -170,16 +170,16 @@ NONE
 NONE
 
 == Backwards Compatibility
-Backward compatibility with previous versions of Wildfly is not a valid consideration for two reasons:
+Backward compatibility with previous versions of WildFly is not a valid consideration for two reasons:
 
 * the behaviour of EJB client over HTTP with a load balancer on bare metal is known to be incorrect
 (see https://issues.redhat.com/browse/WEJBHTTP-81[WEJBHTTP-81])
-* the behaviour of EJB client over HTTP to access Wildfly deployments on OpenShift has never been tested
+* the behaviour of EJB client over HTTP to access WildFly deployments on OpenShift has never been tested
 
 === Default Configuration
-The configuration of the EJB client is provided by wildfly-config.xml on the client application classpath.
+The configuration of the EJB client is provided by WildFly-config.xml on the client application classpath.
 This client configuration file allows configuring various aspects of the EJB client behaviour, such as
-authentication, discovery, initlal targets for the http client, XNIO-related properties, etc.
+authentication, discovery, initial targets for the http client, XNIO-related properties, etc.
 It may be required to adjust this configuration file to allow specifying affinity management properties to
 the http-client configuration.
 
@@ -188,13 +188,13 @@ N/A
 
 === Deployments
 
-Deployments must make use of the Wildfly operator.
+Deployments must make use of the WildFly operator.
 
 === Interoperability
 N/A
 
 == Implementation Plan
-There are a number of issues with the Wu=ilfly HTTP client which need to be fixed before this issue can be rresolved.
+There are a number of issues with the WildFly HTTP client which need to be fixed before this issue can be resolved.
 The issues are:
 
 * https://issues.redhat.com/browse/WEJBHTTP-81[WEJBHTTP-81]
@@ -208,10 +208,10 @@ There are two aspects to consider here:
 * security of access between EJB client and EAP server (or EAP cluster)
 * security of access to the OpenShift cluster
 
-The EJB client can be configured for authentication and encryption by way of the wildfly-client.xml configuration
+The EJB client can be configured for authentication and encryption by way of the WildFly-client.xml configuration
 file, thus providing configurable security in the communication pathways between client and server.
 
-Securtity of access to the OpenShift cluster would be the responaibility of the OpenShift adminstrator and it is
+Security of access to the OpenShift cluster would be the responsibility of the OpenShift administrator, and it is
 unclear if this touches on the configuration of the client.
 
 == Test Plan
@@ -219,14 +219,14 @@ TODO
 
 == Community Documentation
 This issue will require community documentation, at a minimum to explain how to use the EJB client to access
-Wildfly-operator-based deployments on OpenShift.
+WildFly-operator-based deployments on OpenShift.
 
 == Release Note Content
 TODO
 ////
 Draft verbiage for up to a few sentences on the feature for inclusion in the
 Release Note blog article for the release that first includes this feature. 
-Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+Example article: http://WildFly.org/news/2018/08/30/WildFly14-Final-Released/.
 This content will be edited, so there is no need to make it perfect or discuss
 what release it appears in.  "See Overview" is acceptable if the overview is
 suitable. For simple features best covered as an item in a bullet-point list 
