@@ -1,0 +1,110 @@
+= Provide complete QuickStart and documentation for connecting to a remote AMQ broker
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Using a remote AMQ broker is a scenario that is becoming more and more used, all the more so as on the cloud this is our recommended configuration.
+We should provide a QuickStart on how to configure EAP to connect to a remote AMQ broker. This QuickStart should also be portable to the cloud.
+It should also be the base of a complete documentation example on how to configure this setup.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/EAP7-1792[EAP7-1792]
+* https://issues.redhat.com/browse/WFLY-17644[WFLY-17644]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1559[EAP7-1559]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [X] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [] Managed domain
+
+* [x] OpenShift s2i
+
+* [] Bootable jar
+
+== Requirements
+
+The goal of this RFE is to evolve the existing https://github.com/wildfly/quickstart/tree/main/helloworld-mdb[helloworld-mdb] to make the same application run on a remote broker instead of an embedded one.
+
+=== Hard Requirements
+
+Provide configuration and documentation to run the application with a remote broker on baremetal and on Openshift.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Backwards Compatibility
+
+// Does this enhancement affect backwards compatibility with previously released
+// versions of WildFly?
+// Can the identified incompatibility be avoided?
+
+=== Default Configuration
+
+=== Importing Existing Configuration
+
+=== Deployments
+
+=== Interoperability
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+
+== Security Considerations
+
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+
+== Test Plan
+
+== Community Documentation
+
+The quickstart and its documentation is already in the community, it will be updated.
+
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
