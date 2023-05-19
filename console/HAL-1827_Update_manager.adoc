@@ -147,7 +147,7 @@ An update item represents one model node of the `result` array returned by `/cor
 
 * Hash: The revision hash
 * Timestamp: The timestamp of the commit
-* Type: The type of the commit: `rollback`, `update` or `install`
+* Type: The type of the commit: `rollback`, `update`, `install` or `config_change`
 * An icon representing the type
 
 The item provides the following actions ❶:
@@ -158,7 +158,7 @@ The preview shows the following information:
 
 * Hash: The revision hash
 * Timestamp: The timestamp of the commit
-* Type: The type of the commit: `rollback`, `update` or `install`
+* Type: The type of the commit: `rollback`, `update`, `install` or `config_change`
 * The artifact changes
 * The channel changes
 
