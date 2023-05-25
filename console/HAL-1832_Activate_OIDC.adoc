@@ -66,9 +66,13 @@ Affected Resources:: `/subsystem=elytron-oidc-client`
 
 The console shows the new `elytron-oidc-client` subsystem. The UI for this subsystem is backed by the https://hal.github.io/documentation/concepts/#applications[model browser] which generates a UI based on the resource descriptions.
 
-The UI makes it possible to configure the necessary resources as described in the Elytron admin guide: `docs/src/main/asciidoc/_admin-guide/subsystem-configuration/Elytron_OIDC_Client.adoc`, section "Securing the management console with OpenID Connect".
+The UI makes it possible to configure the necessary resources as described in the Elytron admin guide: `docs/src/main/asciidoc/_admin-guide/subsystem-configuration/Elytron_OIDC_Client.adoc`, section "Securing the management console with OpenID Connect". In particular, this means the console makes it possible to add the following resources:
 
-If the console is secured by the Keycloak OpenID Connect (OIDC) adapter, the "Access Control" top level category shows a screen which summarizes the basic settings. This screen, contains also a link to the Keycloak admin console.
+* `/subsystem=elytron-oidc-client/provider=keycloak`
+* `/subsystem=elytron-oidc-client/secure-deployment=wildfly-management`
+* `/subsystem=elytron-oidc-client/secure-server=wildfly-console`
+
+If the console is secured by the Keycloak OpenID Connect (OIDC) provider, the "Access Control" top level category shows a summary of the basic settings. This contains a link to the Keycloak admin console.
 
 === Nice-to-Have Requirements
 
