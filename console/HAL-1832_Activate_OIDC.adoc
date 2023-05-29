@@ -88,7 +88,7 @@ The console does not offer a dedicated UI/wizards to configure the `elytron-oidc
 
 == Test Plan
 
-Additional tests are added to the test suite that verify that the hash is visible in the deployment preview.
+Additional tests are added to the test suite that verify that the relevant OIDC resource (see above) can be configured.
 
 == Community Documentation
 
