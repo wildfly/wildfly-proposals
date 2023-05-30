@@ -1,0 +1,124 @@
+= Transaction SlotStore config options
+:author:            Jonathan Halliday
+:email:             jonathan.halliday@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The server's transaction engine, Narayana, has a configurable 'ObjectStore' for persistent storage of transaction recovery records. We seek to broaden the range of options available for configuring this, to provide alternatives suited to new and emerging deployment environments.
+
+The current options include filesystem based using file-per-transaction or append-only log (reusing code from HornetQ / ActiveMQ Artemis), or a JDBC database.
+
+Narayana upstream now also offers the SlotStore, a filesystem based store that employs an efficient memory mapping approach. Additionally and uniquely, this store can utilise Persistent Memory (pmem) hardware where available for very fast transaction logging.
+
+Extending the server's transaction management model to allow configuration of these options would allow users to access the new functionality of this component.
+
+Although the SlotStore code is part of Narayana, the mashona library used to support use on pmem is independent and may also be utilised by other components requiring similar hardware support e.g. Infinispan and messaging. For this reason, it may be suited to packaging as a separate module.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-15659
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/JBTM-3276
+* https://issues.redhat.com/browse/JBTM-3417
+
+=== Dev Contacts
+
+* mailto:jonathan.halliday@redhat.com[Jonathan Halliday]
+* mailto:mmusgrov@redhat.com[Michael Musgrove]
+
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+Wildfly
+
+=== Other Interested Projects
+
+Narayana, Infinispan, Mashona.
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+Extend the server management model to facilitate configuration of the new SlotStore transaction log type. Minimally this will require the ability to select the store in preference to existing fs/journal/jdbc options. The SlotStore itself further requires a directory path to be set. Size tuning options also exist, but default values should suffice for most use cases.
+
+=== Nice-to-Have Requirements
+
+Extend the sever dependency model to package the Persistent Memory library, mashona, as a separate module that components requiring it can depend on.
+Note that as mashona is small and doesn't have a service lifecycle of its own, it need not necessarily be an optional dependency if making it such introduces unwarranted complexity compared to having it always active.
+
+=== Non-Requirements
+
+== Backwards Compatibility
+
+Existing store types remain available, existing configurations remain valid.
+Automatic data migration between store types is not supported, so no transactions should be in-flight when switching store types.
+
+=== Default Configuration
+
+The existing transaction store will remain the default. The SlotStore will be available only by explicit user selection. The SlotStore will provide defaults for its configuration properties where possible.
+
+=== Importing Existing Configuration
+
+=== Deployments
+
+=== Interoperability
+
+== Implementation Plan
+
+This will be a community-only feature for a few releases before being considered for support in EAP.
+
+== Security Considerations
+
+As with existing transaction store types the tx log files may, in certain cases, contain db connection information.
+
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+
+== Test Plan
+
+* Testing of the new server configuration options will require new tests, patterned on those for existing store configurations.
+
+* Testing of the SlotStore itself can be accomplished by using the same transaction tests that exercise existing store types, but changing the server config to use the new store type.
+Broadly, this is any tx test involving two resources e.g. an MDB writing a database. Single resource tests e.g. just using db, can be forced to use the store by setting appropriate configuration (disable 1PC optimization), potentially providing additional coverage at low effort if required.
+
+* Testing of the pmem options will require appropriate hardware, though this can be simulated by system configuration (similar to a RAM disk)
+
+== Community Documentation
+
+Update upstream Narayana docs with SlotStore config guide, probably reusing existing material from http://mashona.io/blog/2021/04/06/narayana-config
+Then likewise update https://docs.wildfly.org/25/Admin_Guide#Transactions_Subsystem
+Note that, as with many other Narayana components, the app server model may choose to expose only a subset of the available config options to the user and the respective docs may therefore have different scope.
+
+== Release Note Content
+
+Storage of transaction recovery logs can now be configured with additional options, which may be faster for some deployments. These include options tailored to efficient transaction logging on Persistent Memory hardware.
