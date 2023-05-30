@@ -133,11 +133,6 @@ In order to make the most out of the proposed subsystem, appropriate Galleon lay
 full Elytron subsystem will be added. The point of this is to reduce the memory overhead of simple deployments
 as much as possible.
 
-==== Undertow + Elytron Web
-
-Currently, https://github.com/wildfly/wildfly/blob/main/undertow/pom.xml#L113-L121[Undertow depends on Elytron Web] 
-in order to access the Elytron authentication code, which in turn depends on https://github.com/wildfly-security/elytron-web/blob/1.x/pom.xml#L264-L317[most Elytron modules]. In order to reduce dependencies, it should be considered whether a simpler version of the Undertow components can be provided, or if unneeded parts can be removed via transitive dependencies.
-
 ==== Covered use-case scenarios
 
 * Standard one-way TLS (truststore and certificates for client side, key store and key pairs for server side)
@@ -156,6 +151,13 @@ A more complete list is being developed, feel free to comment any other possible
 * If both Elytron and Elytron TLS are installed on the server, consider if a TLS context in one be able to reference
 resources in the other via the shared capability (ex. via ``org.wildfly.security.trust-manager``)
 * An ``elytron-tls-tool`` script to interactively create a TLS context from the CLI, similar to ``add-user``
+
+==== Undertow + Elytron Web
+
+Currently, https://github.com/wildfly/wildfly/blob/main/undertow/pom.xml#L113-L121[Undertow depends on Elytron Web]
+in order to access the Elytron authentication code, which in turn depends on https://github.com/wildfly-security/elytron-web/blob/1.x/pom.xml#L264-L317[most Elytron modules]. In order to reduce dependencies, it should be considered whether a simpler version of the Undertow components can be provided, or if unneeded parts can be removed via transitive dependencies.
+
+Changes may be somewhat intensive, due to tight dependencies on security domains within Undertow. This would be investigated after an initial alpha release.
 
 === Non-Requirements
 
