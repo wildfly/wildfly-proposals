@@ -1,0 +1,138 @@
+= WFLY-15260 Securing the management console with OIDC
+:author:            Farah Juma
+:email:             fjuma@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+With the Keycloak OpenID Connect (OIDC) adapter, it was possible to secure the management console
+using OIDC. When accessing the management console, the user would get redirected to the Keycloak
+login page, log in with their credentials, and get redirected back to the management console upon
+successful authentication. It was also possible for the user to log out of the console.
+
+This RFE is to add the ability to secure the management console when using the native support for
+OIDC.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-15260[WFLY-15260]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-15485[WFLY-15485]
+* https://issues.redhat.com/browse/EAP7-1796[EAP7-1796]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+* TBD
+
+=== Affected Projects or Components
+
+* HAL
+* WildFly Elytron
+* WildFly
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* It will be possible to secure the management console using the native support for OIDC.
+** A new `secure-server` resource will be added to the `elytron-oidc-client` subsystem. This will
+be similar to the `secure-server` resource from the previous `keycloak` subsystem.
+** The steps to secure the management console with OIDC will be very similar to the steps
+that were previously used with the Keycloak OIDC adapter (i.e., configure a `secure-deployment`
+to protect the management interface using bearer-only authentication, configure a `secure-server`
+to publish the OIDC configuration for the management console).
+** The previous `keycloak` subsystem published the OIDC configuration to be used for the
+management console via the http://localhost:MANAGEMENT_PORT/keycloak/adapter/wildfly-console/index.html
+endpoint. HAL would access this endpoint and if it found OIDC configuration, HAL would then
+redirect to the Keycloak login page. Similarly, the `elytron-oidc-client` subsystem will publish the
+OIDC configuration to be used for the management console to a new endpoint (e.g.,
+http://localhost:MANAGEMENT_PORT/elytron-oidc-client/wildfly-console/index.html). HAL will need to be
+updated to access this endpoint and if it finds OIDC configuration, HAL would then
+redirect to the OIDC provider login page.
+* It will be possible to log out of the management console after having logged in with OIDC.
+
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+Like with the previous Keycloak OIDC adapter, the ability to secure the management console
+with OIDC will only be supported for standalone mode. Domain mode won't be supported.
+
+== Backwards Compatibility
+
+No backwards compatibility concerns.
+
+=== Default Configuration
+
+No changes to the default configuration.
+
+=== Importing Existing Configuration
+
+N/A
+
+=== Deployments
+
+N/A
+
+=== Interoperability
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can
+not be delivered all in one go to suggest the strategy. If your feature falls
+into this category, please mention the Release Coordinators on the pull
+request so they are aware.
+////
+
+== Security Considerations
+
+This is a security RFE.
+
+== Test Plan
+
+Tests will be added to the WildFly testsuite to verify that the management console
+can be secured successfully with OIDC. Tests for logging out and tests that make use
+of RBAC will also be added.
+
+== Community Documentation
+
+A new section will be added to the Elytron OIDC Client documentation that describes how
+to secure the management console using OIDC.
+
+== Release Note Content
+
+It is now possible to secure the management console with OpenID Connect.
