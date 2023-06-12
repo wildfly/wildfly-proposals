@@ -1,0 +1,143 @@
+== [Community] Adding the ability to configure additional scope value for an authentication request
+:author:            Prarthona Paul
+:email:             prpaul@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+OpenID Connect is an authentication mechanism that builds on OAuth 2.0 
+and allows a user to login to a web application using credentials established 
+by an OpenID provider. 
+Currently, when sending an authentication request to the OpenID provider, one 
+of the required parameters with the authentication code flow is "scope". However, for 
+now, the Elytron OIDC HTTP authentication mechanism hardcodes this value to just "openid" and only allows additional scopes to be specified via a "scope" query parameter.
+
+The https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest[OpenID Connect specification] indicate that there are other scope values which may be included in 
+the authentication request. This new feature will add the ability to configure the `scope` attribute
+of the `elytron-oidc-client` subsystem under the `secure-server` and `secure-deployment` resources, so that additional scope values can be specified when 
+configuring the server or the deployment settings. 
+
+The feature will allow the user to specify additional scope values in two ways: 
+
+* In an application's `oidc.json` configuration file in the `WEB-INF` directory of the application,
+
+* Adding configurations to the `elytron-oidc-client` subsystem under the `secure-deployment` and the 'secure-server' resource.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-16532[WFLY-16532]
+
+* https://issues.redhat.com/browse/ELY-2574[ELY-2574]
+
+
+=== Related Issues
+
+* N/A
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [ ] Preview
+
+* [x] Community
+
+* [ ] default
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+
+* WildFly Elytron
+
+=== Other Interested Projects
+
+N/A
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* A new attribute named `scope` will be added to the `secure-deployment` and the `secure-server` resources under the `elytron-oidc-client` subsystem, which will be used 
+to specify additional scope values. The user can specify the scope values in either resource when setting up the other attributes, such as, `client-id` and `provider-url`. These values will be used by the Elytron HTTP OIDC authentication mechanism.  
+
+* It must be possible to configure this attribute using cli commands. For example: 
+
+```
+    /subsystem=elytron-oidc-client/secure-deployment=my-secure-deployment:write-attribute(name=scope, value="profile offline_access")
+```
+
+* It must also be configured by specifying it in the deployment. This can be done using the `oidc.json` file inside the `WEB-INF` directory. For example: 
+
+```
+    "scope" : "profile email offline_access"
+```
+
+* The OpenID Connect Specifications contain more details on https://openid.net/specs/openid-connect-core-1_0.html#ScopeClaims[optional scope values] and https://openid.net/specs/openid-connect-core-1_0.html#OfflineAccess[using scope values to requst Offline Access.]
+
+* The scope value must be a String of space separated values as seen in the examples above. 
+
+* When building the redirect URL, the scopes are to be added at the end as `&scope=openid+profile+email+offline_access` with the `+` as the delimiters replacing the spaces. 
+
+* Although OpenID Connect has a small set of scope values outlined in the https://openid.net/specs/openid-connect-core-1_0.html#ScopeClaims[documentation], there are additional scope values that can be configured depending on the OpenID provider. The scope attribute must accept additional scope values accepted by different OpenID providers. 
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+=== Backwards Compatibility
+
+N/A
+
+=== Default Configuration
+
+The `scope` attribute would be undefined by default and in that case, the scope value
+would be hardcoded as `scope=openid` as before if the user does not configure any additional scope values. 
+
+== Test Plan
+
+* WildFly Elytron test suite: Integration test cases implemented to test for functionality. 
+
+* WildFly test suite: Ensuring the correct scope is specified in the authentication request and used when the `scope` attribute is changed. The token will be checked for the correct claims obtained using the scope values configured.
+
+* Tests will be added for both subsystem and deployment configuration. 
+
+* Tests may be added to ensure that the subsystem configuration would fail if the stability level is not defined appropriately. 
+
+== Community Documentation
+
+Documentation for the new scope option will be added to https://github.com/wildfly/wildfly/blob/main/docs/src/main/asciidoc/_admin-guide/subsystem-configuration/Elytron_OIDC_Client.adoc[Elytron OpenID Connect Client Subsystem Configuration].
