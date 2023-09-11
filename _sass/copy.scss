@@ -1,0 +1,28 @@
+.btn-copy {
+    background-color: transparent !important;
+    border: transparent !important;
+    color: $yellow;
+    cursor: pointer;
+    float: right;
+}
+
+.btn-copy:hover {
+    color: $orange !important;
+}
+
+/* Avoid different line-heights when the button is used */
+.inline-btn-copy {
+    margin-top: 0;
+    margin-left: 0;
+    margin-bottom: 0;
+}
+
+// clipboard for code blocks
+pre.highlight {
+    .btn-copy {
+        display: block;
+        margin-top: 0;
+        padding-left: 0.5em;
+        margin-bottom: 0;
+    }
+}

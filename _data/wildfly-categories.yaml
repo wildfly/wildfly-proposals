@@ -1,0 +1,11 @@
+---
+categories:
+  - name: Maven
+    id: maven
+    description: Maven Tooling & Ecosystem
+  - name: User Experience
+    id: user-experience
+    description: Impact how the user experiences working with WildFly
+  - name: Cloud
+    id: cloud
+    description: Developping and Running WildFly on the cloud
