@@ -1,0 +1,158 @@
+---
+categories:
+  - user-experience
+  - maven
+  - installation  
+---
+= WFLY-18428 - Improve the "Get Started" Experience with WildFly
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+It must be possible to create, build and deploy a new WildFly application in less than 5 minutes (not counting download times...)
+
+We need to address the initial experience of getting started with WildFly to set up a Java project with minimal requirements and a fully configured Maven project that lets users starts writing code in a matter of minutes.
+
+This "get started experience" should be at the forefront of the wildfly.org web site as the gateways for new users and existing WildFly users that wants to learn the new capabilities offered by WildFly (provisioning, configuration, etc.) to adapt them to their applications.
+
+This "get started" experience would be the starting point of our documentation. From there, we could guide the users towards task-oriented guides and our existing reference material (eg subsystems and model reference)
+
+Having this fresh "get started" experience is key for new users. It is also very important for existing users that are used to develop with WildFLy in a certain way (download the zip, edit its XML configuration file, run it, copy their wars) and may not be aware that there are new mechanisms that automate the installation and configuration of WildFly and control it from *their* codebase. 
+
+This "get started" guide willl showcase the efficiency of operating and maintaining an Entreprise Java codebase with WildFly.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-18428[WFLY-18428] - Improve the "Get Started" Experience with WildFly
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-17651[WFLY-17651] - Add a getting started archetype
+* https://issues.redhat.com/browse/WFLY-15746[WFLY-15746] - WildFly Application Development Guide
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+* mailto:darran.lofthouse@redhat.com[Darran Lofthouse]
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly.org - source code for https://wildfly.org/
+* https://github.com/wildfly/wildfly-archetypes - Maven archetypes for WildFly
+
+=== Relevant Installation Types
+
+* Application installation with server provisioned with wildfly-maven-plugin
+
+== Requirements
+
+* It must be possible to create, build and run a WildFly application in less than 5 minutes (no counting download times and requirements setup)
+* The only requirement to get started with WildFly are:
+** having a working Java 11+ installation (verified with `java -v`)
+** having a working Maven 3.9+ installation (verified with `maven -v`)
+* The user must be able to create a new Maven project that provides the minimal configuration to provision WildFly and run integration tests.
+* The "get started" documentation must be up to date with the latest release of WildFly.
+
+
+=== Hard Requirements
+
+* WildFly provisioning and configuration is controlled by the `wildfly-maven-plugin`
+** We want to promote a modern way (sustainable, maintainable) to develop with WildFly. Any interaction with WildFly is controlled by the wildfly-maven-plugin. This implies that instructions to download WildFly server with zips or modifyings its XML configuration by hand are prohibited
+* Dependencies to Jakarta EE artifacts are controlled by the WildFly BOM for Jakarta EE
+* Integration tests are configured to use Arquillian against the WildFly server provisioned by the `wildfly-maven-plugin`
+
+=== Non-Requirements
+
+* Cloud deployment is not part of this Get Started experience
+** While cloud deployment is a big focus for WildFly, the initial get started experience should focus on the foundations to develop with WildFly that applies to bare metal as well as the cloud. Further guides for Cloud development and deployments will build on top of this "get started" guide to let
+  new and existing users how they can take their WildFly applications to the cloud.
+
+== Backwards Compatibility
+
+// Does this enhancement affect backwards compatibility with previously released
+// versions of WildFly?
+// Can the identified incompatibility be avoided?
+
+=== Default Configuration
+
+The new `wildfly-getting-started-archetype` archetype will create a Maven project with a "minimal" configuration to get started with WildFly.
+This includes:
+
+* Add properties to controll all dependencies and plugin configuration
+* Add `org.wildfly.bom:wildfly-ee-with-tools` to the `dependencyManagement`
+* Add `CDI` and `Jakarta RS` dependencies
+* Add test dependencies (JUnit, Arquillian )
+* Add the `wildfly-maven-plugin` configured with:
+** the `org.wildfly:wildfly-galleon-pack` Galleon feature pack
+** the `cloud-server` layer
+
+[NOTE]
+====
+Once WildFly Glow is available in the wildfly-maven-plugin, we will use it to 
+discover feature packs and layers automatically from the source code.
+====
+
+* Generated java code provides a "Hello Word" service using Jakarta RS
+* Generated test code provides
+** integration test for a single CDI bean (using Shrinwrap to create the deployment)
+** integration test against the actual application deployed in WildFly (run as a client)
+
+This configuration (and its requirement for JDK 11+ and Maven 3.9+) is the minimal setup needed to start with WildFly.
+
+
+== Implementation Plan
+
+* The new `wildfly-getting-started-archetype` (tracked by https://issues.redhat.com/browse/WFLY-17651[WFLY-17651]) will provide the foundation to create the Maven project used by the "get started" guide.
+** This archetype will generate a Maven project with the default configuration described above.
+
+* The "get started" guide is a single Web page that is in the https://github.com/wildfly/wildfly.org Git repository. It will be composed of 4 steps:
+** step 0. Verify that `java` and `mvn` are properly installed
+** step 1. Create the Java project using the  `wildfly-getting-started-archetype` archetype
+** step 2. Build the java application with `mvn package verify` (to run integration tests)
+** step 3. Run the application with `./target/server/bin/standalone.sh`
+** step 4. Check continuous development by running `mvn wildfly:dev`, updated some code and see the change live in the running server
+
+== Next steps
+
+The new developer guide tracked by https://issues.redhat.com/browse/WFLY-15746[WFLY-15746] must align with this "get started" guide and make sure that its instructions to develop with WildFly can be applied to it.
+In particular, the whole section to "develop a first basic application"  must result in the same structure and codebase than the one produced by the 
+`wildfly-getting-started-archetype`.
+
+Any additional feature or capability described by the developer guide must be compliant with the get startet gude.
+
+As an example, a subsequent guide to "use MicroProfile Config with WildFly" can focus on the steps to achieve this task:
+
+* prerequisites to perform this task 
+* Add the `org.wildfly.bom:wildfly-microprofile` BOM to the `dependencyManagement`
+* Add the `org.eclipse.microprofile.config:microprofile-config-api` dependency
+* Add the `microprofile-platform` Galleon layer
+* A code snippet to add MicroProfile Config API to the existing code with tests or output that shows its outcome.
+* Links to the subsystem guide and model reference for the microprofile-config-smallary subsystem
+* Links to Eclipse MicroProfile Config home page
+
+== Security Considerations
+
+The Maven project that is used to provide this get started experience must keep in mind mechanism to update any component provided by WildFly 
+to make sure the users can stay up to date with new releases and security fixes.
+
+The user would be responsible to identify and apply these updates (eg using Dependabot or similar tools)
+
+== Test Plan
+
+The Maven archetype uses for this "get started" experience must be fully tested before it is released. Its release should be aligned with every WildFly releases (major, minor and micro).
+
+== Community Documentation
+
+This "get started" experience must be at the forefront of WildFly documentation. It will reside in a top-level page /getstarted on the wildfly.org web site.
+This page (https://wildfly.org/getstarted) will be feature promently in the web site navigation header and home page.
+
+== Release Note Content
+
+A new https://wildfly.org/getstarted["Get Started"] page on https://wildfly.org presents to new and existing users the best modern experience with WildFly to create, build and test a Jakarta EE application in a matter of minutes.
