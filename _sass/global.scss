@@ -278,3 +278,13 @@ table {
   }
 }
 
+.toc #toctitle {
+  visibility: hidden;
+}
+
+.toc {
+  opacity: 0.8;
+  background-color: $dark-blue;
+  border-radius: 4px;
+  max-width:1000px
+}
