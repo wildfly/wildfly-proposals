@@ -20,7 +20,7 @@ Elytron already supports specifying hashing algorithms in its security realms. T
 character sets.
 
 
-====  PicketBox Configuration
+===  PicketBox Configuration
 
 In the legacy configuration, the module ``UsernamePasswordLoginModule`` imposes an
 ``identity == String username, credentials == String password`` view on the login process.

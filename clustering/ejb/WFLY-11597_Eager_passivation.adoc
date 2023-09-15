@@ -19,10 +19,10 @@ This proposal would restore the ability to eagerly passivate SFSBs for such user
 
 In general, eager passivation is strongly discouraged for the following reasons:
 
-1. Eager passivation in a cluster has a negative impact on performance.
-1. Cluster-wide eviction can result in deadlocks if an SFSB is accessed while in the process of eviction.
-1. Under low load/capacity, eager passivation results in memory under-utilization.
-1. Under high load/capacity, eager passivation does not prevent OOMs.
+. Eager passivation in a cluster has a negative impact on performance.
+. Cluster-wide eviction can result in deadlocks if an SFSB is accessed while in the process of eviction.
+. Under low load/capacity, eager passivation results in memory under-utilization.
+. Under high load/capacity, eager passivation does not prevent OOMs.
 
 Given that this is a temporary feature and not one we intend to advertise, eager passivation will be enabled via a system property, rather than via a proper management attribute.
 

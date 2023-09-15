@@ -72,7 +72,7 @@ A simple example of a https://github.com/wildfly-extras/wildfly-jar-maven-plugin
 
 == Requirements
 
-==== Bootable JAR server vs Standalone server
+=== Bootable JAR server vs Standalone server
 
 Although the bootable JAR can be seen as a standalone server the following limitations apply:
 
@@ -82,7 +82,7 @@ Although the bootable JAR can be seen as a standalone server the following limit
 * Changes done to the management model (e.g.: using CLI or Web console) at runtime are not persisted between bootable JAR executions. NB: In order to make persistent changes
 to the management model, one can use the WildFly CLI scripts execution feature that the Maven plugin offers.
 
-==== Defining a new WildFly Maven Plugin
+=== Defining a new WildFly Maven Plugin
 
 Existing Maven plugins related to provision, build, and manage WildFly:
 

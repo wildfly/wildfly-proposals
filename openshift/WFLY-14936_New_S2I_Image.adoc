@@ -30,7 +30,7 @@ The WildFly s2i image becomes a generic image allowing to properly install and e
  As a developer one should be able in max 2 steps to deploy to the cloud an app. Same for WildFly developers that should 
 deploy a locally built WildFly SNAPSHOT in one step (as done with WildFly Bootable JAR today). 
 
-==== Responsabilities of the WildFly s2i builder image
+=== Responsabilities of the WildFly s2i builder image
 
 * Provide JDK and maven tooling
 * Provides automatic and configurable JVM configuration at server startup (same as the openjdk builder image)
@@ -42,14 +42,14 @@ deploy a locally built WildFly SNAPSHOT in one step (as done with WildFly Bootab
 * Built application Image must be runnable but also usable inside a docker chained build to construct 
    a final application image (that doesn't contain any build tooling). 
 
-==== Responsabilities of the WildFly runtime image
+=== Responsabilities of the WildFly runtime image
 
 * Provides Java JDK. We are including the JDK in order for the image to contain JDK debug tooling.
 * Provides automatic and configurable JVM configuration at server startup (same as the openjdk builder image)
 * Understand the execution constraints for the server and adapt the server launch processing (e.g.: start the server in a way that would allow a server killed by POD to terminate properly).
 * Provides nice defaults for the minimal set of server configuration items (e.g.: jboss.node.name derived from hostname, public interface address, management address)
 
-==== A Maven plugin to provision and configure WildFly
+=== A Maven plugin to provision and configure WildFly
 
 The steps that have been removed from the WildFly s2i build processing are now aggregated inside a 
 single point of configuration inside the WildFly Maven plugin that is evolved with https://issues.redhat.com/browse/WFMP-138[WFMP-138]. 
@@ -62,7 +62,7 @@ relying on a fixed set of features packaged inside a WildFly s2i builder image.
 N.B.: The image is not strongly coupled with this Maven plugin. For source build, any plugin that outputs a server installation can be used during S2I source build.
 For binary build, any server installation can be the source of binary build.
 
-==== Legacy s2i workflow
+=== Legacy s2i workflow
 
 The image still supports s2i build that don't require the usage of the WildFly Maven plugin. This support is deprecated and could be removed in a 
 future version of the images. 
@@ -70,7 +70,7 @@ future version of the images.
 Some `GALLEON_XXX` env variables have to be set to enable the legacy s2i workflow. 
 When the legacy workflow is enabled, the server is first provisioned then the application deployment built during s2i is copied to the provisioned server deployments directory.
 
-===== Galleon provisioning based on env variables
+==== Galleon provisioning based on env variables
 
 * ``GALLEON_PROVISION_FEATURE_PACKS=<comma separated list of Galleon feature-packs GAV>``. 
 For example: `org.wildfly:wildfly-galleon-pack:25.0.0.Final,org.wildfly.cloud:wildfly-cloud-galleon-pack:1.0.0.Final`. 
@@ -85,7 +85,7 @@ looked-up in the application project (by default `<app basedir>/galleon/provisio
 * ``GALLEON_DIR=<path to galleon directory> ``. Used to locate the directory relative to the application project 
 directory that contains galleon custom content (provisioning.xml and settings.xml files). By default the directory `galleon` is used.
 
-==== WildFly cloud Galleon feature-pack
+=== WildFly cloud Galleon feature-pack
 
 All the existing launch scripts and configuration changes that were present in the WildFly s2i image are moved inside a cloud Galleon feature-pack.
 This feature-pack is to be provisioned with WildFly Galleon feature-pack.
@@ -96,7 +96,7 @@ Feature-pack source repository is : https://github.com/wildfly-extras/wildfly-cl
 
 The Maven coordinates of this feature-pack are ``org.wildfly.cloud:wildfly-cloud-galleon-pack:<version>``.
 
-===== OIDC support
+==== OIDC support
 
 The `keycloak` Galleon layer is not present in the cloud feature-pack. 
 The WildFly `elytron-oidc-client` has to be used to provision the OIDC subsystem. OIDC support in a cloud context is 
