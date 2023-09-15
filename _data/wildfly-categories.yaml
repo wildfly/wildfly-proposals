@@ -12,9 +12,6 @@ categories:
   - name: Bootable Jar
     id: bootable-jar
     description: Bootable Jar
-  - name: Build
-    id: build
-    description: Build
   - name: Command Line Interface (CLI)
     id: cli
     description: Command Line Interface
