@@ -1,3 +1,7 @@
+---
+categories:
+  - iiop
+---
 = IIOP security configuration and tests refactor
 :author:            Tomasz Adamski
 :email:             tadamski@redhat.com

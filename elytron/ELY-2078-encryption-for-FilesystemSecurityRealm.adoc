@@ -1,4 +1,8 @@
-= [ELY-2078] Add encryption and integrity support to FilesystemSecurityRealm
+---
+categories:
+  - elytron
+---
+= Add encryption and integrity support to FilesystemSecurityRealm
 :author:            Ashpan Raskar
 :email:             araskar@redhat.com
 :toc:               left

@@ -1,3 +1,8 @@
+---
+categories:
+  - pojo
+  - wf-galleon
+---
 = Galleon layer for the Pojo subsystem
 :author:            Yeray Borges
 :email:             yborgess@redhat.com

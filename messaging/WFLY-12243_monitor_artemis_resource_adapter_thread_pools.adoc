@@ -1,3 +1,7 @@
+---
+categories:
+  - messaging
+---
 = Monitor Artemis resource adapter thread pools
 :author:            Emmanuel Hugonnet
 :email:             ehugonne@redhat.com

@@ -1,3 +1,7 @@
+---
+categories:
+  - messaging
+---
 = Document how to configure a datasource to take advantage of new Artemis pool support
 :author:            Emmanuel Hugonnet
 :email:             ehugonne@redhat.com

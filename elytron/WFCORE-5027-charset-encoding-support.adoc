@@ -1,4 +1,8 @@
-= [WFCORE-5027] Security Realms should support specifying the charset and encoding for credentials
+---
+categories:
+  - elytron
+---
+= Security Realms should support specifying the charset and encoding for credentials
 :author:            Sonia Zaldana Calles
 :email:             szaldana@redhat.com
 :toc:               left

@@ -1,4 +1,8 @@
-= WFLY-10500 / EAP7-1003 JAX-RS parameters annotations with default names
+---
+categories:
+  - jaxrs
+---
+= JAX-RS parameters annotations with default names
 :author:            Alessio Soldano
 :email:             asoldano@redhat.com
 :toc:               left

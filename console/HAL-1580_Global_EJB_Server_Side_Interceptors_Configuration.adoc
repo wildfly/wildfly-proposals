@@ -1,3 +1,8 @@
+---
+categories:
+  - console
+  - ejb
+---
 = Configure Global EJB Server Side Interceptors
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

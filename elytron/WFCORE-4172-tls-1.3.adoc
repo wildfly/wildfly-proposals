@@ -1,4 +1,9 @@
-= WFCORE-4172 Add support for TLS 1.3
+---
+categories:
+  - elytron
+  - security
+---
+= Add support for TLS 1.3
 :author:            Farah Juma
 :email:             fjuma@redhat.com
 :toc:               left

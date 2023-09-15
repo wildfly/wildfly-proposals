@@ -1,3 +1,7 @@
+---
+categories:
+  - ejb
+---
 = Enable compression on remoting globally for EJB calls
 :email:             tomasz.adamski@redhat.com
 :toc:               left

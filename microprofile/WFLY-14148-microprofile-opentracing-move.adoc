@@ -1,4 +1,8 @@
-= WFLY-14148 Remove MicroProfile Opentracing from WildFly EE
+---
+categories:
+  - microprofile
+---
+= Remove MicroProfile Opentracing from WildFly EE
 :author:            Emmanuel Hugonnet
 :email:             ehugonne@redhat.com
 :toc:               left

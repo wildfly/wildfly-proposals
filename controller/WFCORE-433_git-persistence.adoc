@@ -1,3 +1,7 @@
+---
+categories:
+  - controller
+---
 = Adding support for Git backend for configuration files
 :author:            Emmanuel Hugonnet
 :email:             ehugonne@redhat.com

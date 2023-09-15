@@ -1,4 +1,9 @@
-= [WFLY-20901] MicroProfile JWT Quickstart
+---
+categories:
+  - microprofile
+  - quickstarts
+---
+= MicroProfile JWT Quickstart
 :author:            Darran Lofthouse
 :email:             darran.lofthouse@redhat.com
 :toc:               left

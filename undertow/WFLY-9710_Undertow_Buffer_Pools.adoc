@@ -1,4 +1,8 @@
-= WFLY-9710 Undertow Buffer Pools
+---
+categories:
+  - undertow
+---
+= Undertow Buffer Pools
 :author:            Stuart Douglas
 :email:             sdouglas@redhat.com
 :toc:               left

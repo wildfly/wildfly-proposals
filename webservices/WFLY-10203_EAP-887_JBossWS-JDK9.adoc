@@ -1,4 +1,8 @@
-= WFLY-10203 + WFLY-9128 / EAP7-887 JBossWS JDK9 support
+---
+categories:
+  - webservices
+---
+= JBossWS JDK9 support
 :author:            Alessio Soldano
 :email:             asoldano@redhat.com
 :toc:               left

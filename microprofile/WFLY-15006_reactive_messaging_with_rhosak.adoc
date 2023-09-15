@@ -1,3 +1,7 @@
+---
+categories:
+  - microprofile
+---
 = MicroProfile Reactive Messaging Integration with RHOSAK
 :author:            Kabir Khan
 :email:             kkhan@redhat.com

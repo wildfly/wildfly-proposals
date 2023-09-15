@@ -1,3 +1,8 @@
+---
+categories:
+  - console
+  - security 
+---
 = Support for Keycloak SSO
 :author:            Claudio Miranda
 :email:             claudio@redhat.com

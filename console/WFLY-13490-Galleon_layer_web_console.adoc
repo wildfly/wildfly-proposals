@@ -1,3 +1,8 @@
+---
+categories:
+  - console
+  - wf-galleon
+---
 = Galleon layer for the Web Management Console
 :author:            Yeray Borges
 :email:             yborgess@redhat.com

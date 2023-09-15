@@ -1,3 +1,7 @@
+---
+categories:
+  - clustering
+---
 = Enhance CommandDispatcher API to leverage CompletableFutures
 :author:            Paul Ferraro
 :email:             paul.ferraro@redhat.com

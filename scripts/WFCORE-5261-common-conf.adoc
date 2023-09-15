@@ -1,3 +1,7 @@
+---
+categories:
+  - scripts
+---
 = Add Common Script Configuration File
 :author:            James R. Perkins
 :email:             jperkins@redhat.com

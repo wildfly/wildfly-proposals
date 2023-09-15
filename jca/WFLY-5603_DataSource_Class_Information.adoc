@@ -1,4 +1,8 @@
-= WFLY-5603 - Get Datasource Class Information
+---
+categories:
+  - jca
+---
+= Get Datasource Class Information
 :author:            Lin Gao
 :email:             lgao@redhat.com
 :toc:               left

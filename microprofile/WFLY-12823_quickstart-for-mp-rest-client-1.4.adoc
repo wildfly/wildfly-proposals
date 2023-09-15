@@ -1,4 +1,9 @@
-= WFLY-12823 Quickstart for MP REST-client 1.4
+---
+categories:
+  - microprofile
+  - quickstarts
+---
+= Quickstart for MP REST-client 1.4
 :author:            Martin Stefanko
 :email:             mstefank@redhat.com
 :toc:               left

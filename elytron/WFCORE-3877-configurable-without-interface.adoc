@@ -1,4 +1,8 @@
-= WFCORE-3877 Make implementing Configurable interface optional for configurable components
+---
+categories:
+  - elytron
+---
+= Make implementing Configurable interface optional for configurable components
 :author:            Jan Kalina, Martin Mazanek
 :email:             jkalina@redhat.com mmazanek@redhat.com
 :toc:               left

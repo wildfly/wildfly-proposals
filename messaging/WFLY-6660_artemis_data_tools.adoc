@@ -1,3 +1,7 @@
+---
+categories:
+  - messaging
+---
 = Allow to dump Artemis journal to file using WildfFly Management API
 :author:            Emmanuel Hugonnet
 :email:             ehugonne@redhat.com

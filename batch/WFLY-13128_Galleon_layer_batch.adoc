@@ -1,3 +1,8 @@
+---
+categories:
+  - batch
+  - wf-galleon
+---
 = Galleon layer for Batch subsystem
 :author:            Yeray Borges
 :email:             yborgess@redhat.com

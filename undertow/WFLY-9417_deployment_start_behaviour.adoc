@@ -1,4 +1,8 @@
-= Title
+---
+categories:
+  - undertow
+---
+= Don't handle web requests until the server is started
 :author:            Stuart Douglas
 :email:             sdouglas@redhat.com
 :toc:               left

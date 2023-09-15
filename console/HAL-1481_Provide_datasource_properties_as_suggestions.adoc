@@ -1,3 +1,8 @@
+---
+categories:
+  - console
+  - user-experience
+---
 = Provide datasource properties as suggestions
 :author:            Claudio Miranda
 :email:             claudio@redhat.com

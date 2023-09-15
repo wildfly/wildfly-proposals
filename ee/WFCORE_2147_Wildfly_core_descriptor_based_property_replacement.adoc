@@ -1,3 +1,7 @@
+---
+categories:
+  - ee
+---
 = Enable/disable descriptor based property replacement for files parsed by wildfly-core
 :author:            Yeray Borges
 :email:             yborgess@redhat.com

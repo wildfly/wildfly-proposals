@@ -2,8 +2,9 @@
 categories:
   - maven
   - cloud
+  - user-experience
 ---
-= [WFMP-174] As an user, I want to build and push an application image from the wildlfy-maven-plugin
+= As an user, I want to build and push an application image from the wildfly-maven-plugin
 :author:            Jeff Mesnil
 :email:             jmesnil@redhat.com
 :toc:               left

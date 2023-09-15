@@ -1,4 +1,9 @@
-= EAP7-943, [CLI] Auth security commands
+---
+categories:
+  - cli
+  - security
+---
+= Auth security commands
 :author:            Jean-François Denise
 :email:             jdenise@redhat.com
 :toc:               left

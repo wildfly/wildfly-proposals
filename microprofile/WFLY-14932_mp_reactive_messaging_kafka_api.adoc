@@ -1,3 +1,7 @@
+---
+categories:
+  - microprofile
+---
 = API for more information and configuration of Kafka messages
 :author:            Kabir Khan
 :email:             kkhan@redhat.com

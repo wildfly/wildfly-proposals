@@ -1,4 +1,8 @@
-= EAP7-839 CDI 2.0 Support
+---
+categories:
+  - weld
+---
+= CDI 2.0 Support
 :author:            Matej Novotny
 :email:             manovotn@redhat.com
 :toc:               left

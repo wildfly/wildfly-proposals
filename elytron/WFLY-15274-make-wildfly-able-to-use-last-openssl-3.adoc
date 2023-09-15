@@ -1,4 +1,9 @@
-= WFLY-15274 Make WildFly able to use latest OpenSSL 3.0.0 libraries
+---
+categories:
+  - elytron
+  - security
+---
+= Make WildFly able to use latest OpenSSL 3.0.0 libraries
 :author:            Ricardo Martin Camarero
 :email:             rmartinc@redhat.com
 :toc:               left

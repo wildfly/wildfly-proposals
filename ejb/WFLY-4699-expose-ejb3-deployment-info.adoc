@@ -1,3 +1,7 @@
+---
+categories:
+  - ejb
+---
 = Expose EJB3 Deployment Information as Runtime Resources
 :author:            Cheng Fang
 :email:             cfang@redhat.com

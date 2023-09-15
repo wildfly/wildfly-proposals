@@ -1,3 +1,7 @@
+---
+categories:
+  - console
+---
 = Support adding of HTTP headers to management console responses
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

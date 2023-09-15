@@ -1,3 +1,8 @@
+---
+categories:
+  - console
+  - user-experience
+---
 = Adjust naming in console "master/slave" → "primary/secondary"
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

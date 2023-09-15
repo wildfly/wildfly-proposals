@@ -1,3 +1,8 @@
+---
+categories:
+  - jdr
+  - wf-galleon
+---
 = Galleon layer for JBoss Diagnostic Reporting support
 :author:            Yeray Borges
 :email:             yborgess@redhat.com

@@ -1,4 +1,9 @@
-= [WFCORE-4484] Support SSH authentication for Git persistence
+---
+categories:
+  - elytron
+  - server
+---
+= Support SSH authentication for Git persistence
 :author:            Ashley Abdel-Sayed
 :email:             aabdelsa@redhat.com
 :toc:               left

@@ -1,4 +1,8 @@
-= WFLY-6462 JSF 2.3 Support
+---
+categories:
+  - jsf
+---
+= JSF 2.3 Support
 :author:            Farah Juma
 :email:             fjuma@redhat.com
 :toc:               left

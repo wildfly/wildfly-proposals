@@ -1,4 +1,9 @@
-= WFLY-11597 Eager passivation of SFSBs
+---
+categories:
+  - clustering
+  - ejb
+---
+= Eager passivation of SFSBs
 :author:            Paul Ferraro
 :email:             paul.ferraro@redhat.com
 :toc:               left

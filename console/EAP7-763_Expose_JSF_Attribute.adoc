@@ -1,3 +1,8 @@
+---
+categories:
+  - console
+  - jsf
+---
 = Expose attribute of the JSF subsystem to specify whether or not DOCTYPE declarations in JSF deployments should be disallowed
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

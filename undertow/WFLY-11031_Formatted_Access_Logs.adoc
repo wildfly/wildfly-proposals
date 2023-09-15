@@ -1,3 +1,8 @@
+---
+categories:
+  - undertow
+  - logging
+---
 = JSON Formatted Access Logs
 :author:            James Perkins
 :email:             jperkins@redhat.com

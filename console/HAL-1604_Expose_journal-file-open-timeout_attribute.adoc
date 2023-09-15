@@ -1,3 +1,8 @@
+---
+categories:
+  - console
+  - messaging
+---
 = Make journal-file-open-timeout Attribute Configurable for Messaging Server Resource
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

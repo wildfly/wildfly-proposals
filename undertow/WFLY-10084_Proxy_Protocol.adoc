@@ -1,4 +1,8 @@
-= WFLY-10084 Support for the PROXY protocol
+---
+categories:
+  - undertow
+---
+= Support for the PROXY protocol
 :author:            Stuart Douglas
 :email:             sdouglas@redhat.com
 :toc:               left

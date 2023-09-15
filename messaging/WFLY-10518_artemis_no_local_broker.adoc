@@ -1,4 +1,8 @@
-= [WFLY-10518] Connections to remote Artemis broker must not require local Artemis instance
+---
+categories:
+  - messaging
+---
+= Connections to remote Artemis broker must not require local Artemis instance
 :author:            Jeff Mesnil
 :email:             jmesnil@redhat.com
 :toc:               left

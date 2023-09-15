@@ -1,3 +1,7 @@
+---
+categories:
+  - management
+---
 = Add option to always sent certificate for LDAPS connections when using Legacy Security Realm (WFCORE-2647)
 :author:            Darran Lofthouse
 :email:             darran.lofthouse@redhat.com

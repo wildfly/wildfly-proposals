@@ -1,3 +1,7 @@
+---
+categories:
+  - microprofile
+---
 = Upgrade MicroProfile Config to 1.4
 :author:            Jeff Mesnil
 :email:             jmesnil@redhat.com

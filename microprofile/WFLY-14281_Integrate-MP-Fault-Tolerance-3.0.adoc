@@ -1,3 +1,7 @@
+---
+categories:
+  - microprofile
+---
 = Integrate MP Fault Tolerance 3.0 into EAP
 :author:            Jason Lee
 :email:             jasondlee@redhat.com

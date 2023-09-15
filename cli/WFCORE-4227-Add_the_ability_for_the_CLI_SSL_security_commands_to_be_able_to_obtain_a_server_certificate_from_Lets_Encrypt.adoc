@@ -1,4 +1,10 @@
-= WFCORE-3447 Add the ability for the CLI SSL security commands to be able to obtain a server certificate from Let's Encrypt
+---
+categories:
+  - cli
+  - user-experience
+  - security
+---
+= Add the ability for the CLI SSL security commands to be able to obtain a server certificate from Let's Encrypt
 :author:            Marek Marusic
 :email:             mmarusic@redhat.com
 :toc:               left

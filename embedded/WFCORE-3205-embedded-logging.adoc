@@ -1,3 +1,8 @@
+---
+categories:
+  - embedded
+  - logging
+---
 = Embedded Logging Changes
 :author:            James R. Perkins
 :email:             jperkins@redhat.com

@@ -1,4 +1,9 @@
-= WFLY-11868 REST integration with WildFly Elytron - AuthenticationClient for Authentication / SSL
+---
+categories:
+  - elytron
+  - jaxrs
+---
+= REST integration with WildFly Elytron - AuthenticationClient for Authentication / SSL
 :author:            Diana Vilkolakova
 :email:             dvilkola@redhat.com
 :toc:               left

@@ -1,3 +1,7 @@
+---
+categories:
+  - quickstarts
+---
 = EAP8 Beta Quickstarts
 :author:            Eduardo Martins
 :email:             emartins@redhat.com

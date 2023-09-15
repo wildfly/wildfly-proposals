@@ -1,3 +1,7 @@
+---
+categories:
+  - clustering
+---
 = ProtoStream marshalling of web session attributes
 :author:            Paul Ferraro
 :email:             paul.ferraro@redhat.com

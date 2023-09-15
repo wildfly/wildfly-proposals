@@ -1,3 +1,7 @@
+---
+categories:
+  - bootable-jar
+---
 = Ability to execute CLI script at runtime
 :author:           Jean-Francois Denise
 :email:             jdenise@redhat.com

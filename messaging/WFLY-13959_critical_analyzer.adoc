@@ -1,3 +1,7 @@
+---
+categories:
+  - messaging
+---
 = Provide a WildFly Management API operation to configure the critical analyzer
 :author:            Emmanuel hugonnet
 :email:             ehugonne@redhat.com

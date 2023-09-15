@@ -1,3 +1,7 @@
+---
+categories:
+  - elytron
+---
 = JDBC Security Realm mod_crypt and HEX encoding support.
 :author:            Darran Lofthouse
 :email:             darran.lofthouse@redhat.com

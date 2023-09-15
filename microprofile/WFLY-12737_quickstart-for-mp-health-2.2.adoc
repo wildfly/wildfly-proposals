@@ -1,4 +1,9 @@
-= WFLY-12737 Quickstart for MP Health 2.2
+---
+categories:
+  - microprofile
+  - quickstarts
+---
+= Quickstart for MP Health 2.2
 :author:            Martin Stefanko
 :email:             mstefank@redhat.com
 :toc:               left

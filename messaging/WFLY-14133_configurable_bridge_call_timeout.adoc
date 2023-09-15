@@ -1,3 +1,7 @@
+---
+categories:
+  - messaging
+---
 = Add call-timeout attribute to the Artemis core bridge resource
 :author:            Tomas Hofman
 :email:             thofman@redhat.com

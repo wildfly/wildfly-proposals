@@ -1,3 +1,8 @@
+---
+categories:
+  - console
+  - undertow
+---
 = Add support for undertow session operations
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

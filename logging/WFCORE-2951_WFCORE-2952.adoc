@@ -1,3 +1,7 @@
+---
+categories:
+  - logging
+---
 = JSON and XML Formatters
 :author:            James R. Perkins
 :email:             jperkins@redhat.com

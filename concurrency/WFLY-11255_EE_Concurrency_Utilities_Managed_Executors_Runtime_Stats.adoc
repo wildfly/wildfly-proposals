@@ -1,3 +1,7 @@
+---
+categories:
+  - concurrency
+---
 = Managed Executors Runtime Stats
 :author:            Eduardo Martins
 :email:             emartins@redhat.com

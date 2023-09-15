@@ -1,4 +1,8 @@
-= WFCORE-4750 Introduce regex mapper for security roles in Elytron
+---
+categories:
+  - elytron
+---
+= Introduce regex mapper for security roles in Elytron
 :author:            Diana Vilkolakova
 :email:             dvilkola@redhat.com
 :toc:               left

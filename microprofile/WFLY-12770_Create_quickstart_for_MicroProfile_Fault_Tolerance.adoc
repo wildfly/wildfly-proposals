@@ -1,4 +1,9 @@
-= WFLY-12770 Create quickstart for MicroProfile Fault Tolerance
+---
+categories:
+  - microprofile
+  - quickstarts
+---
+= Create quickstart for MicroProfile Fault Tolerance
 :author:            Radoslav Husar
 :email:             rhusar@redhat.com
 :toc:               left

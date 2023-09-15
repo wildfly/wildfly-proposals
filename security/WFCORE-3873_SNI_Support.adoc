@@ -1,3 +1,7 @@
+---
+categories:
+  - security
+---
 = SNI Support
 :author:            Stuart Douglas
 :email:             sdouglas@redhat.com

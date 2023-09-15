@@ -1,3 +1,8 @@
+---
+categories:
+  - console
+  - messaging
+---
 = Configure enable-amq1-prefix Attribute
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

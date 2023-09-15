@@ -1,4 +1,8 @@
-= [WFLY-10709] Support Eclipse MicroProfile OpenTracing
+---
+categories:
+  - microprofile
+---
+= Support Eclipse MicroProfile OpenTracing
 :author:            Juraci Paixão Kröhling
 :email:             jpkroehling@redhat.com
 :toc:               left

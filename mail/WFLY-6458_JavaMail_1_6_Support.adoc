@@ -1,3 +1,7 @@
+---
+categories:
+  - mail
+---
 = JavaMail 1.6 
 :author:            Tomaz Cerar
 :email:             tcerar@redhat.com

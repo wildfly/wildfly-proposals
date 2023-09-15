@@ -1,3 +1,7 @@
+---
+categories:
+  - console
+---
 = Expose IO worker runtime data / statistics
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

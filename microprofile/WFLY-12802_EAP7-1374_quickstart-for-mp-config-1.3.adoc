@@ -1,4 +1,9 @@
-= WFLY-12802 / EAP7-1374 Quickstart for MP Config 1.4
+---
+categories:
+  - microprofile
+  - quickstarts
+---
+= Quickstart for MP Config 1.4
 :author:            Martin Stefanko
 :email:             mstefank@redhat.com
 :toc:               left

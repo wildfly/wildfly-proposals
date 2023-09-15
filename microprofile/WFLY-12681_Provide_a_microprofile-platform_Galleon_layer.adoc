@@ -1,4 +1,9 @@
-= WFLY-12681 Provide a 'microprofile-platform' Galleon layer
+---
+categories:
+  - microprofile
+  - wf-galleon
+---
+= Provide a 'microprofile-platform' Galleon layer
 :author:            Radoslav Husar
 :email:             rhusar@redhat.com
 :toc:               left

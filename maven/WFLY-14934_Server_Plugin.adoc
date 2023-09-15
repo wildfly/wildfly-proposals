@@ -3,7 +3,7 @@ categories:
   - maven
   - user-experience
 ---
-= [WFLY-14934] WildFly Maven Plugin to produce fully configured WildFly server
+= WildFly Maven Plugin to produce fully configured WildFly server
 :author:           Jean-Francois Denise
 :email:             jdenise@redhat.com
 :toc:               left

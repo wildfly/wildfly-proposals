@@ -1,4 +1,9 @@
-= EAP7-1132 Replace 'list-log-files' with using the 'log-file' resource
+---
+categories:
+  - console
+  - logging
+---
+= Replace 'list-log-files' with using the 'log-file' resource
 :author:            Claudio Miranda
 :email:             claudio@redhat.com
 :toc:               left

@@ -1,3 +1,7 @@
+---
+categories:
+  - jaxrs
+---
 = RESTEasy should be able to provide trace information about request
 :author:            Wei Nan Li
 :email:             weli@redhat.com

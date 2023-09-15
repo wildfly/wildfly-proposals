@@ -1,3 +1,7 @@
+---
+categories:
+  - logging
+---
 = Add `named-formatter` to the `syslog-handler`
 :author:            James R. Perkins
 :email:             jperkins@redhat.com

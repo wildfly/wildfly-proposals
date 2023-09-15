@@ -26,7 +26,7 @@ categories:
     description: Impact how the user experiences working with WildFly
   - name: Clustering
     id: clustering
-    description: Clustering
+    description: Clustering, including Infinispan and JGroups
   - name: Concurrency
     id: concurrency
     description: Concurrency
@@ -55,7 +55,7 @@ categories:
     id: iiop
     description: Internet InterORB Protocol
   - name: Jakarta RS
-    id: jakarta-rs
+    id: jaxrs
     description: Jakarta RESTful Web Services
   - name: JCA
     id: jca
@@ -93,9 +93,9 @@ categories:
   - name: Mod_cluster
     id: mod_cluster
     description: mod_cluster
-  - name: JBoss Modules
+  - name: Modules
     id: modules
-    description: JBoss Modules
+    description: JBoss Modules & Java Platform Module System (JPMS)
   - name: JBoss MSC
     id: msc
     description: JBoss MSC
@@ -108,7 +108,7 @@ categories:
   - name: POJO
     id: pojo
     description: POJO
-  - name: Quickstarts for WildFly
+  - name: Quickstarts
     id: quickstarts
     description: Quickstarts examples for WildFly
   - name: Service Archive (SAR)
@@ -129,6 +129,9 @@ categories:
   - name: Undertow
     id: undertow
     description: Undertow
+  - name: User Experience
+    id: user-experience
+    description: Improving the experience of using WildFly
   - name: Web Services
     id: webservices
     description: Web Services
@@ -137,4 +140,4 @@ categories:
     description: Context injection
   - name: WildFly Galleon
     id: wf-galleon
-    description: Provision WildFly with Galleon
+    description: Provision WildFly with Galleon Feature Packs and Layers

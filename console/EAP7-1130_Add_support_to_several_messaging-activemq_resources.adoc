@@ -1,4 +1,9 @@
-= EAP7-1130 Add support to several messaging-activemq resources
+---
+categories:
+  - console
+  - messaging
+---
+= Add support to several messaging-activemq resources
 :author:            Claudio Miranda
 :email:             claudio@redhat.com
 :toc:               left

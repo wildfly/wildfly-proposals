@@ -1,3 +1,7 @@
+---
+categories:
+  - messaging
+---
 = Support JMS Java EE resources definition for remote Artemis-based broker
 :author:            Jeff Mesnil
 :email:             jmesnil@redhat.com

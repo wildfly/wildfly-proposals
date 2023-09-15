@@ -1,3 +1,7 @@
+---
+categories:
+  - clustering
+---
 = Distributable Shared Session Configuration
 :author:            Paul Ferraro
 :email:             paul.ferraro@redhat.com

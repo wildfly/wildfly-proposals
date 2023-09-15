@@ -1,4 +1,8 @@
-= [WFLY-12038] Expose the enable1Prefixes configuration on external (pooled) connection factories
+---
+categories:
+  - messaging
+---
+= Expose the enable1Prefixes configuration on external (pooled) connection factories
 :author:            Emmanuel Hugonnet
 :email:             ehugonne@redhat.com
 :toc:               left

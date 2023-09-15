@@ -1,4 +1,8 @@
-= WFLY-10480 / EAP7-1017 Propagate authenticated subject in ElytronSecurityDomainContextImpl
+---
+categories:
+  - webservices
+---
+= Propagate authenticated subject in ElytronSecurityDomainContextImpl
 :author:            Jim Ma
 :email:             ema@redhat.com
 :toc:               left

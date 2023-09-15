@@ -1,3 +1,7 @@
+---
+categories:
+  - ejb
+---
 = EJB Timers: Forcing refresh timers in a database-data-store in a clustered environment
 :author:            Cheng Fang
 :email:             cfang@redhat.com

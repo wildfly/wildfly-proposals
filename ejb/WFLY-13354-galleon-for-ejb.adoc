@@ -1,3 +1,8 @@
+---
+categories:
+  - ejb
+  - wf-galleon
+---
 = Galleon layers for the EJB subsystem
 :author:            Brian Stansberry; Yeray Borges; Cheng Fang
 :email:             cfang@redhat.com

@@ -2,8 +2,9 @@
 categories:
   - cloud
   - openshift
+  - user-experience
 ---
-= [WFLY-14936] New WildFly S2I image
+= New WildFly S2I image
 :author:           Jean-Francois Denise
 :email:             jdenise@redhat.com
 :toc:               left

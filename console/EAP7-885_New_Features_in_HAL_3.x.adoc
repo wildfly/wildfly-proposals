@@ -1,3 +1,7 @@
+---
+categories:
+  - console
+---
 = New Features in HAL 3.x
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

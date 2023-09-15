@@ -1,4 +1,8 @@
-= WFLY-12609 MicroProfile JWT 1.1 Support
+---
+categories:
+  - microprofile
+---
+= MicroProfile JWT 1.1 Support
 :author:            Darran Lofthouse
 :email:             darran.lofthouse@redhat.com
 :toc:               left

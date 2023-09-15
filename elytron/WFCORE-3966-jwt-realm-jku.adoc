@@ -1,4 +1,8 @@
-= WFCORE-3966 JwtValidator jku and kid header parameters
+---
+categories:
+  - elytron
+---
+= JwtValidator jku and kid header parameters
 :author:            Martin Mazanek
 :email:             mmazanek@redhat.com
 :toc:               left

@@ -1,3 +1,8 @@
+---
+categories:
+  - core
+  - modules
+---
 = Expose Module Options
 :author:            James R. Perkins
 :email:             jperkins@redhat.com

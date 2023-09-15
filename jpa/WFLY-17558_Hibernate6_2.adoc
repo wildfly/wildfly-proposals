@@ -1,3 +1,7 @@
+---
+categories:
+  - jpa
+---
 = Hibernate ORM 6.2
 :author:            Scott Marlow
 :email:             smarlow@redhat.com

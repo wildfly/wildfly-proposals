@@ -1,4 +1,8 @@
-= WFLY-14347 Allow to configure module for custom validation classes
+---
+categories:
+  - jca
+---
+= Allow to configure module for custom validation classes
 :author:            Tomasz Adamski
 :email:             tadamski@redhat.com
 :toc:               left

@@ -1,3 +1,7 @@
+---
+categories:
+  - console
+---
 = Display content hash in deployment panel
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

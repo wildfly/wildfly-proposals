@@ -1,4 +1,10 @@
-= EAP7-1136 Expose CA management operations for key-store and certificate-authority-account
+---
+categories:
+  - console
+  - elytron
+  - security 
+---
+= Expose CA management operations for key-store and certificate-authority-account
 :author:            Claudio Miranda
 :email:             claudio@redhat.com
 :toc:               left

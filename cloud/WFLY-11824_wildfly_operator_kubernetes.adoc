@@ -1,3 +1,8 @@
+---
+categories:
+  - cloud
+  - openshift
+---
 = WildFly Operator for Kubernetes/OpenShift
 :author:            Jeff Mesnil
 :email:             jmesnil@redhat.com

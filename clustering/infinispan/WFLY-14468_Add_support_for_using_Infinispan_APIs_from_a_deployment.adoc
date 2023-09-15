@@ -1,4 +1,8 @@
-= WFLY-14468 Add support for using Infinispan APIs from a deployment
+---
+categories:
+  - clustering
+---
+= Add support for using Infinispan APIs from a deployment
 :author:            Radoslav Husar
 :email:             rhusar@redhat.com
 :toc:               left

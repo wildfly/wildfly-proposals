@@ -1,4 +1,9 @@
-= EAP7-984 Search output for CLI
+---
+categories:
+  - cli
+  - user-experience
+---
+= Enhance word navigation in CLI
 :author:            JF Denise
 :email:             jdenise@redhat.com
 :toc:               left

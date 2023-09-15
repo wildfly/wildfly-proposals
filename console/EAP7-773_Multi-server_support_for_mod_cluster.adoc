@@ -1,4 +1,10 @@
-= EAP7-773 Add multi-server support to mod_cluster
+---
+categories:
+  - console
+  - clustering
+  - mod_cluster
+---
+= Add multi-server support to mod_cluster
 :author:            Claudio Miranda
 :email:             claudio@redhat.com
 :toc:               left

@@ -1,4 +1,8 @@
-= WFLY-16043 Allow configuration of an arbitrary cookie to use for web request affinity
+---
+categories:
+  - clustering
+---
+= Allow configuration of an arbitrary cookie to use for web request affinity
 :author:            Radoslav Husar
 :email:             rhusar@redhat.com
 :toc:               left

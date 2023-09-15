@@ -1,4 +1,8 @@
-= [WFCORE-5740] Add the ability to ignore unavailable realms for a distributed-realm
+---
+categories:
+  - elytron
+---
+= Add the ability to ignore unavailable realms for a distributed-realm
 :author:            Lukas Vydra
 :email:             lvydra@redhat.com
 :toc:               left

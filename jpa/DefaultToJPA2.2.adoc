@@ -1,3 +1,7 @@
+---
+categories:
+  - jpa
+---
 = Remove EE7 (JPA) mode: default to (EE8) JPA 2.2 spec jar, Hibernate ORM 5.3.x
 :author:            Scott Marlow
 :email:             smarlow@redhat.com

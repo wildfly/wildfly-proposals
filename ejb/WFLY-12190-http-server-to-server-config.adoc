@@ -1,3 +1,7 @@
+---
+categories:
+  - ejb
+---
 = EJB over HTTP server-to-server invocation
 :email:             tomasz.adamski@redhat.com
 :toc:               left

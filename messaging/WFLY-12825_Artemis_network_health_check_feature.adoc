@@ -1,3 +1,7 @@
+---
+categories:
+  - messaging
+---
 = Artemis network health check feature not configurable from WildFly
 :author:            Emmanuel Hugonnet
 :email:             ehugonne@redhat.com

@@ -1,3 +1,7 @@
+---
+categories:
+  - microprofile
+---
 = Integrate MP OpenTracing 2.0 into EAP
 :author:            Jason Lee
 :email:             jasondlee@redhat.com

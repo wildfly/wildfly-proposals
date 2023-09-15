@@ -1,3 +1,7 @@
+---
+categories:
+  - jpa
+---
 = Legacy compatibility option for executing queries in non-JTA threads
 :author:            Scott Marlow
 :email:             smarlow@redhat.com

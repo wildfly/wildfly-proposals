@@ -1,4 +1,8 @@
-= WFLY-15832 - MP Config: Ability to specify root config source directory
+---
+categories:
+  - microprofile
+---
+= MP Config: Ability to specify root config source directory
 :author:            Kabir Khan
 :email:             kkhan@redhat.com
 :toc:               left

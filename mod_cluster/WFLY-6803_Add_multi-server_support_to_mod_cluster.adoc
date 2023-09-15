@@ -1,4 +1,8 @@
-= WFLY-6803 Add multi-server support to mod_cluster
+---
+categories:
+  - mod_cluster
+---
+= Add multi-server support to mod_cluster
 :author:            Radoslav Husar
 :email:             rhusar@redhat.com
 :toc:               left

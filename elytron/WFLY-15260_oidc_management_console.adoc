@@ -1,4 +1,8 @@
-= WFLY-15260 Securing the management console with OIDC
+---
+categories:
+  - elytron
+---
+= Securing the management console with OIDC
 :author:            Farah Juma
 :email:             fjuma@redhat.com
 :toc:               left

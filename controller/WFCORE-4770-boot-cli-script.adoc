@@ -1,3 +1,7 @@
+---
+categories:
+  - controller
+---
 = Controller boot CLI Script execution
 :author:            Jean-Francois Denise
 :email:             jfdenise@redhat.com

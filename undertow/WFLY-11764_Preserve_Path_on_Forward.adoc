@@ -1,4 +1,8 @@
-= WFLY-11764 Make return value of HttpServletRequest.getServletPath/getRequestURI/getRequestURL configurable (DeploymentInfo.setPreservePathOnForward)
+---
+categories:
+  - undertow
+---
+= Make return value of HttpServletRequest.getServletPath/getRequestURI/getRequestURL configurable (DeploymentInfo.setPreservePathOnForward)
 :author:            Flavia Rainone
 :email:             frainone@redhat.com
 :toc:               left

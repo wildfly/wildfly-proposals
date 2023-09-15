@@ -1,4 +1,8 @@
-= Keep corrupted Journal filesin Artemis.
+---
+categories:
+  - messaging
+---
+= Keep corrupted Journal files in Artemis.
 :author:            Emmanuel Hugonnet
 :email:             your.email@redhat.com
 :toc:               left

@@ -1,4 +1,8 @@
-= WFCORE-5120 Automatic registration of client side / JVM wide default SSLContext
+---
+categories:
+  - elytron
+---
+= Automatic registration of client side / JVM wide default SSLContext
 :author:            Diana Vilkolak Krepinska
 :email:             dvilkola@redhat.com
 :toc:               left

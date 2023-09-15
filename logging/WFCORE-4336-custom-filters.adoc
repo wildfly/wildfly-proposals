@@ -1,3 +1,7 @@
+---
+categories:
+  - logging
+---
 = Custom Filter
 :author:            James R. Perkins
 :email:             jperkins@redhat.com

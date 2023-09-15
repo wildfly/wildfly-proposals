@@ -1,3 +1,7 @@
+---
+categories:
+  - elytron
+---
 = HTTP External Mechanism Support in Elytron
 :author:            Ashley Abdel-Sayed
 :email:             aabdelsa@redhat.com

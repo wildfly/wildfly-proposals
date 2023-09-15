@@ -1,4 +1,8 @@
-= WFCORE-3596 Add support for named permission sets to the Elytron subsystem configuration
+---
+categories:
+  - elytron
+---
+= Add support for named permission sets to the Elytron subsystem configuration
 :author:            Farah Juma
 :email:             fjuma@redhat.com
 :toc:               left

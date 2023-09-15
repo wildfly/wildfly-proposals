@@ -1,3 +1,8 @@
+---
+categories:
+  - messaging
+  - wf-galleon
+---
 = Galleon layer for remote ActiveMQ Artemis broker integration support
 :author:            Brian Stansberry
 :email:             brian.stansberry@redhat.com

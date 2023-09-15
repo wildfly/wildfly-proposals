@@ -1,4 +1,9 @@
-= EAP7-1035 / WFLY-9825 Microprofile REST Client 1.0 support
+---
+categories:
+  - jaxrs
+  - microprofile
+---
+= Microprofile REST Client 1.0 support
 :author:            Alessio Soldano
 :email:             asoldano@redhat.com
 :toc:               left

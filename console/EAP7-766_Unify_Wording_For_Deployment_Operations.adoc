@@ -1,3 +1,7 @@
+---
+categories:
+  - console
+---
 = Unify wording for deployment operations
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

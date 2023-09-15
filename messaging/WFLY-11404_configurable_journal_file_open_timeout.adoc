@@ -1,3 +1,7 @@
+---
+categories:
+  - messaging
+---
 = Add journal-file-open-timeout attribute to the Artemis messaging server resource
 :author:            Tomas Hofman
 :email:             thofman@redhat.com

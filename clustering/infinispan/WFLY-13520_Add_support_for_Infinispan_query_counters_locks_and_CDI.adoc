@@ -1,4 +1,8 @@
-= WFLY-13520 Add support for Infinispan query, counters, locks, and CDI
+---
+categories:
+  - clustering
+---
+= Add support for Infinispan query, counters, locks, and CDI
 :author:            Radoslav Husar
 :email:             rhusar@redhat.com
 :toc:               left

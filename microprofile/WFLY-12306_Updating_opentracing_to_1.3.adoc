@@ -1,3 +1,7 @@
+---
+categories:
+  - microprofile
+---
 = Transition OpenTracing to Microprofile 3.0
 :author:            Emmanuel Hugonnet
 :email:             ehugonne@redhat.com

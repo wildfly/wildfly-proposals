@@ -1,3 +1,7 @@
+---
+categories:
+  - messaging
+---
 = Support messaging clusters (Artemis Clusters) behind http load balancers
 :author:            Emmanuel Hugonnet
 :email:             ehugonne@redhat.com

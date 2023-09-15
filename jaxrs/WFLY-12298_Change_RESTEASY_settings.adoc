@@ -1,4 +1,8 @@
-= WFLY-12298 Support configuring RESTEasy through Wildfly management model
+---
+categories:
+  - jaxrs
+---
+= Support configuring RESTEasy through Wildfly management model
 :author:            Ron Sigal
 :email:             rsigal@redhat.com
 :toc:               left

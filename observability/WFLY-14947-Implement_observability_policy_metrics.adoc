@@ -1,4 +1,8 @@
- = Implement Observability Policy for Metrics
+---
+categories:
+  - observability
+---
+= Implement Observability Policy for Metrics
 :author:            Jason Lee
 :email:             jasondlee@redhat.com
 :toc:               left

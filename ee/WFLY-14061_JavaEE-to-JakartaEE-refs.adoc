@@ -1,3 +1,7 @@
+---
+categories:
+  - ee
+---
 = Replace JavaEE references with corresponding JakartaEE ones
 :author:            Alessio Soldano
 :email:             asoldano@redhat.com

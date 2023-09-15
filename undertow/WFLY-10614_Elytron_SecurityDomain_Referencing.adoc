@@ -1,3 +1,9 @@
+---
+categories:
+  - undertow
+  - elytron
+  - security
+---
 = Reference WildFly Elytron SecurityDomain from Undertow's application-security-domain resource.
 :author:            Darran Lofthouse
 :email:             darran.lofthouse@redhat.com

@@ -1,3 +1,7 @@
+---
+categories:
+  - concurrency
+---
 = EE Concurrency Hung Tasks Termination
 :author:            Eduardo Martins
 :email:             emartins@redhat.com

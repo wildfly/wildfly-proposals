@@ -1,3 +1,7 @@
+---
+categories:
+  - ejb
+---
 = Global EJB Client Side Interceptors Configuration
 :email:             tomasz.adamski@redhat.com
 :toc:               left

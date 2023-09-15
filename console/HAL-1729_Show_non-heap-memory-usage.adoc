@@ -1,3 +1,7 @@
+---
+categories:
+  - console
+---
 = Show non-heap-memory-usage in server preview
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

@@ -1,3 +1,8 @@
+---
+categories:
+  - console
+  - logging
+---
 = Expose named-formatter Attribute on the syslog-handler Resource
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

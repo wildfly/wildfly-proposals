@@ -1,3 +1,7 @@
+---
+categories:
+  - elytron
+---
 = WildFly Elytron JASPI (JSR-196) Servlet Profile Suport
 :author:            Darran Lofthouse
 :email:             darran.lofthouse@redhat.com

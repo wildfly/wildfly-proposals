@@ -1,4 +1,9 @@
-= EAP7-1023 Compact output for echo-dmr command
+---
+categories:
+  - cli
+  - user-experience
+---
+= Compact output for echo-dmr command
 :author:            Jean-Francois Denise
 :email:             jdenise@redhat.com
 :toc:               left

@@ -1,3 +1,7 @@
+---
+categories:
+  - elytron
+---
 = ELY-1686 Add utility to port legacy properties files into a FileSystemRealm
 :author:            Justin Michael Cook
 :email:             jucook@redhat.com

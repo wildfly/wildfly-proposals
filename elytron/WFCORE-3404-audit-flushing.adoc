@@ -1,4 +1,8 @@
-= WFCORE-3404 Separate stream flushing and file syncing in file-audit-endpoint
+---
+categories:
+  - elytron
+---
+= Separate stream flushing and file syncing in file-audit-endpoint
 :author:            Jan Kalina
 :email:             jkalina@redhat.com
 :toc:               left

@@ -1,4 +1,9 @@
-= WFCORE-5489 - As a developer, I want to override management attribute values using environment variables
+---
+categories:
+  - management
+  - user-experience
+---
+= As a developer, I want to override management attribute values using environment variables
 :author:            Jeff Mesnil
 :email:             jmesnil@redhat.com
 :toc:               left

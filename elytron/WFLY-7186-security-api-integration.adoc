@@ -1,4 +1,9 @@
-= WFLY-7186 Support the EE 8 Security API (JSR-375) with WildFly Elytron
+---
+categories:
+  - elytron
+  - ee
+---
+= Support the EE 8 Security API (JSR-375) with WildFly Elytron
 :author:            Darran Lofthouse
 :email:             darran.lofthouse@redhat.com
 :toc:               left

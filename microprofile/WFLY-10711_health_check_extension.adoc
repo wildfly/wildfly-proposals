@@ -1,4 +1,8 @@
-= [WFLY-10711] Support Eclipse MicroProfile Health
+---
+categories:
+  - microprofile
+---
+= Support Eclipse MicroProfile Health
 :author:            Jeff Mesnil
 :email:             jmesnil@redhat.com
 :toc:               left

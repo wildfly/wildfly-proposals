@@ -1,3 +1,7 @@
+---
+categories:
+  - messaging
+---
 = Implement the Pause method for a Topic via Management APIs
 :author:            Emmanuel Hugonnet
 :email:             ehugonne@redhat.com
