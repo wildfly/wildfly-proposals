@@ -1,0 +1,92 @@
+= Move BOMs to the Server Repository
+:author:            Eduardo Martins
+:email:             emartins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This proposal specifies the move of BOMs to the Server Repository, for both WildFly and JBoss EAP, which should prevent recurrent synchronization issues (e.g. WFLY-18043, WFLY-18155, WFLY-17879), and simplify maintenance and the WildFly/EAP release processes.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-18526[WFLY-18526]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-2146[EAP7-2146]
+* https://issues.redhat.com/browse/WFLY-18043[WFLY-18043]
+* https://issues.redhat.com/browse/WFLY-18155[WFLY-18155]
+* https://issues.redhat.com/browse/WFLY-17879[WFLY-17879]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TODO
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [x] QE
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly
+* https://github.com/wildfly/boms
+* https://github.com/jboss-developer/jboss-eap-boms
+* https://github.com/wildfly/quickstart
+* https://github.com/jboss-developer/jboss-eap-quickstarts
+* https://github.com/wildfly/wildfly-archetypes
+
+=== Other Interested Projects
+
+* None
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+
+* [] Bootable jar (local and cloud deployment)
+* [] OpenShift S2I
+
+== Requirements
+
+=== Hard Requirements
+
+* The BOMs sources should be moved to the Server repository, and placed in a new /boms/user directory. The BOMs sources repository history should be included in such move.
+
+* Any dependency on the BOMs source repository should be updated to depend instead on the directory /boms/user in the Server's source repository:
+** WildFly Quickstarts GitHub Actions CI
+
+* The following repositories should be archived after the first related Server release includes the BOMs sources:
+** https://github.com/wildfly/boms
+** https://github.com/jboss-developer/jboss-eap-boms
+
+=== Nice-to-Have Requirements
+
+* N/A
+
+=== Non-Requirements
+
+* N/A
+
+== Test Plan
+
+* The BOMs Maven modules will be added to the server's Maven Project, and thus the BOMs building will be tested along any Server's build test.  identify and
+
+== Community Documentation
+
+* No community documentation reference to the BOMs source repository exists, requiring an update.
+
+== Release Note Content
+
+* The sources for WildFly/JBoss EAP BOMs builder are now included with the server sources, and may be found in the /boms/user directory.
