@@ -1,6 +1,6 @@
 ---
 categories:
-  - server
+  - core
 ---
 = read-config-as-features management operation
 :author:            Alexey Loubyansky

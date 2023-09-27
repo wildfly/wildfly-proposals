@@ -1,7 +1,7 @@
 ---
 categories:
   - console
-  - server
+  - core
 ---
 = Show active management operation from hosts and servers in a central place
 :author:            Claudio Miranda

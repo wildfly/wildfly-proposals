@@ -1,6 +1,6 @@
 ---
 categories:
-  - controller
+  - core
 ---
 = Adding support for Git backend for configuration files
 :author:            Emmanuel Hugonnet

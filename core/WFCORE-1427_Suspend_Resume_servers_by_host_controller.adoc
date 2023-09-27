@@ -1,7 +1,6 @@
 ---
 categories:
   - core
-  - server
 ---
 = Convenient declaration of server suspend timeouts
 :author:            Brian Stansberry

@@ -1,6 +1,6 @@
 ---
 categories:
-  - controller
+  - core
 ---
 = Controller boot CLI Script execution
 :author:            Jean-Francois Denise

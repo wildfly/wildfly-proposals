@@ -1,7 +1,7 @@
 ---
 categories:
   - elytron
-  - server
+  - core
 ---
 = Support SSH authentication for Git persistence
 :author:            Ashley Abdel-Sayed

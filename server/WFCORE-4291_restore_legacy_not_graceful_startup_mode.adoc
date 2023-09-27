@@ -1,6 +1,6 @@
 ---
 categories:
-  - server
+  - core
 ---
 = Restore legacy (not "graceful") startup mode
 :author:            Jason Lee

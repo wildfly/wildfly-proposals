@@ -1,7 +1,6 @@
 ---
 categories:
   - core
-  - server
   - wf-galleon
 ---
 = Use Galleon for the WildFly and WildFly Core build

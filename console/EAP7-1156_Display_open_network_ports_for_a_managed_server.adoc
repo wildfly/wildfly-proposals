@@ -1,7 +1,7 @@
 ---
 categories:
   - console
-  - server
+  - core
 ---
 = Display open network ports for a managed server
 :author:            Claudio Miranda
