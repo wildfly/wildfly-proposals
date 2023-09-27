@@ -15,7 +15,7 @@
   <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}" />
 </head>
 
-<body class="homepage">
+<body class="{% if page.url == '/' %}homepage{% endif %}">
   <div class="content">
     {{ content }}
   </div>
