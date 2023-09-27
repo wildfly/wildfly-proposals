@@ -2,13 +2,13 @@
 categories:
   - name: Agroal
     id: agroal
-    description: Agroal Data Source
+    description: Agroal DataSources
   - name: Batch
     id: batch
     description: Jakarta EE Batch
-  - name: Bean Validation
+  - name: Jakarta Validation
     id: bean-validation
-    description: Jakarta EE Bean Validation
+    description: Jakarta Validation
   - name: Bootable Jar
     id: bootable-jar
     description: Bootable Jar
@@ -18,30 +18,24 @@ categories:
   - name: Cloud
     id: cloud
     description: Developing and Running a WildFly application on the cloud
-  - name: User Experience
-    id: user-experience
-    description: Impact how the user experiences working with WildFly
   - name: Clustering
     id: clustering
     description: Clustering, including Infinispan and JGroups
-  - name: Concurrency
+  - name: Jakarta Concurrency
     id: concurrency
-    description: Concurrency
-  - name: Console
+    description: Jakarta Concurrency
+  - name: Web Console
     id: console
-    description: Console
-  - name: WildFly Controller
-    id: controller
-    description: WildFly Controller
+    description: HAL Web Console
   - name: WildFly Core
     id: core
     description: WildFly Core
   - name: Jakarta EE
     id: ee
     description: Jakarta EE
-  - name: Jakarta EJB
+  - name: Jakarta Enterprise Beans
     id: ejb
-    description: Jakarta Entreprise Java Beans (EJB)
+    description: Jakarta Enterprise Beans (EJB)
   - name: WildFly Elytron
     id: elytron
     description: WildFly Elytron
@@ -50,20 +44,20 @@ categories:
     description: Embedded
   - name: IIOP
     id: iiop
-    description: Internet InterORB Protocol
-  - name: Jakarta RS
+    description: Internet InterORB Protocol and CORBA
+  - name: Jakarta RESTful Web Services
     id: jaxrs
     description: Jakarta RESTful Web Services
-  - name: JCA
+  - name: Jakarta Connectors
     id: jca
-    description: Jakarta Connectors Architecture
+    description: Jakarta Connectors
   - name: JDR
     id: jdr
     description: JBoss Diagnostic Reporter
-  - name: JPA
+  - name: Jakarta Persistence
     id: jpa
     description: Jakarta Persistence
-  - name: JSF
+  - name: Jakarta Faces
     id: jsf
     description: Jakarta Faces
   - name: Logging
@@ -81,12 +75,12 @@ categories:
   - name: Messaging
     id: messaging
     description: Messaging, including Jakarta Messaging (JMS)
-  - name: Eclipse MicroProfile
+  - name: MicroProfile
     id: microprofile
-    description: Eclipse MicroProfile
+    description: MicroProfile
   - name: Migration
     id: migration
-    description: Migration
+    description: Application and server configuration migration
   - name: Mod_cluster
     id: mod_cluster
     description: mod_cluster
@@ -99,15 +93,15 @@ categories:
   - name: Observability
     id: observability
     description: Observability
-  - name: OpenShifft
+  - name: OpenShift
     id: openshift
     description: Building and Running a WildFly application on OpenShift
   - name: POJO
     id: pojo
-    description: POJO
+    description: Legacy JBoss Microcontainer support
   - name: Quickstarts
     id: quickstarts
-    description: Quickstarts examples for WildFly
+    description: Quickstart examples for WildFly
   - name: Service Archive (SAR)
     id: sar
     description: Service Archive (SAR)
@@ -117,9 +111,6 @@ categories:
   - name: Security
     id: security
     description: Security
-  - name: Server
-    id: server
-    description: WildFly Server
   - name: Transactions
     id: transactions
     description: Transactions, including Jakarta Transactions API (JTA, JTS)
@@ -132,9 +123,9 @@ categories:
   - name: Web Services
     id: webservices
     description: Web Services
-  - name: Weld
+  - name: Jakarta CDI / Weld
     id: weld
-    description: Context injection
+    description: Jakarta Contexts and Dependency Injection
   - name: WildFly Galleon
     id: wf-galleon
     description: Provision WildFly with Galleon Feature Packs and Layers
