@@ -15,6 +15,9 @@ categories:
   - name: Clustering
     id: clustering
     description: Clustering, including Infinispan and JGroups
+  - name: Datasources
+    id: datasource
+    description: Server-provided `javax.sql.Datasource`s
   - name: Embedded
     id: embedded
     description: Embedding WildFly in another process
@@ -48,6 +51,9 @@ categories:
   - name: Jakarta Persistence
     id: jpa
     description: Jakarta Persistence
+  - name: Jakarta Resources
+    id: resource-adapter
+    description: Resource adapters
   - name: Jakarta RESTful Web Services
     id: jaxrs
     description: Jakarta RESTful Web Services

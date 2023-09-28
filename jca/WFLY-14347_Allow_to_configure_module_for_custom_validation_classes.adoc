@@ -1,6 +1,8 @@
 ---
 categories:
+  - datasource
   - jca
+  - resource-adapter
 ---
 = Allow to configure module for custom validation classes
 :author:            Tomasz Adamski

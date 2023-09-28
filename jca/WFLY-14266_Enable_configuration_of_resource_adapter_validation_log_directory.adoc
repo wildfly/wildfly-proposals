@@ -1,6 +1,7 @@
 ---
 categories:
   - jca
+  - resource-adapter
 ---
 = Enable configuration of resource adapter validation log directory
 :author:            Tomasz Adamski
