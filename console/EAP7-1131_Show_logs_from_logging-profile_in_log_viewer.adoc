@@ -1,4 +1,9 @@
-= EAP7-1131 Show logs from logging-profile in log viewer
+---
+categories:
+  - console
+  - logging
+---
+= Show logs from logging-profile in log viewer
 :author:            Claudio Miranda
 :email:             claudio@redhat.com
 :toc:               left

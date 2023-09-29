@@ -1,3 +1,7 @@
+---
+categories:
+  - ee
+---
 = JSON-B 1.0 (JSR 367)
 :author:            James R. Perkins
 :email:             jperkins@redhat.com

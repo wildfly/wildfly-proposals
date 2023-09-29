@@ -1,3 +1,8 @@
+---
+categories:
+  - messaging
+  - wf-galleon
+---
 = Galleon layer for embedded broker messaging
 :author:            Emmanuel Hugonnet
 :email:             ehugonne@redhat.com

@@ -1,3 +1,9 @@
+---
+categories:
+  - undertow
+  - elytron
+  - security
+---
 = Reference WildFly Elytron SecurityDomain from Undertow's application-security-domain resource.
 :author:            Darran Lofthouse
 :email:             darran.lofthouse@redhat.com
@@ -100,21 +106,21 @@ security enable-http-auth-http-server --security-domain=foo --referenced-securit
 The overall changes affect both WildFly and WildFly Core so the changes will need to be coordinated across 3 pull requests.
 
 1. Main Pull Request to WildFly
-
++
 This pull request will contain the updates to the resource to support the new attribute, additionally the testsuite will be updated to no longer assume the `http-authentication-factory` will be present in the default configuration.  This pull request will also contain additional test cases to test HTTP authentication using the new configuration and the community documentation.
-
++
 Finally this pull request will temporarily disable the test `SecurityAuthCommandsTestCase.testOOBHTTP()` as this is dependent on configuration that will be removed from WildFly Core.
 
 2. Follow Up Pull Request to WildFly Core
-
++
 This pull request will remove the `application-http-authentication` instance of the `http-authentication-factory` resource from the default configuration.  This will also contain updates to the JBoss CLI to support the updated resource in the Undertow subsystem and to no longer depend on the removed resource.
-
++
 This second pull request can be merged immediately after the first pull request.
 
 3. Clean up pull request to WildFly
-
++
 This pull request will un-ignore the test case temporarily ignored in the first pull request and update it based on the updates made to the JBoss CLI in the second pull request.
-
++
 This pull request can only be applied after WildFly Core has been tagged containing the changes in the second pull request and WildFly updated to use this latest tag.
  
 

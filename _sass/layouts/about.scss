@@ -1,0 +1,21 @@
+.about-page {
+  padding-bottom: 3rem;
+  .page-subtitle {
+    color: $teal;
+    border-top: 2px solid $teal;
+    border-bottom: 2px solid $teal;
+    padding: 2rem 0;
+    margin: 4rem 0 0 0;
+    strong {
+      color: $teal;
+    }
+  }
+  .sec-title-teal,
+  .sec-title-yellow,
+  .sec-title-red,
+  .sec-title-blue {
+    h2 {
+      text-align: center;
+    }
+  }
+}

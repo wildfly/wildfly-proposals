@@ -1,3 +1,9 @@
+---
+categories:
+  - cloud
+  - wf-galleon
+  - openshift
+---
 = Evolve support for custom Galleon feature-packs usage during s2i.
 :author:           Jean-Francois Denise
 :email:             jdenise@redhat.com

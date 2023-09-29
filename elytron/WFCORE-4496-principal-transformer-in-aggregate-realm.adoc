@@ -1,4 +1,8 @@
-= [WFCORE-4496] Adding principal-transformer in aggregate-realm
+---
+categories:
+  - elytron
+---
+= Adding principal-transformer in aggregate-realm
 :author:            Ashley Abdel-Sayed
 :email:             aabdelsa@redhat.com
 :toc:               left

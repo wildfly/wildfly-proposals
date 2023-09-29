@@ -1,3 +1,7 @@
+---
+categories:
+  - ejb
+---
 = Ability to add a server-side configured Interceptor for the applications without changing the deployments
 :author:            Tomasz Adamski
 :email:             tomasz.adamski@redhat.com

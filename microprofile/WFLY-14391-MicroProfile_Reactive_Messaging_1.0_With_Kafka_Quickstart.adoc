@@ -1,4 +1,8 @@
-= WFLY-14392 Quickstart for MicroProfile Reactive Messaging 1.0 with Kafka
+---
+categories:
+  - microprofile
+---
+= Quickstart for MicroProfile Reactive Messaging 1.0 with Kafka
 :author:            Kabir Khan
 :email:             kkhan@redhat.com
 :toc:               left

@@ -1,4 +1,10 @@
-= EAP7-1157 - Add support for server-ssl-sni-context
+---
+categories:
+  - console
+  - elytron
+  - security 
+---
+= Add support for server-ssl-sni-context
 :author:            Claudio Miranda
 :email:             claudio@redhat.com
 :toc:               left

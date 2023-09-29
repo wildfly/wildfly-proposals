@@ -1,4 +1,8 @@
-= WFLY-11737 RESTEasy support for setting HTTP proxy by using JAX-RS API
+---
+categories:
+  - jaxrs
+---
+= RESTEasy support for setting HTTP proxy by using JAX-RS API
 :author:            Petr Jurak
 :email:             pjurak@redhat.com
 :toc:               left

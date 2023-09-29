@@ -1,3 +1,7 @@
+---
+categories:
+  - clustering
+---
 = Singleton Service Election Listener
 :author:            Paul Ferraro
 :email:             paul.ferraro@redhat.com

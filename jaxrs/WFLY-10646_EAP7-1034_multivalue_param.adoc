@@ -1,4 +1,8 @@
-= WFLY-10646 / EAP7-1034 RESTEasy extended support for multivalue @*Param
+---
+categories:
+  - jaxrs
+---
+= RESTEasy extended support for multivalue @*Param
 :author:            Alessio Soldano
 :email:             asoldano@redhat.com
 :toc:               left

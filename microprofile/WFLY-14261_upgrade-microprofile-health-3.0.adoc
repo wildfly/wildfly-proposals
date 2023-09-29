@@ -1,3 +1,7 @@
+---
+categories:
+  - microprofile
+---
 = Upgrade MicroProfile Health to 3.0
 :author:            Martin Stefanko
 :email:             mstefank@redhat.com

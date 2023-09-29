@@ -1,3 +1,7 @@
+---
+categories:
+  - console
+---
 = Support kill and destroy operations for server-groups
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

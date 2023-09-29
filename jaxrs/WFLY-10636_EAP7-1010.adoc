@@ -1,4 +1,8 @@
-= WFLY-10636 / EAP7-1010 RESTEasy extended async / reactive support
+---
+categories:
+  - jaxrs
+---
+= RESTEasy extended async / reactive support
 :author:            Alessio Soldano
 :email:             asoldano@redhat.com
 :toc:               left

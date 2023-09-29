@@ -1,3 +1,8 @@
+---
+categories:
+  - mail
+  - wf-galleon
+---
 = Galleon layer for the Mail subsystem
 :author:            Yeray Borges
 :email:             yborgess@redhat.com

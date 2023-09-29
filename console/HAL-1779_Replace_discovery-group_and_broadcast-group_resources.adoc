@@ -1,3 +1,8 @@
+---
+categories:
+  - console
+  - messaging
+---
 = Replace 'discovery-group' and 'broadcast-group' resources
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

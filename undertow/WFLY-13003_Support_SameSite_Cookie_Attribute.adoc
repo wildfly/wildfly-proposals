@@ -1,4 +1,8 @@
-= WFLY-13003 Support SameSite Cookie Attribute
+---
+categories:
+  - undertow
+---
+= Support SameSite Cookie Attribute
 :author:            Flavia Rainone
 :email:             frainone@redhat.com
 :toc:               left

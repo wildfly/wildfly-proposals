@@ -1,3 +1,7 @@
+---
+categories:
+  - messaging
+---
 = Provide CLI operation which returns used journal type -NIOxASYNCIO.
 :author:            Emmanuel hugonnet
 :email:             ehugonne@redhat.com

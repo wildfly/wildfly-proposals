@@ -1,4 +1,8 @@
-= WFCORE-1110 Custom HTTP Headers for the HTTP Management Interface
+---
+categories:
+  - management
+---
+= Custom HTTP Headers for the HTTP Management Interface
 :author:            Darran Lofthouse
 :email:             darran.lofthouse@redhat.com
 :toc:               left

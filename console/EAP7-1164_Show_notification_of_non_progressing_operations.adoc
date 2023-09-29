@@ -1,4 +1,9 @@
-= EAP7-1164 Show notification of non progressing operations
+---
+categories:
+  - console
+  - user-experience
+---
+= Show notification of non progressing operations
 :author:            Claudio Miranda
 :email:             claudio@redhat.com
 :toc:               left

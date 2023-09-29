@@ -1,4 +1,8 @@
-= WFLY-10361 / EAP7-997 Async (NIO) request processing support in RESTEasy ClientHttpEngine
+---
+categories:
+  - jaxrs
+---
+= Async (NIO) request processing support in RESTEasy ClientHttpEngine
 :author:            Alessio Soldano
 :email:             asoldano@redhat.com
 :toc:               left

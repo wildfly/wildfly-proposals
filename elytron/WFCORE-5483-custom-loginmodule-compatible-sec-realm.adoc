@@ -1,4 +1,8 @@
-= WFCORE-5483 Provide a LoginModule compatible security realm.
+---
+categories:
+  - elytron
+---
+= Provide a LoginModule compatible security realm.
 :author:            Diana Krepinska
 :email:             dvilkola@redhat.com
 :toc:               left

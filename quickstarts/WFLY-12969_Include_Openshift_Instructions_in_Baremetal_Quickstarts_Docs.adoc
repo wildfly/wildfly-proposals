@@ -1,3 +1,8 @@
+---
+categories:
+  - quickstarts
+  - openshift
+---
 = Include Openshift Instructions in EAP non-CD Quickstarts READMEs
 :author:            Eduardo Martins
 :email:             emartins@redhat.com

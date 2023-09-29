@@ -1,4 +1,9 @@
-= WFLY-8770 Integrate aws.S3_PING discovery protocol
+---
+categories:
+  - clustering
+  - cloud
+---
+= Integrate aws.S3_PING discovery protocol
 :author:            Radoslav Husar
 :email:             rhusar@redhat.com
 :toc:               left

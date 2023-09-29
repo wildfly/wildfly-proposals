@@ -1,3 +1,7 @@
+---
+categories:
+  - clustering
+---
 = HotRod client injection via @Resource JNDI injection
 :author:            Radoslav Husar
 :email:             rhusar@redhat.com

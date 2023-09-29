@@ -1,0 +1,20 @@
+.header-banner {
+  background-color: $red;
+  padding: 1.13rem;
+  position: fixed;
+  z-index: 2;
+  width: 100%;
+  p {
+    margin: 0;
+    font-size: 1.5rem;
+    line-height: 1.5rem;
+    text-align: center;
+    width: calc(100% - 2.5rem);
+  }
+
+  + .content {
+    position: relative;
+    top: 6rem;
+    padding-bottom: 5rem;
+  }
+}

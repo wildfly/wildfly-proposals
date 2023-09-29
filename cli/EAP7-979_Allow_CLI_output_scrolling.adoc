@@ -1,4 +1,9 @@
-= EAP7-979 WFCORE-3568 Allow CLI output scrolling
+---
+categories:
+  - cli
+  - user-experience
+---
+= Allow CLI output scrolling
 :author:            Marek Marusic
 :email:             mmarusic@redhat.com
 :toc:               left

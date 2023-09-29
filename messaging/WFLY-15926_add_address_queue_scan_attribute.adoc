@@ -1,3 +1,7 @@
+---
+categories:
+  - messaging
+---
 = Add an attribute to be able to define the address_queue_scan period.
 :author:            Emmanuel hugonnet
 :email:             ehugonne@redhat.com

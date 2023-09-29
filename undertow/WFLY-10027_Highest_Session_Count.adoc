@@ -1,4 +1,8 @@
-= WFLY-10027 Highest Session Count Metric
+---
+categories:
+  - undertow
+---
+= Highest Session Count Metric
 :author:            Stuart Douglas
 :email:             sdouglas@redhat.com
 :toc:               left

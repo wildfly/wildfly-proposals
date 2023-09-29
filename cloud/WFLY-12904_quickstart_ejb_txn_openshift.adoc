@@ -1,3 +1,9 @@
+---
+categories:
+  - openshift
+  - ejb
+  - quickstarts
+---
 = Quickstart for EJB remoting and transaction recovery on OpenShift
 :author:            Ondrej Chaloupka
 :email:             ochaloup@redhat.com

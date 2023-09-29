@@ -1,4 +1,8 @@
-= EAP7-1429 / WFLY-13089 Microprofile REST Client 1.4 support
+---
+categories:
+  - microprofile
+---
+= Microprofile REST Client 1.4 support
 :author:            Alessio Soldano
 :email:             asoldano@redhat.com
 :toc:               left

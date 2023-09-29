@@ -1,3 +1,7 @@
+---
+categories:
+  - clustering
+---
 = Initial state transfer configuration
 :author:            Paul Ferraro
 :email:             paul.ferraro@redhat.com

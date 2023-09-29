@@ -1,3 +1,7 @@
+---
+categories:
+  - messaging
+---
 = Add attribute to model which will indicate that backup is synchronized with live server
 :author:            Emmanuel Hugonnet
 :email:             ehugonne@redhat.com

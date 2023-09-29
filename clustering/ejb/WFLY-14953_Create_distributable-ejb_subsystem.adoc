@@ -1,4 +1,9 @@
-= WFLY-14953 Create distributable-ejb subsystem
+---
+categories:
+  - clustering
+  - ejb
+---
+= Create distributable-ejb subsystem
 :author:            Richard Achmatowicz
 :email:             rachmato@redhat.com
 :toc:               left

@@ -1,4 +1,9 @@
-= Implement new infinispan resources
+---
+categories:
+  - console
+  - microprofile
+---
+= Make "Expose EAP Metrics" configurable
 :author:            Harald Pehl
 :email:             hpehl@redhat.com
 :toc:               left

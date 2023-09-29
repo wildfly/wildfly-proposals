@@ -1,3 +1,7 @@
+---
+categories:
+  - core
+---
 = Add the ability to resolve standard server system properties to configure the managed server JVMs
 :author:            Yeray Borges
 :email:             yborgess@redhat.com

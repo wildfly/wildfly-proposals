@@ -1,4 +1,8 @@
-= WFLY-9724 Allow unescaped characters in URL
+---
+categories:
+  - undertow
+---
+= Allow unescaped characters in URL
 :author:            Stuart Douglas
 :email:             sdouglas@redhat.com
 :toc:               left

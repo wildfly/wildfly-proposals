@@ -1,4 +1,9 @@
-= WFLY-14479 - Helm Charts for WildFly
+---
+categories:
+  - cloud
+  - openshift
+---
+= Helm Charts for WildFly
 :author:            Jeff Mesnil
 :email:             jmesnil@redhat.com
 :toc:               left

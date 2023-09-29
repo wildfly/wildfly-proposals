@@ -1,3 +1,8 @@
+---
+categories:
+  - console
+  - security
+---
 = Provide web console (GUI) full support for Security Manager configuration
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

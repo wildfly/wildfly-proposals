@@ -1,4 +1,9 @@
-= WFLY-14312 Microprofile REST Client 2.0 support
+---
+categories:
+  - jaxrs
+  - microprofile
+---
+= Microprofile REST Client 2.0 support
 :author:            Ron Sigal
 :email:             rsigal@redhat.com
 :toc:               left

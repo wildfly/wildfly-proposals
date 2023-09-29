@@ -1,3 +1,7 @@
+---
+categories:
+  - ejb
+---
 = Ability to configure default global stateful timeout for Stateful Session Beans
 :author:            Cheng Fang
 :email:             cfang@redhat.com

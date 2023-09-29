@@ -1,4 +1,9 @@
-= EAP7-924 Coloured output for CLI
+---
+categories:
+  - cli
+  - user-experience
+---
+= Coloured output for CLI
 :author:            Ingo Weiss
 :email:             ingo@redhat.com
 :toc:               left

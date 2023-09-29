@@ -1,3 +1,7 @@
+---
+categories:
+  - modules
+---
 = Java Platform Module Support
 :author:            David Lloyd
 :email:             david.lloyd@redhat.com

@@ -1,4 +1,8 @@
-= WFLY-12192 Add support for injecting Optional<T> parameter types
+---
+categories:
+  - jaxrs
+---
+= Add support for injecting Optional<T> parameter types
 :author:            Wei Nan Li
 :email:             weli@redhat.com
 :toc:               left

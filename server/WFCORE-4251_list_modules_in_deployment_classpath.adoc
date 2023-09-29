@@ -1,3 +1,8 @@
+---
+categories:
+  - core
+  - modules
+---
 = Provide ability to list modules which are on deployment's classpath via a Management Operation.
 :author:            Yeray Borges
 :email:             yborgess@redhat.com

@@ -1,4 +1,9 @@
-= WFCORE-4842 Add support for TLS 1.3 using the OpenSSL TLS provider with Elytron
+---
+categories:
+  - elytron
+  - security
+---
+= Add support for TLS 1.3 using the OpenSSL TLS provider with Elytron
 :author:            Farah Juma
 :email:             fjuma@redhat.com
 :toc:               left

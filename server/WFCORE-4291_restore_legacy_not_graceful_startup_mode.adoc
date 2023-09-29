@@ -1,4 +1,8 @@
-= WFCORE-4291 - Restore legacy (not "graceful") startup mode
+---
+categories:
+  - core
+---
+= Restore legacy (not "graceful") startup mode
 :author:            Jason Lee
 :email:             jasondlee@redhat.com
 :toc:               left

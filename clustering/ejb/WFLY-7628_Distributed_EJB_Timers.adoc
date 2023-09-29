@@ -1,3 +1,8 @@
+---
+categories:
+  - clustering
+  - ejb
+---
 = Distributed EJB timers
 :author:            Paul Ferraro
 :email:             paul.m.ferraro@redhat.com

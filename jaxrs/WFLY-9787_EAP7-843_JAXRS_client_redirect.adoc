@@ -1,4 +1,8 @@
-= WFLY-9787 / EAP7-843 JAX-RS client redirect
+---
+categories:
+  - jaxrs
+---
+= JAX-RS client redirect
 :author:            Alessio Soldano
 :email:             asoldano@redhat.com
 :toc:               left

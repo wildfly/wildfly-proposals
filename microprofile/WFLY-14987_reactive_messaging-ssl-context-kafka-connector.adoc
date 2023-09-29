@@ -1,3 +1,7 @@
+---
+categories:
+  - microprofile
+---
 = Configure Reactive Messaging Kafka connector to use SSLContext from the Elytron subsystem and allow SASL_PLAINTEXT and SASL_SSL protocols
 :author:            Kabir Khan
 :email:             kkhan@redhat.com

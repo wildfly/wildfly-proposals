@@ -1,3 +1,8 @@
+---
+categories:
+  - ee
+  - wf-galleon
+---
 = Add a Galleon Layer for the Jakarta EE 10 Core Profile
 :author:            James Perkins
 :email:             jperkins@redhat.com

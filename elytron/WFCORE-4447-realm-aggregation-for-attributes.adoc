@@ -1,4 +1,8 @@
-= WFCORE-4447 Aggregation of SecurityRealms for Attribute Loading
+---
+categories:
+  - elytron
+---
+= Aggregation of SecurityRealms for Attribute Loading
 :author:            Darran Lofthouse
 :email:             darran.lofthouse@redhat.com
 :toc:               left

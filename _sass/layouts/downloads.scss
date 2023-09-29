@@ -1,0 +1,135 @@
+// This is a partial.
+// It lies in <source>/_sass, just waiting to be imported.
+// It does not contain the YAML front matter and has no corresponding output file in the built site.
+
+.wildfly-downloads {
+  h1 {
+    text-align: center;
+  }
+
+  .download-ctas {
+    text-align: center;
+    @media screen and (max-width: 768px) {
+      a.button-cta {
+        display: block;
+        margin: 1rem auto;
+        
+        min-width: 230px;
+      }
+    }
+  }
+  .page-subtitle {
+    text-align: center;
+    border-top: 2px solid white;
+    border-bottom: 2px solid white;
+    padding: 0 0 2rem 0;
+    margin: 4rem 0;
+    h4 {
+      text-align: left;
+      font-weight: 200;
+      color: $teal;
+      a { font-weight: 200; }
+      strong { color: $teal; }
+    }
+  }
+}
+
+.version-row {
+  background-color: $blue;
+  margin: 3rem 0;
+  padding: 1rem;
+
+  &:first-of-type {
+    .version-name { border-bottom: 3px solid $white; }
+  }
+  .version-id {
+    @media screen and (max-width: 1380px) {
+      h2 {
+        font-size: 1.5rem;
+        line-height: 2rem; 
+      }
+    }
+    @media screen and (max-width: 768px) {
+      grid-column: span 12;
+    }
+  }
+  .version-content {
+    @media screen and (max-width: 768px) {
+      grid-column: span 12;
+    }
+  }
+
+
+  h1>a.anchor, h2>a.anchor, h3>a.anchor, h4>a.anchor, h5>a.anchor, h6>a.anchor {
+    position: absolute;
+    z-index: 1001;
+    width: 1.5ex;
+    margin-left: -1.2ex;
+    display: block;
+    text-decoration: none!important;
+    visibility: hidden;
+    text-align: center;
+    font-weight: 400;
+  }
+
+  h1>a.anchor::before, h2>a.anchor::before, h3>a.anchor::before,
+  h4>a.anchor::before, h5>a.anchor::before, h6>a.anchor::before {
+    content: "\00A7";
+    font-size: .75em;
+    display: block;
+    padding-top: 0.1em;
+  }
+
+  h1:hover > a.anchor, h1 > a.anchor:hover,
+  h2:hover > a.anchor, h2 > a.anchor:hover,
+  h3:hover > a.anchor, h3 > a.anchor:hover,
+  h4:hover > a.anchor, h4 > a.anchor:hover,
+  h5:hover > a.anchor, h5 > a.anchor:hover,
+  h6:hover > a.anchor, h6 > a.anchor:hover {
+    visibility: visible;
+  }
+}
+
+.version-table {
+  justify-self: center;
+  margin: 1rem 0;
+  table {
+    border-collapse: collapse;
+    width: auto;
+  }
+  thead th, tbody td {
+    padding: 1px;
+  }
+  tbody tr:not(:first-of-type):not(:last-of-type) {
+    border-bottom: 1px solid $dark-blue;
+  }
+  .version-name {
+    text-align: left;
+    padding-bottom: .3rem;
+    border-bottom: 1px solid $teal;
+    font-weight: 400;
+    &.final {
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .release-date {
+      float: right;
+      text-transform: initial;
+    }
+  }
+
+  .description { width: 60%; }
+  .licence {
+    width: 15%;
+    text-align: center;
+  }
+  .links {
+    width: 25%;
+    padding: 5px 0 7px 0;
+    text-align: right;
+  }
+  td, a { font-size: .875rem; }
+  @media screen and (max-width: 1024px) {
+    grid-column: span 12;
+  }
+}

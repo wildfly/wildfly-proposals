@@ -1,3 +1,7 @@
+---
+categories:
+  - microprofile
+---
 = Example CLI script to evolve standalone configurations with microprofile
 :author:            JF Denise
 :email:             jdenise@redhat.com

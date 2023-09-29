@@ -1,4 +1,9 @@
-= EAP7-1156 Display open network ports for a managed server
+---
+categories:
+  - console
+  - core
+---
+= Display open network ports for a managed server
 :author:            Claudio Miranda
 :email:             claudio@redhat.com
 :toc:               left

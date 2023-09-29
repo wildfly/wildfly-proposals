@@ -1,3 +1,7 @@
+---
+categories:
+  - transactions
+---
 = WS-AT Integration with .NET
 :author:            Ondrej Chaloupka
 :email:             ochaloup@redhat.com

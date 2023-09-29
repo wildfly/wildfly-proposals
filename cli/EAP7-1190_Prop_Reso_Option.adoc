@@ -1,4 +1,9 @@
-= EAP7-1190. CLI, new option to enable properties resolution
+---
+categories:
+  - cli
+  - user-experience
+---
+= CLI, new option to enable properties resolution
 :author:            Jean-François Denise
 :email:             jdenise@redhat.com
 :toc:               left

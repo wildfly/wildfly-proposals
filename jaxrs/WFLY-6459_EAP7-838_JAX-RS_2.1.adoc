@@ -1,4 +1,8 @@
-= WFLY-6459 / EAP7-838 JAX-RS 2.1 Support
+---
+categories:
+  - jaxrs
+---
+= JAX-RS 2.1 Support
 :author:            Alessio Soldano
 :email:             asoldano@redhat.com
 :toc:               left

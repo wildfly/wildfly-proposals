@@ -1,4 +1,9 @@
-= WFLY-14266 Enable configuration of resource adapter validation log directory
+---
+categories:
+  - jca
+  - resource-adapter
+---
+= Enable configuration of resource adapter validation log directory
 :author:            Tomasz Adamski
 :email:             tadamski@redhat.com
 :toc:               left

@@ -1,4 +1,9 @@
-= EAP7-1134 Update Modcluster view for new resources load-provider
+---
+categories:
+  - console
+  - mod_cluster
+---
+= Update Modcluster view for new resources load-provider
 :author:            Claudio Miranda
 :email:             claudio@redhat.com
 :toc:               left

@@ -1,3 +1,7 @@
+---
+categories:
+  - clustering
+---
 = Remote cache metrics
 :author:            Paul Ferraro
 :email:             paul.ferraro@redhat.com

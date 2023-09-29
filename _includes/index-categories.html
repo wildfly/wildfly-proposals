@@ -1,0 +1,51 @@
+<div class="about-page home-section">
+  <h1 class="title"><strong>Wild</strong>Fly Proposals</h1>
+  <h2 class="page-subtitle">A central location for analysis and design documents of new features and capabilities in the <a href="https://wildfly.org">WildFly</a> project universe</h2>
+  <h2>WildFly features and capabilites are described as <em>proposals</em> documents that contain information on their context, scope, requirements, etc.
+     Proposals can affect one or many categories. This page lists all categories and their respective proposals.</h2>  
+</div>
+
+
+  <div class="categories">
+
+  <h2 class="sec-title-teal">Categories</h2>
+  <ul>
+  {% for cat in site.data["wildfly-categories"].categories %}
+    <li><a href="#{{ cat.id }}">{{ cat.name }}</a></li>
+  {% endfor %}
+  </ul>
+  <ul>
+    <li><a href="#uncategorized">Uncategorized Proposals</a></li>
+  </ul>
+
+  <hr />
+
+  <div>
+    {% for cat in site.data["wildfly-categories"].categories %}
+    <h2 id="{{ cat.id }}">{{ cat.name }} <small>[{{ cat.id }}]</small></a></h2>
+    <div class="description">{{ cat.description | markdownify }}</div>
+
+    {% for page in site.pages %}
+    <ul>
+      {% if page.categories contains cat.id %}
+      <li><a href="{{ site.baseurl }}{{ page.url }}">{{ page.title }}</a></li>
+      {% endif %}
+    </ul>
+    {% endfor %}
+    {% endfor %}
+  </div>
+
+  <div>
+    <h2 id="uncategorized">Uncategorized Proposals</h2>
+
+    {% for page in site.pages %}
+    <ul>
+      {% unless page.categories %}
+      {% if page.title != nil and page.layout == "proposal" %}
+      <li><a href="{{ site.baseurl }}{{ page.url }}">{{ page.title }}</a></li>
+      {% endif %}
+      {% endunless %}
+    </ul>
+    {% endfor %}
+  </div>
+</div>

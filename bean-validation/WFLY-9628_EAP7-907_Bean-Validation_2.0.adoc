@@ -1,4 +1,8 @@
-= WFLY-9628 / EAP7-907 Bean Validation 2.0 support
+---
+categories:
+  - bean-validation
+---
+= Bean Validation 2.0 support
 :author:            Guillaume Smet
 :email:             gsmet@redhat.com
 :toc:               left

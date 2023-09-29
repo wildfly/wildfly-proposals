@@ -1,4 +1,8 @@
-= WFLY-10769 Integrate mod_cluster ramp-up mechanism when starting new nodes
+---
+categories:
+  - mod_cluster
+---
+= Integrate mod_cluster ramp-up mechanism when starting new nodes
 :author:            Radoslav Husar
 :email:             rhusar@redhat.com
 :toc:               left

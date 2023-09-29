@@ -1,4 +1,8 @@
-= WFLY-10503 / EAP7-1009 RESTEasy SPI to modify resource metadata
+---
+categories:
+  - jaxrs
+---
+= RESTEasy SPI to modify resource metadata
 :author:            Alessio Soldano
 :email:             asoldano@redhat.com
 :toc:               left

@@ -1,3 +1,7 @@
+---
+categories:
+  - jpa
+---
 = EE8 preview mode: JPA 2.2 support: ability to enable latest Hibernate ORM
 :author:            Sanne Grinovero
 :email:             sanne@redhat.com

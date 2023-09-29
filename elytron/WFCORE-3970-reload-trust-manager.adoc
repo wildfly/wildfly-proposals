@@ -1,4 +1,8 @@
-= WFCORE-3970 Add support for Elytron's trust-manager to be dynamically reloaded
+---
+categories:
+  - elytron
+---
+= Add support for Elytron's trust-manager to be dynamically reloaded
 :author:            Justin Michael Cook
 :email:             jucook@redhat.com
 :toc:               left

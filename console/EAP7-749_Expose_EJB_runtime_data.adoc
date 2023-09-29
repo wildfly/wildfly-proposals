@@ -1,3 +1,8 @@
+---
+categories:
+  - console
+  - ejb
+---
 = Expose EJB runtime data / statistics
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

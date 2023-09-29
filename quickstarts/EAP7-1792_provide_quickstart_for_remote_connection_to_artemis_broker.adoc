@@ -1,3 +1,8 @@
+---
+categories:
+  - quickstarts
+  - messaging
+---
 = Provide complete QuickStart and documentation for connecting to a remote AMQ broker
 :author:            Emmanuel Hugonnet
 :email:             ehugonne@redhat.com

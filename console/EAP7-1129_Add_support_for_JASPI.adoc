@@ -1,4 +1,10 @@
-= EAP7-1129 Add support for JASPI as added to the WildFly Elytron Subsystem
+---
+categories:
+  - console
+  - elytron
+  - security 
+---
+= Add support for JASPI as added to the WildFly Elytron Subsystem
 :author:            Claudio Miranda
 :email:             claudio@redhat.com
 :toc:               left

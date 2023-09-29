@@ -1,3 +1,8 @@
+---
+categories:
+  - jsf
+  - wf-galleon
+---
 = Galleon layer for Jakarta Server Faces support
 :author:            Yeray Borges
 :email:             yborgess@redhat.com

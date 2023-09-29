@@ -1,4 +1,8 @@
-= [ELY-2320] Add integrity support to FilesystemSecurityRealm
+---
+categories:
+  - elytron
+---
+= Add integrity support to FilesystemSecurityRealm
 :author:            Ashpan Raskar
 :email:             araskar@redhat.com
 :toc:               left

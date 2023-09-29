@@ -1,3 +1,8 @@
+---
+categories:
+  - clustering
+  - wf-galleon
+---
 = Add a Galleon layer for the Distributable Web subsystem configured with a local web cache
 :author:            Yeray Borges
 :email:             yborgess@redhat.com

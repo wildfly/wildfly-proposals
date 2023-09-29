@@ -1,3 +1,7 @@
+---
+categories:
+  - elytron
+---
 = Add ability to FileAuditEndpoint to allow file encoding to be overridden.
 :author:            Ilia Vassilev
 :email:             ivassile@redhat.com

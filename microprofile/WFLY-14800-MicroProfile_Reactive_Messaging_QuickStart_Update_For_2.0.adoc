@@ -1,4 +1,9 @@
-= WFLY-14800 Modernise Reactive Messaging QuickStart for MicroProfile Reactive Messaging 2.0
+---
+categories:
+  - microprofile
+  - quickstarts
+---
+= Modernise Reactive Messaging QuickStart for MicroProfile Reactive Messaging 2.0
 :author:            Kabir Khan
 :email:             kkhan@redhat.com
 :toc:               left

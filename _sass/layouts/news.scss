@@ -1,0 +1,97 @@
+.news-page {
+  margin-bottom: 3rem;
+  .news-list-item {
+    margin-bottom: 3rem;
+    p {
+      margin: 0;
+    }
+
+    &.blue .post-title { background-color: $blue; }
+    &.orange .post-title { background-color: $orange; }
+    &.teal .post-title { background-color: $teal; }
+    &.red .post-title { background-color: $red; }
+    &.yellow .post-title {
+      background-color: $yellow;
+      h2, a { color: $dark-blue; }
+    }
+
+    .post-title {
+      padding: 1rem;
+      h2 {
+        margin: 0;
+        a{
+          color: $white;
+          text-decoration: none;
+          font-weight: 100;
+          text-transform: uppercase;
+        }
+      }
+    }
+  }
+  .share-page {
+    text-align: right;
+  }
+  .rss-btn {
+    justify-self: center;
+    align-self: center;
+    font-size: 2rem;
+    i {
+      color: inherit;
+    }
+  }
+}
+
+.news-list-blocks {
+  margin-top: 3rem;
+  .news-block-item {
+    margin-bottom: 3rem;
+    text-align: left;
+    p {
+      margin: 10px 0;
+    }
+    &.orange .post-title {
+      color: $orange;
+      border-color: $orange;
+    }
+    &.yellow .post-title {
+      color: $yellow;
+      border-color: $yellow;
+    }
+    &.teal .post-title {
+      color: $teal;
+      border-color: $teal;
+    }
+    &.red .post-title {
+      color: $red;
+      border-color: $red;
+    }
+
+    @media screen and (max-width: 1024px) {
+      grid-column: span 6;
+    }
+    @media screen and (max-width: $breakpoint-m) {
+      grid-column: span 12;
+    }
+  }
+  .post-title {
+    border: 3px solid;
+    min-height: 9rem;
+    h4 {
+      margin: 1rem;
+      color: inherit;
+      a {
+        text-decoration: none;
+        color: inherit;
+      }
+    }
+  }
+}
+
+@media screen and (max-width: $breakpoint-m) {
+  .news-block-item .post-title h4 {
+    font-size: 1.5rem;
+  }
+  .news-list-item .share-page {
+    text-align: left;
+  }
+}

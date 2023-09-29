@@ -1,3 +1,8 @@
+---
+categories:
+  - console
+  - clustering
+---
 = Configure session affinity using multiple routes if supported by balancer
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

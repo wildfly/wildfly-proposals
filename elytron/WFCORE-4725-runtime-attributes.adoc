@@ -1,4 +1,8 @@
-= [WFCORE-4725] Making additional attributes available for authorization decisions
+---
+categories:
+  - elytron
+---
+= Making additional attributes available for authorization decisions
 :author:            Farah Juma
 :email:             fjuma@redhat.com
 :toc:               left

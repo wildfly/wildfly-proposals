@@ -1,4 +1,9 @@
-= CLOUD-3772: Support 'microprofile-platform' Galleon layer in S2i workflow
+---
+categories:
+  - microprofile
+  - wf-galleon
+---
+= Support 'microprofile-platform' Galleon layer in S2i workflow
 :author:            Jean-Francois Denise
 :email:             jdenise@redhat.com
 :toc:               left
@@ -44,7 +49,7 @@
 
 == Requirements
 
-==== Use 'microprofile-platform' Galleon layer decorator during S2I
+=== Use 'microprofile-platform' Galleon layer decorator during S2I
 
 During S2I build operated from an XP 2.0 builder image, a user can reference the layer 'microprofile-platform' in GALLEON_PROVISION_LAYERS environment variable. It is usable with
 any base Galleon layer: 'datasources-web-server', 'jaxrs-server' and 'cloud server'

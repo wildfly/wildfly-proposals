@@ -1,4 +1,8 @@
-= WFCORE-3819 Add Elytron subsystem component to use a custom security event listener
+---
+categories:
+  - elytron
+---
+= Add Elytron subsystem component to use a custom security event listener
 :author:            Jan Kalina
 :email:             jkalina@redhat.com
 :toc:               left

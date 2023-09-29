@@ -1,4 +1,8 @@
-= EAP7-832 Secure Cookie Handling
+---
+categories:
+  - undertow
+---
+= Secure Cookie Handling
 :author:            Stuart Douglas
 :email:             sdouglas@redhat.com
 :toc:               left

@@ -1,4 +1,8 @@
-= WFLY-11697 WS integration with WildFly Elytron - AuthenticationClient for Authentication / SSL
+---
+categories:
+  - elytron
+---
+= WS integration with WildFly Elytron - AuthenticationClient for Authentication / SSL
 :author:            Diana Vilkolakova
 :email:             dvilkola@redhat.com
 :toc:               left

@@ -1,4 +1,9 @@
-= WFLY-11868 REST integration with WildFly Elytron - AuthenticationClient for Authentication / SSL
+---
+categories:
+  - elytron
+  - jaxrs
+---
+= REST integration with WildFly Elytron - AuthenticationClient for Authentication / SSL
 :author:            Diana Vilkolakova
 :email:             dvilkola@redhat.com
 :toc:               left
@@ -80,11 +85,11 @@ Because we do not want RESTEasy to have Elytron dependency, new SPI for client c
 
 To invoke requests, the RESTEasy client uses single instance of ClientHttpEngine interface implementation, which can have only one SSLContext defined. However, Elytron client configuration can have multiple credentials and SSL contexts specified and these are chosen based on rules, eg. URI. It will be necessary to intercept/filter the requests and choose credentials, bearer token or SSLContext based on the destination of the requests.
 
-#### Different credentials / Bearer token for different URIs
+=== Different credentials / Bearer token for different URIs
 
 New RequestClientFilter will be registered for client if Elytron is on classpath. This RequestClientFilter will be used to set Authorization header if it is missing - with either HTTP Basic authentication or Bearer token. If both Bearer token and credentials are obtained from Elytron, only the Bearer token will be applied to outgoing request.
 
-#### Different SSLContexts for different URIs
+=== Different SSLContexts for different URIs
 
 Creation of SSLSocket will be delegated to SSLContext obtained from Elytron client if it is present on classpath.
 

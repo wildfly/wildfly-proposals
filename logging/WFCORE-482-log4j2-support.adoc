@@ -1,3 +1,7 @@
+---
+categories:
+  - logging
+---
 = Add log4j2 Support to WildFly
 :author:            James R. Perkins
 :email:             jperkins@redhat.com

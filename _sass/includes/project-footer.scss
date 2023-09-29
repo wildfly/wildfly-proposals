@@ -1,0 +1,95 @@
+// This is a partial.
+// It lies in <source>/_sass, just waiting to be imported.
+// It does not contain the YAML front matter and has no corresponding output file in the built site.
+
+.project-footer {
+  background-color: $grey-4;
+
+  .logo-wrapper {
+    display: block;
+    margin: 0 auto;
+  }
+
+  p {
+    margin-top: 0;
+    font-size: .875rem;
+    @media screen and (max-width: 1024px) {
+      grid-column: 1/6;
+    }
+    @media screen and (max-width: 768px) {
+      order: 2;
+      grid-column: span 12;
+    }
+  }
+
+  .project-links {
+    font-size: .875rem;
+    @media screen and (max-width: 1024px) {
+      grid-column: span 2;
+    }
+    @media screen and (max-width: 768px) {
+      order: 1;
+      grid-column: span 4;
+    }
+    @media screen and (max-width: 480px) {
+      order: 1;
+      grid-column: span 6;
+    }
+  }
+
+  ul.footer-links {
+    list-style: none;
+    padding-left: 0;
+    a { font-size: .875rem; }
+  }
+  .more-links {
+    padding-left: 4rem;
+    font-size: .875rem;
+    margin-bottom: 2rem;
+    ul {
+      -moz-column-count: 4;
+      -moz-column-gap: 1rem;
+      -webkit-column-count: 4;
+      -webkit-column-gap: 1rem;
+      column-count: 4;
+      column-gap: 1rem;
+      a { font-size: .875rem; }
+    }
+    @media screen and (max-width: 1024px) {
+      grid-column: span 12;
+      border-top: 4px solid white;
+      padding: 3rem 0 2rem 0;
+      margin-bottom: 1rem;
+    }
+    @media screen and (max-width: 768px) {
+      order: 3;
+      ul {
+        -moz-column-count: 3;
+        -moz-column-gap: 1rem;
+        -webkit-column-count: 3;
+        -webkit-column-gap: 1rem;
+        column-count: 3;
+      }
+    }
+    @media screen and (max-width: 480px) {
+      ul {
+        -moz-column-count: 2;
+        -moz-column-gap: 1rem;
+        -webkit-column-count: 2;
+        -webkit-column-gap: 1rem;
+        column-count: 2;
+      }
+    }
+  }
+}
+
+.footer-section {
+  border-bottom: 4px solid white;
+  margin-bottom: 3rem;
+  padding: 1rem 0;
+  @media screen and (max-width: 480px) {
+    border-bottom: none;
+    margin-bottom: 1rem;
+  }
+}
+

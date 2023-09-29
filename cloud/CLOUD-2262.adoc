@@ -1,3 +1,9 @@
+---
+categories:
+  - cloud
+  - transactions
+  - ejb
+---
 = Transactions propagation and recovery over EJB remoting on OpenShift
 :author:            Ondrej Chaloupka
 :email:             ochaloup@redhat.com

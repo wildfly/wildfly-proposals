@@ -1,4 +1,8 @@
-= WFCORE-5526 Remove Legacy Security Realms
+---
+categories:
+  - security
+---
+= Remove Legacy Security Realms
 :author:            Darran Lofthouse
 :email:             darran.lofthouse@redhat.com
 :toc:               left

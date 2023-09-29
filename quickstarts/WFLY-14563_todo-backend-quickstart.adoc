@@ -1,4 +1,9 @@
-= WFLY-14563 - todo-backend Quickstart
+---
+categories:
+  - quickstarts
+  - openshift
+---
+= todo-backend Quickstart
 :author:            Jeff Mesnil
 :email:             jmesnil@redhat.com
 :toc:               left

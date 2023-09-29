@@ -1,3 +1,7 @@
+---
+categories:
+  - core
+---
 = Support for read only server configuration directory
 :author:            Yeray Borges
 :email:             yborgess@redhat.com

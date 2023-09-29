@@ -1,3 +1,7 @@
+---
+categories:
+  - console
+---
 = Specify Custom Server URLs
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

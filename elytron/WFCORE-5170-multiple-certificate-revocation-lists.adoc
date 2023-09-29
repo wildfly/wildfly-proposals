@@ -1,4 +1,8 @@
-= [WFCORE-5170] Certificate Revocation Lists
+---
+categories:
+  - elytron
+---
+= Certificate Revocation Lists
 :author:            Sonia Zaldana Calles
 :email:             szaldana@redhat.com
 :toc:               left

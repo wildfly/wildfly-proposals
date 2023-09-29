@@ -1,3 +1,7 @@
+---
+categories:
+  - elytron
+---
 = Support for multiple security realms - Failover
 :author:            Martin Mazanek
 :email:             mmazanek@redhat.com

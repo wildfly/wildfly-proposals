@@ -1,3 +1,7 @@
+---
+categories:
+  - wf-galleon
+---
 = Galleon layer for JSON-P support
 :author:            Yeray Borges
 :email:             yborgess@redhat.com

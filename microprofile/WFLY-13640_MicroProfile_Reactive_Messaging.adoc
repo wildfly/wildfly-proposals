@@ -1,3 +1,7 @@
+---
+categories:
+  - microprofile
+---
 = MicroProfile Reactive Messaging with Focus on Apache Kafka
 :author:            Kabir Khan
 :email:             kabir.khan@redhat.com

@@ -1,3 +1,7 @@
+---
+categories:
+  - microprofile
+---
 = Upgrade MicroProfile Config to 2.0
 :author:            Kabir Khan
 :email:             kkhan@redhat.com

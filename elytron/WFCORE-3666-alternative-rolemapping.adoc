@@ -1,4 +1,8 @@
-= WFCORE-3666 Provide Elytron alternative to RoleMappingLoginModule
+---
+categories:
+  - elytron
+---
+= Provide Elytron alternative to RoleMappingLoginModule
 :author:            Martin Mazanek
 :email:             mmazanek@redhat.com
 :toc:               left

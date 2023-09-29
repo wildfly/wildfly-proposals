@@ -1,4 +1,8 @@
-= WFCORE-5095 Add the ability to make use of an automatically generated self-signed certificate with Elytron
+---
+categories:
+  - elytron
+---
+= Add the ability to make use of an automatically generated self-signed certificate with Elytron
 :author:            Farah Juma
 :email:             fjuma@redhat.com
 :toc:               left

@@ -1,3 +1,7 @@
+---
+categories:
+  - ejb
+---
 = EJB subsystem configure max threads and core threads independently
 :author:            Cheng Fang
 :email:             cfang@redhat.com

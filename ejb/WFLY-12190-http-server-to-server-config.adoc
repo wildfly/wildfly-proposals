@@ -1,9 +1,15 @@
+---
+categories:
+  - ejb
+---
 = EJB over HTTP server-to-server invocation
 :email:             tomasz.adamski@redhat.com
 :toc:               left
 :icons:             font
 :idprefix:
 :idseparator:       -
+
+== Overview
 
 === Issue
 * https://issues.redhat.com/browse/WFLY-12190

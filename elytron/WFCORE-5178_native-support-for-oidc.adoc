@@ -1,4 +1,8 @@
-= WFCORE-5178 Native support for OpenID Connect
+---
+categories:
+  - elytron
+---
+= Native support for OpenID Connect
 :author:            Farah Juma
 :email:             fjuma@redhat.com
 :toc:               left

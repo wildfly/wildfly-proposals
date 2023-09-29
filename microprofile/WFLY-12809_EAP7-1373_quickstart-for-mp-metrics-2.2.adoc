@@ -1,4 +1,9 @@
-= WFLY-12809 / EAP7-1373 Quickstart for MP Metrics 2.3
+---
+categories:
+  - microprofile
+  - quicsktarts
+---
+= Quickstart for MP Metrics 2.3
 :author:            Martin Stefanko
 :email:             mstefank@redhat.com
 :toc:               left

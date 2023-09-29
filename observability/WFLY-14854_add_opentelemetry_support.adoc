@@ -1,4 +1,8 @@
- = Add OpenTelemetry Tracing Support to WildFly
+---
+categories:
+  - observability
+---
+= Add OpenTelemetry Tracing Support to WildFly
 :author:            Jason Lee
 :email:             jasondlee@redhat.com
 :toc:               left

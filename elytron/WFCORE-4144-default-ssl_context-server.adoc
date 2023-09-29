@@ -1,4 +1,8 @@
-= WFCORE-4144 Default SSLContext Registration (Within Application Server)
+---
+categories:
+  - elytron
+---
+= Default SSLContext Registration (Within Application Server)
 :author:            Darran Lofthouse
 :email:             darran.lofthouse@redhat.com
 :toc:               left

@@ -1,3 +1,7 @@
+---
+categories:
+  - elytron
+---
 = Make the certificate authority used by a certificate-authority-account configurable
 :author:            Farah Juma, Diana Vilkolakova
 :email:             dvilkola@redhat.com

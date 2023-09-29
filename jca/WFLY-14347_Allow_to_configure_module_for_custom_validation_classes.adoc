@@ -1,4 +1,10 @@
-= WFLY-14347 Allow to configure module for custom validation classes
+---
+categories:
+  - datasource
+  - jca
+  - resource-adapter
+---
+= Allow to configure module for custom validation classes
 :author:            Tomasz Adamski
 :email:             tadamski@redhat.com
 :toc:               left

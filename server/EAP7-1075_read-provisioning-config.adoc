@@ -1,4 +1,8 @@
-= WFCORE-3991 read-config-as-features management operation
+---
+categories:
+  - core
+---
+= read-config-as-features management operation
 :author:            Alexey Loubyansky
 :email:             alexey.loubyansky@redhat.com
 :toc:               left

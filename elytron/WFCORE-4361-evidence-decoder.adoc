@@ -1,4 +1,8 @@
-= [WFCORE-4361] Enhanced mapping of an X509Certificate to the underlying identity
+---
+categories:
+  - elytron
+---
+= Enhanced mapping of an X509Certificate to the underlying identity
 :author:            Farah Juma
 :email:             fjuma@redhat.com
 :toc:               left

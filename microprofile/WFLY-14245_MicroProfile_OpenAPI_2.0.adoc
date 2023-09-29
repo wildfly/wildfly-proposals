@@ -1,3 +1,7 @@
+---
+categories:
+  - microprofile
+---
 = Integrate MicroProfile OpenAPI 2.0
 :author:            Paul Ferraro
 :email:             paul.ferraro@redhat.com

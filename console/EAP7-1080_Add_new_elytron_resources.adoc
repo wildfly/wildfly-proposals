@@ -1,4 +1,10 @@
-= Implement new infinispan resources
+---
+categories:
+  - console
+  - elytron
+  - security 
+---
+= Add new Elytron resources
 :author:            Claudio Miranda
 :email:             claudio@redhat.com
 :toc:               left

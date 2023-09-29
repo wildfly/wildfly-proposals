@@ -1,4 +1,9 @@
-= [WFCORE-3769][WFLY-10305] Use Galleon for the WildFly and WildFly Core build
+---
+categories:
+  - core
+  - wf-galleon
+---
+= Use Galleon for the WildFly and WildFly Core build
 :author:            Brian Stansberry
 :email:             brian.stansberry@redhat.com
 :toc:               left

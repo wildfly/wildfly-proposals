@@ -1,4 +1,8 @@
-= [WFLY-12294] Upgrade MicroProfile Metrics 2.0.1
+---
+categories:
+  - microprofile
+---
+= Upgrade MicroProfile Metrics 2.0.1
 :author:            Jeff Mesnil
 :email:             jmesnil@redhat.com
 :toc:               left

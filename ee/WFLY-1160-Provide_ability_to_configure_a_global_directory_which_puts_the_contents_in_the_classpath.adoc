@@ -1,3 +1,7 @@
+---
+categories:
+  - core
+---
 = Provide ability to easily apply certain JBoss module libraries to all deployments running in a server
 :author:            Yeray Borges
 :email:             yborgess@redhat.com

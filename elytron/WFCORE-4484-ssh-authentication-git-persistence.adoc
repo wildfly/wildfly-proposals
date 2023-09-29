@@ -1,4 +1,9 @@
-= [WFCORE-4484] Support SSH authentication for Git persistence
+---
+categories:
+  - elytron
+  - core
+---
+= Support SSH authentication for Git persistence
 :author:            Ashley Abdel-Sayed
 :email:             aabdelsa@redhat.com
 :toc:               left
@@ -106,7 +111,7 @@ key identities: `id_rsa, id_dsa, id_ecdsa` and the known hosts files: `known_hos
 
 == Test Plan
 
-==== JGit/SSHD
+=== JGit/SSHD
 
 * Tests will be added to the WildFly-Core testsuite to test SSH authentication when connecting to a Git repository
 ** Tests will be added to test successful authentication when specifying the location, name, and passphrase to the file
@@ -114,12 +119,12 @@ containing a private key
 ** Tests will be added to test successful authentication using a KeyPairCredential with all supported formats
 ** Tests will be added to test unsuccessful authentication when no correct credentials are provided
 
-==== Elytron Tool
+=== Elytron Tool
 
 * Tests will be added to the Elytron testsuite to test generating and importing a KeyPairCredential successfully into
  a CredentialStore with all supported algorithms
 
-==== Elytron XML File
+=== Elytron XML File
 * Tests will be added to test parsing of a `key-pair` credential type in the OpenSSH format for all supported algorithms
 
 == Community Documentation

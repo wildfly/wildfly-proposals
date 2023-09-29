@@ -1,3 +1,7 @@
+---
+categories:
+  - batch
+---
 = Stop batch job execution from a different node
 :author:            Cheng Fang
 :email:             cfang@redhat.com

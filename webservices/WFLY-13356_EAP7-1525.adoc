@@ -1,4 +1,9 @@
-= WFLY-13356/ EAP7-1525 Add WebServices Galloen layer
+---
+categories:
+  - webservices
+  - wf-galleon
+---
+= Add WebServices Galleon layer
 :author:            Jim Ma
 :email:             ema@redhat.com
 :toc:               left

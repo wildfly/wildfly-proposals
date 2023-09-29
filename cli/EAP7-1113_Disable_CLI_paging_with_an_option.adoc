@@ -1,4 +1,9 @@
-= EAP7-1113 Disable CLI paging with an option
+---
+categories:
+  - cli
+  - user-experience
+---
+= Disable CLI paging with an option
 :author:            Marek Marusic
 :email:             mmarusic@redhat.com
 :toc:               left

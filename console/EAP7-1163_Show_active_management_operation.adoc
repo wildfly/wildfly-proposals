@@ -1,4 +1,9 @@
-= EAP7-1163 Show active management operation from hosts and servers in a central place
+---
+categories:
+  - console
+  - core
+---
+= Show active management operation from hosts and servers in a central place
 :author:            Claudio Miranda
 :email:             claudio@redhat.com
 :toc:               left

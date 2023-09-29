@@ -1,4 +1,8 @@
-= WFLY-12473 Obfuscate session-route
+---
+categories:
+  - undertow
+---
+= Obfuscate session-route
 :author:            Flavia Rainone
 :email:             frainone@redhat.com
 :toc:               left

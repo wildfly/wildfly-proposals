@@ -1,4 +1,8 @@
-= [WFLY-9513] Support Messaging JDBC HA Shared Store
+---
+categories:
+  - messaging
+---
+= Support Messaging JDBC HA Shared Store
 :author:            Jeff Mesnil
 :email:             jmesnil@redhat.com
 :toc:               left

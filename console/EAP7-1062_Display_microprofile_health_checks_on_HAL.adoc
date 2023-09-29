@@ -1,4 +1,9 @@
-= EAP7-1062 Display microprofile health checks on HAL
+---
+categories:
+  - console
+  - microprofile
+---
+= Display microprofile health checks on HAL
 :author:            Claudio Miranda
 :email:             claudio@redhat.com
 :toc:               left

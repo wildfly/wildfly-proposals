@@ -1,4 +1,8 @@
-= WFLY-12590 Integrate MicroProfile Fault Tolerance 2.0
+---
+categories:
+  - microprofile
+---
+= Integrate MicroProfile Fault Tolerance 2.0
 :author:            Radoslav Husar
 :email:             rhusar@redhat.com
 :toc:               left

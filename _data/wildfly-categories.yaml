@@ -1,0 +1,137 @@
+---
+categories:
+  - name: Agroal
+    id: agroal
+    description: Agroal DataSources
+  - name: Bootable Jar
+    id: bootable-jar
+    description: WildFly and an application packaged as an executable jar
+  - name: Command Line Interface (CLI)
+    id: cli
+    description: Command Line Interface tool
+  - name: Cloud
+    id: cloud
+    description: Developing and Running a WildFly application on the cloud
+  - name: Clustering
+    id: clustering
+    description: Clustering, including Infinispan and JGroups
+  - name: Datasources
+    id: datasource
+    description: Server-provided `javax.sql.Datasource`s
+  - name: Embedded
+    id: embedded
+    description: Embedding WildFly in another process
+  - name: IIOP
+    id: iiop
+    description: Internet InterORB Protocol and CORBA
+  - name: Jakarta Batch
+    id: batch
+    description: Jakarta Batch
+  - name: Jakarta CDI / Weld
+    id: weld
+    description: Jakarta Contexts and Dependency Injection
+  - name: Jakarta Concurrency
+    id: concurrency
+    description: Jakarta Concurrency
+  - name: Jakarta Connectors
+    id: jca
+    description: Jakarta Connectors
+  - name: Jakarta EE
+    id: ee
+    description: Jakarta Enterprise Edition
+  - name: Jakarta Enterprise Beans
+    id: ejb
+    description: Jakarta Enterprise Beans (EJB)
+  - name: Jakarta Faces
+    id: jsf
+    description: Jakarta Faces
+  - name: Jakarta Mail
+    id: mail
+    description: Mail
+  - name: Jakarta Persistence
+    id: jpa
+    description: Jakarta Persistence
+  - name: Jakarta Resources
+    id: resource-adapter
+    description: Resource adapters
+  - name: Jakarta RESTful Web Services
+    id: jaxrs
+    description: Jakarta RESTful Web Services
+  - name: Jakarta Validation
+    id: bean-validation
+    description: Jakarta Validation
+  - name: JBoss Diagnostic Reporter
+    id: jdr
+    description: JBoss Diagnostic Reporter
+  - name: JBoss MSC
+    id: msc
+    description: JBoss Modular Service Container
+  - name: Logging
+    id: logging
+    description: Logging
+  - name: Management
+    id: management
+    description: Management
+  - name: Maven
+    id: maven
+    description: Maven Tooling & Ecosystem
+  - name: Messaging
+    id: messaging
+    description: Messaging, including Jakarta Messaging (JMS)
+  - name: MicroProfile
+    id: microprofile
+    description: MicroProfile
+  - name: Migration
+    id: migration
+    description: Application and server configuration migration
+  - name: Mod_cluster
+    id: mod_cluster
+    description: mod_cluster
+  - name: Modules
+    id: modules
+    description: JBoss Modules & Java Platform Module System (JPMS)
+  - name: Observability
+    id: observability
+    description: Observability
+  - name: OpenShift
+    id: openshift
+    description: Building and Running a WildFly application on OpenShift
+  - name: POJO
+    id: pojo
+    description: Legacy JBoss Microcontainer support
+  - name: Quickstarts
+    id: quickstarts
+    description: Quickstart examples for WildFly
+  - name: Scripts
+    id: scripts
+    description: Scripting WildFly
+  - name: Security
+    id: security
+    description: Security
+  - name: Service Archive (SAR)
+    id: sar
+    description: Service Archive (SAR)
+  - name: Transactions
+    id: transactions
+    description: Transactions, including Jakarta Transactions API (JTA, JTS)
+  - name: Undertow
+    id: undertow
+    description: Undertow
+  - name: User Experience
+    id: user-experience
+    description: Improving the experience of using WildFly
+  - name: Web Console
+    id: console
+    description: HAL Web Console
+  - name: Web Services
+    id: webservices
+    description: Web Services
+  - name: WildFly Core
+    id: core
+    description: WildFly Core
+  - name: WildFly Elytron
+    id: elytron
+    description: WildFly Elytron
+  - name: WildFly Galleon
+    id: wf-galleon
+    description: Provision WildFly with Galleon Feature Packs and Layers

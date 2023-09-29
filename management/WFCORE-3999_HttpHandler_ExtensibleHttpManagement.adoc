@@ -1,4 +1,8 @@
-= [WFCORE-3999] Allow registering a custom HTTP handler for management interface
+---
+categories:
+  - management
+---
+= Allow registering a custom HTTP handler for management interface
 :author:            Jeff Mesnil
 :email:             jmesnil@redhat.com
 :toc:               left

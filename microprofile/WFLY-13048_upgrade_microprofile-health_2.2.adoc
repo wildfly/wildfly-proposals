@@ -1,3 +1,7 @@
+---
+categories:
+  - microprofile
+---
 = Upgrade MicroProfile Health to 2.2
 :author:            Jeff Mesnil
 :email:             jmesnil@redhat.com

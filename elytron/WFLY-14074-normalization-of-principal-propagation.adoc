@@ -1,4 +1,8 @@
-= WFLY-14074 Normalize principal propagation/injection across elytron and legacy
+---
+categories:
+  - elytron
+---
+= Normalize principal propagation/injection across elytron and legacy
 :author:            Diana Krepinska Vilkolakova
 :email:             dvilkola@redhat.com
 :toc:               left

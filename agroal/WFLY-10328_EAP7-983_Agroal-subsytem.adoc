@@ -1,4 +1,9 @@
-= WFLY-10328 - Agroal subsystem
+---
+categories:
+  - agroal
+  - datasource
+---
+= Agroal subsystem
 :author:            Luis Barreiro
 :email:             lbarreiro@redhat.com
 :toc:               left

@@ -1,3 +1,7 @@
+---
+categories:
+  - msc
+---
 = MSC Multi-Value Service API
 :author:            Richard Opálka
 :email:             ropalka@redhat.com

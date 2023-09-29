@@ -1,3 +1,7 @@
+---
+categories:
+  - messaging
+---
 = Add support for Elytron provided SSLContexts in Artemis
 :author:            Emmanuel Hugonnet
 :email:             ehugonne@redhat.com

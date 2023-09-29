@@ -1,4 +1,9 @@
-= WFLY-11622 Multiple Delivery Group Support for Message Driven Beans
+---
+categories:
+  - ejb
+  - messaging
+---
+= Multiple Delivery Group Support for Message Driven Beans
 :author:            Flavia Rainone
 :email:             frainone@redhat.com
 :toc:               left

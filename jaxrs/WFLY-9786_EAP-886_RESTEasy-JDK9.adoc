@@ -1,4 +1,8 @@
-= WFLY-9786 / EAP7-886 RESTEasy JDK9 support
+---
+categories:
+  - jaxrs
+---
+= RESTEasy JDK9 support
 :author:            Alessio Soldano
 :email:             asoldano@redhat.com
 :toc:               left

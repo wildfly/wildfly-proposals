@@ -1,3 +1,7 @@
+---
+categories:
+  - messaging
+---
 = JMS Bridge should display statistics about messages that have been processed.
 :author:            Emmanuel Hugonnet
 :email:             ehugonne@redhat.com

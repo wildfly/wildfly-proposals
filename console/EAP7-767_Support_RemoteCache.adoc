@@ -1,4 +1,9 @@
-= EAP7-767 Support RemoteCache configuration to Infinispan subsystem
+---
+categories:
+  - console
+  - clustering
+---
+= Support RemoteCache configuration to Infinispan subsystem
 :author:            Harald Pehl
 :email:             hpehl@redhat.com
 :toc:               left

@@ -1,0 +1,115 @@
+// This is a partial.
+// It lies in <source>/_sass, just waiting to be imported.
+// It does not contain the YAML front matter and has no corresponding output file in the built site.
+
+.homepage {
+  background-image: url($baseurl + '/assets/img/wildfly_hero_r3v1.jpg');
+  background-repeat: no-repeat;
+  background-size: 100%;
+}
+
+.home-section {
+  text-align: center;
+  padding-bottom: 4rem;
+  &:not(:last-of-type){
+    border-bottom: 4px solid white;
+  }
+}
+
+.home-ctas {
+  grid-column-start: 3;
+}
+
+.home-icons {
+  justify-self: center;
+
+  a {
+    display: inline-grid;
+    text-transform: uppercase;
+    font-weight: 700;
+    text-decoration: none;
+    color: $white;
+    font-size: 1.5rem;
+    margin: 1.5rem 2.5rem;
+    &:before {
+      transform: scale(.8);
+    }
+    &.github:before { content: url($baseurl + '/assets/img/homepage/wildfly_icons_home-github.png'); }
+    &.docs:before { content: url($baseurl + '/assets/img/homepage/wildfly_icons_home-docs.png'); }
+    &.forums:before { content: url($baseurl + '/assets/img/homepage/wildfly_icons_home-forums.png'); }
+  }
+}
+
+.home-img {
+  max-width: 60%;
+  margin-top: 1.5rem;
+}
+
+.callout {
+  padding: 0 1.5rem;
+  text-align: left;
+  margin-top: 1.5rem;
+  display:flex;
+  align-items:center;
+  h2 {
+    display: block;
+    float: left;
+    width: 35%;
+    margin: 2rem 1rem;
+    text-transform: uppercase;
+  }
+  p {
+    width: 65%;
+    display: block;
+  }
+  &.red {
+    background-color: $red;
+    strong { color: $yellow; }
+  }
+  &.yellow {
+    background-color: $yellow;
+    color: $dark-blue;
+    h2 {
+      margin-top: 1rem;
+    }
+    h2, p {
+      color: $dark-blue;
+    }
+    strong { color: $red; }
+  }
+  &.teal {
+    background-color: $teal;
+    strong { color: $dark-blue; }
+  }
+  &.orange {
+    background-color: $orange;
+    strong { color: $dark-blue; }
+  }
+}
+
+@media screen and (max-width: 1505px) {
+  .callout {
+    h2, p {
+      width: 50%;
+    }
+  }
+}
+
+
+@media screen and (max-width: 1024px) {
+  .callout {
+    display: block;
+    padding: 1rem 1.5rem;
+    h2, p {
+      display: block;
+      width: 100%;
+      margin: 1rem 0;
+    }
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .home-ctas .button-cta {
+    display: block;
+  }
+}

@@ -1,4 +1,9 @@
-= EAP7-1133 Add "init" runtime operation to trust-manager
+---
+categories:
+  - console
+  - elytron
+---
+= Add "init" runtime operation to trust-manager
 :author:            Claudio Miranda
 :email:             claudio@redhat.com
 :toc:               left

@@ -1,4 +1,8 @@
-= WFLY-16140 - Remove Outdated Quickstarts
+---
+categories:
+  - quickstarts
+---
+= Remove Outdated Quickstarts
 :author:            Eduardo Martins
 :email:             emartins@redhat.com
 :toc:               left

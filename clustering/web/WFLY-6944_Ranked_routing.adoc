@@ -1,4 +1,8 @@
-= WFLY-6944 Ranked routing
+---
+categories:
+  - clustering
+---
+= Ranked routing
 :author:            Paul Ferraro
 :email:             paul.ferraro@redhat.com
 :toc:               left

@@ -1,3 +1,7 @@
+---
+categories:
+  - console
+---
 = Show Disconnected Hosts
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

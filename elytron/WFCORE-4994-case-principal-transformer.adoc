@@ -1,4 +1,8 @@
-= [WFCORE-4994] Add the ability to adjust the case of a user name using an Elytron principal transformer
+---
+categories:
+  - elytron
+---
+= Add the ability to adjust the case of a user name using an Elytron principal transformer
 :author:            Sonia Zaldana Calles
 :email:             szaldana@redhat.com
 :toc:               left

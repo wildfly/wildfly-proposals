@@ -1,4 +1,8 @@
-= [WFCORE-5145] Elytron server-ssl-context allowed protocols
+---
+categories:
+  - elytron
+---
+= Elytron server-ssl-context allowed protocols
 :author:            Sonia Zaldana Calles
 :email:             szaldana@redhat.com
 :toc:               left

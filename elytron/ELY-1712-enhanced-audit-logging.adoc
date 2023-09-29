@@ -1,4 +1,9 @@
-= [WFCORE-4394] Enhanced Audit Logging - RFC support and Configuring Reconnects
+---
+categories:
+  - elytron
+  - logging
+---
+= Enhanced Audit Logging - RFC support and Configuring Reconnects
 :author:            Justin Michael Cook
 :email:             jucook@redhat.com
 :toc:               left

@@ -1,3 +1,7 @@
+---
+categories:
+  - ejb
+---
 = Return Context Data to EJB Clients
 :author:            Stuart Douglas
 :email:             sdouglas@redhat.com

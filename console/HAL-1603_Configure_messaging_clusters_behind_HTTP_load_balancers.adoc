@@ -1,4 +1,9 @@
-= Customise Browser Title
+---
+categories:
+  - console
+  - messaging
+---
+= Configure Messaging Clusters behind HTTP load balancers
 :author:            Harald Pehl
 :email:             hpehl@redhat.com
 :toc:               left

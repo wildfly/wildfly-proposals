@@ -1,3 +1,7 @@
+---
+categories:
+  - microprofile
+---
 = Upgrade MicroProfile Metrics to 2.2.0
 :author:            Jeff Mesnil
 :email:             jmesnil@redhat.com

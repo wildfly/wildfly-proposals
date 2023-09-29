@@ -1,4 +1,11 @@
-= HAL-1545 Enhance the SSL Wizard to add support to LetsEncrypt CA
+---
+categories:
+  - console
+  - elytron
+  - security 
+  - user-experience
+---
+= Enhance the SSL Wizard to add support to LetsEncrypt CA
 :author:            Claudio Miranda
 :email:             claudio@redhat.com
 :toc:               left

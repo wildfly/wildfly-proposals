@@ -1,4 +1,9 @@
-= EAP7-1209 / WFLY-12138 Microprofile REST Client 1.3 support
+---
+categories:
+  - jaxrs
+  - microprofile
+---
+= Microprofile REST Client 1.3 support
 :author:            Alessio Soldano
 :email:             asoldano@redhat.com
 :toc:               left

@@ -1,0 +1,28 @@
+.contribute-page {
+  padding-bottom: 3rem;
+  .page-subtitle {
+    color: $red;
+    border-top: 2px solid $red;
+    border-bottom: 2px solid $red;
+    padding: 2rem 0;
+    margin-top: 4rem;
+    strong {
+      color: $red;
+    }
+  }
+  .contribute-item {
+    text-align: center;
+    margin: 1rem;
+    h3 {
+      margin-bottom: 1rem;
+    }
+    p {
+      margin-top: 1rem;
+    }
+  }
+  @media screen and (max-width: 480px) {
+    .contribute-item {
+      grid-column: span 12;
+    }
+  }
+}

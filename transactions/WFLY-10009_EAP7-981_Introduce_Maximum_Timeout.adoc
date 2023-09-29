@@ -1,4 +1,8 @@
-= EAP7-981 Introduce a maximum-timeout management model attribute
+---
+categories:
+  - transactions
+---
+= Introduce a maximum-timeout management model attribute
 :author:            Zheng Feng
 :email:             zfeng@redhat.com
 :toc:               left

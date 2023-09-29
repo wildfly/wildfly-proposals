@@ -1,3 +1,7 @@
+---
+categories:
+  - messaging
+---
 = Add Setting to Control Global Resources Usage for Messaging Servers
 :author:            Jeff Mesnil
 :email:             jmesnil@redhat.com

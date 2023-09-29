@@ -1,3 +1,7 @@
+---
+categories:
+  - security
+---
 = <HTTP Basic Authentication - Silent Mode>
 :author:            Diana Vilkolakova
 :email:             dvilkola@redhat.com

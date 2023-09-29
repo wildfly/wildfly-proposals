@@ -1,3 +1,7 @@
+---
+categories:
+  - batch
+---
 = Limit number of records loaded by the JDBC job repository
 :author:            Tomas Hofman
 :email:             thofman@redhat.com

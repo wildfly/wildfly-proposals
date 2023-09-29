@@ -1,4 +1,9 @@
-= Title
+---
+categories:
+  - console
+  - undertow
+---
+= Add support for Underotw's proxy-protocol attribute
 :author:            Harald Pehl
 :email:             hpehl@redhat.com
 :toc:               left
