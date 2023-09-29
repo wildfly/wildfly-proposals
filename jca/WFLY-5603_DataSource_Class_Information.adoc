@@ -1,5 +1,6 @@
 ---
 categories:
+  - datasource
   - jca
 ---
 = Get Datasource Class Information

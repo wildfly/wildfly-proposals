@@ -1,6 +1,7 @@
 ---
 categories:
   - agroal
+  - datasource
 ---
 = Agroal subsystem
 :author:            Luis Barreiro
