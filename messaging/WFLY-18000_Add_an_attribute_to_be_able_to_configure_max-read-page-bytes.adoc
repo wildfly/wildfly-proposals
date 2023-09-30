@@ -1,0 +1,110 @@
+= Add an attribute to be able to configure max-read-page-bytes
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:          messaging,jms
+:idseparator:       -
+
+== Overview
+
+In order to avoid OutOfMemoryException, Apache Artemis has defined an upper limit for paging. This limit is controller though the *max-read-page-bytes* which is not exposed not configureable from WildFly.
+So we are adding a new `max-read-page-bytes` attribute to be able to set that value.
+
+max-read-page-messages and max-read-page-bytes are used to control messaging reading from paged file into the Queue. The broker will add messages on the Queue until either max-read-page-meessages or max-read-page-bytes reaches the limit.
+
+If both values are set to -1 the broker will keep reading messages as long as the consumer is reaching for more messages. However this would keep the broker unprotected from consumers allocating huge transactions or consumers that don't have flow control enabled.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-18000[WFLY-18000]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-2072[EAP7-2072]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [X] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+Add a new `max-read-page-bytes`attribute to the https://docs.wildfly.org/28/wildscribe/subsystem/messaging-activemq/server/address-setting/[/subsystem=messaging-activemq/server/address-setting resource] to define the paging memory size.
+
+=== Hard Requirements
+
+Create the attribute to be able to configure the Artemis broker.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Backwards Compatibility
+
+// Does this enhancement affect backwards compatibility with previously released
+// versions of WildFly?
+// Can the identified incompatibility be avoided?
+
+=== Default Configuration
+
+=== Importing Existing Configuration
+
+=== Deployments
+
+=== Interoperability
+
+== Implementation Plan
+
+* Add a positive INT `max-read-page-bytes` attribute, with a default value set to `-1` in bytes. It is not required.
+
+This attribute will be added to the https://docs.wildfly.org/28/wildscribe/subsystem/messaging-activemq/server/address-setting/[/subsystem=messaging-activemq/server/address-setting resource]
+
+== Security Considerations
+
+== Test Plan
+
+* Changes in Wildfly management model will be covered in WF testsuite.
+
+== Community Documentation
+
+* Covered by attribute description in management model.
+
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
