@@ -1,0 +1,199 @@
+= WFLY-16793 Support for Identity Propagation within an EAR and across EARs with OIDC
+:author:            Farah Juma
+:email:             fjuma@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+For a deployment secured with OpenID Connect using the `elytron-oidc-client` subsystem,
+the subsystem automatically creates and makes use of a virtual security domain. With
+virtual security domains, it's currently possible to propagate a security identity from the
+web layer to an EJB within the same WAR. However, there are some limitations. In particular,
+the following two things are currently missing:
+
+* Ability to propagate an identity from a WAR to an EJB within a *single* EAR
+* Ability to propagate an identity from a WAR within an EAR to an EJB within *another* EAR
+(i.e., across deployments)
+
+This RFE is to add support for these two things.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-6190[WFCORE-6190]
+* https://issues.redhat.com/browse/WFLY-16793[WFLY-16793]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1971[EAP7-1971]
+* https://issues.redhat.com/browse/WFLY-17312[WFLY-17312]
+* https://issues.redhat.com/browse/WFLY-17333[WFLY-17333]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+
+TBD
+
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly Core
+* WildFly
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* A new `virtual-security-domain` resource will be introduced in the `elytron` subsystem.
+The new resource will make it possible to outflow security identities established by virtual
+security domains to other security domains. The new `virtual-security-domain` resource will have
+a few attributes:
+
+** `name` - This is the runtime name of a deployment associated with a virtual security domain (e.g.,
+`DEPLOYMENT_NAME.ear`, a deployment that has a subdeployment that is secured using OIDC).
+
+** `outflow-security-domains` - This is the list of `security-domains` that security identities from
+the virtual security domain should be automatically outflowed to. This will be an optional attribute
+and must be non-empty if specified.
+
+** `outflow-anonymous` - When outflowing to a security domain, if outflow is not possible, should the
+anonymous identity be used? Outflow to a security domain might not be possible if the domain does
+not trust this domain or if the identity being outflowed to a domain does not exist in that domain.
+Outflowing anonymous has the effect of clearing any identity already established for that domain.
+This attribute defaults to `false`.
+
+** `auth-method` - The authentication mechanism that will be used with the virtual security domain.
+Allowed values: 'OIDC', 'MP-JWT'. The default value is 'OIDC'.
+
+** As an example, a `virtual-security-domain` could be added as follows:
+[source]
+----
+/subsystem=elytron/virtual-security-domain=DEPLOYMENT_NAME.ear:add(outflow-security-domains=...)
+----
+
+* We also need the ability to specify the virtual security domains that should be trusted by a `security-domain`.
+A new `trusted-virtual-security-domains` attribute will be added to the `security-domain` resource.
+** e.g., `trusted-virtual-security-domains=DEPLOYMENT_NAME.ear` would indicate that this `security-domain`
+should trust the virtual security domain associated with the `DEPLOYMENT_NAME.ear` deployment.
+
+* It should also be possible to use the virtual security domain that was used to secure a web application
+to secure an EJB within the same deployment (i.e., within a JAR in the same EAR) and across deployments.
+** For the case where the EJB is located in the same deployment, additional configuration won't need to
+be added. This means that if no security domain configuration has been explicitly specified for the EJB,
+the virtual security domain will be used by default to secure the EJB.
+** For the case where the EJB is located in another deployment, additional configuration will need to be
+added to indicate that the virtual security domain should be used to secure it. In particular, the EJB
+will need to reference the virtual security domain explicitly. For example, an annotation
+like `@SecurityDomain(DEPLOYMENT_NAME.ear)` can be added to an EJB, where `DEPLOYMENT_NAME.ear` is
+a reference to a `virtual-security-domain`. This configuration indicates that the virtual security domain
+associated with `DEPLOYMENT_NAME.ear` should be used to secure the EJB.
+
+=== Nice-to-Have Requirements
+
+Since we are now introducing a new `virtual-security-domain` resource, we can easily add some `security-domain`
+attributes in addition to `outflow-security-domains` since the ability to add configuration for virtual
+security domains is something that we have seen users asking for both on the WildFly user forum and in
+JIRA (e.g., see https://issues.redhat.com/browse/WFLY-17312[WFLY-17312] and https://issues.redhat.com/browse/WFLY-17333[WFLY-17333]).
+
+As a starting point, we could add the following attributes:
+
+* pre-realm-principal-transformer
+* post-realm-principal-transformer
+* principal-decoder
+* evidence-decoder
+* role-decoder
+* role-mapper
+* permission-mapper
+* security-event-listener
+
+=== Non-Requirements
+
+
+== Backwards Compatibility
+
+No backwards compatibility concerns.
+
+=== Default Configuration
+
+No changes to the default configuration.
+
+=== Importing Existing Configuration
+
+N/A
+
+=== Deployments
+
+N/A
+
+=== Interoperability
+
+N/A
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+
+== Security Considerations
+
+This is a security RFE.
+
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+
+== Test Plan
+
+Elytron subsystem parsing and transformer tests will be added.
+
+Tests will be added to the WildFly testsuite to verify that a security identity
+established with OIDC using the `elytron-oidc-client` subsystem can be successfully
+propagated from a WAR within an EAR to an EJB within the same EAR and to an EJB
+within another EAR.
+
+Tests will be added to verify that the additional nice-to-have attributes can
+be configured successfully as well.
+
+Since virtual security domains are also used for MP JWT, some tests will also be
+added for this use case as well.
+
+== Community Documentation
+
+The Elytron and Elytron OIDC Client sections in the WildFly documentation will
+be updated accordingly.
+
+== Release Note Content
+
+It's now possible to propagate an identity within an EAR and across EARs when using
+the `elytron-oidc-client` subsystem.
