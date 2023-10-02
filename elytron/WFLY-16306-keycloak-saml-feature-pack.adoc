@@ -1,0 +1,331 @@
+= WFLY-16306: Keycloak Galleon Feature Pack
+:author:            Farah Juma
+:email:             fjuma@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+It's currently possible to secure applications deployed to WildFly with SAML by installing the
+https://www.keycloak.org/docs/latest/securing_apps/#jboss-eap-wildfly-adapter-2[Keycloak Elytron SAML adapter].
+
+The general installation approach is to unpack the Keycloak adapter zip in the WildFly installation root directory.
+This installs some modules and provides some CLI scripts to complete the configuration. The CLI scripts can then
+be executed to install the `keycloak-saml` subsystem and update the default `application-security-domain` mapping in
+the `undertow` subsystem to use a newly installed `http-authentication-factory` which supports SAML.
+
+The following gist shows the changes that are made to the server by installing the Keycloak Elytron SAML adapter:
+https://gist.github.com/fjuma/97ca51d2d0a380fa6c93664de4d09341
+
+This task is to introduce a new Galleon feature pack that can be used to install the Keycloak Elytron SAML adapter.
+A similar feature pack to install the Keycloak Elytron OIDC adapter was added a little while ago before WildFly
+added native support for OpenID Connect (see https://issues.jboss.org/browse/WFLY-13706[WFLY-13706] / https://issues.jboss.org/browse/KEYCLOAK-14953[KEYCLOAK-14953]).
+Thus, the analysis for this task is quite similar to the analysis for https://issues.jboss.org/browse/WFLY-13706[WFLY-13706].
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-16306[WFLY-16306 - Galleon feature pack to install Keycloak adapters]
+* https://github.com/keycloak/keycloak/issues/12363[Issue #12363 - Galleon feature pack to install Keycloak Elytron SAML adapter]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1928[EAP7-1928]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+
+TBD.
+
+Note that since this feature is being developed across two different projects, we'll need engineers and QE
+from both the WildFly and Keycloak projects involved.
+
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+ * https://github.com/keycloak/keycloak
+ * https://github.com/wildfly
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+Note that the code for the Keycloak Elytron SAML adapter is going to be extracted from the https://github.com/keycloak/keycloak repo
+and moved to a separate repo. We don't have details yet on when this will happen. We'll likely need to add our feature pack to the
+existing Keycloak project initially and then it will get moved to the new project with the rest of the adapter code.
+
+A new Galleon feature pack will be added to the Keycloak project with the group ID, `org.keycloak`, and artifact ID, `keycloak-saml-adapter-galleon-pack`.
+This new feature pack will contain three layers called `keycloak-saml`, `keycloak-client-saml`, and `keycloak-client-saml-ejb`.
+
+When this feature pack and its layers are provisioned to a WildFly installation, the end result will mostly match the results
+of manually installing the Keycloak Elytron SAML adapter using the instructions linked above.
+
+In particular, when the `keycloak-saml` layer is provisioned, the following steps will occur:
+
+ # Install a set of modules under `modules/system/add-ons`
+ # Register the `org.keycloak.keycloak-saml-adapter-subsystem` extension.
+ # Add an empty `urn:jboss:domain:keycloak:1.4` subsystem.
+
+The `keycloak-client-saml` layer will depend on the `keycloak-saml` layer and when provisioned, the following additional steps will occur:
+
+ # Add the required resources to the `elytron` subsystem to result in an `http-authentication-factory` and `security-domain` supporting SAML being available.
+ # Update the `application-security-domain` mapping in the `undertow` subsystem to map the default security domain to the new `http-authentication-factory`.
+
+The `keycloak-client-saml-ejb` layer will depend on the `keycloak-client-saml` layer and when provisioned, the following additional steps will occur:
+
+ # Update the `application-security-domain` mapping in the `ejb3` subsystem to map the default security domain to the new `KeycloakDomain`.
+
+Note that the existing CLI scripts for the SAML adapter and the existing feature pack for OIDC only update the `application-security-domain` mapping in the
+`undertow` subsystem. However, the CLI scripts for the OIDC adapter also update the `application-security-domain`
+mapping in the EJB3 subsystem. For this reason, we have added the `keycloak-client-saml-ejb` layer here for users
+that need to propagate their identities to EJBs as well.
+
+The CLI scripts that would have been added via the manual installation steps won't be added to the resulting installation
+since the required resources will be added already during provisioning.
+
+Note that Keycloak and WildFly have different release cadences. This means anyone using Galleon to keep their WildFly
+installation up to date should be able to receive updates to the core WildFly installation independently of the new
+Keycloak feature pack. Having the new Keycloak feature pack installed should not prevent the server from being updated
+once later WildFly versions are available. Similarly, WildFly releases should not trigger the need for an update to Keycloak.
+
+==== Bare Metal vs. Cloud Use Cases
+
+For the bare metal use case, the `keycloak-client-saml` layer should be used.
+
+For WildFly s2i, when using the automatic registration of SAML deployments feature, the `keycloak-saml` layer should be used.
+(For this use case, the necessary `elytron`, `undertow`, and `ejb` subsystem configuration will be handled via a CLI script
+that is generated at boot time.)
+
+Otherwise, for WildFly s2i with manual deployments (i.e., with `keycloak-saml` configuration handled via a CLI script or included
+within the deployment itself), the `keycloak-client-saml` layer should be used.
+
+For bootable JAR on the cloud, the `keycloak-client-saml` layer should be used.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+Published artifacts will be available from online maven repositories only. No offline maven repository support will be provided.
+
+The feature pack and resulting layer being provisioned are for securing web applications accessed directly via HTTP.
+This feature request does not extend to securing management interfaces, Remoting invocations, or EJB over HTTP invocations.
+
+== Examples
+
+This section contains examples of how the new feature pack will be installed using different approaches.
+
+=== Provisioned using the Galleon CLI
+
+A server installation can be provisioned using the Galleon CLI which would need to be downloaded and installed first.
+
+Start the CLI:
+
+----
+java -jar galleon-cli-5.0.6.Final.jar
+----
+
+First provision a WildFly server with the `web-server` later:
+
+----
+install wildfly:current --layers=web-server --dir=/home/fjuma/tmp/galleon/wildfly
+----
+
+Then install the Keycloak Elytron SAML adapter:
+
+----
+install org.keycloak:keycloak-saml-adapter-galleon-pack:999-SNAPSHOT --layers=keycloak-client-saml --dir=/home/fjuma/tmp/galleon/wildfly
+----
+
+=== Provisioned using org.wildfly.plugins:wildfly-maven-plugin.
+
+The following is an example of using the `wildfly-maven-plugin` to provision a server containing the Keycloak
+SAML subsystem.
+
+[source,xml]
+----
+<plugin>
+    <groupId>org.wildfly.plugins</groupId>
+    <artifactId>wildfly-maven-plugin</artifactId>
+    <version>4.0.0.Final</version>
+    <configuration>
+        <feature-packs>
+            <feature-pack>
+                <location>wildfly@maven(org.jboss.universe:community-universe):current</location>
+            </feature-pack>
+            <feature-pack>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-saml-adapter-galleon-pack</artifactId>
+                <version>999-SNAPSHOT</version>
+            </feature-pack>
+        </feature-packs>
+        <layers>
+            <layer>web-server</layer>
+            <layer>keycloak-client-saml</layer>
+        </layers>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>package</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+----
+
+=== Provisioned using org.wildfly.plugins:wildfly-jar-maven-plugin
+
+There are two different approaches available to configure the `wildfly-jar-maven-plugin`. We can either define both feature packs within
+the pom.xml or we can use a `provisioning.xml` descriptor to describe the desired server.
+
+==== Inline Configuration
+
+The following is an example defining the complete configuration within the pom.xml of the project.
+
+[source,xml]
+----
+<plugin>
+    <groupId>org.wildfly.plugins</groupId>
+    <artifactId>wildfly-jar-maven-plugin</artifactId>
+    <version>${version.wildfly.jar.maven.plugin}</version>
+    <configuration>
+        <feature-packs>
+            <feature-pack>
+                <location>wildfly@maven(org.jboss.universe:community-universe):current</location>
+                <inherit-packages>false</inherit-packages>
+            </feature-pack>
+            <feature-pack>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-saml-adapter-galleon-pack</artifactId>
+                <version>999-SNAPSHOT</version>
+                <inherit-packages>false</inherit-packages>
+            </feature-pack>
+        </feature-packs>
+        <layers>
+            <layer>web-server</layer>
+            <layer>keycloak-client-saml</layer>
+        </layers>
+        <context-root>simple-webapp</context-root>
+        <cli-sessions>
+            <cli-session>
+                <script-files>
+                    <script>configure-saml.cli</script>
+                </script-files>
+            </cli-session>
+        </cli-sessions>
+    </configuration>
+    ....
+</plugin>
+----
+
+==== provisioning.xml Configuration
+
+The server to be provisioned can also be defined within a `provisioning.xml` descriptor.
+
+An example configuration adding the Keycloak Elytron SAML adapter to an installation can be seen here:
+
+.provisioning.xml
+[source,xml]
+----
+<installation xmlns="urn:jboss:galleon:provisioning:3.0">
+    <feature-pack location="wildfly@maven(org.jboss.universe:community-universe):current">
+        <default-configs inherit="false"/>
+        <packages inherit="false">
+            <exclude name="product.conf"/>
+            <exclude name="docs.schema"/>
+        </packages>
+    </feature-pack>
+    <feature-pack location="org.keycloak:keycloak-saml-adapter-galleon-pack:999-SNAPSHOT">
+        <default-configs inherit="false"/>
+        <packages inherit="false"/>
+    </feature-pack>
+    <config model="standalone" name="standalone.xml">
+        <layers>
+            <include name="web-server"/>
+            <include name="keycloak-client-saml"/>
+        </layers>
+    </config>
+    <options>
+        <option name="optional-packages" value="passive+"/>
+    </options>
+</installation>
+----
+
+The `wildfly-jar-maven-plugin` can then be defined as:
+
+[source,xml]
+----
+<plugin>
+    <groupId>org.wildfly.plugins</groupId>
+    <artifactId>wildfly-jar-maven-plugin</artifactId>
+    <version>${version.wildfly.jar.maven.plugin}</version>
+    <configuration>
+        <root-url-path>simple-webapp</root-url-path>
+        <provisioning-file>provisioning.xml</provisioning-file>
+        <cli-sessions>
+            <cli-session>
+                <script-files>
+                    <script>configure-saml.cli</script>
+                </script-files>
+            </cli-session>
+        </cli-sessions>
+    </configuration>
+    <executions>
+        <execution>
+            <goals>
+                <goal>package</goal>
+            </goals>
+        </execution>
+    </executions>
+</plugin>
+----
+
+== Implementation Plan
+
+The new feature pack will hosted within the Keycloak project, no specific development is required within WildFly.
+Releases of this feature pack will be subject to the Keycloak release cadences.
+
+As described below the WildFly project will contain some community documentation but beyond that the WildFly project
+will have no dependency back to the Keycloak project and feature pack.
+
+== Test Plan
+
+Testing will need to focus on the provisioning of the feature pack using the supported mechanisms.
+
+Engineering will perform manual tests using the different approaches explained in the "Examples" section.
+This is similar to the approach that was used for the feature pack for the OIDC adapter. Automated tests
+weren't added there.
+
+== Community Documentation
+
+Community documentation will be added to WildFly that explains how to provision the new feature pack using the
+following approaches:
+
+ * Galleon command line.
+ * Provisioned via plug-in - wildfly-maven-plugin.
+ * Provisioned for bootable jar - wildfly-jar-maven-plugin
+
+The Keycloak Elytron SAML adapter allows configuration to be provided either via subsystem configuration or via
+a deployment descriptor. The community documentation will provide some minimal examples of this.
+
+Users should refer to the Keycloak documentation for more detailed information.
+
+== Release Note Content
+
+Other than the community documentation that will be added, this feature won't be included in any WildFly release as it is a
+feature pack to be installed on top of an existing release.
+
