@@ -1,0 +1,219 @@
+---
+categories:
+  - provisioning
+  - galleon
+---
+= Upward compatibility for Galleon tooling
+:author:           Jean-Francois Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Problem Overview
+
+Galleon core library that is used during provisioning is backward compatible. Galleon core version N is able to provision WildFly server that has been built using 
+Galleon core version N-x.
+
+Galleon core library is not upward compatible for good reason. It implements the provisioning logic for a given Galleon version. 
+Galleon core version N is not able (actually could but with no guarantee) to provision a WildFly server that depends on a Galleon core version N+x.
+
+The problem we are facing is that our provisioning tooling is bound to a given Galleon core version. 
+That makes upward compatibility impossible. Due to this limitation, each time we release new WildFly feature-packs that depend on a given Galleon core version, we need to upgrade all our tooling. Furthermore the error in this case is cryptic and doesn't help user to understand 
+what corrective action is required.
+
+This dependency of WildFly feature-pack on a Galleon core version is not formalized. It is only discovered at provisioning time, with cryptic errors.
+ 
+At feature-pack build time, even if the built feature-pack depends on a given Galleon core version, no check is operated. 
+Whatever the Galleon core in use, the galleon feature-pack is built without any compatibility check.
+
+We are here proposing to make WildFly provisioning tooling upward compatible and formalize the dependency that a feature-pack can have on a given Galleon version.
+
+== Proposal Overview
+
+=== New Galleon API
+
+In this proposal we are introducing a Galleon provisioning API that allows to deal with multiple versions of Galleon core library.
+
+The API isolates the tooling from the Galleon core version. It handles the Galleon feature-packs resolution and main provisioning use-cases.
+
+The API allows to provision feature-packs that depend on older Galleon core versions as well as newer Galleon core versions.
+
+=== Binding a feature-pack with a Galleon version at build time
+
+We have the opportunity to check that the Galleon core version used at build time will be able to provision the server at provisioning time.
+When building a feature-pack, the Galleon core version in use to build the feature-pack is set in the Galleon feature-pack `feature-pack.xml` descriptor.
+
+=== Impact on tooling
+
+This API is to be used by Provisioning tooling. For example:
+
+* Galleon CLI and Maven plugin
+* WildFly Maven plugin
+* WildFly bootable JAR Maven plugin
+* Prospero CLI, and all kind of distributions (management integration, installer,...)
+* WildFly Glow
+
+The impact is at the tooling implementation level, no visible changes at the tooling user level is expected. For example, 
+the provisioning based on Galleon Maven plugin that occurs in WildFly repository is untouched.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-18671[WFLY-18671]
+
+=== Related Issues
+
+* 
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* Tested by Eng.
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/galleon/[Galleon]
+
+* https://github.com/wildfly/galleon-plugins/[Galleon Plugins]
+
+* https://github.com/wildfly/wildfly-maven-plugin/[WildFly Maven plugin]
+
+* https://github.com/wildfly-extras/wildfly-jar-maven-plugin[WildFly Bootable JAR]
+
+* https://github.com/wildfly-extras/prospero[Prospero]
+
+* https://github.com/wildfly/wildfly-glow[WildFly Glow]
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Implementation notes
+
+==== Tooling API
+
+The API is composed of 3 parts. Being 3 parts is an implementation detail, tooling depend directly on the Galleon API only.
+
+* Galleon maven universe: The resolution of Galleon feature-packs using Maven.
+
+* Galleon common API: this API is shared between Galleon core and the Galleon API.
+
+* Galleon API: Provisioning + feature-pack resolutions. It depends on the Galleon common API and Galleon maven universe.
+
+The maven coordinates of the Galleon API: `org.jboss.galleon:galleon-api`, coordinates of the common api: `org.jboss.galleon:galleon-common-api`, 
+coordinates of the maven universe api: `org.jboss.galleon:galleon-maven-universe`.
+
+==== No Galleon core classes in the tooling classpath
+
+The Galleon core classes must not be present in the tooling classpath. Dynamic classloader is to be used to resolve Galleon core classes.
+
+==== Resolution of the Galleon core library
+
+At provisioning time, the new API resolves the feature-pack(s) to use and retrieve the Galleon core version advertised by the feature-pack(s).
+When multiple galleon feature-packs are used, the greater version is used. If a discovered version is smaller than the API version, the API version is used.
+If no version is discovered (feature-pack built with an older version of Galleon), the Galleon core with the same version as the API is used. 
+Galleon being backward compatible, older feature-packs can be provisioned with this new API.
+
+When WildFly Channels are configured in the provisioning tooling, an attempt is first made to identify if a Galleon core version is configured in the channel. 
+If a version is found, this version is used and no discovery of the Galleon core version is attempted. If no version is found, the version discovery is operated.
+
+This discovery is transparent when using the Galleon tooling API.
+
+==== Packaged Galleon core artifact
+ 
+The API jar artifact includes the Galleon core library jar artifact of the same version. N.B.: The API includes the Galleon core jar, 
+the Galleon core classes are hidden and not loadable from the classpath.
+
+Packaging the core jar allows to avoid to resolve the core library when the version is equal or smaller to the current API version.
+For other cases, the jar artifact is resolved using the configured maven repositories (according to the tooling in use).
+
+==== Impact on WildFly Galleon plugins
+
+This plugin is WildFly specific. It is called during provisioning in order to assemble a WildFly installation. This plugin is bound 
+to a given Galleon core version. The new API enforces that the Galleon core version expected by the galleon-plugins is used during provisioning.
+The introduction of the tooling API has no impact on the WildFly Galleon Plugins.
+
+==== Impact on WildFly Galleon plugins Maven plugin
+
+This plugin is used to build a WildFly Feature-pack. Currently no check is done to validate that the feature-pack content is aligned with the Galleon core version 
+in use at build time. The Maven plugin logic is evolved to check that the feature-pack content is in sync with the Galleon core version in use. In addition, 
+during feature-pack build, the Galleon core version in use is set in the feature-pack XML descriptor.
+
+==== Impact on provisioning tools
+
+The impact is major on all tools that depend today on Galleon core API. 
+The impact is at the implementation level only. No visible changes for tooling users.
+N.B: Nothing forbid a tool to continue to use the Galleon core API directly but that is strongly discouraged.
+
+==== The Galleon CLI case
+
+The Galleon CLI is currently strongly bound to the Galleon core library. Using the newly introduced API is not enough to cover all the CLI use-cases. 
+A slightly different approach is put in place. 
+
+We are binding part of the CLI to the Galleon core library. This core specific part is resolved when a newer core version is required. 
+
+The CLI is split into 3 parts (3 maven artifacts):
+
+* The "CLI commands": this part depends on the Galleon tooling API. It implements the commands up to the point where a version of Galleon core is needed.
+* The "CLI core adapter": this part is bound to a given Galleon core. It is dynamically resolved when a core version has been identified. It implements the logic of the command 
+that interacts with the Galleon core library. This core adapter depends on the "CLI commands" artifact. 
+* The "CLI shaded jar": this part is what replaces the current CLI. It shades the Galleon API and Galleon CLI commands.
+
+The "CLI commands" jar artifact contains the "CLI core adapter" jar artifact of its version. This avoid to resolve the "CLI core adapter" when the current version is usable for 
+provisioning.
+
+There is no visible changes when using the galleon CLI tool.
+
+==== POC
+
+In order to validate this proposal, an implementation of the API has been made. 
+Galleon CLI, Galleon Maven plugin, WildFly Maven plugin, WildFly Bootable JAR Maven plugin, WildFly Glow and Prospero have been successfully ported to the new API.
+
+=== Hard Requirements
+
+* Provisioning tooling must be upward and backward compatible.
+
+=== Nice-to-Have Requirements
+
+* None.
+
+=== Non-Requirements
+
+* None.
+
+
+== Test Plan
+
+* New unit tests for new API.
+* Existing Galleon core tests must succeed without changes.
+* Existing tooling tests must be updated to use the new API.
+
+== Community Documentation
+
+* Tooling documentation should be evolved with a note on upward compatibility. 
+
+== Release Note Content
+
+No.
