@@ -1,0 +1,175 @@
+= Add support for encrypted expressions in the wildfly-config.xml
+:author:            Prarthona Paul
+:email:             prpaul@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+WildFly includes a common configuration framework that can be used to configure multiple clients, rather than relying on each client having their own configuration file. The configuration can be defined using a `wildfly-config.xml` file, where there are multiple configuration sections containing elements whose values determine the configuration of the WildFly clients. 
+
+Attribute values for client configuration can include sensitive information. And while credential references can be used for some of them, others still need to be defined using plaintext. As a result, those elements are still exposed and make the application vulnerable. Additionally, the password for the https://docs.wildfly.org/33/WildFly_Elytron_Security.html#CredentialStore[credential store] needs to be defined as clear-text, which is not ideal. 
+
+This feature adds support for encrypted expressions for elements in `wildfly-config.xml` file, which allows users to avoid specifying sensitive information using plaintext. Instead, encrypted expressions can be used to specify this information. A configuration section named `encrypted-expressions` would be added, which would reference a `secret-key-credential-store` to convert plaintext to encrypted expressions and vice versa. The secret-key-credential-store would be indicated by the `credential-store` tag with the `type` being `PropertiesCredentialStore`. It would also have a expression-resolver, which would be backed by one of the secret key aliases from the the secret-key-credential-store. The `credential-store` can be created using the wildfly-elytron tool using the `credential-store` command and the `--create` option.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14984[WFLY-14984]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/ELY-2711[ELY-2711]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* The ability to specify attribute values as encrypted expressions should be added to wildfly-config.xml. 
+
+* Parsing for client configuration needs to be separate from parsing server configuration.
+
+* Configurations may not depend on components created for server configuration, such as `expression-resolvers` or `elytron/expression`. The expression-resolver for the encrypted expression on the client side should be configured through the client configuration. The `expression-resolver` used on the client side must not have any server specific components. 
+
+* The `encrypted-expressions` would be a new schema added to the client config under WildFly client configuration. The new elements added include <expression-resolvers>, with elements called <expression-resolver> under it. Additionally, <credential-stores> attribute would be added to the schema with the <credential-store> elements added to it. The structures of this attribute would be the same as the one one under the `authentication-client` schema. 
+
+** There may be multiple `expression-resolver` attribute listed under <expression-resolvers>, and there may be multiple <credential-store> elements added under <credential-stores>. However, there may be a maximum of 1 default expression resolver. This would be used to decrypt expression when no resolvers are specified. 
+
+** The configuration for this block can be specified as follows: 
+```
+<encrypted-expressions>
+	<credential-stores>
+        <credential-store name="my-credential-store" type="PropertiesCredentialStore">
+            <attributes>
+                <attribute name="location" value="path/to/mycred.cs"/>
+            </attributes>
+            <protection-parameter-credentials>
+                <clear-password password="password"/>
+            </protection-parameter-credentials>
+        </credential-store>
+    </credential-stores>
+    <expression-resolvers default-resolver="expression-resolver-name">
+        <expression-resolver name= “expression-resolver-name” credential-store= “credential-store-name" alias=“key”/>
+        <expression-resolver name= “expression-resolver-name-2” credential-store= “credential-store-name" alias=“example”/>
+    </expression-resolvers>
+</encrypted-expressions>
+```
+** Note that the initial password for the credential-store used for the expression-resolver would need to be specified in clear-text if it is a keystoreCredentialStore. However, if it is of PropertiesCredentialStore type, then the password would no longer need to be specified. 
+
+** Once parsing is done, the expression-resolver would need to be created programmatically and be connected with the associated secret-key aliases from a credential-store. 
+
+* Once this has been configured, secret keys can be added to the credential store under different aliases and be used for client configuration as follows: 
+```
+<credential-store name="credential-store-name" type="credential-store-type" provider="provider-name" >
+    <attributes>
+        <attribute name="location" value="path/to/credential-store-name.cs" />
+    </attributes>
+    <protection-parameter-credentials>
+	    <clear-password password="${ENC::expression-resolver-name:encrypted-expression}"" />
+    </protection-parameter-credentials>
+</credential-store>
+```
+
+* Note that the value for the location must be the absolute path to the credential store. 
+
+* In cases where the default-resolver is to be used for the expression, the field for "expression-resolver-name" can be left empty. Instead, the format would be as follows: 
+```
+    <protection-parameter-credentials>
+	    <clear-password password="${ENC::encrypted-expression}"" />
+    </protection-parameter-credentials>
+```
+
+* The secret keys that would be used to encrypt expressions would be created using the `--generate-secret-key` command and can be read using the `--export-secret-key` command as follows using the WildFly-Elytron tool: 
+```
+$ bin/elytron-tool.sh credential-store --generate-secret-key example --location=standalone/configuration/mycredstore.cs
+```
+* In order to encrypt a clear-text expression, `--encrypt` option in the wildfly-elytron tool can be used as follows: 
+```
+$ bin/elytron-tool.sh credential-store --location standalone/configuration/store-one.cs --type PropertiesCredentialStore --encrypt key
+Clear text value:
+Confirm clear text value:
+Clear text encrypted to token 'RUxZAUMQvGzk6Vaadp2cahhZ6rlPhHOZcWyjXALlAthrENvRTvQ=' using alias 'key'.
+```
+
+* expression-resolvers should be backed by an entry from a credential-store of type KeyStoreCredentialStore. However, when using other types of credential stores that are protected by a protection parameter, such as a password, it needs to be specified in clear-text inside the <encrypted-expressions> tag. 
+
+* Attribute value resolvers inside the wildfly-client-config project should be updated with the ability to parse encrypted expressions and resolve them to extract the clear-text sensitive information. In order to avoid circular dependencies, service loader would be used by the wildfly-client-config project to use an EncryptedExpressionResolver class to decrypt an encrypted expression.
+
+** The service loader would have an interface called `ResolverProvider` inside the `wildfly-client-config` project. This interface will be used on the `wildfly-elytron` project by the `WildFlyClientResolverProvider` class, which implements it. This class would use the `MetaInfServices` tag, which helps generate the files used by `wildfly-client-config` inside `META-INF/services`. This helps `wildfly-client-config` access the functions it needs to resolve an encrypted expression and decrypt the token and find the clear-text value without adding a dependency for `wildfly-elytron`. 
+
+=== Nice-to-Have Requirements
+
+* Encrypted expressions can be added with different client configurations in addition to `authentication-client`. As a result, the parsing rules and sequences should be configured to be compatible with those schemas as well. 
+
+* Encrypted expressions should be used for any element or attribute where the value is of type `xsd:string` without adding any new elements to each client. 
+
+* Encrypted expressions feature should be compatible with any new clients introduced to wildfly client configuration. 
+
+=== Non-Requirements
+
+* In the future, the ability to specify multiple encrypted expressions for one attribute or the ability to specify part of the value for an attribute may be added. 
+
+== Backwards Compatibility
+
+* Passwords and other sensitive information should still have the ability to be specified using clear-text or masked passwords for backwards compatibility. 
+
+* Credential-store-reference may still be used to specify passwords for client config. 
+
+=== Default Configuration
+
+* If the configuration section for adding encrypted expression is not added, the passwords and other sensitive information can be specified using older methods, including clear-text, credential stores and masked passwords. 
+
+=== Importing Existing Configuration
+
+=== Deployments
+
+=== Interoperability
+
+== Security Considerations
+
+The elytron client would be configurable using the new support for encrypted expression, which would make clients more secure. 
+
+== Test Plan
+
+* Parsing tests would be added to the elytron testsuite with a configuration file that has the correct configuration of an `encrypted-expressions` element.
+* Parsing tests would also be added to the elytron client test suite with a configuration file containing the `encrypted-expressions` element and another client. The client would be using an encrypted expression to specify the value for one of the client configuration elements.  
+** Resulting client configurations would be tested to see that the parsed value matches the expected value. 
+* Tests would be added for functionality where values for elements would be specified using encrypted expressions.  
+** Functionality tests would be added to ensure successful authentication with the proper configuration of encrypted expressions. 
+** Tests would also be added to ensure unsuccessful authentication when encrypted expressions are not configured properly.
+
+== Community Documentation
+
+Documents for the new support for encrypted expression would be added to https://docs.wildfly.org/30/Client_Guide.html[WildFly Client Configuration].
+
+// == Release Note Content
