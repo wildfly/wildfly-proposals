@@ -8,23 +8,23 @@
 
 == Overview
 
-When employing WildFly in cloud environments, distributed transactions are not supported out of the box. In particular, Narayana (and, thus, the Transactions subsystem) has some [hard requirements](https://jbossts.blogspot.com/2022/04/narayana-on-cloud-part-1.html) that need to be satisfied. The goal of this proposal is to outline how distributed transactions should be safely terminated during the graceful shutdown of WildFly, with a particular focus on cloud environments.
+When employing WildFly in cloud environments, Narayana (and, thus, the Transactions subsystem) has some [hard requirements](https://jbossts.blogspot.com/2022/04/narayana-on-cloud-part-1.html) that need to be satisfied. The goal of this proposal is to outline how distributed transactions should be safely terminated during the graceful shutdown of WildFly, with a particular focus on cloud environments.
 
 === Current Issues
 
-_1.1 The following paragraphs in the `Current Issue` section provide a summary of the current logic governing the graceful shutdown of WildFly's Transactions subsystem. They do not propose any changes but serve the sole purpose of offering context to reviewers who may not be familiar with the Transactions subsystem of WildFly._
+This section provides a summary of the current logic governing the graceful shutdown of WildFly's Transactions subsystem. They do not propose any changes but serve the sole purpose of offering context to reviewers who may not be familiar with the Transactions subsystem of WildFly.
 
-_1.2 WildFly’s graceful shutdown logic does not take into consideration that hosting entities can be shut down indefinitely, i.e. there will not be any restart after shutdown. From the point of view of WildFly’s Transactions subsystem, this scenario might develop into a data integrity issue. In fact, transactions might result in:
-Heuristics, which can leave data in an inconsistent state
-An in-doubt state, which might not be completed during suspension (i.e. WildFly’s state before shutdown)_
+1.1 WildFly’s graceful shutdown logic does not take into consideration that hosting entities can be shut down indefinitely, i.e. there will not be any restart after shutdown. From the point of view of WildFly’s Transactions subsystem, this scenario might develop into a data integrity issue. In fact, transactions might result in:
+* Heuristics, which can leave data in an inconsistent state
+* An in-doubt state, which might not be completed during suspension (i.e. WildFly’s state before shutdown)
 
-The reason behind this behaviour is that the suspension logic of Narayana, the framework behind WildFly’s Transactions subsystem, is premised on the assumption that it will eventually be resumed after it gets suspended. During suspension, Narayana attempts the completion of all transactions before leaving this task.
+The reason behind this behaviour is that the suspension logic of Narayana, the framework behind WildFly’s Transactions subsystem, is premised on the assumption that it will eventually be resumed after it gets suspended. During suspension, Narayana attempts the completion of all transactions before leaving their recovery for later.
 
 NOTE: Heuristic transactions cannot be resolved automatically thus they are left untouched during suspension and then they will be reported to the administrator when Narayana gets resumed.
 
 _In cloud environments_, when hosting entities (e.g. containers, pods, virtual machines) are scaled down and their state is erased (e.g. their file system, ip address, and memory are deleted) WildFly cannot guarantee that all transactions will be completed and a data integrity issue might occur.
 
-NOTE: There are additional complications when hosting entities crash (i.e. an unintentional shutdown occurs). This extreme scenario is beyond what WildFly can handle and the hosting cloud environment must provide the ability to recover the hosting entity from crashes. In this case, the state of the hosting entity (e.g. its file system, ip address, etc.) should be recovered by the cloud environment without the intervention of the administrator. In K8s, for example, the employment of StatefulSet creates a stable environment where crashes are handled automatically. If a particular cloud environment does not provide a guarantee similar to StatefulSet, it is not possible to employ WildFly’s Transaction Subsystem. *As there are no solutions to solve this extreme scenario within WildFly (as it is impossible to control the lifecycle of the host from WildFly), this proposal is only concerned with problem 1.2.*
+NOTE: There are additional complications when hosting entities crash (i.e. an unintentional shutdown occurs). This extreme scenario is beyond what WildFly can handle and the hosting cloud environment must provide the ability to recover the hosting entity from crashes. In this case, the state of the hosting entity (e.g. its file system, ip address, etc.) should be recovered by the cloud environment without the intervention of the administrator. In K8s, for example, the employment of StatefulSet creates a stable environment where crashes are handled automatically. If a particular cloud environment does not provide a guarantee similar to StatefulSet, it is not possible to employ WildFly’s Transaction Subsystem. *As there are no solutions to solve this extreme scenario within WildFly (as it is impossible to control the lifecycle of the host from WildFly), this proposal is only concerned with problem 1.1.*
 
 == Issue Metadata
 
@@ -64,7 +64,7 @@ NOTE: There are additional complications when hosting entities crash (i.e. an un
 
 === Hard Requirements
 
-* This proposal is about importing into WildFly the transactional functionalities of its Kubernetes Operator. It does not include any further improvements
+* This proposal is about importing into WildFly the transactional functionalities of its Kubernetes Operator. It does not include any further improvements. Please, for further information, refer to the `transaction_recovery` controller in the Kubernetes Operator of WildFly.
 * The Management Model of WildFly will not be modified
 * The Transactions subsystem needs to become aware of in-doubt and heuristic transactions and delay its suspension until all in-doubt transactions are complete and all transactions that ended with a heuristic outcome have been resolved. This will guarantee data integrity in all scenarios, including situations when a negative timeout (i.e. indefinite waiting) is employed (e.g. in cloud environments)
 * The administrator needs to receive notifications when the Transactions subsystem is causing delays in the graceful shutdown of WildFly, achieved through integration with the existing logging mechanism. This is especially true when a negative timeout is used (i.e. indefinite graceful shutdown). Moreover, internal details like 'ServerActivity' do not need to be prominent. Part of working out such a notification would be how to consistently describe a ServerActivity to the administrator in an understandable manner without exposing internal technical implementation details
