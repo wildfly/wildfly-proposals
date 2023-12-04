@@ -68,6 +68,7 @@ NOTE: There are additional complications when hosting entities crash (i.e. an un
 * The Management Model of WildFly will not be modified
 * The Transactions subsystem needs to become aware of in-doubt and heuristic transactions and delay its suspension until all in-doubt transactions are complete and all transactions that ended with a heuristic outcome have been resolved. This will guarantee data integrity in all scenarios, including situations when a negative timeout (i.e. indefinite waiting) is employed (e.g. in cloud environments)
 * The administrator needs to receive notifications when the Transactions subsystem is causing delays in the graceful shutdown of WildFly, achieved through integration with the existing logging mechanism. This is especially true when a negative timeout is used (i.e. indefinite graceful shutdown). Moreover, internal details like 'ServerActivity' do not need to be prominent. Part of working out such a notification would be how to consistently describe a ServerActivity to the administrator in an understandable manner without exposing internal technical implementation details
+** Sufficient information should be reported as soon as they are known (so not waiting for shutdown) to allow the administrator to manually reconcile all expired and heuristic transactions
 
 === Nice-to-Have Requirements
 
