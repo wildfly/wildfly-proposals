@@ -8,7 +8,7 @@
 
 == Overview
 
-When employing WildFly in cloud environments, Narayana (and, thus, the Transactions subsystem) has some [hard requirements](https://jbossts.blogspot.com/2022/04/narayana-on-cloud-part-1.html) that need to be satisfied. The goal of this proposal is to outline how distributed transactions should be safely terminated during the graceful shutdown of WildFly, with a particular focus on cloud environments.
+When employing WildFly in cloud environments, Narayana (and, thus, the Transactions subsystem) has some [hard requirements](https://jbossts.blogspot.com/2022/04/narayana-on-cloud-part-1.html) that need to be satisfied. The goal of this proposal is to outline how distributed transactions should be safely terminated during the graceful shutdown of WildFly, considering both cloud environments and the baremetal scenario.
 
 === Current Issues
 
@@ -64,7 +64,7 @@ NOTE: There are additional complications when hosting entities crash (i.e. an un
 
 === Hard Requirements
 
-* This proposal is about importing into WildFly the transactional functionalities of its Kubernetes Operator. It does not include any further improvements. Please, for further information, refer to the `transaction_recovery` controller in the Kubernetes Operator of WildFly.
+* This proposal is about importing into WildFly the transactional functionalities of its Kubernetes Operator. It does not include any further improvements. Please, for further information, refer to the `transaction_recovery` controller in the [Kubernetes Operator of WildFly](https://github.com/wildfly/wildfly-operator/blob/main/controllers/transaction_recovery.go).
 * The Management Model of WildFly will not be modified
 * The Transactions subsystem needs to become aware of in-doubt and heuristic transactions and delay its suspension until all in-doubt transactions are complete and all transactions that ended with a heuristic outcome have been resolved. This will guarantee data integrity in all scenarios, including situations when a negative timeout (i.e. indefinite waiting) is employed (e.g. in cloud environments)
 * The administrator needs to receive notifications when the Transactions subsystem is causing delays in the graceful shutdown of WildFly, achieved through integration with the existing logging mechanism. This is especially true when a negative timeout is used (i.e. indefinite graceful shutdown). Moreover, internal details like 'ServerActivity' do not need to be prominent. Part of working out such a notification would be how to consistently describe a ServerActivity to the administrator in an understandable manner without exposing internal technical implementation details
