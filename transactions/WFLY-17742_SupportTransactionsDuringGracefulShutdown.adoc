@@ -64,13 +64,15 @@ NOTE: There are additional complications when hosting entities crash (i.e. an un
 
 === Hard Requirements
 
-* This proposal is about importing into WildFly the transactional functionalities of its Kubernetes Operator. It does not include any further improvements. Please, for further information, refer to the `transaction_recovery` controller in the [Kubernetes Operator of WildFly](https://github.com/wildfly/wildfly-operator/blob/main/controllers/transaction_recovery.go).
-* The Management Model of WildFly will not be modified
 * The Transactions subsystem should be enhanced to handle in-doubt and heuristic transactions. The behaviour of WildFly during suspension will vary based on the graceful shutdown's timeout:
 ** For a negative timeout: WildFly will postpone suspension until all in-doubt transactions are completed, and transactions with heuristic outcomes are resolved; this ensures data integrity in various scenarios, such as cloud environments
 ** For a positive timeout: WildFly will postpone suspension for the specified duration; during this time window, WildFly should apply the same behaviour defined in the case of a negative timeout
 * The administrator needs to receive notifications when the Transactions subsystem is causing delays in the graceful shutdown of WildFly, achieved through integration with the existing logging mechanism. This is especially true when a negative timeout is used (i.e. indefinite graceful shutdown). Moreover, internal details like [ServerActivity](https://github.com/wildfly/wildfly-core/blob/22.0.2.Final/server/src/main/java/org/jboss/as/server/suspend/ServerActivity.java) do not need to be prominent. Part of working out such a notification would be how to consistently describe a ServerActivity to the administrator in an understandable manner without exposing internal technical implementation details
 ** Sufficient information about expired, in-doubt, and heuristic transactions should be reported as soon as they are known (so not waiting for shutdown) to inform the administrator about the state of the transactions subsystem and allow them to manually reconcile expired and heuristic transactions (keeping in mind the effect of a positive timeout)
+
+NOTE: The previous hard requirements are inspired from the functionalities already implemented in the transactional_recovery module of the [Kubernetes Operator of WildFly](https://github.com/wildfly/wildfly-operator/blob/main/controllers/transaction_recovery.go). This proposal does not seek to improve the overall design/behaviour of those functionalities.
+
+* The Management Model of WildFly will not be modified
 
 === Nice-to-Have Requirements
 
