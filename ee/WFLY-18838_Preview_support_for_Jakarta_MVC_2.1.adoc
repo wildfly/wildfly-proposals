@@ -1,0 +1,176 @@
+---
+categories:
+  - ee
+---
+= [WFLY-18838]
+:author:            Brian Stansberry
+:email:             brian.stansberry@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+https://jakarta.ee/specifications/mvc/[Jakarta MVC] is a Jakarta specification project for
+providing support for the Model-View-Controller pattern in web applications. The specification
+has had three releases, and a fourth is in the works. It has been considered for incorporation
+in the Jakarta EE Platform or Web Profile, although it was not included in Jakarta EE 11.
+
+The intent here is to provide preview support for Jakarta MVC in the WildFly ecosystem in order
+to gain broader experience with the technology and to better gauge community interest.
+
+The integration is straightforward; just a matter of exposing a couple of modules with an API
+and two implementation artifacts to deployments. Users can easily enough package these artifacts
+in their own application artifacts; WildFly providing its own integration saves them
+needing to manage the implementation.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-18838[WFLY-18838]
+
+=== Related Issues
+
+* 
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [X] Preview
+
+* [ ] Community
+
+* [ ] default
+
+=== Dev Contacts
+
+* mailto:brian.stansberry@redhat.com[Brian Stansberry]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [X] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* Provide an extension/subsystem that makes modules containing the Jakarta MVC 2.1 api 
+  and the Eclipse Krazo implementation available to an application.
+* Provide an 'mvc-krazo' Galleon layer
+** The layer will depend on the 'bean-validation', 'cdi' and 'jaxrs-core' layers, in line 
+   with Jakarta MVC's dependencies on other EE specifications.
+* Provide an extension/subsystem artifact jar, and a 'galleon-shared' src zip for use
+  in other feature packs.
+* Incorporate the above in the 'wildfly-preview' feature pack.
+* Provide a Galleon feature pack that depends on `wildfly-ee` and that can install the Jakarta MVC
+  integration into standard WildFly.
+* Extension will advertise itself as having stability level 'preview'.
+
+=== Nice-to-Have Requirements
+// Requirements in this section do not have to be met to merge the proposed functionality.
+// Note: Nice-to-have requirements that don't end up being implemented as part of
+// the work covered by this proposal should be moved to the 'Future Work' section.
+
+
+=== Non-Requirements
+// Use this section to explicitly discuss things that readers might think are required
+// but which are not required.
+ * Inclusion of the extension/subsystem in any standard OOTB config, including docs/examples configs.
+ * Inclusion in any of the WildFly user boms.
+ * Quickstart.
+
+=== Future Work
+// Use this section to discuss requirements that are not addressed by this proposal
+// but which may be addressed in later proposals.
+* Possible integration into the 'wildfly' or 'wildfly-ee' feature pack.
+* Add a quickstart
+** Requires integration into 'wildfly' or 'wildfly-ee' FP, along with Quickstart project support for
+   preview features.
+
+== Backwards Compatibility
+
+// Does this enhancement affect backwards compatibility with previously released
+// versions of WildFly?
+// Can the identified incompatibility be avoided?
+
+=== Default Configuration
+
+No incompatibility.
+
+=== Importing Existing Configuration
+
+No incompatibility.
+
+=== Deployments
+
+No incompatibility.
+
+=== Interoperability
+
+No incompatibility.
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+Initially, use WildFly Extras to house the source code.
+
+== Security Considerations
+
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+None.
+
+== Test Plan
+
+ * Standard subsystem tests (parsing and marshalling; Stage.MODEL execution)
+ * Pass the Jakarta MVC TCK
+ ** TCK runner should support passing in the GAV of the feature pack to provision the 
+    server, allowing execution against both the wildfly-preview feature pack and
+	the mvc-krazo-specific feature pack
+
+== Community Documentation
+////
+ * README explaining how to use with 'wildfly' or 'wildfly-ee' feature packs.
+ * Mention in the 'WildFly and WildFly Preview' document as a difference between the two.
+ * Mention in the https://docs.wildfly.org/30/Admin_Guide#Simple_configuration_subsystems[Simple configuration subsystems section of the Admin Guide].
+ * Addition to the specification section in the https://docs.wildfly.org/30/Getting_Started_Guide.html[Getting Started Guide].
+////
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
