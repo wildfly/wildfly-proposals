@@ -1,0 +1,119 @@
+= Community - Simple config export for a server as an attachment for standalone or domain mode 
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-4758[WFCORE-4758]
+* https://issues.redhat.com/browse/EAP7-1810[EAP7-1810]
+
+=== Related Issues
+
+* N/A
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [ ] Preview
+
+* [X] Community
+
+* [ ] default
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [X] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* HAL
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+Provide a management operation to export the configuration of a running server as an XML data stream to avoid content being escaped. This operation should replace the existing '*read-config-as-xml*' operation without the escaping issues.
+It should work for a standalone server as for a domain server.
+
+=== Hard Requirements
+
+ * Export the current running configuration as an XML data stream that can be saved or displayed with the attachment operation from the CLI.
+ * Since the full configuration is read, the operation should fail if the user is not in a role that allows reading sensitive data.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Implementation Plan
+Simple usage:
+----
+[standalone@localhost:9990 /] :read-config-as-xml-file
+{
+"outcome" => "success",
+"result" => {"uuid" => "89c858bf-dba4-4d38-8b8c-93e13beaacca"},
+"response-headers" => {"attached-streams" => [{
+"uuid" => "89c858bf-dba4-4d38-8b8c-93e13beaacca",
+"mime-type" => "application/xml"
+}]}
+}
+----
+
+To display the content of the file:
+----
+[standalone@localhost:9990 /] attachment display --operation=:read-config-as-xml-file
+ATTACHMENT 3363018e-1a79-401a-a865-97d85c83f5f4:
+<?xml version='1.0' encoding='UTF-8'?>
+...
+----
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+== Test Plan
+
+* Add a test "testReadConfigAsXmlFile" into the class `org.wildfly.core.test.standalone.mgmt.api.CoreServerTestCase` in the standalone testsuite to check that the result of the operation is the same as the "standalone.xml" file used to start the server.
+
+* Add several tests to the class `org.jboss.as.test.integration.domain.ManagementReadXmlTestCase` in the domain testsuite:
+    ** testDomainReadConfigAsXml : check that the result of the operation is the same as the "domain-standard.xml" file used to start the server.
+    ** testHostReadConfigAsXml : check that the result of the operation is the same as the "host-master.xml" and "host-slave.xml" files used to start the hosts.
+* Add a test to the class `org.jboss.as.test.integration.mgmt.access.StandardRolesBasicTestCase` in the rbac testsuite:
+    ** readWholeConfigAsXMLFile
+
+== Community Documentation
+
+* Covered by operation description in management model.
+
+== Release Note Content
+
+A new operation to export the effective configuration of a server as an XML file.
