@@ -156,21 +156,17 @@ None.
  ** TCK runner should support passing in the GAV of the feature pack to provision the 
     server, allowing execution against both the wildfly-preview feature pack and
 	the mvc-krazo-specific feature pack
+ * Smoke test in the testsuite/preview/basic module
+ * Test the layer by itself and as part of the all-layers provisioning in testsuite/layers/LayersTestCase
 
 == Community Documentation
-////
+
  * README explaining how to use with 'wildfly' or 'wildfly-ee' feature packs.
  * Mention in the 'WildFly and WildFly Preview' document as a difference between the two.
  * Mention in the https://docs.wildfly.org/30/Admin_Guide#Simple_configuration_subsystems[Simple configuration subsystems section of the Admin Guide].
  * Addition to the specification section in the https://docs.wildfly.org/30/Getting_Started_Guide.html[Getting Started Guide].
-////
+
 == Release Note Content
-////
-Draft verbiage for up to a few sentences on the feature for inclusion in the
-Release Note blog article for the release that first includes this feature. 
-Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
-This content will be edited, so there is no need to make it perfect or discuss
-what release it appears in.  "See Overview" is acceptable if the overview is
-suitable. For simple features best covered as an item in a bullet-point list 
-of features containing a few words on each, use "Bullet point: <The few words>" 
-////
+
+WildFly now provides preview support for Jakarta MVC, using the Eclipse Krazo implementation. This is available out of the box in WildFly Preview 
+and can be added to a standard WildFly installation using a new 'mvc-krazo' Galleon feature pack available from WildFly Extras. 
