@@ -1,0 +1,117 @@
+---
+categories: observability
+---
+= WFLY-18582 - Add prometheus endpoint to micrometer extension
+:author:            Jason Lee
+:email:             jasondlee@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Micrometer replaced Micrometer Metrics as the user-facing metrics library provided by WildFly. As part of that
+transition, the export behavior moved from a pull-based Prometheus-like format to push-based mechanism using the
+OpenTelemetry Protocol. Based on feedback from users who still desire to use the pull-based approach, this change will
+add support for the Prometheus Registry in addition to or in place of the OTLP Registry.
+
+====
+
+====
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-18582[WFLY-18582]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY[WFLY-XXXX]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* Existing servers, if configured to use Micrometer (e.g., the `endpoint` property has been set), will be migrated to be
+and OTLP-based configuration. Since OTLP is the only current option, there is no ambiguity in this migration.
+* Existing servers with the extension enabled but with no endpoint set will not be changed. That is to say, Micrometer
+will continue to use a no-op registry.
+* Support for a new registry, `PrometheusRegistry` will be added.
+** It can be added as the only registry, or it can be added _in addition to_ the OTLP Registry
+** The only configuration option exposed for this registry is the web context (e.g., `/micrometer`) on which the metrics
+will be exposed
+** If the user would like to use `/metrics`, the WildFly metrics extension must be disabled first to avoid a naming conflict.
+
+=== Nice-to-Have Requirements
+
+* Support for specifying the scrape format via the `Accept` header
+(https://docs.micrometer.io/micrometer/reference/implementations/prometheus.html#_scrape_format[])
+
+=== Non-Requirements
+
+== Backwards Compatibility
+
+* Existing servers should continue to operate as is, using any existing OTLP configuration.
+
+=== Default Configuration
+
+* The default configuration will continue to be a no-op registry.
+* The default context for the Prometheus scrape will be `micrometer` so as to avoid conflicts with the base metrics extension.
+
+=== Importing Existing Configuration
+
+* See above.
+
+=== Deployments
+
+=== Interoperability
+
+
+== Security Considerations
+
+The push export of metrics is left to be secured at the OpenTelemetry Collector. We can, though, control access to this
+context on WildFly itself. The implementation of securing this endpoint will mirror how base metrics are secured.
+
+== Test Plan
+
+A test for scraping metrics will be added to the WildFly testsuite under
+`integration/microprofile/src/test/java/org/wildfly/test/integration/observability/micrometer/`
+
+== Community Documentation
+
+The WildFly Administration Guide will be updated to include this new support.
+
+== Release Note Content
+
+The Micrometer extension has been modified to add support for the Prometheus Registry, allowing for pull-based/scraping
+of metrics information for deployments where that is preferred.
