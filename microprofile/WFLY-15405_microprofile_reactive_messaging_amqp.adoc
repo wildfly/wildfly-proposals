@@ -1,10 +1,11 @@
-= <INSERT TITLE HERE>
+= Add support for AMQP Connector in MicroProfile Reactive Messaging
 :author:            Kabir Khan
 :email:             kkhan@redhat.com
 :toc:               left
 :icons:             font
 :idprefix:
 :idseparator:       -
+:keywords:          microprofile,messaging
 
 == Overview
 The scope of this RFE is to enhance the MicroProfile Reactive Messaging integration to include the AMQP connector in order to be able to send and receive data from AMQP message brokers.
