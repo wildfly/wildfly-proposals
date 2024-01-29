@@ -1,0 +1,135 @@
+= Migrate WildFly to JDK JAXP (Java API for XML Processing) Version 1.6
+:author:            Richard Opalka
+:email:             ropalka@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This enhancement will migrate WildFly from legacy Apache's JAXP version 1.5 to the most recent JDK's JAXP version 1.6
+
+== Issue Metadata
+
+=== Issue:
+* https://issues.redhat.com/browse/WFLY-18846[WFLY-18846]
+
+=== Dev Contacts:
+* mailto:ropalka@redhat.com[Richard Opalka]
+
+=== QE Contacts:
+* mailto:msvehla@redhat.com[Martin Svehla]
+
+=== Testing By
+* [x] Engineering
+
+* [x] QE
+
+=== Affected Projects or Components:
+
+* Hibernate Validator, JBoss Modules, JDR, JSF, RESTEasy, WebServices, WildFly Core, WildFly
+
+=== Relevant Installation Types
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* JAXP hack will be removed from JBoss Modules library and relevant WildFly Core modules participating in this hack.
+* All modules depending on org.apache.xerces or org.apache.xalan modules will depend on standard JPMS java.xml module instead.
+* All modules depending on org.codehaus.woodstox module (except WebServices modules) will depend on standard JPMS java.xml module instead.
+* org.apache.xalan and org.apache.xerces modules will be completely removed from WildFly project and WildFly distribution.
+* Apache's Xalan and Xerces dependencies will be completely removed from both WildFly Core and WildFly projects.
+* By default JDK provided JAXP 1.6 specification implementation will be used by WildFly and deployed applications.
+
+=== None Requirements
+
+* JAXP de/serialization backward compatibility with earlier WildFly versions using Apache's legacy JAXP specification version 1.5.
+
+== Test Plan
+
+* XML Binding 4.0 TCK must pass.
+* Jakarta EE 10 TCK must pass.
+* Both WildFly Core & WildFly test suites must pass.
+
+== Community Documentation
+
+The migration path is to use standard JPMS java.xml module as dependency instead of org.apache.xerces , org.apache.xalan modules , org.codehaus.woodstox
+dependencies in user applications. This information will be added to the WildFly documentation and it will be based on this analysis document as a reference.
+
+== Release Note Content
+Bullet point: Support for JDK provided JAXP specification version 1.6.
+
+== Introduction
+
+WildFly uses custom JAXP specification 1.5 implementation internally by default.
+There is very high demand for latest JAXP specification version 1.6 support from WildFly community.
+
+=== Design Notes
+
+JBoss Modules project had built-in support for JAXP redirection functionality since 2011 (JAXP hack).
+The main purpose of JAXP redirection functionality was to ensure only one globally configured JAXP implementation
+will be used in whole JBoss Modules library controlled classloading environment.
+At that time when JAXP redirection was implemented WildFly project was dealing with inconsistent
+JAXP implementations behavior across different JDKs (each JDK came with its own JAXP implementation).
+Decision was taken to unify JAXP implementation behaviour on all supported JDKs at that time.
+
+In recent days the JDK market state is very different. Vast majority of available JDKs is based on Open JDK code base.
+That results in an unified JAXP implementation behaviour that is now consistent on those Open JDK forks provided by different vendors.
+Further more JAXP hack used internally by WildFly was based on obsolete and not maintained JAXP specification version 1.5.
+Upgrade to most recent JDK provided JAXP specification version 1.6 was needed.
+
+== Affected Components
+
+=== Hibernate Validator
+
+Hibernate Validator module org.hibernate.validator will depend on standard JPMS java.xml module instead of org.apache.xerces module.
+
+=== JBoss Modules
+
+JAXP hack (eagerly created global JAXP factories implementation cache and redirections to that cache) will be removed from JBoss Modules library.
+
+=== JDR
+
+WildFly JDR module org.jboss.as.jdr will depend on standard JPMS java.xml module instead of org.apache.xalan module.
+
+=== JSF
+
+WildFly JSF module com.sun.jsf-impl will depend on standard JPMS java.xml module instead of org.apache.xerces and org.apache.xalan modules.
+
+=== RESTEasy
+
+WildFly RESTEasy module org.jboss.resteasy.resteasy-jaxp-provider will depend on standard JPMS java.xml module instead of org.apache.xerces module.
+
+=== WebServices
+
+WildFly WebServices modules com.sun.xml.messaging.saaj , org.jboss.as.webservices.server , org.jboss.ws.common , org.jboss.as.appclient
+will depend on standard JPMS java.xml module instead of org.apache.xerces module.
+
+=== WildFly Core
+
+JBoss Modules dependency will be upgraded from 1.x version to 2.x version (version with eliminated JAXP hack).
+Apache's Xalan and Xerces dependencies will be completely removed from both WildFly Core project a WildFly Core distribution.
+JBoss Modules JAXP redirect hack will be removed from org.wildfly.core.jar.boot.Main class.
+The following WildFly core modules that participated in JBoss Modules JAXP hack will be updated in the following way:
+* org.apache.xalan , org.apache.xerces , org.codehaus.woodstox dependencies will be removed from org.jboss.as.cli module and standard JPMS java.xml dependency will be used instead.
+* org.codehaus.woodstox dependency will be removed from org.jboss.as.controller module and standard JPMS java.xml dependency will be used instead.
+* org.apache.xalan , org.apache.xerces , org.codehaus.woodstox dependencies will be removed from org.jboss.as.host-controller module and standard JPMS java.xml dependency will be used instead.
+* org.apache.xalan , org.apache.xerces , org.codehaus.woodstox dependencies will be removed from org.jboss.as.server module and standard JPMS java.xml dependency will be used instead.
+* org.apache.xalan , org.apache.xerces , org.codehaus.woodstox dependencies will be removed from org.jboss.as.standalone module and standard JPMS java.xml dependency will be used instead.
+* org.apache.xalan , org.apache.xerces , org.codehaus.woodstox dependencies will be removed from org.wildfly.bootable-jar module and standard JPMS java.xml dependency will be used instead.
+
+=== WildFly
+
+WildFly will use WildFly Core version that incorporates JBoss Modules 2.x version (version with eliminated JAXP hack).
+Apache's Xalan and Xerces dependencies will be completely removed from both WildFly project a WildFly distribution.
+All WildFly modules containing org.apache.xalan, org.apache.xerces dependencies will migrate to standard JPMS java.xml dependency instead,
+see Hibernate Validator, JDR, JSF, RESTEasy, Webservices sections above.
