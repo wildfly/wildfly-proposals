@@ -7,9 +7,9 @@
 
 Remote EJB invocations is an important feature of EJB and Jakarta EE compatible servers in general. Moving forward, it is expected that customers will be migrating from bare metal to cloud and we have to make sure that this functionality is working in a robust way in this environment.
 
- EAP is supported on number of cloud providers but this analysis is related to OpenShift, which is being developed by RedHat. Nevertheless, if some design decision may impact integration with other cloud providers in the future they will be also taken into consideration in this document.
+EAP is supported on number of cloud providers but this analysis is related to OpenShift, which is being developed by RedHat. Nevertheless, if some design decision may impact integration with other cloud providers in the future they will be also taken into consideration in this document.
 
-Wildfly-http-client is a library that implements EJB invocation using HTTP semantics. 
+wildfly-http-client is a library that implements EJB invocation using HTTP semantics. 
 
 The goal of this document is to analyze whether wildfly-http-client could become the protocol of choice for EJB invocation in OpenShift cloud enviroment.
 
@@ -20,7 +20,7 @@ Currently in JBoss EAP are two other implementations of remote EJB invocations: 
 
 IIOP is a legacy protocol, which is not planned to be redesigned to work in the cloud and it’s usage is discouraged in such enviroment.
 
-Jboss-ejb-client based on remoting protocol is a proprietary EAP solution designed specifically for EJB invocation. It is a full featured solution responsible for all aspects of the invocation. It is a protocol most commonly used in bare metal environments. Applications using remoting client are supposed to work correctly for internal OpenShift EJB invocations. Because of this it will server as a comparison point in this document.
+jboss-ejb-client based on remoting protocol is a proprietary EAP solution designed specifically for EJB invocation. It is a full featured solution responsible for all aspects of the invocation. It is a protocol most commonly used in bare metal environments. Applications using remoting client are supposed to work correctly for internal OpenShift EJB invocations. Because of this it will server as a comparison point in this document.
 
 
 ## Architecture
@@ -42,7 +42,7 @@ EJB client code has a number of responsibilities that it has to fullfill in orde
 
 
 * Supports EJB, transactions and JNDI via HTTP protocol
-* Designed to be compatible with loadbalancers
+* Designed to be compatible with load balancers
 * Is not responsible for affinity processing and load balancing - some other entity has to take care of those
 * Has a simple discovery algorithm (just finding EJBs by coordinates if host is not known)
 * Because of OpenShift architecture wildfly-http-client is the only option for invocation from outside the cloud (see that analysis of EAP7-2062)
@@ -52,17 +52,13 @@ Project design goals are described in detail in [design analysis](https://github
 
 #### Implications
 
-
-
 * Uses HTTP - current cloud protocol of choice
 * Simpler library and easier maintanance
-* Because of loadbalancer being separate entity wildfly-http-client may be easier integrated with various cloud environments (load balancer can be a integrated with given cloud architecture)
+* Because of load balancer being separate entity wildfly-http-client may be easier integrated with various cloud environments (load balancer can be a integrated with given cloud architecture)
 * Consistent configuration: the same protocol used for internal and external invocation scenarios
 
 
 ### Comparision to jboss-ejb-client
-
-
 
 * Much more complex library
 * Fat client - responsible for discovery, load-balancing, affinity processing (including clustering)
@@ -103,8 +99,6 @@ A deployment and a service is a method of choice when it comes to deploying appl
 
 Alternative to Deployment but with guarantees regarding:
 
-
-
 * Network IPs of nodes
 * Stable persistence storage
 * Ordered scaling
@@ -112,17 +106,42 @@ Alternative to Deployment but with guarantees regarding:
 
 For this analysis, the most important features are the first two. We have guarantees that if we use IP address provided by StatefulSet we will reach the same node each time ad even if the node goes down the new pod that is going to replace it will have access to the same persistent storage.
 
+### Load balancing
+
+wildfly-http-client library does not implement load balancing and we need an external solution that is going to be used as loadbalancer in OpenShift. 
+Requirements:
+
+* support for node affinity based on JSESSIONID
+* support for homogenous deployments with constant number of nodes 
+* easy integration and deployment in OpenShift
+
+Good to have:
+
+* load balance factor calculation
+
+Non-requirements:
+
+*  dynamic load balancer configuration
+
+In bare metal we use mod-cluster for that whereas in OpenShift the Service is a load balancer under the hood.
 
 ## Modcluster
 
-CLUSTERING REVIEW REQUIRED
+Modcluster is a load-balancer of choice for bare metal environments. It was designed to be used with dynamic and heterogenous environments: it https://docs.modcluster.io/[implements] a bunch of advanced functionalities that enable it to be dynamically configured in runtime, provide graceful shutdown and load-balance based on statistics provided by the nodes. 
 
-I made a following assumptions regarding Modcluster in OpenShift:
+In contrast, OpenShift deployments have different requirements. They are homogenous and stable in size (see above StatefulSet description) so they do not demand dynamic configuration capabilties. On the other hand, we have to make sure that the loadbalancer is to be well integrated with OpenShift.
 
+Because of the above, modcluster is not planned to be used with wildfly-http-client in cloud.
 
+## OpenShift services as load balancer
 
-* We are able to deploy modcluster in OpenShift
-* Modcluster routes invocation to correct node if JSESSIONID is provided
+Service is a native part of OpenShift. The implementation is based on IP tables: the implementation listens to OpenShift events (such as starting and stopping pods) and if those events have an effect on the application to which the service is related, it modifies the IP table rules accordingly.
+
+Although such implementation is very efficient, it is impractical to adapt it to meet EJB requirements, as implementing affinity support inside IP tables seems unfeasible, in not undoable. Furthermore, it would be a solution that could be used only in OpenShift and another additional solutions would have to be provided for other cloud providers. Maintaining load balancer for each cloud provider is also unfeasible.
+
+## Minimal cloud load balancer
+
+Because of the factors mentioned above, currently proposed solution would be to implement a minimal load balancer (or a plugin to the existing loadbalancer) that is going to implement just the requirements mentioned above.
 
 
 ## Suggested configuration
@@ -130,11 +149,9 @@ I made a following assumptions regarding Modcluster in OpenShift:
 
 ### The necessity of StatefulSet
 
-Because of the EJB requirements: transaction processing and recovery, session affinity, and custom loadbalancing it is necessary that EJB application are deployed using StatefulSet.
+Because of the EJB requirements: transaction processing and recovery, session affinity, and custom load balancing it is necessary that EJB application are deployed using StatefulSet.
 
 Reasons:
-
-
 
 * If network IP of a pod in the Deployment is not stable keeping affinity to it makes no sense.
 * Keeping affinity to the Service makes no sense as well cause the calls are going to be further load balanced and will be invoked on different pods under the hood anyway.
@@ -147,7 +164,7 @@ Because of the above, nodes with persistent addresses and storage are a requirem
 
 Apart from the above we need to make sure that application pods are scaled down correctly in respect to transaction recovery - we cannot remove the pod if it still have transaction recovery log entries present.
 
-[WildFly operator](https://github.com/wildfly/wildfly-operator) is a tool that is responsible for deploying EJB application in the OpenShift so that this requirement is being met. WidFly operator relies on StatefulSet under the hood.
+[WildFly operator](https://github.com/wildfly/wildfly-operator) is a tool that is responsible for deploying EJB application in the OpenShift so that this requirement is being met. WildFly operator relies on StatefulSet under the hood.
 
 It is required that the operator is used for EJB deployments.
 
@@ -158,10 +175,10 @@ The possible way of deploying EJB applications which are going to rely on wildfl
 
 
 
-* Applications are deployed via wildfly-operator as StatefulSets with modcluster in front of them. They are reached by the address of modcluster.
+* Applications are deployed via wildfly-operator as StatefulSets with load balancer in front of them. They are reached by the address of load balancer
 * All nodes in StatefulSet must have the same beans available in all of them.
 * Application may be clustered.
-* If application is supposed to be run on only one node it is possible to omit the modcluster and rely to its StatefulSet identity as an address.
+* If application is supposed to be run on only one node it is possible to omit the load balancer and rely to its StatefulSet identity as an address.
 
 There are problems associated with this config though and they will be discussed in the scenarios section below.
 
