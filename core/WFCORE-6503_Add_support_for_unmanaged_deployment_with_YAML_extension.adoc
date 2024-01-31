@@ -1,0 +1,157 @@
+---
+categories:
+    - core
+    - managemenet
+# Add any category for this proposal
+# if missing, add it to _data/widfly-categories and use its id
+---
+= Add support for deployments with YAML extension
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The YAML extension works by using the read-only mode of the server. The aim of this proposal is to expend the YAML extension defined in WFCORE-5343 to support deployments.
+We also want this to be *idempotent*: that means that starting and restarting the server with the same command line should produce the same result and shouldn't fail.
+This means that we will restriict our support to *unmanaged* deployments because otherwise we would have to manage the deployment thus having a state that would change between calls.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE--6503[WFCORE--6503]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFCORE-5343[WFCORE-5343]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+`wildfly-core`
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [] Managed domain
+
+* [] OpenShift s2i
+
+* [] Bootable jar
+
+== Requirements
+
+Deploy unmanaged deployments described in the yaml files.
+If the deployment uses any managed attributes the yaml file is incorrect and the server must fail to start.
+
+=== Hard Requirements
+
+Managed deployments are not supported and any description of such a deployment must fail.
+The deployment description must follow the resource defintion, this means that we must have a `content` key with a list of values (even if in practice only the first value will be used).
+Sample description of a correct deployment:
+----
+wildfly-configuration:
+    deployment:
+        test.jar:
+            content:
+                - 
+                    path: test.jar
+                    relative-to: jboss.server.base.dir
+                    archive: true
+        hello.jar:
+            content:
+                - 
+                    path: test.jar
+                    relative-to: jboss.server.base.dir
+                    archive: true
+----
+
+But such a description must fail:
+----
+wildfly-configuration:
+    deployment:
+        test.jar:
+            content:
+                - 
+                    path: test.jar
+                    relative-to: jboss.server.base.dir
+                    archive: true
+        hello.jar:
+            content:
+                -
+                    empty: true
+----
+
+Note that any failure will cause the boot to fail, thus this description will fail with an IllegalArgumentException describing the failure.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+Support for managed deployments.
+
+== Backwards Compatibility
+
+// Does this enhancement affect backwards compatibility with previously released
+// versions of WildFly?
+// Can the identified incompatibility be avoided?
+
+=== Default Configuration
+
+=== Importing Existing Configuration
+
+=== Deployments
+
+=== Interoperability
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+
+== Security Considerations
+
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+
+== Test Plan
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
