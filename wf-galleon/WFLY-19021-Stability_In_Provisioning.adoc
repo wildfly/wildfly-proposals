@@ -1,0 +1,315 @@
+---
+categories:
+  - wf-galleon
+---
+= [Community] WildFly provisioning to support WildFly stability
+:author:            Jean-Francois Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WildFly 31 introduced the notion of stability level. Galleon, WildFly Galleon plugins and provisioning tooling must be evolved to support this notion.
+This proposal describes how stability is handled by the WildFly provisioning. 
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-19021[WFLY-19021] - WildFly provisioning to support WildFly stability
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFCORE-6668[WFCORE-6668] - Ensure read-feature-description results contain stability as reported by associated description for use by WildFly Glow
+* https://issues.redhat.com/browse/WFGP-265[WFGP-265] - Support setting a minimum stability level when provisioning
+* https://issues.redhat.com/browse/WFGP-264[WFGP-264] - Support setting a minimum stability level when building a feature pack
+* https://issues.redhat.com/browse/GAL-357[GAL-357] - Support for feature/package stability
+* https://github.com/wildfly-extras/prospero/issues/570[Issue 570] - Support in prospero for stability level
+
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [ ] Preview
+
+* [x] Community
+
+* [ ] default
+
+
+=== Dev Contacts
+
+* mailto:{brian.stansberry@redhat.com}[Brian Stansberry]
+* mailto:{kkhan@redhat.com}[{Kabir Khan}]
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* N/A.
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly[WildFly]
+* https://github.com/wildfly/galleon-plugins[WildFly Galleon plugins]
+* https://github.com/wildfly/galleon[Galleon]
+* https://github.com/wildfly/wildfly-glow[WildFly Glow]
+* https://github.com/wildfly/wildfly-maven-plugin[WildFly Maven Plugin]
+* https://github.com/wildfly-extras/wildfly-jar-maven-plugin[WildFly Bootable JAR]
+* https://github.com/wildfly-extras/prospero[Prospero]
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+Stability becomes a Galleon notion that applies to feature-pack, feature/feature_param and package.
+There is a 1 to 1 mapping with WildFly stability.
+The stability levels are: `default` >`community` > `preview` > `experimental`
+
+Galleon feature-pack descriptor is extended with 2 new attributes:
+
+* `config-stability-level`: The stability to be used when provisioning configurations.
+* `package-stability-level`: The stability to be used when provisioning packages.
+
+These attributes are set when building Galleon feature-packs and used by Galleon runtime at provisioning time.
+
+=== Requirements at feature-pack build time
+ 
+==== feature-pack minimum stability level
+
+A minimum stability level can be set at feature-pack build time. If no stability level is specified, the `default` level is used.
+
+Stability level is set thanks to a new option of the WildFly Galleon Plugins Maven plugin: 
+`<minimum-stability-level>default|community|preview|experimental</minimum-stability-level>`
+
+Feature-specs and packages at a lower stability level than is specified will not be included in the feature pack.
+
+==== feature-pack provisioning stability level
+
+This level is used as the default stability level to be used when provisioning server configurations and packages.
+If no stability level is specified, the `default` level is used for both configs and packages stability levels. 
+It is set thanks to a new option of the WildFly Galleon Plugins Maven plugin: 
+`<stability-level>default|community|preview|experimental</stability-level>`.
+
+[NOTE]
+====
+If one wants to have different values for configs and packages, then `<config-stability-level>` and `<package-stability-level>` are to be used instead of `<stability-level>`.
+The use case for using `config-stability-level` and `package-stability-level` as an alternative to `stability-level` 
+is when the user wishes to generates configurations with features at a given stability level 
+while allowing provisioning of packages at a lower level. 
+The presence of the lower stability level packages allows subsequent update of the configuration to enable lower stability features.
+====
+
+==== feature-pack provisioning config stability level
+
+This level is used as the default stability level to be used when provisioning server configurations.
+If no stability level is specified at feature-pack build time, the `default` level is used.
+Stability level is set thanks to a new option of the WildFly Galleon Plugins Maven plugin: 
+`<config-stability-level>default|community|preview|experimental</config-stability-level>`
+
+This level can be overridden at provisioning time with the Galleon option `<config-stability-level>`
+
+==== feature-pack provisioning package stability level
+
+This level is used as the default stability level to be used when provisioning server packages (e.g.: JBoss Modules modules). 
+If no stability level is specified, the `default` level is used.
+Stability level is set thanks to a new option of the WildFly Galleon Plugins Maven plugin: 
+`<package-stability-level>default|community|preview|experimental</package-stability-level>`
+
+This level can be overridden at provisioning time with the Galleon option `<package-stability-level>`
+
+[NOTE]
+====
+* Configuring `<stability-level>` and `<config|package-stability-level>` options in the same plugin execution is not supported and will lead to a failure.
+* If the specified stability level is not enabled by the level specified by the 'minimum-stability-level' setting, the build of the feature pack will fail.
+* This stability level is not the minimal stability level at which a feature-pack can be provisioned. At provisioning time, a lower stability level 
+for both configs and packages can be specified.
+====
+
+==== JBoss Modules modules stability level
+
+A stability level can be set in `module.xml` thanks to the property `jboss.stability`. 
+Possible value being `default|community|preview|experimental`. If no stability is specified, `default` is assumed.
+
+==== Implementation notes
+
+At build time, the minimum stability level is used in 2 cases:
+
+* To start the embedded server that generates the Galleon features at the correct stability level (allowing the features to be discovered in the server).
+* To filter-out packages at a stability level lower than the minimum-stability level. Such packages are not packaged inside the feature-pack.
+
+==== Stability levels for WildFly feature-packs
+
+Expected minimum stability levels for WildFly feature-packs:
+
+* wildfly-ee-galleon-pack: `experimental`
+* wildfly-galleon-pack: `experimental`
+* wildfly-preview-feature-pack: `experimental`
+* wildfly-core: `experimental`
+
+Expected config stability levels for WildFly feature-packs:
+
+* wildfly-ee-galleon-pack: `community`
+* wildfly-galleon-pack: `community`
+* wildfly-preview-feature-pack: `preview`
+* wildfly-core: `community`
+
+Expected package stability levels for WildFly feature-packs:
+
+* wildfly-ee-galleon-pack: `experimental`
+* wildfly-galleon-pack: `experimental`
+* wildfly-preview-feature-pack: `experimental`
+* wildfly-core: `experimental`
+
+=== Requirements at provisioning time
+
+Provisioning time follows some rules to properly handle stability and avoid features/packages of wrong stability being provisioned.
+
+* The feature-pack contained config stability level is used to constrain the set of provisioned features. Any features at a lower stability level contained in the 
+feature-pack (if any), are not provisioned.
+* The feature-pack contained package stability level is used to constrain the set of provisioned packages. Any packages at a lower stability level contained in the 
+feature-pack (if any), are not provisioned.
+* By default, the config and package stability levels of each feature-pack are used when provisioning its own content. 
+* Each feature-pack present in the provisioning configuration can have a different config stability level. 
+The config stability of each feature-pack applies to its own content and doesn't leak into other feature-packs.
+* Each feature-pack present in the provisioning configuration can have a different package stability level. 
+The package stability of each feature-pack applies to its own content and doesn't leak into other feature-packs.
+* A user can specify a config stability level, by means of the `config-stability-level` Galleon option. NB: This option can't be set when `stability-level` is set.
+This stability level is used to enable the stability level of all features present in configurations generated during provisioning.
+* A user can specify a package stability level, by means of the `package-stability-level` Galleon option. 
+This stability level is used to set the stability level of all provisioned packages. NB: This option can't be set when `stability-level` is set.
+* A user can specify a stability level for both configs and packages, by means of the `stability-level` Galleon option. This option is a convenience 
+allowing to set both the config and package stability level using a single option. It can't be set when `config-stability-level` or `package-stability-level` 
+are in use.
+* At provisioning time, usage of `<stability-level>` and `<config|package-stability-level>` options in the same provisioning execution 
+is not supported and would lead to a failure.
+
+For example, a provisioning configuration containing 3 feature-packs:
+
+* A, config and package stability default, minimum stability default
+* B, config and package stability community, minimum stability community
+* C, config and package stability experimental, minimum stability experimental
+
+If no stability level is specified:
+
+* `default` features/packages of A are provisioned
+* `community` and `default` features/packages of B are provisioned
+* `experimental`, `preview`, `community` and `default` features/packages of C are provisioned
+
+If the config stability level `default` is specified:
+
+* `default` features and packages of A are provisioned
+* `default` features + `community` and `default` packages of B are provisioned
+* `default` features + `experimental` and `preview` and `community` and `default` packages of C are provisioned
+
+If the package stability level `experimental` is specified:
+
+* `default` features/packages of A are provisioned
+* `community` and `default` features/packages of B are provisioned
+* `experimental`, `preview`, `community` and `default` features/packages of C are provisioned
+
+Example of a feature-pack containing packages and features at a lower stability level than its default stability levels:
+
+* The feature-pack A contains features at `default`, `community` and `preview` level.
+* The feature-pack A contains packages at `default`, `community` and `preview` level.
+* The default package stability level is `community`.
+* The default community stability level is `community`.
+* The minimum stability level is set to `preview`.
+
+If no stability level is specified:
+
+* `default` and `community` features/packages of A are provisioned
+
+If the package and config stability level `preview` is specified:
+
+* `default`, `community` and `preview` features/packages of A are provisioned
+
+==== Lowest config stability level needed by WildFly Galleon Plugins
+
+At provisioning time, when WildFly Galleon plugin generates the server configurations, 
+a WildFly embedded server is started. This server is started with a stability level computed in the following way:
+
+* If a config stability level has been specified by the user, this level is used.
+* If no config stability level has been specified, the lowest config stability level of all feature-packs present in the provisioning is used.
+
+=== Provisioning tooling requirement
+
+The following Galleon based tooling should let users specify the `config-stability-level` and `package-stability-level` options:
+
+* Galleon CLI and Maven plugin
+* WildFly Maven Plugin
+* WildFly Bootable JAR Maven Plugin
+* WildFly Glow
+
+* In addition, for WildFly Glow, information about the features/packages that would be not provisioned for a given stability level 
+is displayed to the user.
+
+=== Nice-to-Have Requirements
+
+* Support for stability in Prospero provisioning tooling.
+
+=== Non-Requirements
+
+* Recording and utilizing stability information in Galleon configuration elements 
+at a higher granularity level than a feature-spec or package (i.e. configs, layers, feature-groups).
+
+* If a provisioning plan (i.e. a provisioning.xml or other provisioning tooling configuration that instructs the tooling about what to provision) 
+involves configs, layers of feature-groups that reference features or packages that are not available at the stability level in effect, 
+the result is not specified. That is:
+** Always rejecting provisioning such a server is not required.
+** Always provisioning a working server is not required.
+** Best practice for feature pack authors is to not include features or packages at a lower stability level in configs, 
+layers or feature-groups that are expected to be used in servers provisioned at a higher stability level. 
+However it is not the responsibility of the Galleon tooling to enforce this best practice or to guarantee a particular result 
+if best practice is not followed.
+
+== Future Works
+
+* An attempt could be made to identify, at feature-pack build time, the Galleon content that 
+references packages below the minimal stability level (so not included) and abort.
+
+== Backwards Compatibility
+
+* Galleon must be backward compatible with older WildFly releases not supporting stability.
+
+== Test Plan
+
+* Add new unit tests to Galleon project.
+* Add new tests to the Galleon Plugins project.
+** Define 4 subsystems to cover the 4 known stability levels.
+** Define a set of packages, modules and features at the 4 known stability levels in a common set.
+** Defines 4 feature-packs for a given minimum stability level. Each feature-pack includes resources from the common set, 
+so filtering is applied when building the feature-pack to exclude content at a lower stability level.
+** Test that the feature-pack content must not contain any content at a lower stability level.
+** Test that the provisioned content must be compliant with the provisioning time stability level (if provided, otherwise must be compliant with the feature-pack defined stability level(s)).
+
+== Community Documentation
+
+* Add documentation to Galleon and WildFly Glow.
+
+* Add documentation to WildFly:
+https://docs.wildfly.org/31/Bootable_Guide.html[Bootable Guide] and 
+https://docs.wildfly.org/31/Galleon_Guide.html[Galleon Guide]
+
+* https://docs.wildfly.org/wildfly-maven-plugin/releases/4.2/provision-mojo.html#galleonOptions[WildFly Maven Plugin documentation] 
+should be enhanced with a link to Galleon and WF Galleon Plugin doc that enumerates the options.
+
