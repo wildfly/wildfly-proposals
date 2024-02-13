@@ -76,8 +76,7 @@ NOTE: The previous hard requirements are inspired from the functionalities alrea
 
 === Nice-to-Have Requirements
 
-* Introducing an asynchronous graceful shutdown would enable all ServerActivity implementations to receive a pre-suspend/suspend signal concurrently. In this way, the timeout will have the same duration for all ServerActivity implementations.
-* [Alternatively, the sequence to suspend](https://github.com/wildfly/wildfly-core/blob/22.0.1.Final/server/src/main/java/org/jboss/as/server/suspend/SuspendController.java#L62) ServerActivity implementations during WildFly’s graceful shutdown should be Last In First Out (LIFO), i.e. the last ServerActivity implementation that was registered during startup should be the first one to get suspended.
+* The sequence to suspend](https://github.com/wildfly/wildfly-core/blob/22.0.1.Final/server/src/main/java/org/jboss/as/server/suspend/SuspendController.java#L62) ServerActivity implementations during WildFly’s graceful shutdown should be Last In First Out (LIFO), i.e. the last ServerActivity implementation that was registered during startup should be the first one to get suspended.
 
 === Non Requirements
 
@@ -95,16 +94,13 @@ Narayana will internally handle the lifecycle of transactions during suspension.
 === WildFly
 
 At the moment, WildFly’s graceful shutdown cannot be employed in cloud environments out of the box, especially when it comes to handling transactions during its suspension. In fact, as proved with WildFly’s Kubernetes Operator, before scaling down a pod hosting WildFly, all transactions must be completed.
-Even though WildFly’s graceful shutdown already gives the possibility to wait indefinitely, the Transactions subsystem does not really take advantage of this feature. Moreover, there is also an open question about whether the graceful shutdown should be processed synchronously or asynchronously. Currently, the list of subsystems registered with WildFly’s Suspend Controller is processed synchronously, which has its pros and cons.
+Even though WildFly’s graceful shutdown already gives the possibility to wait indefinitely, the Transactions subsystem does not really take advantage of this feature.
 
 ==== Modifications to WildFly’s Graceful Shutdown (wildfly-core)
 
 Following, modifications to WildFly’s graceful shutdown are discussed in more detail.
 
-*Sync or Async? ->* With regards to the open question presented in the overview, WildFly’s SuspendController synchronously calls pre-suspend and suspend on ServerActivity implementations. As a single timer is started to handle the overall graceful shutdown’s timeout, `ServerActivity` implementations (SAI) have to return very quickly from their pre-suspend/suspend routines to give enough time to other SAIs to process their pre-suspension/suspension. This means that timeout diminishes as SAIs process their suspension. This might result in prematurely cancelling the graceful shutdown for the last SAI in the queue as the overall timeout might have already elapsed. On the other hand, with a synchronous handling, WildFly suspends all registered SAIs one by one, which means that the next SAI does not receive the signal to pre-suspend/suspend until the current SAI has returned the call to pre-suspend/suspend. With an asynchronous suspension, this will no longer be the case and all SAIs will initiate their pre-suspension/suspension concurrently. As a consequence, SAIs should coordinate better their suspensions instead of relying on the intrinsic isolation of the synchronous approach.
-*Proposed modifications.* Introducing an asynchronous graceful shutdown would enable all SAIs to receive a pre-suspend/suspend signal concurrently. In this way, the timeout will have the same duration for all SAIs.
-
-*FIFO or LIFO ->* At the moment, the order to suspend SAIs in WildFly’s graceful shutdown is FIFO, i.e. the first SAI that gets registered at boot time is also the first SAI to get suspended. This logic does not respect the dependencies among MSC services forced during WildFly’s boot time. [The sequence to suspend](https://github.com/wildfly/wildfly-core/blob/22.0.1.Final/server/src/main/java/org/jboss/as/server/suspend/SuspendController.java#L62) SAIs during WildFly’s graceful shutdown should be Last In First Out (LIFO), i.e. the last SAI that was registered during startup should be the first SAI to get suspended. From the Transactions subsystem’s point of view, this would ensure that dependent subsystems get pre-suspended (and, subsequently, suspended) before the Transactions subsystem. The improvement introduced by the LIFO order is only relevant in case it is decided that the asynchronous processing will not be implemented.
+*FIFO or LIFO ->* At the moment, the order to suspend SAIs in WildFly’s graceful shutdown is FIFO, i.e. the first SAI that gets registered at boot time is also the first SAI to get suspended. This logic does not respect the dependencies among MSC services forced during WildFly’s boot time. [The sequence to suspend](https://github.com/wildfly/wildfly-core/blob/22.0.1.Final/server/src/main/java/org/jboss/as/server/suspend/SuspendController.java#L62) SAIs during WildFly’s graceful shutdown should be Last In First Out (LIFO), i.e. the last SAI that was registered during startup should be the first SAI to get suspended. From the Transactions subsystem’s point of view, this would ensure that dependent subsystems get pre-suspended (and, subsequently, suspended) before the Transactions subsystem.
 
 == Test Plan
 
