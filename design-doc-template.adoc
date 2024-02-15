@@ -23,6 +23,16 @@ categories:
 
 * https://issues.redhat.com/browse/WFLY[WFLY-XXXX]
 
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [ ] Preview
+
+* [ ] Community
+
+* [ ] default
+
 === Dev Contacts
 
 * mailto:{email}[{author}]
@@ -56,8 +66,18 @@ categories:
 === Hard Requirements
 
 === Nice-to-Have Requirements
+// Requirements in this section do not have to be met to merge the proposed functionality.
+// Note: Nice-to-have requirements that don't end up being implemented as part of
+// the work covered by this proposal should be moved to the 'Future Work' section.
+
 
 === Non-Requirements
+// Use this section to explicitly discuss things that readers might think are required
+// but which are not required.
+
+=== Future Work
+// Use this section to discuss requirements that are not addressed by this proposal
+// but which may be addressed in later proposals.
 
 == Backwards Compatibility
 
