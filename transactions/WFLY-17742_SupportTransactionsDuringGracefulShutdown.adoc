@@ -69,6 +69,7 @@ NOTE: There are additional complications when hosting entities crash (i.e. an un
 ** For a positive timeout: WildFly will postpone suspension for the specified duration; during this time window, WildFly should apply the same behaviour defined in the case of a negative timeout
 * The administrator needs to receive notifications when the Transactions subsystem is causing delays in the graceful shutdown of WildFly, achieved through integration with the existing logging mechanism. This is especially true when a negative timeout is used (i.e. indefinite graceful shutdown). Moreover, internal details like [ServerActivity](https://github.com/wildfly/wildfly-core/blob/22.0.2.Final/server/src/main/java/org/jboss/as/server/suspend/ServerActivity.java) do not need to be prominent. Part of working out such a notification would be how to consistently describe a ServerActivity to the administrator in an understandable manner without exposing internal technical implementation details
 ** Sufficient information about expired, in-doubt, and heuristic transactions should be reported as soon as they are known (so not waiting for shutdown) to inform the administrator about the state of the transactions subsystem and allow them to manually reconcile expired and heuristic transactions (keeping in mind the effect of a positive timeout)
+* From a set point forward, the transactions subsystem should only focus on completing "left-over" transactions without accepting new ones. This is only possible if the implementation of this proposal would stop the creation of transactions when the suspend hook is invoked. Other subsystems that handle their requests in a transactional context should implement their graceful shutdown taking into consideration the lifecycle of the transactions they initiated. For example, the EJB subsystem follows this logic
 
 NOTE: The previous hard requirements are inspired from the functionalities already implemented in the transactional_recovery module of the [Kubernetes Operator of WildFly](https://github.com/wildfly/wildfly-operator/blob/main/controllers/transaction_recovery.go). This proposal does not seek to improve the overall design/behaviour of those functionalities. For an overview of the features implemented in the transactional module of the Operatore, please refer to the [official documentation](https://github.com/wildfly/wildfly-operator/blob/main/doc/user-guide.adoc#transaction-recovery-during-scaledown).
 
@@ -111,10 +112,10 @@ Following, modifications to WildFly’s graceful shutdown are discussed in more 
 == Community Documentation
 
 The following points should be considered in the documentation:
-* From a set point forward, the transactions subsystem should only focus on completing "left-over" transactions without accepting new ones. This is only possible if the implementation of this proposal would stop the creation of transactions when the suspend hook is invoked. Other subsystems that handle their requests in a transactional context should implement their graceful shutdown taking into consideration the lifecycle of the transactions they initiated. For example, the EJB subsystem follows this logic
 * As WildFly’s graceful shutdown should be modified, WildFly’s documentation should reflect the different behaviour. Moreover, it should be mentioned that, in a cloud environment, when the hosting entity crashes, its state should be recovered by the cloud environment without the intervention of the administrator
 
 == Release Note Content
 
 * Graceful shutdown is modified to take into account cases where WildFly will not be restarted/resumed. In particular, to complete a graceful shutdown, all transactions must now complete their life cycles
 * It should be mentioned that, in a cloud environment, when the hosting entity crashes, its state should be recovered by the cloud environment without the intervention of the administrator
+
