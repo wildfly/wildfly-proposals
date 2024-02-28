@@ -3,9 +3,9 @@ categories:
 # Add any category for this proposal
 # if missing, add it to _data/widfly-categories and use its id
 ---
-= Template <INSERT TITLE HERE>
-:author:            Your Name
-:email:             your.email@redhat.com
+= [WFLY-18749] Deploying a jar with unsatisfied dependencies does not warn/throw an exception
+:author:            Christina Dasoula
+:email:             cdasoula@redhat.com
 :toc:               left
 :icons:             font
 :idprefix:
@@ -13,15 +13,22 @@ categories:
 
 == Overview
 
+The proposed feature aims to enhance the recognition of deprecated "javax" imports and give a detailed view
+of their location inside the codebase. This targeted approach can significantly reduce the time and effort
+required to address deprecated imports, allowing developers  to focus mostly on the problem.
+The incorporation of a configurable option for developers to enable or disable the deprecation check based on their needs,
+adds flexibility and is beneficial, especially during transitions to different Enterprise Edition (EE) versions
+The proposed feature aims to facilitate the maintenance process, codebase health and developer productivity.
+
 == Issue Metadata
 
 === Issue
 
-* https://issues.redhat.com/browse/WFCORE[WFCORE-XXXX]
+* https://issues.redhat.com/browse/WFLY-18749[WFLY-18749]
 
 === Related Issues
 
-* https://issues.redhat.com/browse/WFLY[WFLY-XXXX]
+* https://issues.redhat.com/browse/JBEAP-26071[JBEAP-26071]
 
 === Stability Level
 // Choose the planned stability level for the proposed functionality
@@ -35,7 +42,7 @@ categories:
 
 === Dev Contacts
 
-* mailto:{email}[{author}]
+* cdasoula@redhat.com[Christina Dasoula]
 
 === QE Contacts
 
@@ -64,6 +71,12 @@ categories:
 == Requirements
 
 === Hard Requirements
+
+* Provide a centralized point of configuration within the codebase in the form of a configuration hook that gives
+the ability to enable/disable checks for the “javax” imports.
+* Provide, in every subsystem, a check designed to identify unsatisfied dependencies within a deployment pertaining to "javax.
+* Provide warnings when “javax” imports exist, delineating the exact subsystem to which each import belongs.
+
 
 === Nice-to-Have Requirements
 // Requirements in this section do not have to be met to merge the proposed functionality.
@@ -112,8 +125,12 @@ or a confirmation that there are no security implications to consider.
 
 == Community Documentation
 ////
-Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature
+is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation.
+Indicate which of these will happen.
 ////
+
+* Addition to the specification section in the https://docs.wildfly.org/30/Getting_Started_Guide.html[Getting Started Guide].
 == Release Note Content
 ////
 Draft verbiage for up to a few sentences on the feature for inclusion in the
