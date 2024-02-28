@@ -1,0 +1,106 @@
+= Transaction heuristic state should be reported in a better way
+:author:            Ondrej Chaloupka
+:email:             ochaloup@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:keywords:          openshift,transactions,recovery
+
+
+== Overview
+
+If a pod is scale down then all transactions need to be finished before the pod is terminated.
+It's responsibility of WildFly Operator to maintain the transaction consistency in this manner.
+The WildFly operator runs transaction recovery for his purpose to clean the transaction log.
+During the transaction recovery process there are some cases which are not presented to the user
+in a good manner. These need to be enhanced. Then a developer mode where transaction recovery
+is not run at all needs to be offered in the WildFly Operator functionality.
+
+== Issue Metadata
+
+=== Issue
+
+* https://github.com/wildfly/wildfly-operator/issues/100
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/CLOUD-2262[CLOUD-2262]
+
+=== Dev Contacts
+
+* mailto:ochaloup@redhat.com[{author}]
+
+=== QE Contacts
+
+* ?
+
+=== Testing By
+
+[x] Engineering
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly Operator
+
+=== Other Interested Projects
+
+* Transactions
+
+== Description of the feature
+
+When transaction scale down process reviews the state of transactions in the pods it checks if there are no unfinished prepared transactions.
+If there are found some then it does not permit the pod being terminated and the pod is marked with the _state_ `SCALING_DOWN_RECOVERY_DIRTY`.
+It's marked as dirty until all transactions are safely recovered.
+
+There are cases when transaction is never recovered in automated manner. It's time when transaction ended in heuristics.
+Such transaction needs to be handled manually by administrator. Administrator has to manually connect to the application server running at the pod
+and use the `jboss-sh.cli` to verify and finish such transactions.
+
+The goal of this feature change is that the WildFly Operator needs to report better the transactions in heuristic to user/administrator.
+
+* a new _pod state_ should be created. This _state_ would mean that there are some transactions in heuristic state which needs a manual recovery (because otherwise the pod is never terminated)
+* when the pod is marked with this heuristic _state_ an event about this should be emitted (event should be bound to the pod and to the operator object as well). The event announces that there is a pod in scaledown process which requires a manual assistance.
+* a counter of the recovery attempts should be held for the pod
+* there should be a way to ignore status of transaction recovery processing which means scale down processing terminates the pod immideiatelly without checking the transaction status. Users might want it during development, where data integrity doesn't matter.  
+
+
+== Requirements
+
+=== Hard Requirements
+
+* a _pod state_ *SCALING_DOWN_RECOVERY_HEURISTICS* will be created which reports heuristic transaction found during scaledown process and manual intervention is needed
+* on marking the pod with _state_ *SCALING_DOWN_RECOVERY_HEURISTICS* an event will be emitted for pod and WildFly Operator objects
+* a counter which holds number of recovery attempts will be offered
+* an new flag for the _WildFlyServer_ CR will be created which will deactivate transaction recovery for scaledown processing,
+  which means on scaledown the WildFly pod will be terminated immediatelly without checking status of the transactions.
+  This flag will be by default `false`.
+
+=== Nice-to-Have Requirements
+
+_NONE_
+
+=== Non-Requirements
+
+_NONE_
+
+== Test Plan
+
+The test means to automatize the checks for newly created state and counter and to check if the flag is working.
+The EAP QE testsuite for OpenShift should be used for this.
+
+* the existing test will check if recovery counter is counting the recovery when it happens
+* a new test where heuristic transaction will be created will check if the pod is marked with the new state and that the event was emitted
+* a test which sets the new flag to _WildFlyServer_ CR will be created. There will be created a new pod which will create a prepared
+  transaction into the Narayana object store, the flag will be set to `true` which means that on scaledown the pod will be immediatelly terminated
+  and the transaction is not finished.
+
+== Community Documentation
+
+Documentation for WildFly Operator will be enhanced with the information about the _new state_, flag etc.
+
+== Release Note Content
+
+This is not needed to be documented.
+
