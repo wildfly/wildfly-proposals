@@ -1,0 +1,104 @@
+---
+categories:
+  - elytron
+---
+= WFLY-18163 Make it possible to use JaasSecurityRealm via a custom-realm resource
+:author:            Diana Krepinska
+:email:             dvilkola@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This feature is about adding a possibility to add a JAAS based security realm via the custom-realm resource. Primary need for this feature is to allow users to use jaas-realm resource conveniently in older versions where it was not available and users want to use JDK 17.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-18163[WFLY-18163] community docs will be added here
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/ELY-2544[ELY-2544] - implementation
+* https://issues.redhat.com/browse/EAP7-2068[EAP7-2068] - EAP issue tracker
+* https://issues.redhat.com/browse/WFCORE-6411[WFCORE-6411] - Wildfly core custom-realm tests issue tracker
+
+=== Dev Contacts
+
+* mailto:dvilkola@redhat.com[Diana Krepinska]
+
+=== QE Contacts
+
+* mailto:okotek@redhat.com[Ondrej Kotek]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly-security/wildfly-elytron[WildFly Elytron project]
+* https://github.com/wildfly-core/wildfly-core will have tests of custom-realm resource added
+* https://github.com/wildfly/wildfly will have community documentation added
+
+== Requirements
+
+=== Hard Requirements
+
+* It must be possible to add the `custom-realm` resource in the management model that will use the code of jaas-realm.
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+== Implementation Plan
+
+The task will be achieved by adding custom realm wrapper around existing JaasSecurityRealm class. This custom realm wrapper will be deprecated as users should use jaas realm directly when available. This wrapper class will be added to the `wildfly-core` repository and new module `org.wildfly.extension.elytron.jaas-realm` will be added to expose it.
+
+Example of usage:
+
+```
+[standalone@localhost:9990 /] module add --name=jaasLoginModule --resources=path/to/login/modules/jar --dependencies=org.wildfly.security.elytron
+
+[standalone@localhost:9990 /] /subsystem=elytron/custom-realm=myRealm:add(module=org.wildfly.extension.elytron.jaas-realm,class-name=org.wildfly.extension.elytron.JaasCustomSecurityRealmWrapper,configuration={entry=Entry1,module=jaasLoginModule,callback-handler=org.example.ExampleCallbackHandler,path=/my/example/path,relative-to=jboss.server.config.dir})
+```
+
+Supported configuration options:
+
+* **entry** JAAS configuration file entry name
+
+* **path** Path to the JAAS configuration file. You can also specify the location of the configuration with java system property "java.security.auth.login.config" or with java security property "login.config.url"
+
+* **relative-to** Optional base folder for the path.
+
+* **module** The WildFly module with Login Module implementations and Callback Handler implementation.
+
+* **callback-handler** Callback handler to use with the Login Context. Security property "auth.login.defaultCallbackHandler" can be used instead. The default callback handler of the realm will be used if none of these are defined.
+
+Attribute **entry** is required and all other attributes are optional.
+
+
+== Test Plan
+
+* WildFly Elytron test suite: Functional tests  - functionality tests
+* WildFly Core test suite: Functional tests - testing of adding custom-realm resource that uses JaasSecurityRealm class
+* WildFly test suite: arquillian tests using a deployed web app secured with jaas realm defined as a custom realm resource
+
+== Community Documentation
+
+No community documentation is needed as users can use jaas realm directly.
+
+== Release Note Content
+
+You can now add a JAAS security realm as a custom realm resource without using jaas-realm. This approach is deprecated, and you should use the jaas-realm resource instead.
+
