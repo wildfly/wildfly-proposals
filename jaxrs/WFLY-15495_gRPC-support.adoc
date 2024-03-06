@@ -1,0 +1,284 @@
+= Add support for gRPC
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+The goal of this RFE is to provide support for gRPC in WildFly. https://grpc.io/[gRPC] is a high-performance RPC framework.
+It can efficiently connect services implemented using various languages and frameworks.
+It is also applicable in the last mile of distributed computing to connect devices, mobile applications, and browsers to backend services.
+
+This RFE will add a gRPC subsystem to WildFly.
+It:
+
+* supports implementing gRPC services
+* supports consuming gRPC services
+* integrates with other WildFly components such as CDI, MP health, security or transaction
+* allows plain-text communication as well as TLS, and TLS with mutual authentication
+
+The gRPC subsystem provides a default configuration for all gRPC services and clients. The major part of the gRPC subsystem is a deployment unit processor which scans deployments for gRPC services, clients and interceptors. The default configuration can be overriden on a deployment basis.
+
+The gRPC subsystem defines a https://docs.wildfly.org/galleon/#_layers[Galleon layer] which will be responsible for providing the gRPC subsystem.
+
+=== Jakarta RPC Specification
+
+There's a Jakarta EE proposal for a specification called https://projects.eclipse.org/reviews/jakarta-rpc-creation-review[Jakarta RPC].
+This specification aims to make gRPC services and clients easier to implement in Java.
+The specification proposes a programming model for gRPC similar to JAX-RS and MicroProfile REST Client.
+As the time of writing, the proposal is not an official specification yet and very much wip.
+
+The scope of this RFE is *not* to implement Jakarta RPC.
+If it becomes a Jakarta EE specification at some point in time, there might be a follow-up RFE to support such a specification.
+Instead, this RFE is about to bring gRPC support to WildFly.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/WFLY-15495[WFLY-15495]
+* {issue-base-url}/EAP7-1819[EAP7-1819]
+
+=== Related Issues
+
+* {issue-base-url}/WFLY-13530[WFLY-13530]
+* {issue-base-url}/EAP7-1536[EAP7-1536]
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* TBD
+
+=== Testing By
+
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+
+== Requirements
+
+=== Hard Requirements
+
+* The gRPC subsystem provides a default configuration
+* The Galleon layer must provide the gRPC subsystem configuration.
+* gRPC services, clients and interceptors can be deployed independently of each other
+* gRPC services, clients and interceptors can be configured independently of each other
+* The gRPC subsystem integrates with the Elytron subsystem to provide TLS, and TLS with mutual authentication
+
+=== Nice-to-Have Requirements
+
+* WildFly quickstart for gRPC clients, services and interceptors
+* Support of https://github.com/grpc/grpc/blob/master/doc/health-checking.md[gRPC health check]
+* Support of https://github.com/grpc/grpc/blob/master/doc/server-reflection.md[gRPC relfection]
+* Support of https://smallrye.io/smallrye-mutiny/[Mutiny] API
+* A gRPC chapter in the WildFly https://github.com/wildfly/wildfly/tree/main/docs/src/main/asciidoc/_developer-guide[developer guide]
+
+=== Non-Requirements
+
+* Support of Jakarta gPRC specification
+
+=== Default Configuration
+
+The gRPC subsystem provides a default configuration which is applied to all gRPC services and clients and which can be overriden on a deployment basis.
+
+==== Client
+
+`plain-text`::
+Whether `plain-text` should be used instead of TLS.
+Enables by default, except it TLS/SSL is configured.
+In this case, `plain-text` is disabled.
+
+`keep-alive-time`::
+The duration after which a keep alive ping is sent.
+
+`flow-control-window`::
+The flow control window in bytes.
+Default is 1MiB.
+
+`idle-timeout`::
+The duration without ongoing RPCs before going to idle mode.
+
+`keep-alive-timeout`::
+The amount of time the sender of a keep alive ping waits for an acknowledgement.
+
+`keep-alive-without-calls`::
+Whether keep-alive will be performed when there are no outstanding RPC on a connection.
+
+`max-hedged-attempts`::
+The max number of hedged attempts.
+
+`max-retry-attempts`::
+The max number of retry attempts.
+Retry must be explicitly enabled.
+
+`max-trace-events`::
+The maximum number of channel trace events to keep in the tracer for each channel or sub-channel.
+
+`max-inbound-message-size`::
+The maximum message size allowed for a single gRPC frame (in bytes).
+Default is 4 MiB.
+
+`max-inbound-metadata-size`::
+The maximum size of metadata allowed to be received (in bytes).
+Default is 8192B.
+
+`per-rpc-buffer-limit`::
+The per RPC buffer limit in bytes used for retry.
+
+`retry`::
+Whether retry is enabled.
+Note that retry is disabled by default.
+
+`retry-buffer-size`::
+The retry buffer size in bytes.
+
+`user-agent`::
+Use a custom user-agent.
+
+`compression`::
+The compression to use for each call.
+The accepted values are gzip and identity.
+
+==== Server
+
+`handshake-timeout`::
+The gRPC handshake timeout.
+
+`max-inbound-message-size`::
+The max inbound message size in bytes.
+
+`max-inbound-metadata-size`::
+The max inbound metadata size in bytes
+
+`ssl.client-auth`::
+Configures the engine to require/request client authentication.
+NONE, REQUEST, REQUIRED
+
+`plain-text`::
+Disables SSL, and uses plain text instead.
+If disabled, configure the ssl configuration.
+
+`alpn`::
+Whether ALPN should be used.
+
+`netty.keep-alive-time`::
+Sets a custom keep-alive duration.
+This configures the time before sending a keepalive ping when there is no read activity.
+
+`compression`::
+gRPC compression, e.g. "gzip"
+
+=== Deployment
+
+gRPC services, clients and interceptors are deployed to WildFly using Jakarta EE deployments. Configuration is applied using a deployment descriptor.
+
+==== Deployment Descriptor
+
+[source,xml]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<grpc xmlns="urn:wildfly:grpc:1.0">
+    <server>
+        <host>localhost</host>
+        <port>9001</port>
+        <security>
+            <plain-text>true</plain-text>
+            <key-manager>keyManager</key-manager>
+        </security>
+        <services>
+            <service>
+                <class>com.acme.GrpcService1</class>
+                <interceptors>
+                    <interceptor>
+                        <class>com.acme.GrpcInterceptor1</class>
+                        <priority>10</priority>
+                    </interceptor>
+                    <interceptor>
+                        <class>com.acme.GrpcInterceptor2</class>
+                        <priority>20</priority>
+                    </interceptor>
+                </interceptors>
+            </service>
+            <service>
+                <class>com.acme.GrpcService2</class>
+            </service>
+        </services>
+        <interceptors>
+            <interceptor>
+                <class>com.acme.GrpcInterceptor1</class>
+            </interceptor>
+            <interceptor>
+                <class>com.acme.GrpcInterceptor2</class>
+            </interceptor>
+        </interceptors>
+        <!--
+            Other setting like timeouts, message size,
+            compression (see above).
+        -->
+    </server>
+    <clients>
+        <client>
+            <name>hello</name>
+            <host>localhost</host>
+            <port>9001</port>
+            <security>
+                <plain-text>true</plain-text>
+                <key-manager>keyManager</key-manager>
+            </security>
+            <interceptors>
+                <interceptor>
+                    <class>com.acme.GrpcInterceptor1</class>
+                    <priority>10</priority>
+                </interceptor>
+                <interceptor>
+                    <class>com.acme.GrpcInterceptor2</class>
+                    <priority>20</priority>
+                </interceptor>
+            </interceptors>
+            <!--
+                Other setting like timeouts, message size,
+                compression (see above).
+            -->
+        </client>
+    </clients>
+</grpc>
+----
+
+=== Development Model
+
+==== Services
+
+To implement a gRPC service, the class has to extend the generated gRPC implementation base and override the methods defined in the service interface. Finally, the class has to be marked with an `@GrpcService` annotation.
+
+If there's no access to the source code and one cannot place an annotation on the gRPC service implementation, the gRPC service has to be defined using the deployment descriptor.
+
+==== Server Interceptors
+
+A gRPC server interceptor has to implement `io.grpc.ServerInterceptor` and is applied to a gRPC service using an annotation or the deployment descriptor.
+
+==== Clients
+
+gRPC clients can be created using channels. The channel can be injected referencing the name given in the deployment descriptor. Using the channel both a blocking/synchronous clients and non-blocking/asynchronous clients can be created.
+
+==== Client Interceptors
+
+A gRPC client interceptor has to implement `io.grpc.ClientInterceptor` and is applied to a gRPC client using an annotation or the deployment descriptor.
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+In a first step documentation will be provided as part of the repositories README.
