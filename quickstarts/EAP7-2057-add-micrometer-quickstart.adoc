@@ -1,0 +1,85 @@
+= Add OpenTelemetry to the EAP XP quickstarts
+:author:            Jason Lee
+:email:             jasondlee@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+EAP XP 5 adds support for Micrometer, but there is no demonstration on how to use this new support. This QS will add a
+basic example showing how to enable support in XP and how an application might make use of it.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/EAP7-2057[EAP7-2057]
+* https://issues.redhat.com/browse/WFLY-17678[WFLY-17678]
+
+=== Related Issues
+
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* A new quickstart will be adding showing:
+** How to enable Micrometer support
+** How to use Micrometer in an application
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Backwards Compatibility
+
+This is a new QS
+
+=== Default Configuration
+
+=== Importing Existing Configuration
+
+=== Deployments
+
+=== Interoperability
+
+== Security Considerations
+
+== Test Plan
+
+On the engineering side, manual verification will be done by following the steps from the quickstart README. Additionally,
+the quickstart includes a simple integration test to verify the demo application and setup.
+
+== Community Documentation
+
+The quickstart and its documentation is already in the community.
+
+== Release Note Content
+A new Micrometer quickstart that demonstrates enabling Micrometer support, as well as generating and consuming metrics
+has been added to the EAP quickstarts.
