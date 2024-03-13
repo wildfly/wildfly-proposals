@@ -3,7 +3,7 @@ categories:
 # Add any category for this proposal
 # if missing, add it to _data/widfly-categories and use its id
 ---
-= Template <INSERT TITLE HERE>
+= [Experimental|Preview|Community|default]Template <INSERT TITLE HERE>
 :author:            Your Name
 :email:             your.email@redhat.com
 :toc:               left
