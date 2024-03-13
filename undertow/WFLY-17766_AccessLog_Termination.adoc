@@ -1,0 +1,114 @@
+= [Community] Add ability to configure access log termination schedule and delay
+:author:            Bartosz Baranowski
+:email:             bbaranow@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This RFE(https://issues.redhat.com/browse/WFLY-17766) is part of bug fix for https://issues.redhat.com/browse/WFLY-13933 / https://issues.redhat.com/browse/JBEAP-20056 . In order to avoid bad user experience and possible follow up, it would be
+good to allow configuration of write termination delay. Fix, in both issues is split into functional commit and second RFE commit - which adds functionality and model changes.
+
+Fix commit include only changes to allow graceful takeover of access log write operation. During runtime write ops are being handled by NIO thread. This thread on shutdown is terminated abruptly due to: https://issues.redhat.com/browse/WFCORE-1632
+To mitigate this problem first commit fix contractual requirements for access log classes and shifts burden of termination from NIO worker - just like other WFLY services that do async close.
+Async close will wait till aloted time( with interim checks ) runs off to take over agressively write OPs or until NIO worker yield. As is, in fix number of interim checks and wait period is fixed(interim_period*number_of_retries).
+
+RFE commits add changes to model and services in order to allow configuration of:
+ - number of retries between NIO worker state polls
+ - interim period
+ 
+NOTE: fix also slightly change how access log is being rotated. Previously it has been done on every write OP, which incured overhead.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-17766
+* https://issues.redhat.com/browse/WFLY-13933
+* https://issues.redhat.com/browse/JBEAP-20056
+* https://issues.redhat.com/browse/UNDERTOW-1794
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1642
+* 
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [ ] Preview
+
+* [X] Community
+
+* [ ] default
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [x] QE
+
+=== Affected Projects or Components
+
+Undertow and WFLY
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+Allow configuration of number of retries and delay between each access log write operations are taken forcefuly from NIO thread worker.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Implementation Plan
+
+Already done.
+
+== Test Plan
+ 
+Testing will only be possible with byteman or forced breakpoints as it is timing issue and can not be reliably reproduced in simple JUnit.
+
+== Community Documentation
+
+This will require documentation update on undertow access-log service( https://docs.wildfly.org/22/Admin_Guide.html#console-access-logging ? ) as RFE adds two new options. Both are described in undertow/src/main/resources/org/wildfly/extension/undertow/LocalDescriptions.properties under:
+- undertow.access-log.close-retry-count
+- undertow.access-log.close-retry-delay
+
+Furthermore it would be beneficial to detail that during runtime access-log write OPs are being handled by IO threads, which sadly are terminated as first. Thus during shutdown this particular IO is being taken over to allow continuity.
+ 
+ 
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
