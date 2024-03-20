@@ -1,10 +1,11 @@
 ---
 categories:
   - core
+  - management
 # Add any category for this proposal
 # if missing, add it to _data/widfly-categories and use its id
 ---
-= Ability to reload a server to a different stability level
+= [Community] Ability to reload a server to a different stability level
 :author:            Kabir Khan
 :email:             kkhan@redhat.com
 :toc:               left
@@ -44,6 +45,9 @@ This proposal attempts to solve that by providing a set of ServerSetupTasks that
 === Dev Contacts
 
 * mailto:{email}[{author}]
+* mailto:brian.stansberry@redhat.com[Brian Stansberry]
+* mailto:yborgess@redhat.com[Yeray Borges Santana]
+* mailto:jperkins@redhat.com[James Perkins]
 
 === QE Contacts
 
@@ -80,7 +84,7 @@ WildFly Core. The main changes will be in the server, testsuite/shared and tests
 - The operation will be registered at stability level 'community' at present
 - The operation is based on the reload operation, and adds a parameter called `stability`. This parameter takes the stability level we want to reload the server to
 - The operation also supports all the parameters supported by the standard reload operation
-- The operation has its own RBAC setting to narrow down who can call it
+- The operation has its own sensitive target access constraint setting to narrow down who can call it. It is called `reload-enhanced` and is set to `false` for accessDefault, readDefault and writeDefault.
 * A set of ServerSetupTasks for the WildFly Core test runner will be introduced. These use the above operation to reload the server to the desired stability level before running the tests, and to reload the server back to the original stability level after the tests have completed.
 ** The ServerSetupTasks perform the following checks, and skip the test using JUnit `Assume.assumeXXX()` if the condition is not met:
 *** The desired stability level is one of the ones supported by the server
@@ -100,7 +104,7 @@ WildFly Core. The main changes will be in the server, testsuite/shared and tests
 === Future Work
 // Use this section to discuss requirements that are not addressed by this proposal
 // but which may be addressed in later proposals.
-This is currently only implemented for standalone servers, so there is no domain mode support. In the future it could be nice to be able to reload the host controllers and possibly the managed servers to different stability levels.
+This is currently only implemented for standalone servers, so there is no domain mode support. In the future it could be nice to be able to reload the host controllers to a different stability level.
 
 Also, as this is currently mainly for the testsuite to be able to reload, there is no special support in the CLI's reload command for the enhanced reload operation. If this is seen usable for wider use, adding handling to the CLI command to expose the stability parameter could be interesting. The CLI command would need to take into account both the stability level of the server and the user's RBAC role in order to determine whether the enhanced reload operation is visible to the user. If the operation is visible, and the user wants to use the stability paramter, the enhanced reload operation will be called instead of the current reload operation.
 
@@ -141,7 +145,13 @@ Tests will be added to the testsuite/standalone module to ensure that the Server
 
 == Community Documentation
 
-The only user facing functionality here is the enhanced reload operation. The current intent is to keep this a bit hidden, so no community documentation will be added for this.
+The only user facing functionality here is the `reload-enhanced` operation. We deliberately don't promote direct use of low level reload operations, as any use of those operations requires the caller to properly handle reconnecting to the reloaded server. Our end-user documentation around reloading should focus on the high level CLI reload command, which is out of scope for this proposal.
+
+Additionally, reloading to a different stability level requires great care to make sure the server configuration is compatible with the target stability level.
+
+So, beyond the wildscribe management API documentation no community documentation will be added for this.
+
+
 
 == Release Note Content
 ////
