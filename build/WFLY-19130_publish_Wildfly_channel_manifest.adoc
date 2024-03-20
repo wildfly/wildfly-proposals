@@ -1,0 +1,197 @@
+---
+categories:
+  - wf-galleon
+  - maven
+---
+= [Community] Publish WildFly channel manifest
+:author:            Bartosz Spyrko-Smietanko
+:email:             bspyrkos@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+https://github.com/wildfly-extras/wildfly-channel[Wildfly-channels] added ability to create channels defining component versions used to provision WildFly.
+This ability is being used in component testing and by provisioning projects like Galleon plugins and Prospero.
+
+This proposal describes how the WildFly manifests should be published at build time.
+
+=== Channels overview
+
+A channel consists of a manifest and a set of artifact repositories. The manifest itself is an YAML file either deployed in one of the channel's repositories
+or referenced via an URL. This discussion will focus only on the former option.
+
+A manifest published in an an artifact repository, can be referenced using one of two options - either using a full Maven GAV, or as a stream of manifests,
+using just the GA part of the Maven coordinates.
+When using a full GAV of a manifest, the channel will always retrieve artifact versions associated with this version. On the other hand, when using only a GA,
+the channel will try to resolve the latest available version of the manifest, therefore providing the latest available components. The later scenario is used
+by provisioning tools like Prospero to provide updates for provisioned servers.
+
+If the channel is required to provide backwards compatibility guarantee, this should be enforced using either groupId or artifactId naming convention. 
+For example, if a project provides two concurrent versions (e.g. 1.2.x and 2.0.x), and wants to provide independent updates to both, it could create two
+separate channels `org.test:project-1.2` and `org.test:project-2.0`.
+
+On the other hand, if the channel wants to simply provide access to the latest project state, it can create a single manifest stream with coordinates like
+`org.test:project`. In this case, the newly published manifest might contain a non-backwards compatible upgrade (e.g. from version `1.2` to `2.0`).
+
+The actual versions that the manifest is published with are not relevant, as long as they are incremental. However, if the manifest is tied to a project 
+release (i.e. it can only be updated by releasing a new version of the project), using the same versions as the project will make it easier for the
+users to find correct manifest versions.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-19130[WFLY-19130]
+
+=== Related Issues
+
+
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [ ] Preview
+
+* [X] Community
+
+* [ ] default
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+* mailto:{brian.stansberry@redhat.com}[Brian Stansberry]
+* mailto:{jperkins@redhat.com}[James R. Perkins]
+
+=== QE Contacts
+
+* N/A
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [X] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+* https://github.com/wildfly/wildfly[WildFly]
+* https://github.com/wildfly-extras/prospero[Prospero]
+
+=== Other Interested Projects
+N/A
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+WildFly project currently creates three feature packs: `wildfly-ee`, `wildfly` and `wildfly-preview`.
+Those feature packs can require different versions of the same component being provisioned. To provide this flexibility each
+feature packs has to have a separate channel associated with it.
+
+A channel consists of a stream of manifests with the current manifest being determined by its Maven version. When a new version
+of WildFly is published a new manifest with the same version as WildFly release will be added to the channel.
+The backwards compatibility of a channel is achieved through a naming convention where the supported version range is added to the 
+artifactId of the manifest (e.g. `org.wildfly:wildfly-32.0`).
+
+For this proposal we will publish the latest manifest with no backwards compatibility guarantee, meaning each channel will always
+contain components of the latest released version of WildFly.
+
+Following three channels will be created as part of this proposal:
+
+[cols=3]
+|===
+| Manifest GA
+| Artifacts
+| Depends on
+
+|`org.wildfly.channels:wildfly-ee`
+|wildfly-ee and its dependencies
+| -
+
+|`org.wildfly.channels:wildfly`
+| wildfly and its dependencies
+|`org.wildfly.channels:wildfly-ee`
+
+|`org.wildfly.channels:wildfly-preview`
+| wildfly-preview and its dependencies
+| -
+
+|===
+
+==== Manifest metadata Requirements
+
+The manifest file defines a few metadata fields:
+* name - human readable name of the manifest. Should contain the version of the server.
+* id - identifier of the manifest used to resolve manifest dependencies. Should be the same as the GA of the manifest.
+* description - human readable description of the manifest.
+* requires - id and optionally maven coordinates of dependency manifests.
+
+=== Hard Requirements
+
+* WildFly manifests are published in Maven repository during release.
+* Provisioning tools using wildfly-channels can use the published manifest to provision and update WildFly server.
+* Different WildFly features packs created in the project are able to use different versions of the same artifacts.
+* The versions of the manifests correspond to WildFly releases. When using version `32.0.0.Final`, the user should 
+receive manifest for WildFly 32.0.0 Final
+
+=== Nice-to-Have Requirements
+
+
+=== Non-Requirements
+* The WildFly channels do not guarantee backwards compatibility.
+* Using the WildFly channels to perform a major version upgrade is possible, but not supported.
+* Publishing a channel definition (channel.yaml file)
+
+=== Future Work
+N/A
+
+== Backwards Compatibility
+
+Publishing the manifests adds new capability for provisioning and testing tools, but doesn't affect existing features.
+
+=== Default Configuration
+
+N/A
+
+=== Importing Existing Configuration
+
+N/A
+
+=== Deployments
+
+N/A
+
+=== Interoperability
+N/A
+
+== Security Considerations
+
+N/A
+
+== Test Plan
+
+* Existing WildFly tests already use the channels
+* Add test in Prospero to provision the latest WildFly version
+
+== Community Documentation
+
+Update Prospero documentation and examples with provisioning WildFly server using published manifests.
+
+Add an example of provisioning WildFly server using a channel to https://docs.wildfly.org/wildfly-maven-plugin/releases/4.2/provision-example.html[wildfly-maven-plugin documentation].
+
+== Release Note Content
+
+Publishing WildFly channels used by provisioning and testing tools.
