@@ -1,4 +1,4 @@
-= [Community] Add the ability to specify that the OIDC Authentication Request should include request and request_uri parameters
+= [Preview] Add the ability to specify that the OIDC Authentication Request should include request and request_uri parameters
 :author:            Prarthona Paul
 :email:             prpaul@redhat.com
 :toc:               left
@@ -30,9 +30,9 @@ According to the https://openid.net/specs/openid-connect-core-1_0.html#JWTReques
 // Choose the planned stability level for the proposed functionality
 * [ ] Experimental
 
-* [ ] Preview
+* [x] Preview
 
-* [x] Community
+* [ ] Community
 
 * [ ] default
 
