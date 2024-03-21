@@ -68,23 +68,26 @@ The proper behavior of the existing parameters is already tested in RESTEasy, as
 
  * resteasy.match.cache.enabled, resteasy.match.cache.size:
  
-   resteasy-core/src/test/java/org/jboss/resteasy/core/registry/RootNodeCacheSizeTest.java   
+   * https://github.com/resteasy/resteasy/blob/6.2.7.Final/resteasy-core/src/test/java/org/jboss/resteasy/core/registry/RootNodeCacheSizeTest.java
     
  * resteasy.original.webapplicationexception.behavior:
  
-   testsuite/integration-tests/src/test/java/org/jboss/resteasy/test/client/exception/ClientWebApplicationExceptionMicroProfileProxyTest.java
-   testsuite/integration-tests/src/test/java/org/jboss/resteasy/test/client/exception/ClientWebApplicationExceptionResteasyProxyTest.java
-   testsuite/integration-tests/src/test/java/org/jboss/resteasy/test/client/exception/ClientWebApplicationExceptionTest.java
-   testsuite/integration-tests/src/test/java/org/jboss/resteasy/test/exception/ClosedResponseHandlingTest.java
+   * https://github.com/resteasy/resteasy-microprofile/blob/2.1.5.Final/testsuite/integration-tests/src/test/java/org/jboss/resteasy/microprofile/test/client/exception/ClientWebApplicationExceptionMicroProfileProxyTest.java
+   
+   * https://github.com/resteasy/resteasy/blob/6.2.7.Final/testsuite/integration-tests/src/test/java/org/jboss/resteasy/test/client/exception/ClientWebApplicationExceptionResteasyProxyTest.java
+   
+   * https://github.com/resteasy/resteasy/blob/6.2.7.Final/testsuite/integration-tests/src/test/java/org/jboss/resteasy/test/client/exception/ClientWebApplicationExceptionTest.java
+   
+   * https://github.com/resteasy/resteasy/blob/6.2.7.Final/testsuite/integration-tests/src/test/java/org/jboss/resteasy/test/exception/ClosedResponseHandlingTest.java
    
  * resteasy.patch.filter.disabled, resteasy.patch.filter.legacy:
   
-   testsuite/integration-tests/src/test/java/org/jboss/resteasy/test/resource/patch/StudentPatchTest.java
+   * https://github.com/resteasy/resteasy/blob/6.2.7.Final/testsuite/integration-tests/src/test/java/org/jboss/resteasy/test/resource/patch/StudentPatchTest.java
  
  * resteasy.proxy.implement.all.interfaces:
  
-   resteasy-core/src/test/java/org/jboss/resteasy/core/ContextParameterInjectionTest.java
-   testsuite/integration-tests/src/test/java/org/jboss/resteasy/test/contextProxyInterfaces/ContextProxyInterfacesTest.java
+   * https://github.com/resteasy/resteasy/blob/6.2.7.Final/resteasy-core/src/test/java/org/jboss/resteasy/core/ContextParameterInjectionTest.java
+   * https://github.com/resteasy/resteasy/blob/6.2.7.Final/testsuite/integration-tests/src/test/java/org/jboss/resteasy/test/contextProxyInterfaces/ContextProxyInterfacesTest.java
 
 As for the treatment of the corresponding parameters in WildFly, the tests in wildfly/jaxrs and wildfly/testsuite/integration/basic just have
 to be extended.
