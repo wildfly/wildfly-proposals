@@ -1,4 +1,13 @@
-= WFLY-14559 Add six new RESTEasy context parameters
+---
+categories:
+  - cli
+  - console
+  - jaxrs
+  - management
+  - microprofile
+---
+
+== WFLY-14559 Add six new RESTEasy context parameters
 :author:            Ron Sigal
 :email:             rsigal@redhat.com
 :toc:               left
@@ -6,12 +15,11 @@
 :keywords:          comma,separated,tags
 :idprefix:
 :idseparator:       -
-:issue-base-url:    https://issues.jboss.org/browse
 
 == Overview
 
 Since the RESTEasy context parameters were first exposed in the wildfly/jaxrs management model
-(https://github.com/wildfly/wildfly-proposals/blob/main/jaxrs/WFLY-12298_Change_RESTEASY_settings.adoc)
+(https://github.com/wildfly/wildfly-proposals/blob/main/jaxrs/WFLY-12298_Change_RESTEASY_settings.adoc),
 several new parameters have been introduced, of which the following should be exposed to the user:
 
  * resteasy.match.cache.enabled:                       [RESTEASY-2646]
@@ -23,22 +31,32 @@ several new parameters have been introduced, of which the following should be ex
 
 The wildfly/jaxrs module should be extended to expose these new parameters.
 
-[Note. RESTEasy uses '.' as a separator in parameter names. WildFly/jaxrs uses '-'. 
+[Note. RESTEasy uses '.' as a separator in parameter names. wildfly/jaxrs uses '-'. 
 
 == Issue Metadata
 
 === Issue:
 
-* {issue-base-url}/EAP7-1655[EAP7-1655]
-* {issue-base-url}/WFLY-14559[WFLY-14559]
+* https://issues.redhat.com/browse/WFLY-14559[WFLY-14559]
 
 === Related Issues:
 
-* {issue-base-url}/RESTEASY-2280[RESTEASY-2280]
-* {issue-base-url}/RESTEASY-2646[RESTEASY-2646]
-* {issue-base-url}/RESTEASY-2782[RESTEASY-2782]
-* {issue-base-url}/RESTEASY-2849[RESTEASY-2849]
-* {issue-base-url}/RESTEASY-2866[RESTEASY-2866]
+* https://issues.redhat.com/browse/EAP7-1655[EAP7-1655]
+* https://issues.redhat.com/browse/RESTEASY-2280[RESTEASY-2280]
+* https://issues.redhat.com/browse/RESTEASY-2646[RESTEASY-2646]
+* https://issues.redhat.com/browse/RESTEASY-2782[RESTEASY-2782]
+* https://issues.redhat.com/browse/RESTEASY-2849[RESTEASY-2849]
+* https://issues.redhat.com/browse/RESTEASY-2866[RESTEASY-2866]
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [ ] Preview
+
+* [ ] Community
+
+* [x] default
 
 === Dev Contacts:
 
@@ -50,17 +68,45 @@ Jan Blizňák
 
 === Testing By
 
-Engineering
+* [x] Engineering
+
+* [ ] QE
 
 === Affected Projects or Components:
 
 * WildFly
 * RESTEasy
 
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
 == Requirements
+
+=== Hard Requirements
 
 * Some simple modifications to the wildfly/jaxrs module will be necessary to add these new parameters.
 * This affects the web interface.
+
+=== Future Work
+
+We have discussed omitting the initial "resteasy-" from the parameter names such as "resteasy-match-cache-enabled".
+One option would be to have two versions for each parameter, one with and one without "resteasy-".
+
+== Backwards Compatibility
+
+The new parameters won't affect the handling of the existing parameters. There shouldn't be any backwards
+compatibility issues.
+
+== Security Considerations
+
+This update shouldn't introduce any new security considerations.
 
 === Test Plan
 
@@ -95,7 +141,7 @@ to be extended.
 == Community Documentation
 
 The new context parameters are discussed in the RESTEasy User Guide
-(https://docs.jboss.org/resteasy/docs/4.7.2.Final/userguide/html/Installation_Configuration.html#configuration_switches),
+(https://docs.jboss.org/resteasy/docs/6.2.7.Final/userguide/html/ch03.html#configuration_switches),
 
 The jaxrs management model is discussed in
 
@@ -103,3 +149,8 @@ The jaxrs management model is discussed in
 (https://github.com/wildfly/wildfly/blob/main/docs/src/main/asciidoc/_admin-guide/subsystem-configuration/Jakarta_RESTful_Web_Services.adoc).
 
 Nothing new is required.
+
+== Release Note Content
+
+"Since the RESTEasy context parameters were first exposed in the wildfly/jaxrs management model,
+several new parameters have been introduced which should be exposed to the user."
