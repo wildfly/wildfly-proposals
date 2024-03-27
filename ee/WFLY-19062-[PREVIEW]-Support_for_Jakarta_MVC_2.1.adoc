@@ -2,7 +2,7 @@
 categories:
   - ee
 ---
-= WildFly Preview support for Jakarta MVC 2.1
+=  [Preview] Standard WildFly support for Jakarta MVC 2.1
 :author:            Brian Stansberry
 :email:             brian.stansberry@redhat.com
 :toc:               left
@@ -17,23 +17,19 @@ providing support for the Model-View-Controller pattern in web applications. The
 has had three releases, and a fourth is in the works. It has been considered for incorporation
 in the Jakarta EE Platform or Web Profile, although it was not included in Jakarta EE 11.
 
-The intent here is to provide preview support for Jakarta MVC in the WildFly ecosystem in order
-to gain broader experience with the technology and to better gauge community interest.
+The intent here is to provide preview support for Jakarta MVC in standard WildFly. Previously we https://issues.redhat.com/browse/WFLY-18838[introduced Jakarta MVC support in WildFly Preview]. This proposal is to bring preview stability level support to standard WildFly.
 
-The integration is straightforward; just a matter of exposing a couple of modules with an API
-and two implementation artifacts to deployments. Users can easily enough package these artifacts
-in their own application artifacts; WildFly providing its own integration saves them
-needing to manage the implementation.
 
 == Issue Metadata
 
 === Issue
 
-* https://issues.redhat.com/browse/WFLY-18838[WFLY-18838]
+* https://issues.redhat.com/browse/WFLY-19062[WFLY-19062]
 
 === Related Issues
 
-* 
+* https://issues.redhat.com/browse/WFLY-18838[WFLY-18838]
+* https://issues.redhat.com/browse/WFLY-19021[WFLY-19021]
 
 === Stability Level
 // Choose the planned stability level for the proposed functionality
@@ -60,6 +56,8 @@ needing to manage the implementation.
 
 === Affected Projects or Components
 
+* mvc-krazo-feature-pack
+
 === Other Interested Projects
 
 === Relevant Installation Types
@@ -79,15 +77,15 @@ needing to manage the implementation.
 
 * Provide an extension/subsystem that makes modules containing the Jakarta MVC 2.1 api 
   and the Eclipse Krazo implementation available to an application.
+** Only the Jakarta MVC API module will be jboss-api=public; other modules added here will be jboss-api=private
 * Provide an 'mvc-krazo' Galleon layer
-** The layer will depend on the 'bean-validation', 'cdi' and 'jaxrs-core' layers, in line 
+** The layer will depend on the 'bean-validation', 'cdi', 'jaxrs-core' and 'jsf' layers, in line
    with Jakarta MVC's dependencies on other EE specifications.
 * Provide an extension/subsystem artifact jar, and a 'galleon-shared' src zip for use
   in other feature packs.
-* Incorporate the above in the 'wildfly-preview' feature pack.
-* Provide a Galleon feature pack that depends on `wildfly-ee` and that can install the Jakarta MVC
-  integration into standard WildFly.
+* Incorporate the above in the 'wildfly' and 'wildfly-preview' feature packs.
 * Extension will advertise itself as having stability level 'preview'.
+* JBoss Modules modules associated with the feature will not be provisioned if the user has disabled provisioning of 'preview' stability features.
 
 === Nice-to-Have Requirements
 // Requirements in this section do not have to be met to merge the proposed functionality.
@@ -105,10 +103,11 @@ needing to manage the implementation.
 === Future Work
 // Use this section to discuss requirements that are not addressed by this proposal
 // but which may be addressed in later proposals.
-* Possible integration into the 'wildfly' or 'wildfly-ee' feature pack.
+* Subsequent promotion to 'community' stability.
+* Possible move into the 'wildfly-ee' feature pack.
+** This would reflect a 'promotion' in terms of WildFly's long term compatibility expectations for Jakarta MVC itself.
 * Add a quickstart
-** Requires integration into 'wildfly' or 'wildfly-ee' FP, along with Quickstart project support for
-   preview features.
+** Requires promotion to 'community' or Quickstart project support for preview features.
 
 == Backwards Compatibility
 
@@ -139,7 +138,7 @@ not be delivered all in one go to suggest the strategy. If your feature falls
 into this category, please mention the Release Coordinators on the pull 
 request so they are aware.
 ////
-Initially, use WildFly Extras to house the source code.
+Use WildFly Extras to house the source code. Incorporate into the 'wildfly' and 'wildfly-preview' feature packs in a manner similar to how we incorporate content from WildFly Core into the 'wildfly-ee' feature pack.
 
 == Security Considerations
 
@@ -152,21 +151,25 @@ None.
 == Test Plan
 
  * Standard subsystem tests (parsing and marshalling; Stage.MODEL execution)
+ ** Done in the mvc-krazo-feature-pack project.
  * Pass the Jakarta MVC TCK
  ** TCK runner should support passing in the GAV of the feature pack to provision the 
     server, allowing execution against both the wildfly-preview feature pack and
 	the mvc-krazo-specific feature pack
- * Smoke test in the testsuite/preview/basic module
- * Test the layer by itself and as part of the all-layers provisioning in testsuite/layers/LayersTestCase
+ * Smoke test in the testsuite/integration/manualmode module
+ ** In the future to be moved to testsuite/integration/basic (perhaps for WildFly 32)
+ * Smoke test in the testsuite/preview/basic module (covering testing an installation that provisions the subsystem via the mvc-krazo layer)
+ * Test the layer by itself and as part of the all-layers provisioning in testsuite/layers-expansion/LayersTestCase
 
 == Community Documentation
 
- * README explaining how to use with 'wildfly' or 'wildfly-ee' feature packs.
- * Mention in the 'WildFly and WildFly Preview' document as a difference between the two.
- * Mention in the https://docs.wildfly.org/30/Admin_Guide#Simple_configuration_subsystems[Simple configuration subsystems section of the Admin Guide].
- * Addition to the specification section in the https://docs.wildfly.org/30/Getting_Started_Guide.html[Getting Started Guide].
+ * Addition of a 'Jakarta MVC' subsection in the 'Subsystem configuration' section of the Admin Guide.
+ * Updated project README explaining this is now included in standard WildFly.
+ * Removal of the mention in the 'WildFly and WildFly Preview' document as a difference between the two.
+ * Updated mention in the https://docs.wildfly.org/30/Admin_Guide#Simple_configuration_subsystems[Simple configuration subsystems section of the Admin Guide] to reflect this is not solely WildFly Preview.
+ * Update to the specification section in the https://docs.wildfly.org/30/Getting_Started_Guide.html[Getting Started Guide] to reflect this is not solely a WildFly Preview feature.
 
 == Release Note Content
 
-WildFly now provides preview support for Jakarta MVC, using the Eclipse Krazo implementation. This is available out of the box in WildFly Preview 
-and can be added to a standard WildFly installation using a new 'mvc-krazo' Galleon feature pack available from WildFly Extras. 
+WildFly now provides preview stability support for Jakarta MVC, using the Eclipse Krazo implementation. This is available in standard WildFly and in WildFly Preview. 
+To use the subsystem in standard WildFly the server must be started with the `--stability=preview` parameter.
