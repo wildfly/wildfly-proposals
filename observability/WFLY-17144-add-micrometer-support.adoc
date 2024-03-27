@@ -1,0 +1,171 @@
+= Add Micrometer Support to WildFly
+:author:            Jason Lee
+:email:             jasondlee@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WildFly already supports basic metrics in the base WildFly system, as well as MicroProfile Metrics in the WildFly MicroProfile configuration. In the Java space, however, the library of choice, and the emerging de facto standard for Java developers is https://micrometer.io[Micrometer].  This RFE will add support for Micrometer to WildFly, providing an alternative to the WildFly Metrics subsystem, as well as providing a replacement for MicroProfile Metrics, which is slated for removal from WildFly under another JIRA.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-17144
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1686 - Implement the Observability policy - Metrics (XP)
+* https://issues.redhat.com/browse/EAP7-1805 - Implement the Observability policy - Metrics - Base EAP
+* https://issues.redhat.com/browse/WFLY-17138 - Convert MP Metrics subsystem to Admin-Only Mode
+* https://issues.redhat.com/browse/EAP7-1975 - Remove MP Metrics functionality and convert subsystem to Admin-Only Mode
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:spriadka@redhat.com[Simon Priadka]
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
+
+=== Testing By
+* [X] Engineering
+* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* Observability
+
+=== Other Interested Projects
+
+* MicroProfile
+* Metrics
+
+=== Relevant Installation Types
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+* [ ] Managed domain
+* [x] OpenShift s2i
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+This feature will integrate Micrometer into the WildFly feature pack. It will provide two modules, one to provide the integration of the library into the application server (`org.wildfly.extension.micrometer`), and another to expose Micrometer to user deployments via classpath visibility and CDI beans (`org.wildfly.micrometer.deployment`). These modules will grouped in the new `micrometer` Galleon layer to allow, for example, for easier Galleon and Bootable Jar provisioning.
+
+The source for this new extension will reside under the `observability` directory so as to group it with similar extensions, such as those for OpenTelemetry support.
+
+Metrics will be exported by pushing to a collector using the OTLP protocol. The default endpoint is http://localhost:4318/v1/metrics[]. With this approach, Micrometer will push after a certain number of seconds (configured via the `step` attribute on the subsystem) to a listening OpenTelemetry collector, which is itself configured to export the metrics data (as well as, for example, tracing and logging data, which OpenTelemetry also supports) to a downstream aggregation system chosen by the administrator. (For a simple example of a collector configuration, see the attached YAML files below)
+
+The WildFly administrator will able to configure both the `endpoint` and the frequency (or `step`) with which a push is performed.
+
+This extension will not replace the existing WildFly Metrics solution (exposed at `/metrics`) in the standard configurations. Administrators wishing to make use of this extension will need to install it manually. Removing WildFly Metrics is completely optional, as the extensions will not conflict with each other (though the duplicated metrics monitoring _may_ cause performance concerns).
+
+Server and JVM metrics will automatically be monitored, as is the case with WildFly Metrics. Server metrics are derived by walking the model tree and registering meters for the appropriate entries.
+
+The Micrometer APIs will be exposed to user deployments, allowing user applications to participate in metrics gathering and exporting. The `MeterRegistry` created by the application server will be made available to user applications via CDI injection.
+
+=== Non-Requirements
+
+* Support for multiple metric backends (e.g., Datadog, New Relic, Prometheus)
+* Automatic timing of REST requests
+* Removal of MicroProfile Metrics (This will be handle via another WildFly JIRA)
+* Removal of application metrics when a user application is undeployed
+* Mechanism for arbitrary subsystems to register meters (e.g., Micrometer's `MeterBinder`)
+
+=== Dependencies
+
+* CDI/Weld
+* OpenTelemetry (for the OTLP export support)
+
+== Backwards Compatibility
+
+There are no backwards compatibility issues with this, as it is a new extension.
+
+== Security Considerations
+
+When pushing metrics to the collector, there is no user involved from which to determine credentials/permissions, so the normal RBAC rules cannot be applied directly. The typical Micrometer deployment involves pushing all metrics, irrespective of permissions, to the collector, which then exports the metrics to one or more observability platforms, which are then secured in a manner specific to those systems. The `READ_ATTRIBUTE_OPERATION` (from the JBoss ModelNode API) to read the metrics values from the WildFly model, though, will be run using the `Monitor` role to restrict what metrics are pushed to those that should be monitored.
+
+== Test Plan
+
+* Add tests to testsuite/integration/microprofile
++
+The tests will validate that an application is able to inject a `MeterRegistry` instance and create/update meters programmatically.
++
+The test will also spot check a handful of server/JVM metrics to verify that they have been successfully registered.
+
+== Community Documentation
+
+The feature will be documented in WildFly Admin Guide in the existing observability section.
+
+== Release Note Content
+
+Support for the Micrometer metrics library has been added to the system. Application server and JVM metrics are available, as has been the case in previous releases, but this extension exposes Micrometer's `MeterRegistry` via CDI for the inclusion of application metrics as well.
+
+== Additional Information
+
+=== Sample Docker Configuration for Collector
+
+With the following two yaml files, a simple OpenTelemetry collector can started which will accept metrics from WildFly via OTLP, then export them in the Prometheus format at http://localhost:1234[] for easy manual verification.
+
+.docker-compose.yaml
+[source,yaml]
+-----
+version: "3"
+volumes:
+  shared-volume:
+    # - logs:/var/log
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector
+    command: [--config=/etc/otel-collector-config.yaml]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - 1888:1888 # pprof extension
+      - 8888:8888 # Prometheus metrics exposed by the collector
+      - 8889:8889 # Prometheus exporter metrics
+      - 13133:13133 # health_check extension
+      - 4317:4317 # OTLP gRPC receiver
+      - 4318:4318 # OTLP http receiver
+      - 55679:55679 # zpages extension
+      - 1234:1234 # /metrics endpoint
+-----
+
+.otel-collector-config.yaml
+[source,yaml]
+-----
+extensions:
+  health_check:
+  pprof:
+    endpoint: 0.0.0.0:1777
+  zpages:
+    endpoint: 0.0.0.0:55679
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+
+processors:
+  batch:
+
+exporters:
+  prometheus:
+    endpoint: "0.0.0.0:1234"
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus]
+
+  extensions: [health_check, pprof, zpages]
+-----
