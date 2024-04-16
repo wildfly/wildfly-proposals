@@ -1,0 +1,95 @@
+---
+categories:
+ - server
+---
+= [Community] Aliases for standard configuration files
+:author:            Michal Petrov
+:email:             mpetrov@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Introduce aliases for standard configuration files
+
+This will allow users to reference the configuration by the suffix or a shorter name instead of typing out the filename.
+
+.Full list of aliases:
+|===
+|  standalone.xml variant | Alias
+
+| *-full.xml              | full
+
+| *-ha.xml                | ha
+
+| *-full-ha.xml           | fha, full-ha
+
+| *-load-balancer.xml     | lb, load-balancer
+
+| *-microprofile.xml      | mp, microprofile
+
+| *-microprofile-ha.xml   | mpha, microprofile-ha
+|===
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-4868
+
+=== Stability Level
+* [ ] Experimental
+
+* [ ] Preview
+
+* [x] Community
+
+* [ ] default
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+* mailto:yborgess@redhat.com[Yeray Borges]
+* mailto:ehugonne@redhat.com[Emmanuel Hugonnet]
+
+=== QE Contacts
+
+=== Testing By
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+WildFly
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [ ] OpenShift s2i
+
+* [ ] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+Provide a set of aliases for the files distributed with WildFly that can be used with the commandline argument `--server-config|-c` instead of of a full filename.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+Unit test will be added to server.
+
+== Community Documentation
+Documentation will be added to wildfly master.
+
+== Release Note Content
+See Overview
