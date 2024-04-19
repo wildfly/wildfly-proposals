@@ -1,4 +1,8 @@
-= WFLY-18383 / EAP7-2105 Quickstart for MP LRA 2.0
+---
+categories:
+ - microprofile
+---
+= Quickstart for MicroProfile LRA 2.0
 :author:            Martin Stefanko
 :email:             mstefank@redhat.com
 :toc:               left

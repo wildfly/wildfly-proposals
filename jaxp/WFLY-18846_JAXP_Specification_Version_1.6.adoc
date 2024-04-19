@@ -1,3 +1,14 @@
+---
+categories:
+ - bean-validation
+ - core
+ - ee
+ - jaxrs
+ - jdr
+ - jsf
+ - modules
+ - webservices
+---
 = Migrate WildFly to JDK JAXP (Java API for XML Processing) Version 1.6
 :author:            Richard Opalka
 :email:             ropalka@redhat.com

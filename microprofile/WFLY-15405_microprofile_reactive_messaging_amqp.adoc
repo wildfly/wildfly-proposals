@@ -1,3 +1,7 @@
+---
+categories:
+ - microprofile
+---
 = Add support for AMQP Connector in MicroProfile Reactive Messaging
 :author:            Kabir Khan
 :email:             kkhan@redhat.com
