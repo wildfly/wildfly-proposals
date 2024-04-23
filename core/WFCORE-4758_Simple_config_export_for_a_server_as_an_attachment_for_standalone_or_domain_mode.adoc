@@ -1,4 +1,9 @@
-= Community - Simple config export for a server as an attachment for standalone or domain mode 
+---
+categories:
+ - core
+ - management
+---
+= [Community] Simple config export for a server as an attachment for standalone or domain mode 
 :author:            Emmanuel Hugonnet
 :email:             ehugonne@redhat.com
 :toc:               left

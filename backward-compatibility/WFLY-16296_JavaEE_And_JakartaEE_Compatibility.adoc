@@ -1,3 +1,9 @@
+---
+categories:
+ - ee
+ - ejb
+ - migration
+---
 = Jakarta EE based WildFly have to communicate successfully with previous Java EE based WildFly
 :author:            Richard Opalka; Flavia Rainone
 :email:             ropalka@redhat.com; frainone@@redhat.com

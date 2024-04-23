@@ -1,4 +1,8 @@
-= MicroProfile aligned with Jakarta EE 10
+---
+categories:
+ - microprofile
+---
+= MicroProfile aligned with Jakarta EE 10 (MicroProfile 6.0 versions)
 :author:            Kabir Khan
 :email:             kkhan@redhat.com
 :toc:               left

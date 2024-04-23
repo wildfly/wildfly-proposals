@@ -1,4 +1,9 @@
-= WFLY-13762 [Community] SSLContext to support delegation to alternate instances based on peer information
+---
+categories:
+ - elytron
+ - security
+---
+= [Community] SSLContext to support delegation to alternate instances based on peer information
 :author:            Diana Krepinska
 :email:             dvilkola@redhat.com
 :toc:               left
