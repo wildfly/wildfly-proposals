@@ -1,3 +1,9 @@
+---
+categories:
+  - ee
+  - elytron
+  - security
+---  
 = WFLY-16793 Support for Identity Propagation within an EAR and across EARs with OIDC
 :author:            Farah Juma
 :email:             fjuma@redhat.com
