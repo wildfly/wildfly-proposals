@@ -1,6 +1,7 @@
 ---
 categories:
- - server
+ - core
+ - management
 ---
 = [Community] Aliases for standard configuration files
 :author:            Michal Petrov
