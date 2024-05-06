@@ -1,0 +1,195 @@
+---
+categories:
+  - elytron
+  - security
+---
+= [Preview] WFLY-19314 Logout Support for OIDC
+:author:            Farah Juma
+:email:             fjuma@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+It is currently possible to secure applications deployed to WildFly using OpenID Connect (OIDC),
+as specified in the https://openid.net/specs/openid-connect-core-1_0.html[OpenID Connect Core 1.0 spec].
+
+There are additional optional OIDC specifications that may be used in addition to the Core spec to
+provide support for logging out:
+
+* https://openid.net/specs/openid-connect-rpinitiated-1_0.html[RP-Initiated Logout] is an optional
+OIDC specification that defines how a relying party (RP) can request that an OpenID provider logs
+out the end-user.
+* https://openid.net/specs/openid-connect-frontchannel-1_0.html[Front-Channel Logout] is an optional
+OIDC specification that defines a front-channel logout mechanism that does not use an OP iframe on RP
+pages.
+* https://openid.net/specs/openid-connect-core-1_0.html#OpenID.BackChannel[Back-channel Logout] is an
+optional OIDC specification that defines a logout mechanism that uses direct back-channel communication
+between the OP and RPs being logged out.
+
+This RFE is to add support for these three types of logout mechanisms when securing apps deployed to
+WildFly with OIDC.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-19314
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/ELY-2534
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [x] Preview
+
+* [ ] Community
+
+* [ ] default
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly Elytron
+* WildFly Core
+* WildFly
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* It will be possible to log out of an application secured with OIDC using RP-Initiated Logout, Front-Channel Logout,
+and Back-Channel Logout.
+* The new configuration options described below will be added for both the `elytron-oidc-client` subsystem configuration
+and deployment configuration.
+* This feature will be available when starting WildFly with the Preview Stability Level.
+
+==== RP-Initiated Logout
+
+For RP-Initiated Logout, we'll make use of the `id_token_hint` in the logout request to the logout endpoint.
+The use of `id_token_hint` is recommended by the spec.
+
+We'll introduce the following new configuration options:
+
+* `logout-uri`: Specifies a relative URI referencing the endpoint that will start a logout (RP-Initiated).
+This will default to `/logout`.
+* `post-logout-redirect-uri`: Specifies a relative URI referencing the endpoint that the OpenID provider
+should redirect users after logging out sessions. This will be undefined by default.
+
+==== Front-Channel Logout and Back-Channel Logout
+
+For Front-Channel Logout and Back-Channel Logout, we'll introduce the following new configuration options:
+
+* `logout-callback-uri`: A relative URI referencing the endpoint that will handle logout requests
+from the OpenID provider. This will default to `/logout/callback`.
+* `logout-session-required`: A boolean value that indicates whether `elytron-oidc-client` should enforce
+both `sid` and `iss` parameters when processing front-channel logout requests and should enforce the `sid`
+parameter when processing back-channel requests. If set to false, for front-channel logout, there will
+be no check and any authenticated request is going to invalidate the local user session. To make use of back-channel
+logout, this must be set to `true`. (This is because the `sid` will be marked for invalidation using a bounded map
+so that subsequent requests from the user will force the session to be invalidated.) This will default to `true`.
+
+
+
+==== Back-Channel Logout
+
+We'll introduce the following new configuration option for Back-Channel Logout:
+
+* `logout-session-invalidation-limit`: The maximum size for a bounded map when marking sessions for
+invalidation during back-channel logout. Once this maximum size has been reached,
+
+
+
+=== Nice-to-Have Requirements
+// Requirements in this section do not have to be met to merge the proposed functionality.
+// Note: Nice-to-have requirements that don't end up being implemented as part of
+// the work covered by this proposal should be moved to the 'Future Work' section.
+
+
+=== Non-Requirements
+// Use this section to explicitly discuss things that readers might think are required
+// but which are not required.
+The ability to specify the `logout_hint` and `client_id` for RP-Initiated Logout is a
+non-requirement. Neither or these are required since we'll be passing the `id_token_hint`
+in the logout request. The `logout_hint` isn't supported by all OpenID providers.
+
+
+=== Future Work
+// Use this section to discuss requirements that are not addressed by this proposal
+// but which may be addressed in later proposals.
+
+== Backwards Compatibility
+
+// Does this enhancement affect backwards compatibility with previously released
+// versions of WildFly?
+// Can the identified incompatibility be avoided?
+
+=== Default Configuration
+
+=== Importing Existing Configuration
+
+=== Deployments
+
+=== Interoperability
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+
+== Security Considerations
+
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+
+== Test Plan
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
