@@ -112,6 +112,23 @@ or a confirmation that there are no security implications to consider.
 
 == Test Plan
 
+Depending on the selected stability level, the appropriate section below should be completed, including a brief description of how testing is to be performed in accordance with the selected stability level. The non-relevant sections may be removed as needed.
+////
+Depending on the stability level, the test plan required may vary. see below:
+////
+
+** Experimental - no test plan is required. Unit / integration tests may still be added as needed during development.
+
+** Preview - a brief high-level description of the testing approach should be added here, including types of tests added (unit, integration, smoke, component, subsystem, etc.) Note that not all test types are required for a particular feature, so include a description of what is being tested and the approach chosen to perform the testing.
+
+** Community - this level should include everything in the 'Preview' stability level, plus the following additional testing as relevant:
+*** Manual tests: for features that may require manual testing (such as user interface changes etc), provide a description of what was tested and any methods employed (browsers, CLI clients etc.) If manual testing is required, the person performing the manual tests should be identified here.
+*** Miscellaneous checks: Manual checks for significant changes in server performance, memory and disk footprint should be described here. These checks are not always relevant, but consideration of these impacts, and others, are strongly encouraged and should be described here.
+*** Integration tests - at the 'Community' stability level, complete integration tests should be provided.
+*** Compatibility tests - if backwards compatibility is relevant to the feature, then describe how the testing is performed.
+
+** Default - This stability level is reserved for a more formal process, which may be found [here] // note add a link or remove this?
+
 == Community Documentation
 ////
 Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
