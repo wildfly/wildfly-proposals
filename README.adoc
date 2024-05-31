@@ -1,0 +1,35 @@
+# Analysis Documents for WildFly
+
+[.lead]
+This repository is a central location for analysis and design documents of new features and capabilities in the https://wildfly.org[WildFly] project universe
+
+A WildFly Analysis Document (or "proposal") is a way to
+propose, communicate and coordinate on new efforts for the  project.
+
+This process is evolving, but is mandatory for all new features and requirements for WildFly.
+
+## Get Started
+
+1. Socialize an idea with others.  Make sure others think the work is worth doing, and are willing to review design and code changes required.
+2. Create a Pull Request with your new analysis document based on the link:./design-doc-template.adoc[template].
+
+## FAQs
+
+### Do I have to use the process?
+
+Short story --  yes.
+
+Long story -- if your work introduces new user-controllable behavior to WildFly, yes. Requirements not involving user-controllable behavior that are of sufficient complexity should also use the process.
+
+### Why would I want to use the process?
+
+It provides a mechanism to communicate features and requirements across the WildFly community. It also helps coordinate and collaborate on related requirements.
+
+### Do I put my analysis document in a particular directory?
+
+If it fits in an existing directory, put it there.
+Otherwise, you can create a new appropriate subdirectory.
+
+### My FAQ isn't answered here
+
+Please open an issue and ask or even better open a PR with a question and proposed answer.
