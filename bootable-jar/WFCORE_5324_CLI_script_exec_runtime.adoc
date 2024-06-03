@@ -1,6 +1,7 @@
 ---
 categories:
   - bootable-jar
+  - foo
 ---
 = Ability to execute CLI script at runtime
 :author:           Jean-Francois Denise
