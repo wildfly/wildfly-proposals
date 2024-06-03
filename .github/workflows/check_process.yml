@@ -1,0 +1,43 @@
+name: Check Proposals
+
+on:
+  pull_request_target:
+
+jobs:
+  check-proposals:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read # to download a workflow artifact
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: "refs/pull/${{ github.event.number }}/merge"
+      - name: Setup Ruby
+        uses: ruby/setup-ruby@8575951200e472d5f2d95c625da0c7bec8217c42 # v1.161.0
+        with:
+          ruby-version: '3.1' # Not needed with a .ruby-version file
+          bundler-cache: true # runs 'bundle install' and caches installed gems automatically
+          cache-version: 0 # Increment this number if you need to re-download cached gems
+      - name: Get all proposals files that have changed
+        id: changed-proposals
+        uses: tj-actions/changed-files@v44
+        with:
+          files: |
+            **/*.adoc
+          files_ignore: |
+            _*/**
+            index.adoc
+            design-doc-template.adoc
+      - name: Check files that have changed
+        if: steps.changed-proposals.outputs.any_changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PROPOSAL_FILES: ${{ steps.changed-proposals.outputs.all_changed_files }}
+          PR_NUMBER: ${{ github.event.number }}
+        run: |
+          echo "Check all proposals files that have changed: $PROPOSAL_FILES"
+          ./.scripts/check_proposals $PR_NUMBER $PROPOSAL_FILES
