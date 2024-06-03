@@ -1,7 +1,9 @@
 ---
 categories:
-  - core
-  - wf-galleon
+# Add any category for this proposal as a yaml list, e.g.
+# - core
+# - management
+# if missing, add it to _data/widfly-categories and use its id
 ---
 = Use Galleon for the WildFly and WildFly Core build
 :author:            Brian Stansberry

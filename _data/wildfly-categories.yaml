@@ -1,9 +1,6 @@
 ---
 categories:
   - name: Agroal
-    id: foo
-    description: Foo category
-  - name: Agroal
     id: agroal
     description: Agroal DataSources
   - name: Bootable Jar
