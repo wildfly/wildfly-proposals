@@ -2,6 +2,7 @@
 categories:
   - bootable-jar
   - wf-galleon
+  - foo
 ---
 = Server components upgrade and Galleon feature-pack dependency update.
 :author:           Jean-Francois Denise
