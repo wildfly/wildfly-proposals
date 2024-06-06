@@ -1,0 +1,125 @@
+---
+categories:
+  - elytron
+---
+= [Preview] Bearer token timeout configurability will be added to WildFly's Elytron subsystem.
+:author:            Rebecca Searls
+:email:             rsearls@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:
+
+== Overview
+
+Bearer Token Authorization is the process of authorizing HTTP requests based on
+the existence and validity of a bearer token.  The token carries within it
+an expiration timestamp.  The two parameters being added, connection-timeout
+and read-timeout are placed on the URL when obtaining the public key from the OAuth2 provider.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-5691[WFCORE-5691]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1856[EAP7-1856]
+* https://issues.redhat.com/browse/ELY-2189[ELY-2189]
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [x] Preview
+
+* [ ] Community
+
+* [ ] default
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly-core
+* WildFly Elytron
+
+=== Other Interested Projects
+
+N/A
+
+=== Relevant Installation Types
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* Two new attributes, `connection-timeout` and `read-timeout` will be
+added to the token-realm element in the Elytron subsystem of WildFly.
+
+Both parameters are datatype int.  The value is in milliseonds.  Only zero or positive integers are allowed. Zero means infinite time.  WildFly uses a default
+value of 2000 milliseconds if this attribute is not declared.
+If the connection time and/or read time expires during
+public key retrieval a warning message is logged and null is returned as
+the public key to Elyton's process code.
+
+** connection-timeout: The value represents the length of time to wait when
+establishing a connection with the URL used to retrieve the public key.  The attribute is optional.
+
+** read-timeout: The value represents the length of time to wait when
+downloading the public key from the URL. The attribute is optional.
+
+* wildfly-elytron_18_0.xsd will be updated to  wildfly-elytron_preview_19_0.xsd with the added attributes
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+== Backwards Compatibility
+
+For backward compatibility the default value of 2000 milliseconds will be used for both attributes.  This is a hard coded value used in Elytron since 2021.
+
+=== Default Configuration
+
+By default, neither, `connection-timeout` nor `read-timeout` will be
+declared.  The default values will be used.
+
+== Test Plan
+
+* Elytron Tests: Integration test cases implemented for functionality.
+* WildFly Tests: Integration test cases implemented for functionality.
+* WildFly Testsuite: Test cases will be added to check for subsystem parsing.
+** Additional integration tests will be added to test the full functionality when `connection-timeout` and `read-timeout`  are configured.
+* Tests will be added for subsystem configurations.
+* Tests may be added to ensure that server configuration fails when the stability level is not specified appropriately.
+
+== Community Documentation
+Documentation for `connection-timeout` and `read-timeout` will be added
+to https://github.com/wildfly/wildfly/blob/main/docs/src/main/asciidoc/_elytron/Bearer_Token_Authorization.adoc[Bearer Token Authorization]
+
+== Release Note Content
+
+It is now possible to set the timeout duration for introspecting a bearer token
+during Elytron's JWT format validation and OAuth2 validation process.
