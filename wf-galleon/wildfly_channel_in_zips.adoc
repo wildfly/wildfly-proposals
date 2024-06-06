@@ -51,8 +51,8 @@ This lets the user decide whether they want to update to the latest micro releas
 === Dev Contacts
 
 * mailto:{email}[{author}]
-* mailto:{bstansbe@redhat.com}[{Brian Stansberry}]
-* mailto:{bspyrkos@redhat.com}[{Bartosz Spyrko-Smietanko}]
+* mailto:bstansbe@redhat.com[Brian Stansberry]
+* mailto:bspyrkos@redhat.com[Bartosz Spyrko-Smietanko]
 
 === Testing By
 
@@ -61,6 +61,7 @@ This lets the user decide whether they want to update to the latest micro releas
 === Affected Projects or Components
 
 * WildFly
+* Prospero
 
 === Other Interested Projects
 
@@ -74,7 +75,8 @@ This lets the user decide whether they want to update to the latest micro releas
 * WildFly distributions archives (zip & tgz) must contain the tooling (as scripts) to let users update their installations
 ** Users must be able to list and select the updates to apply to their installations
 ** The user MUST specify the updates to apply.
-* Updates must not discard any users changes to an installation (in their configuration files or JBoss modules directory)
+** As this feature is experimental, the tooling should warn the user that udpating their installation is an experimental mechanism
+* Updates must not discard any user changes to an installation (in their configuration files or JBoss modules directory)
 
 === Non-Requirements
 
