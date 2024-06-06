@@ -1,0 +1,96 @@
+#!/usr/bin/env ruby
+
+ENV['BUNDLE_GEMFILE'] ||= File.expand_path('../Gemfile', __dir__)
+require 'bundler/setup'
+require 'fileutils'
+require 'yaml'
+
+class FrontMatterExtractor
+  def process lines
+    return {} if lines.empty?
+
+    front_matter = []
+    if lines.first.chomp == '---'
+      original_lines = lines.dup
+      lines.shift
+      while !lines.empty? && lines.first.chomp != '---'
+        front_matter << lines.shift
+      end
+
+      YAML.load(front_matter.join("\n"))
+    end
+  end
+end
+
+class MetadataChecker
+  def initialize
+    @categories = load_all_categories()
+  end
+
+  def check pr_number, front_matter
+    STDERR.puts "Check front matter #{front_matter}"
+    errors = []
+    categories_errors = check_categories(pr_number, front_matter)
+    if categories_errors.length() > 0
+      errors << categories_errors
+      system("gh pr edit #{pr_number} --add-label invalid-categories")
+    else 
+      system("gh pr edit #{pr_number} --remove-label invalid-categories")
+    end
+    errors
+  end
+
+  def check_categories pr_number, front_matter
+    errors = []
+    unless (front_matter.key? "categories") && (front_matter["categories"] != nil) && (front_matter["categories"].length() > 0)
+      errors << "Missing field: categories"
+    else
+      front_matter["categories"].each do | cat_id |
+        if @categories.find { | global_cat | cat_id == global_cat["id"] } == nil
+          errors << "New category #{cat_id} must be added to _data/wildfly-categories.yaml"
+        end
+      end
+    end
+    errors
+  end
+
+  def load_all_categories
+    yaml = YAML.load_file("_data/wildfly-categories.yaml")
+    return yaml["categories"]
+  end
+end
+
+front_matter_extractor = FrontMatterExtractor.new
+metadata_checker = MetadataChecker.new
+
+check_succeeds = true
+
+pr_number = ARGV[0]
+ARGV.shift
+
+puts "Checking PR #{pr_number}"
+
+# Read and print the content of each file passed as arguments
+ARGV.each do |file|
+
+  begin
+    content = File.read(file)
+    front_matter = front_matter_extractor.process content.split("\n")
+    errors = metadata_checker.check pr_number, front_matter
+    if errors.length() > 0
+      check_succeeds = false
+      puts "❌ #{file}"
+      puts "\tFront matter is not valid: #{front_matter}"
+      puts "\tGot errors:"
+      errors.each do |err|
+        puts "\t* #{err}"
+      end
+    else
+      puts "✅ #{file}"
+    end
+  rescue => e
+    puts "Error reading file #{file}: #{e.message}"
+  end
+end
+
+exit check_succeeds
