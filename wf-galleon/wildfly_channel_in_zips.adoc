@@ -1,0 +1,125 @@
+---
+categories:
+- provisioning
+---
+= [Experimental] Update WildFly download distributions using channels
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+[abstract]
+As an user, I can download WildFly from a zip archive and be able to update it to a more recent release.
+
+== Overview
+
+WildFly now publishes https://repo1.maven.org/maven2/org/wildfly/channels/[channels] that is a mechanism to keep a WildFly installation up to date with the latest releases.
+
+This works out of the box if users is provisioning WildFly (using the wildfly-maven-plugin or Prospero).
+However for users that are downloading WildFly from our traditional distributions (zip & tgz archives) they can not take advantage of this mechanism.
+
+If our archives would work out of the box with channels, it would significantely simplify updating an installation.
+
+The workflow would be as simple as:
+
+1. Download WildFly version x.y.z from our download page
+2. Use it as normal
+3. A micro release of WildFly x.y.(z+ 1) is made available
+4. Run a script in the existing WildFly installation to update if from x.y.z to x.y.(z+1)
+5. Reload the server to run your applications on WildFly x.y.(z+ 1)
+
+If there are multiple available updates for WildFly, the user must be able to decide which one they want to update to.
+This lets the user decide whether they want to update to the latest micro release or the next major release.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-19221
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-19130
+
+=== Stability Level
+
+* [X] Experimental
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+* mailto:{bstansbe@redhat.com}[{Brian Stansberry}]
+* mailto:{bspyrkos@redhat.com}[{Bartosz Spyrko-Smietanko}]
+
+=== Testing By
+
+* [X] Engineering
+
+=== Affected Projects or Components
+
+* WildFly
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped)
+
+== Requirements
+
+* WildFly distributions archives (zip & tgz) must contain the channel metadata that describes their installation state.
+* WildFly distributions archives (zip & tgz) must contain the tooling (as scripts) to let users update their installations
+** Users must be able to list and select the updates to apply to their installations
+** The user MUST specify the updates to apply.
+* Updates must not discard any users changes to an installation (in their configuration files or JBoss modules directory)
+
+=== Non-Requirements
+
+* Trimming an existing installation coming from WildFly distributions with Galleon layers is not supported.
+
+=== Future Work
+
+WIP
+
+== Backwards Compatibility
+
+This enhancement does not affect previous versions of WildFly.
+
+=== Default Configuration
+
+Updating an installation could update its default configuration (eg if the update is to a major version).
+
+WildFly does not make guarantee that its default configuration will be compatible from one major version to another (even though in practice, that's often the case)
+
+=== Importing Existing Configuration
+
+[jmesnil] TBD - I'm not sure what section means in the context of this enhancement
+
+=== Deployments
+
+Deployments can be affected by this enhancement if there are incompatibilities between the existing WildFly installation and the update.
+
+Testing an installation is out of scope of this enhancement but should be incorporated in the user workflow (eg to test the update in a staging environment).
+
+=== Interoperability
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+The https://docs.wildfly.org/32/Installation_Guide.html[Installation Guide] needs to be updated.
+
+Its section `Installing WildFly from a zipped distribution` would be expanded to include information about updating the installation.
+
+Once we have 2 releases of WildFly with that feature, we can add a guide to https://www.wildfly.org/guides/ that showcases that feature.
+The guide would let the users download WildFly (eg 33.0.0.Final), check if there are updates (eg 33.0.1.Final and 34.0.0.Final), and update their installation with a micro bump.
+
+== Release Note Content
+
+
+WildFly downloads can now be updated to more recent releases out of the box.
