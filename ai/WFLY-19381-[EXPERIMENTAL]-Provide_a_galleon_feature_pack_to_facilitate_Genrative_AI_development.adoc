@@ -1,0 +1,264 @@
+---
+categories:
+  - ai
+# - core
+# - management
+# if missing, add it to _data/widfly-categories and use its id
+---
+= [Experimental] Provide a Galleon feature pack to facilitate Generative AI application development
+
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The goal of this feature is to provide a simple way to develop Generative AI applications. 
+This could be done by allowing those resources to be configured in WildFly and then injected into the application via CDI to be used there.
+Given that currently one of the main use-case of Generative AI is to provide Retrieval-Augmented Generation application, all the elements required for such an application should be accessible.
+The feature should take inspiration using LangChain4J which provides an API over several LLM inferers to build such applications.
+As an experimental feature, we will provide LangChain4J integration instead of providing our own API, defining resources to be injected into applications in an *ai* subsystem.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-19381[WFLY-19381]
+
+=== Related Issues
+
+* N/A
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [X] Experimental
+
+* [ ] Preview
+
+* [ ] Community
+
+* [ ] default
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [X] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [] Managed domain
+
+* [] OpenShift s2i
+
+* [] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+This feature should be available as an external galleon feature pack thus not being bound to a specific WildFly version or to the WildFly release cycle.
+The feature pack should enable a way to configure and provide resources to build RAG applications. 
+It should provide at least two kinds of:
+ * embedding models (aka models used to create embeddings): `dev.langchain4j.model.embedding.EmbeddingModel`
+ * embedding stores (aka places to store the computed embeddings): `dev.langchain4j.store.embedding.EmbeddingStore`
+ * content retrievers (aka retrievers of content to provide to the llm as part of the context based on the user query): `dev.langchain4j.rag.content.retriever.ContentRetriever`
+ * chat language models (aka a chat APi with the llm): `dev.langchain4j.model.chat.ChatLanguageModel`
+ Those resources should be exposed via CDI (and thus Weld) to the application using qualifier and type.
+ The less WildFly specific annotations are used the better so this feature should try to use annotations from librairies that are already used in WildFly like smallrye-common-annotations or annotations from LangChain4J.
+ We should provide layers to provision the server according to the needs.
+
+
+=== Nice-to-Have Requirements
+
+ * Provide annotations to be able to create AIServices using our configured resources.
+ * Replace the HTTP clients used so that we have only one that is supported for every API.
+ * Replace the JSON marshalling/umarshalling librairies so that we have only one (through RESTEasy) that is supported.
+ * Support for @Tool
+ * Adding support for ChatMemory
+ * Adding support for more APIs
+
+=== Non-Requirements
+// Use this section to explicitly discuss things that readers might think are required
+// but which are not required.
+
+=== Future Work
+// Use this section to discuss requirements that are not addressed by this proposal
+// but which may be addressed in later proposals.
+
+== Backwards Compatibility
+
+// Does this enhancement affect backwards compatibility with previously released
+// versions of WildFly?
+// Can the identified incompatibility be avoided?
+
+=== Default Configuration
+
+=== Importing Existing Configuration
+
+=== Deployments
+
+The required librairies should be added automatically on the deployment classpath. 
+
+=== Interoperability
+
+== Implementation Plan
+
+=== Embeddings models
+
+The extension should provide resources to define `dev.langchain4j.model.embedding.EmbeddingModel`.
+
+It should expose a simple `embedding-model` resource with the following attributes:
+
+* module: the jboss module containing the code of the model.
+* embedding-class: the name of the class to use to load the model.
+
+----
+/subsystem=ai/embedding-model=myembedding:add(module=dev.langchain4j.embeddings.all-minilm-l6-v2, embedding-class=dev.langchain4j.model.embedding.AllMiniLmL6V2EmbeddingModel)
+----
+
+It should also support LLM backed embedding models like for ollama for example.
+We should have an `ollama-embedding-model` resource with the following attributes:
+
+* base-url: endpoint to connect to an Ollama chat model.
+* connect-timeout: timeout for the Ollama embedding model.
+* log-requests: enabling the tracing of requests going to Ollama.
+* log-responses: enabling the tracing of responses from Ollama.
+* model-name: the name of the embedding model served by Ollama.
+
+----
+subsystem=ai/ollama-embedding-model=myembedding:add(base-url="http://192.168.1.11:11434", model-name="llama3:8b")
+----
+
+=== Embeddings stores
+
+The extension should provide resources to define `dev.langchain4j.store.embedding.EmbeddingStore`.
+
+It should expose a simple `in-memory-embedding-store` resource with the following attributes:
+
+* file: the file to load the in memory embedding store content from.
+
+----
+/subsystem=ai/in-memory-embedding-store=mystore:add(file=/home/ai/dev/wildfly-admin-embeddings.json)
+----
+
+It should also support vector database backed embedding store like for Weaviate.
+It should expose a simple `weaviate-embedding-store` resource with the following attributes:
+
+* avoid-dups: If true the object id is a hashed ID based on provided text segment else a random ID will be generated.
+* consistency-level: hHow the consistency is tuned when writting into weaviate embedding store.
+* metadata: the list of metadata keys to store with the embeddings are stored.
+* object-class: the name of the object class under which the embeddings are stored.
+* ssl-enabled: if the connection to the Weaviate store is https or not.
+* socket-binding: the name of theoutbound socket binding to connect to the Weaviate store.
+
+----
+/socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=weaviate:add(host=localhost, port=8090)
+/subsystem=ai/weaviate-embedding-store=mystore:add(socket-binding=weaviate, ssl-enabled=false, object-class=Simple, metadata=[url,language,parent_url,file_name,file_path,title,subtitle])
+----
+
+=== Chat language models
+
+The extension should provide resources to define `dev.langchain4j.model.chat.ChatLanguageModel` to chat with a llm.
+
+It should expose a simple `openai-chat-model` resource with the following attributes:
+
+* api-key: the API key to authenticate to an OpenAI chat model.
+* base-url: the endpoint to connect to an OpenAI chat model.
+* connect-timeout: the imeout for the OpenAI chat model.
+* frequency-penalty: the frequency penalty of the OpenAI chat model.
+* log-requests: enabling the tracing of requests going to openAI.
+* log-responses: enabling the tracing of responses from openAI.
+* max-token: the number of token retruned by the OpenAI chat model.
+* model-name: the name of the model served by OpenAI.
+* organization-id: the organization id served by OpenAI.
+* presence-penalty: the presence penalty of the OpenAI chat model.
+* seed: the seed of the OpenAI chat model.
+* temperature: the temperature of the OpenAI chat model.
+* top-p: the top P of the OpenAI chat model.
+
+----
+/subsystem=ai/openai-chat-model=mychat:add(base-url="https://api.groq.com/openai/v1", api-key="${env.GROQ_API_KEY}",model-name="llama3-8b-8192")
+----
+
+It should also support vector database backed embedding store like for Weaviate.
+It should expose a simple `weaviate-embedding-store` resource with the following attributes:
+
+* base-url: the endpoint to connect to an Ollama chat model.
+* connect-timeout: the timeout for the Ollama chat model.
+* log-requests: enabling the tracing of requests going to Ollama.
+* log-responses: enabling the tracing of responses from Ollama.
+* model-name: the name of the chat model served by Ollama.
+* temperature: the temperature of the Ollama chat model.
+
+----
+/subsystem=ai/ollama-chat-model=mychat:add(model-name="llama3:8b", base-url="http://192.168.1.11:11434")
+----
+
+=== Content retrievers
+
+The extension should provide resources to define `dev.langchain4j.rag.content.retriever.ContentRetriever` to retrieve content to send to the llm as part of the prompt.
+
+It should support a content retriever that can retrieve content from an embedding store using the contents close to the embedding of the user prompt.
+It should expose a simple `embedding-store-content-retriever` resource with the following attributes:
+
+* embedding-model; the embedding model used to compute embeddings.
+* embedding-store: the embedding store were the contents and embeddings are retrieved from.
+* min-score: the minimum relevance score for the returned contents.Contents scoring below this score are excluded from the results.
+* max-results: the maximum number of contents to retrieve.
+
+----
+/subsystem=ai/embedding-store-content-retriever=myretriever:add(embedding-model=myembedding,embedding-store=mystore, max-results=2, min-score=0.7)
+----
+
+It should also support  a content retriever that can retrieve content from a web search.
+It should expose a simple `web-search-content-retriever` resource with the following attributes:
+
+* google: a complex attribute to use a Google Custom Search Engine.
+* max-results: the maximum number of contents to retrieve.
+* tavily: a complex attribute to use Tavily Search Engine.
+
+----
+/subsystem=ai/web-search-content-retriever=myretriever:add(tavily={api-key=${env.TAVILY_API_KEY}, base-url=https://api.tavily.com, connect-timeout=20000, exclude-domains=[example.org], include-domains=[example.com], include-answer=true})
+----
+
+== Security Considerations
+
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+
+== Test Plan
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////

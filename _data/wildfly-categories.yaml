@@ -135,3 +135,6 @@ categories:
   - name: WildFly Galleon
     id: wf-galleon
     description: Provision WildFly with Galleon Feature Packs and Layers
+  - name: WildFly AI
+    id: ai
+    description: AI extension to WildFly
