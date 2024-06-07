@@ -70,7 +70,7 @@ The feature will be part of the next-gen console (https://github.com/hal/foundat
 
 == Requirements
 
-The dashboard visualizes WildFly's most essential data, including configuration and runtime data and links to valuable resources. Different cards visualize the data on the dashboard.
+The dashboard visualizes WildFly's most essential data, including configuration and runtime data and links to valuable resources. Different cards visualize the data on the dashboard. If a card shows dynamic data, it includes a refresh button. In addition, all cards are refreshed automatically (for static cards this is a noop).
 
 === Cards
 
