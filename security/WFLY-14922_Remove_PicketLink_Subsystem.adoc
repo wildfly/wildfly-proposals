@@ -1,0 +1,145 @@
+= WFLY-14922 Remove PicketLink Subsystem from WildFly
+:author:            Farah Juma
+:email:             fjuma@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The PicketLink subsystem in WildFly has been deprecated for quite some time now. Related to this,
+setting up SSO with SAML using PicketLink is also deprecated. In order to configure SSO
+with SAML for WildFly, the
+https://www.keycloak.org/docs/latest/securing_apps/#jboss-eap-wildfly-adapter-2[Keycloak SAML Elytron adapter]
+can be used instead.
+
+This task is focussed on the removal of this subsystem from WildFly and the related migration path
+for configuring SSO with SAML for WildFly.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14922[WFLY-14922 - Remove picketlink extension and subsystems]
+* https://issues.redhat.com/browse/WFLY-15076[WFLY-15076 - Add documentation on how to configure SSO with SAML for WildFly using the Keycloak adapter]
+* https://issues.redhat.com/browse/WFLY-15623[WFLY-15623 - Add an operation to migrate from the legacy PicketLink subsystem to the keycloak-saml subsystem]
+* https://issues.redhat.com/browse/KEYCLOAK-18924[KEYCLOAK-18924 - The org.picketbox module dependency should be removed from the SAML Elytron adapter module.xml file]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1750[EAP7-1750 - Remove PicketLink Subsystem]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [x] QE
+
+As a removal RFE, this does not require new feature test development. However both teams will need
+to review existing testsuites for tests dependent on the PicketLink subsystem. Identified tests will
+either need to be deleted or they will need to be converted to use the new approach.
+
+=== Affected Projects or Components
+
+* WildFly
+* Keycloak
+
+=== Other Interested Projects
+
+* [x] External Testsuites
+
+* [x] Quickstarts
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+Since this is a removal task, this section will describe the steps that will be needed as opposed to the
+set of requirements.
+
+=== Hard Requirements
+
+* The PicketLink subsystem needs to be converted to a model-only legacy subsystem. A model-only
+legacy subsystem is only supported either in admin-only mode to facilitate migration or in domain mode
+where a current domain controller can manage legacy hosts so that older domains can still be managed.
+If a standalone server is started with the PicketLink subsystem present in the configuration without
+admin-only mode, an error will occur.
+
+* Any affected tests will need to be removed from WildFly.
+
+* Any documentation that references PicketLink will need to be removed. The main section in the WildFly documentation
+that is affected is the "WS-Trust and STS section".
+
+* The `org.keycloak.keycloak-saml-wildfly-elytron-adapter` module that's installed by the Keycloak SAML Elytron
+adapter will need to be updated to remove the `org.picketbox` module from its dependencies (the `org.picketbox` dependency
+does not appear to be used, it just needs to be removed). See https://github.com/keycloak/keycloak/issues/11553[Issue #11553].
+
+* The Keycloak adapter's CLI script will need to be updated to work properly with WildFly now that Elytron is used by
+default. See https://github.com/keycloak/keycloak/pull/11552[PR #111552].
+
+* A simple migration operation will be added to the `picketlink-federation` subsystem to allow migrating a default
+(i.e., empty) configuration to `keycloak-saml`. The migration operation will assume that the user has already installed
+the Keycloak SAML Elytron adapter (either manually or using the Galleon feature pack).
+
+* Documentation will be created to explain how a user can migrate non-empy `picketlink-federation` configuration
+to `keycloak-saml`.
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+* Automatically migrating non-empty `picketlink-federation` subsystem configuration is not a requirement. The `picketlink-federation`
+migration operation will fail if a user attempts to migrate non-empty configuration. The user will need to follow the steps outlined
+in the migration documentation instead.
+
+* A Galleon feature pack will be added to install the Keycloak SAML Elytron adapter as part of a separate RFE
+(see https://issues.redhat.com/browse/WFLY-16306[WFLY-16306]).
+
+* The migration documentation won't cover PicketLink STS in detail. Apache CXF STS has already been an alternative to
+PicketLink STS. Users can reference existing documentation on Apache CXF STS instead. (If more details are needed,
+we'll need to ask the Web Services team to look into this.)
+
+== Implementation Plan
+
+N/A
+
+== Test Plan
+
+To be discussed.
+
+The Keycloak SAML Elytron adapter already exists and is already used and tested today. Testing will
+be needed to make sure no issues arise after removing the `org.picketbox` module dependency
+from the `org.keycloak.keycloak-saml-wildfly-elytron-adapter` module.
+
+== Community Documentation
+
+In addition to removing any references to PicketLink from the community documentation,
+a "migration" article will be added to indicate that the Keycloak SAML Elytron adapter
+should be used to configure SSO with SAML for WildFly. Users should refer to the Keycloak
+documentation for more detailed information.
+
+== Release Note Content
+
+The PicketLink subsystem has now been removed from WildFly. Please refer to
+https://docs.wildfly.org/25/Migration_Guide.html#Migration_PicketLink for information on
+how to use the Keycloak SAML Elytron adapter to configure SSO with SAML for WildFly.
