@@ -1,0 +1,85 @@
+= CLOUD-3843: Support bare metal Galleon layers in S2i workflow.
+:author:            Yeray Borges
+:email:             yborgess@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+During S2I build operated from the builder image, a user can reference Galleon layers by using `GALLEON_PROVISION_LAYERS` environment variable. The goal of this RFE is to define which layers already available on the S2I Galleon pack can be treated as new decorators for the S2I / XP S2I workflows.
+
+This RFE will not implement new Galleon layers. The main task is to ensure there is a proper product documentation and test plan available to allow a new set of Galleon layers be treated as decorators on the S2I workflow.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/CLOUD-3843[CLOUD-3843 Support bare metal Galleon layers in S2i workflow]
+* https://issues.redhat.com/browse/EAP7-1575[EAP7-1575 Support bare metal Galleon layers in S2i workflow]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-13150[WFLY-13150 Add a Galleon layer for the distributable web subsystem configured with a local web cache]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TBD
+
+=== Testing By
+
+[X] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* https://github.com/jboss-container-images/jboss-eap-7-openshift-image[EAP S2I image builder]
+
+
+== Requirements
+
+* This RFE does not require implement any new Layer. All the layers that will be converted into decorators are already available via Galleon on the S2I Galleon pack.
+* The following Galleon layers will be treated as decorators on the S2I / XP S2I workflow:
+** ejb3-lite: Support for Jakarta Enterprise Beans Lite.
+** ejb3: Support for Jakarta Enterprise Beans, excluding the IIOP protocol.
+** webservices: Support for Jakarta XML Web Services
+** jdr: Support for the JBoss Diagnostic Reporting (JDR) subsystem.
+** jpa: Support for JPA (using the latest WildFly supported Hibernate release).
+** jpa-distributed: Support for JPA with a distributed second level cache.
+** jsf: Support for Jakarta Server Faces.
+** web-console: Support for loading the HAL web console from the /console context on the HTTP management interface. Not required to use a HAL console obtained independently and configured to connect to the server.
+* The following layers will not be handled on this RFE:
+** microprofile-platform. This is currently being tracked on a different Jira, see CLOUD-3843.
+
+=== Nice-to-Have Requirements
+
+* The following Galleon layers depend on a different RFE. They will be treated as decorators on the S2I / XP S2I context if the RFE which is adding them is completed for the images feature freeze:
+** web-passivation. This Galleon layer, currently being tracked on https://issues.redhat.com/browse/WFLY-13150[WFLY-13150]
+
+=== Non-Requirements
+
+* N/A
+
+== Implementation Plan
+
+* No implementation required. We need to document and test some specific Galleon layers in the for the S2I context.
+
+== Test Plan
+
+* Behave tests added to repository https://github.com/jboss-container-images/jboss-eap-7-openshift-image. For each Galleon layer we want to convert into a decorator, a behave test will verify that the decorator layer can be combined with a base layer and the server starts without errors.
+* OpenShift integration testing.
+
+== Community Documentation
+
+* There is no need to document the Galleon layers since they are already documented at [WildFly Galleon layers] https://docs.wildfly.org/21/Galleon_Guide.html#wildfly_galleon_layers.
+* This RFE will ensure that the https://github.com/wildfly/wildfly-s2i/[Wildfly S2I] community documentation contains an updated reference to the available Galleon layers on its README.md file.
+
+== Release Note Content
+
+* New Galleon decorator layers can be used during S2I build.
