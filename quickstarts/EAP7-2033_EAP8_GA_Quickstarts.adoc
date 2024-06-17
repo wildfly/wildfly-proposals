@@ -1,0 +1,129 @@
+= EAP8 GA Quickstarts
+:author:            Eduardo Martins
+:email:             emartins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This proposal specifies which Quickstarts will be delivered on EAP 8 GA, and which Cloud, Provisioning and Automated Testing enhancements will be demonstrated by such Quickstarts.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/EAP7-2033[EAP7-2033]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1891[EAP7-1891]
+* https://issues.redhat.com/browse/EAP7-1792[EAP7-1792]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:szhantem@redhat.com[Sultan Zhantemirov]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [x] QE
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/quickstart
+* https://github.com/jboss-developer/jboss-eap-quickstarts
+
+=== Other Interested Projects
+
+* None
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+
+* [x] Bootable jar (local and cloud deployment)
+* [x] OpenShift S2I
+
+== Requirements
+
+=== Hard Requirements
+
+* The Quickstarts to deliver with EAP 8 GA should:
+** Cover EAP 8 GA main functional areas, such as Web apps, Web Services/REST, Database/JPA, Messaging (including remote broker), Transactions and EJBs.
+** Be compatible with OpenShift.
+
+* The following EAP 8 Cloud/Provisioning/Testing enhancements should be delivered by at least one of the EAP 8 GA Quickstarts
+** Cloud
+*** Helm charts may be used to build and deploy an application on OpenShift, with improved user experience compared with the previous S2i usage. Each EAP 8 GA Quickstart should demonstrate how to use Helm Charts to build and deploy the Quickstart’s application on OpenShift.
+** Testing
+*** The Quickstarts should demonstrate how users may test their applications with JBoss EAP 8, on baremetal and OpenShift environments. Regarding the JBoss EAP 8 GA release the delivered Quickstarts should include integration tests, abstract from the environment where the server is running, and take advantage of Arquillian and the other Quickstarts enhancements to run such tests.
+**** On OpenShift the Helm Charts should be used to build and deploy the server with the application, and use Arquillian remote container to run the tests.
+
+* The following existing Quickstarts were reviewed by the developer team and selected for being delivered with EAP 8 GA:
+** cmt
+*** Main EAP 8 GA functionality covered: Transactions, Messaging
+** Ee-security
+Main EAP 8 GA functionality covered: EE Security
+** Helloworld
+Main EAP 8 GA functionality covered: Servlets
+** Helloworld-ws
+Main EAP 8 GA functionality covered: Web Services
+** Jaxrs-client
+Main EAP 8 GA functionality covered: REST
+** Kitchensink
+Main EAP 8 GA functionality covered: Multiple (JSF, CDI, EJB, JPA, and Bean Validation)
+** Numberguess
+Main EAP 8 GA functionality covered: CDI, JSF
+** Servlet-security
+Main EAP 8 GA functionality covered: Servlet, Elytron
+** Temperature-converter
+Main EAP 8 GA functionality covered: EJB
+** Thread-racing
+Main EAP 8 GA functionality covered: Batch, EE Concurrency, Messaging, REST
+** Todo-backend
+Main EAP 8 GA functionality covered: Datasource, Openshift
+** Websocket-hello
+Main EAP 8 GA functionality covered: Web Socket
+
+* A new Quickstart named remote-helloworld-mdb, showcasing the usage of a remote Messaging broker, and to be provided by EAP7-1792, should be delivered with EAP 8 GA.
+
+=== Nice-to-Have Requirements
+
+* N/A
+
+=== Non-Requirements
+
+* N/A
+
+== Test Plan
+
+*
+
+== Community Documentation
+
+* New shared asciidoc sections should be added to the Quickstarts repository, with respect to the enhancements delivered with JBoss EAP 8 GA, and include these in the READMEs.
+
+== Release Note Content
+
+* The following Quickstarts are fully compatible and included with JBoss EAP 8 GA:
+** cmt
+** ee-security
+** helloworld
+** helloworld-ws
+** jaxrs-client
+** kitchensink
+** numberguess
+** remote-helloworld-mdb
+** servlet-security
+** temperature-converter
+** thread-racing
+** todo-backend
+** websocket-hello
