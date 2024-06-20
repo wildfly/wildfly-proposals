@@ -1,0 +1,61 @@
+= Configure the certificate authority used by a certificate-authority-account
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+Currently, Let's Encrypt (https://acme-v02.api.letsencrypt.org/directory) is the only certificate authority that can be used by a certificate-authority-account. In the future, if/when other certificate authorities implement the server side of the ACME protocol, this will need to be configurable. In addition, making this configurable would also allow local Let's Encrypt server instances to be used for testing purposes.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1593[HAL-1593]
+* {issue-base-url}/EAP7-1276[EAP7-1276]
+
+=== Related Issues
+
+* n/a
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:spriadka@redhat.com[Simon Priadka]
+
+=== Testing By
+
+[x] Engineering
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+Provide UI views to configure the newly added Elytron resource `/subsystem=elytron/certificate-authority=*`.
+
+=== Affected UI
+
+* Configuration / Subsystems / Security / Other Settings / Other Settings / Certificate Authority
+
+=== Affected Resources
+
+* `/subsystem=elytron/certificate-authority=*`
+
+== Test Plan
+
+New tests will be added to the test suite that tests the new resource.
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
