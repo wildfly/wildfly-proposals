@@ -1,0 +1,205 @@
+= Can not get core MBeans such as jboss.as and jboss.as.expr from application on WildFly when RBAC enabled
+:author:            Kabir Khan
+:email:             kkhan@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The RFE was opened outlining a possible regression compared to previous releases in that when RBAC is enabled, it is no longer possible to invoke core MBeans (exposed by the JMX facade) on the platform MBean server. This tightening up was actually a good thing, which closed a security hole allowing non-authenticated users access to the MBean server which would allow them to modify server configuration from within their deployments.
+
+Following investigation, it is possible to call core MBeans via the platform MBean server, if the user configures the server and application. No WildFly code changes are needed for this to work.
+
+The scope of this RFE thus becomes documentation and testing. A summary of the configuration needed will be included. The configuration needed is inspired by the existing https://github.com/wildfly/quickstart/tree/main/security-domain-to-domain[security-domain-to-domain] quickstart which demonstrates the propagation of an identity across two different deployments using different security domains.
+
+This is similar to our use-case where calls come in via a security domain used for applications, while the resulting ModelController calls from the platform MBean server methods use the security domain set up for management of the server.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-16387
+
+=== Related Issues
+
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+No code changes are needed in the main code. Tests will be added to the WildFly testsuite.
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+* A user will be able to access core MBeans via the platform MBean server from within their deployments when RBAC is enabled
+* They will need to configure their server to be able to do this.
+* They also need to implement a mechanism to propagate the SecurityIdentity before calling the platform MBean server
+* Both secured and unsecured applications will be able to do the above
+
+Details of the configuration changes will be listed in the <<test-plan>> section..
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+* The mechanism to propagate the SecurityIdentity to between the security domains could in theory be added to the JMX subsystem. However, it is seen as safer to make this a conscious step done by the user. Hence, the user will have to implement the mechanism.
+
+== Backwards Compatibility
+
+No implications
+
+=== Default Configuration
+This will not be added to the default configurations.
+
+=== Importing Existing Configuration
+
+=== Deployments
+Users might need to configure their deployments
+
+=== Interoperability
+N/A
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can
+not be delivered all in one go to suggest the strategy. If your feature falls
+into this category, please mention the Release Coordinators on the pull
+request so they are aware.
+////
+
+== Security Considerations
+There should be no security considerations beyond the steps the user follows to turn on the feature.
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+
+== Test Plan
+
+Test will be added to the WildFly testsuite (in the `testsuite/integration/basic` module) to test that both unsecured and secured applications are able to access the core MBeans via the platform MBean server.
+
+For these tests the existing `ApplicationDomain` and `ManagementDomain` security domains are used. However, these could use other domains too, as demonstrated in the https://github.com/wildfly/quickstart/tree/main/security-domain-to-domain[security-domain-to-domain] quickstart.
+
+Three scenarios are tested:
+
+a. Applications not secured with Jakarta EE security
+b. Applications secured with Jakarta EE security, using RBAC role mappings from the management layer
+c. Applications secured with Jakarta EE security, using RBAC mappings from the the security domain used for the management layer
+
+=== Configuration
+
+The below table shows the setup steps required to perform the various scenarios. If the 'Scenarios' column is empty, it indicates that the step applies to all scenarios. Otherwise, it lists the scenarios above that the step applies to, meaning it doesn't apply to the scenarios that are not listed.
+
+For brevity the terms 'ManagementDomain' and 'ApplicationDomain' will refer to the security domains used to secure the management layer and application respectively. Although these are the names of the shipped security domains, as previously mentioned they could equally well be other domains.
+
+[%autowidth.stretch]
+[cols="1,1"]
+|===
+| Step | Scenarios
+
+| Set up ApplicationDomain with a user, and configure security with standard Jakarta EE security role mappings in e.g. jboss-web.xml + web.xml. This is standard stuff, only mentioned here because a) does **not** need this.
+| b, c
+
+| Set up users in ManagementDomain. Users must match the ones in the application domain
+| b, c
+
+| In ManagementDomain, map the users to RBAC roles such as SuperUser
+| c
+
+| Enable RBAC
+|
+
+| Add the 'anonymous' user to the 'SuperUser' (or other desired RBAC role) RBAC role mapping. Since this flavour is for a non-secured application, this is the SecurityIdentity that will be used
+| a
+
+| Add the user(s) duplicated in ApplicationDomain and ManagementDomain to the 'SuperUser' (or other desired RBAC role) RBAC role mapping.
+| b
+
+| In ManagementDomain, add the user(s) duplicated in ManagementDomain and ApplicationDomain to the 'SuperUser' group.
+| c
+
+| Update `/core-service=management/access=identity` to reference ManagementDomain.
+|
+
+| Update the 'outflow-security-domains' of the management resource for ApplicationDomain to include ManagementDomain.
+|
+
+| Update the 'trusted-domains' of the management resource for ManagementDomain to include ApplicationDomain.
+|
+
+|===
+
+Finally, calls on the platform MBean server must be wrapped. Say we have the following code:
+
+[source, java]
+----
+ObjectName mbean = ...
+MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+server.getAttribute(mbean, "attribute");
+----
+
+The `server.getAttribute()` call will need wrapping to propagate the SecurityIdentity across the domains. For this to work, instead of the above code, the user will need to rewrite this as:
+
+[source, java]
+----
+ObjectName mbean = ...
+MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+SecurityIdentity identity = SecurityDomain.getCurrent().getCurrentSecurityIdentity();
+try {
+    identity.runAs(() -> {
+        try {
+            server.getAttribute(mbean, "attribute");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    });
+} catch (RuntimeException e) {
+    // Handle exception
+}
+server.getAttribute(mbean, "attribute");
+----
+
+The `SecurityIdentity.runAs()` call deals with propagating the identity across the domains.
+
+== Community Documentation
+This seems to me a bit of a corner case, which has not been reported by community users. For now, I would like to refer users to the test case if they ask.
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
+
+== Release Note Content
+Users can now access the platform MBean server from their deployments when a server has RBAC turned on for the management layer. This involves some additional configuration of the server, and calls to the platform MBean server must be wrapped by the user to properly propagate the security identity.
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
