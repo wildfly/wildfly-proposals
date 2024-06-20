@@ -1,0 +1,109 @@
+= WFLY-12164 SSL_KEY_EXCHANGE JGroups protocol should be configured from Elytron capabilities
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The SSL_KEY_EXCHANGE protocol is relatively new and does not yet integrate with Elytron.
+The upstream configuration consumes properties needed to open a key store in order to provide an SSL client and server socket.
+Elytron provides client and socket `SSLContexts` which can be instead fed into the protocol – ignoring the properties based configuration.
+The protocol by default also uses "automagic" for figuring out vacant sockets for the server SSL socket.
+The socket will be required by a socket binding, with `port_range` feature disabled, i.e. set to 0 as we do for other protocols.
+
+Example usage of the protocol if keystores are already present:
+
+----
+/subsystem=elytron/key-store=jgroups:add(relative-to="jboss.server.config.dir",path="application.keystore",required=true,type=JKS,credential-reference={clear-text=password})
+/subsystem=elytron/key-manager=jgroups:add(algorithm=SunX509,key-store=jgroups,credential-reference={clear-text=password})
+/subsystem=elytron/trust-manager=jgroups:add(algorithm=SunX509,key-store=jgroups)
+/subsystem=elytron/client-ssl-context=jgroups-client:add(key-manager=jgroups,trust-manager=jgroups)
+/subsystem=elytron/server-ssl-context=jgroups-server:add(key-manager=jgroups,trust-manager=jgroups)
+
+/subsystem=jgroups/channel=ee:write-attribute(name=stack,value=tcp)
+/subsystem=jgroups/stack=tcp/protocol=ASYM_ENCRYPT:add(add-index=5)
+/subsystem=jgroups/stack=tcp/protocol=org.jgroups.protocols.ASYM_ENCRYPT:map-put(name=properties,key=use_external_key_exchange,value=true)
+/socket-binding-group=standard-sockets/socket-binding=jgroups-ssl-key-exchange:add(interface=private,port=2157,fixed-port=true)
+/subsystem=jgroups/stack=tcp/protocol=SSL_KEY_EXCHANGE:add(add-index=5,client-ssl-context=jgroups-client,server-ssl-context=jgroups-server)
+----
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-12164[WFLY-12164 SSL_KEY_EXCHANGE JGroups protocol should be configured from Elytron capabilities]
+* https://issues.jboss.org/browse/EAP7-1333[EAP7-1333 SSL_KEY_EXCHANGE JGroups protocol should be configured from Elytron capabilities]
+
+=== Related Issues
+
+JGroups issues/tasks
+
+* JGRP-2370 SSL_KEY_EXCHANGE creates key_store in init() even if SSLContext is already provided
+* JGRP-2371 SSL_KEY_EXCHANGE needs to support distinct client and server SSLContext instances
+* JGRP-2352 Add setter methods for SSLContext, SessionVerifier, and bind_addr to SSL_KEY_EXCHANGE
+
+Implementation tasks
+
+* WFLY-12389 Add JGroups subsystem schema and model version 8.0
+* WFLY-12395 Upgrade JGroups to 4.1.4.Final
+
+Another protocol for integration
+
+* WFLY-12381 DH_KEY_EXCHANGE JGroups should be configured from Elytron capabilities
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* To by provided by QE if necessary.
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* JGroups
+
+=== Other Interested Projects
+
+* Elytron
+
+== Requirements
+
+=== Hard Requirements
+
+* SSL_KEY_EXCHANGE protocol resource override requiring:
+- client-ssl-context
+- server-ssl-context
+- socket-binding
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+== Implementation Plan
+
+Just a note on the implementation, while we requested for the protocol to be integrable, this integration points were not sufficient,
+and more changes were needed in JGroups; in the meantime the PR will be in the queue in draft state for review.
+
+== Test Plan
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
+
+Documentation section is added into the upstream documentation.
