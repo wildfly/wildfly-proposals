@@ -121,6 +121,7 @@ Feature packs external to WildFly, as mentioned in the 'Future Work' section.
 *** the 'wildfly-ee' feature pack for the `org.hibernate.Incubating` annotation.
 *** the 'wildfly' feature pack for the `io.smallrye.common.annotation.Experimental` annotation.
 *** It also contains a simple configuration mechanism to narrow down which classpath entries to index (e.g when scanning for `io.smallrye.common.annotation.Experimental` we only check the SmallRye libraries on the classpath)
+*** To reduce size as much as possible we will add the index files in zip format.
 * In WildFly Core
 ** deployment unit processors will be added to:
 *** Iterate all resources from the `{indexModule}` module. These resources are the .zip or .txt files containing the indices for each feature pack
@@ -155,18 +156,21 @@ Feature packs external to WildFly, as mentioned in the 'Future Work' section.
 === Future Work
 // Use this section to discuss requirements that are not addressed by this proposal
 // but which may be addressed in later proposals.
-* Promote this feature to Community or higher.
-** This would allow us to enable it out of the box by default, making it more useful.
+* Promote this feature to Community or higher. Once we analyse what a community level feature would contain, the below are some ideas which should be taken into consideration when defining the set of enhancements.
+* Promoting to Community or higher would allow us to enable the scanning and reporting out of the box by default, which (in my opinion) would make it more useful.
+* Investigate the use of layers to provision the feature or not
+** Decide whether to opt in or out of provisioning the scanner utility
+** At the moment, the current feeling is that the zipped index files are small enough to not matter if they are provisioned or not. So the candidate would be the module containing the wildfly/unstable-api-annotation-utils jar.
 * Identify all annotations indicating unstable API used by WildFly itself with the help of component leads.
 ** Scan for these annotations during feature pack builds, and make them available in a provisioned server.
 * Engage with owners of feature packs external to WildFly, and identify all annotations indicating unstable API in those feature packs.
 ** Provide instructions on how to do the build time scan, and to make the indices available at runtime once their feature pack has been provisioned.
 ** Scan for these annotations during feature pack build, and make them available in a provisioned server.
 ** I think an appropriate set of feature packs would be the ones WildFly Glow is aware of.
-* Index user provided classes
+* Investigate the feasibility of scanning user provided classes from other locations than deployment archives, such as:
 ** in user modules
 ** in classes referenced via the `module`/`class` attribute pairs in the management model
-* Add a deployment marker to force enable/disable the runtime scanning independent of the subsystem setting
+* Investigate adding a deployment marker to force enable/disable the runtime scanning independent of the subsystem setting
 ** This could possibly be enhanced with a filter so a user could say to ignore usage of constructs annotated with `org.hibernate.Incubating` (or perhaps an expression to ignore classes matching the expression), while reporting usage of everything else (e.g. constructs annotated with `io.smallrye.common.annotation.Experimental`).
 
 == Backwards Compatibility
