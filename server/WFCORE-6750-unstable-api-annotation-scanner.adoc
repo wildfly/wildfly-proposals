@@ -85,7 +85,7 @@ Both the two alternative ideas above would need this conversion to strings, sinc
 === Affected Projects or Components
 
 * WildFly
-** the wildfly-galleon-pack and wildfly-ee-feature pack feature packs will scan their classpaths and provide the indices of API elements annotated with `io.smallrye.common.annotation.Experimental` and `org.hibernate.Incubating`.
+** the 'wildfly' and 'wildfly-ee' feature packs will scan their classpaths and provide the indices of API elements annotated with `io.smallrye.common.annotation.Experimental` and `org.hibernate.Incubating`.
 * WildFly Core
 ** scans the applications when they are deployed, looking for usage of API elements that exist in the index.
 * https://github.com/wildfly/unstable-api-annotation-utils[wildfly/unstable-api-annotation-utils] - contains a library providing:
@@ -115,20 +115,20 @@ Feature packs external to WildFly, as mentioned in the 'Future Work' section.
 * There is a maven plugin that can be used in the feature pack builds.
 ** It will scan for annotations indicating unstable API, and add the following to the `content/` directory of the  `{indexModule}` module (the `content/` directory is defined as a resource root:
 *** a file containing the indices for annotations concerning the feature pack.
-*** The name of the file will be added to a file called `index.txt` in the `content/` folder of the `{indexModule}` module. This `index.txt` is provided as the main lookup mechanism for the files mentioned in the above point.
+**** The file may be either a .txt or a .zip
 ** The maven plugin scans the full classpath of the feature pack looking for dependencies to index.
 ** For this iteration we will scan
-*** the `wildfly-ee-feature-pack` for the `org.hibernate.Incubating` annotation.
-*** the `wildfly-galleon-pack` for the `io.smallrye.common.annotation.Experimental` annotation.
+*** the 'wildfly-ee' feature pack for the `org.hibernate.Incubating` annotation.
+*** the 'wildfly' feature pack for the `io.smallrye.common.annotation.Experimental` annotation.
 *** It also contains a simple configuration mechanism to narrow down which classpath entries to index (e.g when scanning for `io.smallrye.common.annotation.Experimental` we only check the SmallRye libraries on the classpath)
 * In WildFly Core
 ** deployment unit processors will be added to:
-*** Load the indices listed in the `content/index.html` file in the `{indexModule}` module.
+*** Iterate all resources from the `{indexModule}` module. These resources are the .zip or .txt files containing the indices for each feature pack
 *** Use the wildfly/unstable-api-annotation-utils library to scan the bytecode of every class in the user's deployed application and cross-reference against the loaded indices.
 ** The deployment unit processors will use the WildFly classloading rules to make sure that in the case of nested archives, that we only scan each class once. E.g. if a .war contains a `WEB-INF/lib/my-library.jar`, classes in `WEB-INF/lib/my-library.jar` will only be s scanned as part of the `WEB-INF/lib/my-library.jar` resource root scan, and not for the parent .war.
 ** Once scanned, usage of annotated API elements may be reported depending on configuration in the `core-management` subsystem:
 *** A new child resource (currently called `service=unstable-api-annotations`) is added with a `level` attribute to configure the reporting
-**** Since this is a resource/feature with a stability level of preview, if the resource is not present, no reporting is done.
+**** Since this is a resource/feature with a stability level of preview, if the resource is not present, no scanning or reporting is done.
 ****** The resource is added to the `preview` flavour of the current version of the model. At the time of writing it I was told there is no need to bump the version of management model constructs coming in lower than `community` level.
 **** If the attribute is set to `log` (this is the default value for the attribute), the usages will be logged to the server.log. In this case the user application will be deployed.
 **** If the attribute is set to `error`, the deployment will fail with an exception containing the usages.
@@ -209,7 +209,7 @@ WildFly Core:
 ** Thus, a test feature pack will be created offering an API (including its own annotations for indicating unstable API) and a subsystem providing this API on the classpath.
 ** The feature pack will be indexed and the indices will be added to the `{indexModule}` module.
 ** The test will check that
-*** the index file is added to the `${indexModule}` module, and to the list in the module's `index.txt`, as outlined in the requirements
+*** the index file is added to the `${indexModule}` module, as outlined in the requirements
 *** when deploying an application using annotated API elements from the test feature pack API, usage of those is reported in line with the configuration in the `subsystem=core-management/service=unstable-api-annotations` resource (as outlined in the requirements). We will test both with
 **** `level=log` - and inspect that the log messages pick up all the usages of annotated API elements.
 **** `level=error` - and inspect that the application fails to deploy, and that the error message picks up all the usages of annotated API elements.
@@ -218,10 +218,11 @@ WildFly Core:
 WildFly:
 
 * Since we have done the main testing of the mechanism in WildFly Core, we will not test that here
-* A test will be added to `testsuite/integration/basic` which runs in an execution provisioning both `wildfly-ee-feature-pack` and `wildfly-galleon-pack`. It will test
-** that the `{indexModule}` module, and the list in the module's `index.txt`, contain the indices from both feature packs.
-** A number of differently packaged deployments will be tested, to make sure that each class only gets scanned once, in order to test that the annotated class/member usage follows the WildFly classloading rules. The scanner outputs the class count when an undocumented system property is set to `true`.
-* The above test will run at the `preview` stability level
+* The verifier plugin in each feature pack will verify that the `{indexModule}` module in each feature pack contains the expected index files.
+** The 'wildfly-ee' feature pack expects `wildfly-ee-feature-pack.zip`
+** The 'wildfly' feature pack expects `wildfly-ee-feature-pack.zip` and `wildfly-galleon-pack.zip`
+* A test will be added to `testsuite/integration/microprofile` which runs in an execution provisioning both the 'wildfly-ee' and 'wildfly' feature packs. It will test a number of differently packaged deployments, to make sure that each class only gets scanned once, in order to test that the annotated class/member usage follows the WildFly classloading rules. The scanner outputs the class count when an undocumented system property is set to `true`.
+** This test will run at the `preview` stability level
 
 == Community Documentation
 ////
