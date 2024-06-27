@@ -37,6 +37,21 @@ class MetadataChecker
     else 
       system("gh pr edit #{pr_number} --remove-label invalid-categories")
     end
+    issue_errors = check_issue(pr_number, front_matter)
+    if issue_errors.length() > 0
+      errors << issue_errors
+      system("gh pr edit #{pr_number} --add-label missing-issue")
+    else
+      system("gh pr edit #{pr_number} --remove-label missing-issue")
+    end
+    stability_level_error = check_stability_level(pr_number, front_matter)
+    if stability_level_error.length() > 0
+      errors << stability_level_error
+      system("gh pr edit #{pr_number} --add-label invalid-stability-level")
+    else
+      system("gh pr edit #{pr_number} --remove-label invalid-stability-level")
+    end
+
     errors
   end
 
@@ -50,6 +65,24 @@ class MetadataChecker
           errors << "New category #{cat_id} must be added to _data/wildfly-categories.yaml"
         end
       end
+    end
+    errors
+  end
+
+  def check_issue pr_number, front_matter
+    errors = []
+    unless (front_matter.key? "issue") && (front_matter["issue"] != nil)
+      errors << "Missing field: issue"
+    end
+    errors
+  end
+
+  def check_stability_level pr_number, front_matter
+    stability_levels = ["experimental", "preview", "community", "default"]
+
+    errors = []
+    unless (front_matter.key? "stability-level") && (stability_levels.include? front_matter["stability-level"])
+      errors << "Invalid field: stability-level"
     end
     errors
   end
