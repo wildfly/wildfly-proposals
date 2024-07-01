@@ -1,0 +1,161 @@
+---
+categories:
+  - core
+  - management
+# Add any category for this proposal
+# if missing, add it to _data/widfly-categories and use its id
+---
+= [Community] Ability to reload a Host Controller to a different stability level
+:author:            Yeray Borges
+:email:             yborgess@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WFCORE-6728 introduces the ability to reload a standalone server to a different stability level. This is mainly for the testsuite to be able to reload the server to a different stability level before running the tests, and to reload back to the original stability level after the tests have completed.
+
+This proposal is to extend this functionality to domain mode and provide a method to reload a Host Controller to a different stability level for testing purposes.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE[WFCORE-6815]
+
+=== Related Issues
+
+//* https://issues.redhat.com/browse/WFLY[WFLY-XXXX]
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [ ] Preview
+
+* [x] Community
+
+* [ ] default
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+* mailto:brian.stansberry@redhat.com[Brian Stansberry]
+* mailto:kkhan@redhat.com[Kabir Khan]
+* mailto:jperkins@redhat.com[James Perkins]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+WildFly Core. The main changes will be in the controller, host-controller and testsuite/shared modules.
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [ ] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [ ] OpenShift s2i
+
+* [ ] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* There will be a new operation based on the current reload operation introduced for host controllers.
+* The operation will be registered at stability level 'community' at present.
+* The operation is based on the reload operation as follows:
+** It will add a parameter called `stability`. This parameter takes the stability level we want to reload the server to.
+** It will remove the `restart-servers` parameter, as it is not useful in the context of reloading a host to a different stability level. For the reload-enhanced operation, the managed servers will always be restarted to ensure that the managed servers are running with the same stability level as the host controller.
+* The operation has its own sensitive target access constraint setting to narrow down who can call it. It is called `reload-enhanced` and is set to `false` for accessDefault, readDefault and writeDefault.
+* A set of classes for the WildFly Core testsuite will be introduced. These use the above operation to reload the DomainTestSupport to the desired stability level before running the tests, and to reload it back to the original stability level after the tests have completed.
+* The DomainTestSupport is always configured with at least one Domain Controller, and optionally it could also contain the configuration for an additional Host controller as a secondary host, and the new utility classes will take this into account.
+** These new classes perform the following checks, and skip the test using JUnit `Assume.assumeXXX()` if the condition is not met:
+*** The desired stability level is one of the ones supported by the domain.
+*** The enhanced reload operation exists at our current stability level for the host controllers in the domain.
+*** It is assumed that if we reload to a higher stability level than the one at which the enhanced reload operation is registered, it is not possible to reload back to the original stability. For example, with the operation currently registered at 'community' level, once reloaded to default stability level, it won't be possible to reload back to 'community' level because the reload-enhanced operation will not be available.
+
+=== Nice-to-Have Requirements
+// Requirements in this section do not have to be met to merge the proposed functionality.
+// Note: Nice-to-have requirements that don't end up being implemented as part of
+// the work covered by this proposal should be moved to the 'Future Work' section.
+
+
+=== Non-Requirements
+// Use this section to explicitly discuss things that readers might think are required
+// but which are not required.
+
+=== Future Work
+// Use this section to discuss requirements that are not addressed by this proposal
+// but which may be addressed in later proposals.
+As this is currently mainly for the testsuite to be able to reload, there is no special support in the CLI's reload command for the enhanced reload operation. If this is seen usable for wider use, adding handling to the CLI command to expose the stability parameter could be interesting. The CLI command would need to take into account both the stability level of the server and the user's RBAC role in order to determine whether the enhanced reload operation is visible to the user. If the operation is visible, and the user wants to use the stability parameter, the enhanced reload operation will be called instead of the current reload operation.
+
+== Backwards Compatibility
+
+// Does this enhancement affect backwards compatibility with previously released
+// versions of WildFly?
+// Can the identified incompatibility be avoided?
+No, we are adding a new operation, which is mainly for testing as described above. There are no configuration changes.
+
+=== Default Configuration
+
+No impact
+
+=== Importing Existing Configuration
+
+No impact
+
+=== Deployments
+
+No impact
+
+=== Interoperability
+
+No impact
+
+== Security Considerations
+
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+RBAC constraints will be configured on the enhanced reload operation to narrow down who can call it.
+
+== Test Plan
+
+Tests will be added to the testsuite/domain module to ensure that the new classes mentioned in the requirements section reload properly to the desired stability levels.
+
+== Community Documentation
+
+The only user facing functionality here is the `reload-enhanced` operation. We deliberately don't promote direct use of low level reload operations, as any use of those operations requires the caller to properly handle reconnecting to the reloaded server. Our end-user documentation around reloading should focus on the high level CLI reload command, which is out of scope for this proposal.
+
+Additionally, reloading to a different stability level requires great care to make sure the server configuration is compatible with the target stability level.
+
+So, beyond the wildscribe management API documentation no community documentation will be added for this.
+
+
+
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature.
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list
+of features containing a few words on each, use "Bullet point: <The few words>"
+////
