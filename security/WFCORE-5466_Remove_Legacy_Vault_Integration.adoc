@@ -1,0 +1,311 @@
+= WFCORE-5466 Remove Legacy Vault Integration
+:author:            Darran Lofthouse
+:email:             darran.lofthouse@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+At the start for JBoss AS7 the secure handling of credentials in the management model was handled
+by the PicketBox vault allowing expressions in the management model to be resolved against the 
+vault.
+
+During WildFly 11 with the addition of support for WildFly Elytron an alternative solution was
+added providing a credential store which can be used to resolve credentials.  This was later
+enhanced to also support the use of encrypted expressions in the management model in general.
+
+This task is focused on the removal of the PicketBox based vault integration.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-5466[WFCORE-5466 - Remove Vault support entirely from WildFly Core]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFCORE-5485[WFCORE-5485 - Bump the CLI configuration schema to version 4]
+* https://issues.redhat.com/browse/WFLY-14912[WFLY-14912 - Remove Vault support entirely from WildFly]
+* https://issues.redhat.com/browse/EAP7-1745[EAP7-1745 - Remove Vault support]
+* https://issues.redhat.com/browse/WFLY-14943[WFLY-14943 - Once all legacy security removal is in perform a full refactor]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [x] QE
+
+As a removal RFE this does not require new feature test development, however both teams will need
+to review existing testsuites for tests dependent on the Vault integration.  Identified tests will
+either need deleting or converting to a credential store equivalent.
+
+=== Affected Projects or Components
+
+* WildFly Core
+* WildFly
+
+=== Other Interested Projects
+
+* [x] External Testsuites
+
+* [ ] Quickstarts
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+As a removal task, this section is describing the steps being undertaken rather than a set of
+"requirements".
+
+=== Hard Requirements
+
+The command line vault utility scripts `vault.bat`, `vault.ps1`, and `vault.sh` are all removed
+from the server.
+
+The next version of the management model is updated to remove all vault resources.  Any use of
+vault resources in the latest version will result in a usual unexpected element error.
+
+Where configurations are read using older model versions if they contain a vault definition this
+will be logged as a warning and the vault configuration dropped at the next write.  This is to
+allow older configurations to still be handled in admin mode.  This same approach will be used for
+appclient parsing.
+
+Vault expressions are not prevented from occurring within the management model for two reasons:
+
+* The WildFly Elytron expression encryption can use a similar format.
+* Domains will need to handle configurations containing vault expressions for older host controllers.
+
+The vault elements in the WildFly CLI config are removed from the next version of the schema.  The
+presence of the element in ALL versions of configuration will result in a parsing error being
+reported.  The parsing is more abrubt in the CLI as this is only used for configuring SSL so will
+need immediate attention.
+
+All vault integration code is deleted from WildFly Core reducing the dependence on PicketBox.
+
+All vault test utilities are deleted and removed from the testsuite.
+
+The `vault` galleon layer will be removed from the available galleon layers.
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+This RFE is not quite sufficient to remove dependencies on PicketBox from WildFly Core.
+
+The legacy security subsystem also supports it's own vault definition, this is outside the
+scope of the task and will be handled with the removal of the subsystem.
+
+The core management vault resources are not transformed so configuration does not need to be
+retained for managing older host controllers.
+
+The following items identified during the removal of Vault integration will be handled
+independently in their own follow up tasks:
+
+* https://issues.redhat.com/browse/WFLY-14919[WFLY-14919 - Credential store expression resolution not usable for deployment descriptors.]
+* https://issues.redhat.com/browse/WFCORE-5490[WFCORE-5490 - Elytron Expression Resolution too late to handle system properties.]
+
+== Implementation Plan
+
+This task will need to be developed in stages, logically the first step is to remove the
+integration from WildFly Core then move to WildFly, however this would break CI for any WildFly
+use of vault.
+
+* An early PR to WildFly to compensate for forthcoming changes.
+* Submit main PR to WildFly Core removing the vault integration.
+* A third PR to WildFly completing the removal including documentation updates.
+
+During this task follow up activities will be identified, these should not block the progress
+of the initial PRs being merged.
+
+Follow up tasks may include:
+
+* Re-purposing test cases or developing new test cases where Elytron coverage is required.
+* Additional enhancements for feature parity in relation to removed features.
+
+== Test Plan
+
+The following table identifies the tests in WildFly Core and WildFly affected by the removal.
+
+.Test Case Updates
+|===
+|Project |Test Case |Action
+
+|WildFly Core
+|org.jboss.as.server.services.security.RuntimeVaultReaderUnitTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.server.RuntimeExpressionResolverUnitTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.server.deployment.DeploymentAddHandlerTestCase
+|Tweaked
+
+|WildFly Core
+|org.jboss.as.server.test.InterfaceManagementUnitTestCase
+|Tweaked
+
+|WildFly Core
+|org.jboss.as.server.parsing.SystemPropertiesParsingTest
+|Reduced
+
+|WildFly Core
+|org.jboss.as.domain.controller.operations.SyncModelServerStateTestCase
+|Tweaked
+
+|WildFly Core
+|org.jboss.as.core.model.test.vault.HostVaultTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.vault.StandaloneVaultTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.core.model.test.host.HostModelTestCase#testDefaultHostXmlWithExpressions
+|Tweaked
+
+|WildFly Core
+|org.wildfly.core.test.standalone.mgmt.api.core.MissingVaultExpressionTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.manualmode.vault.VaultPasswordsInCLITestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.manualmode.vault.CustomVaultInModuleTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.manualmode.management.cli.CustomVaultInCLITestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.integration.mgmt.access.VaultExpressionSensitivityTestCase
+|Removed
+
+|WildFly Core
+|org.jboss.as.test.integration.mgmt.access.ValidateAddressOrOperationTestCase
+|Reduced
+
+|WildFly Core
+|org.jboss.as.test.integration.domain.SlaveHostControllerAuthenticationTestCase
+|Reduced
+
+|WildFly Core
+|org.jboss.as.test.integration.domain.rbac.AccessConstraintUtilizationTestCase
+|Tweaked
+
+|WildFly
+|org.jboss.as.test.integration.security.passwordmasking.PasswordMaskingInContainerTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.integration.security.passwordmasking.PasswordMaskingTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.integration.security.loginmodules.LdapExtLoginModuleTestCase
+|Reduced
+
+|WildFly
+|org.jboss.as.test.integration.messaging.jms.definitions.JMSResourceDefinitionsTestCase
+|Reduced
+
+|WildFly
+|org.jboss.as.test.integration.messaging.jms.context.VaultedInjectedJMSContextTestCase
+|Reduced
+
+|WildFly
+|org.jboss.as.test.integration.security.vault.ExternalPasswordCommandsTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.integration.security.vault.ExternalPasswordByClassTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.integration.security.vault.RemoveSecuredAttributeTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.integration.security.vault.VaultDatasourceTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.integration.security.vault.VaultSystemPropertiesTestCase
+|Removed
+
+|WildFly
+|org.jboss.as.test.integration.ejb.mdb.vaultedproperties.MDBWithVaultedPropertiesTestCase
+|Reduced
+
+|WildFly
+|org.jboss.as.test.integration.security.loginmodules.LdapExtLikeAdvancedLdapLMTestCase
+|Reduced
+
+|WildFly
+|org.jboss.as.test.integration.mgmt.access.AccessConstraintUtilizationTestCase
+|Tweaked
+
+|WildFly
+|org.jboss.as.test.manualmode.security.VaultSystemPropertyOnServerStartTestCase
+|Removed
+|===
+
+.Action Key
+|===
+|Action | Description
+
+|Removed
+|Test case removed entirely.
+
+|Reduced
+|Removed vault specific testing from case.
+
+|Tweaked
+|Minor changes needed for vault removal.
+|===
+
+== Community Documentation
+
+This task will include a pass through of all existing community documentation and remove all
+references to the PicketBox vault.  Where appropriate the WildFly Elytron credential store will
+be referenced.
+
+A migration "article" will be added to the documentation, this article will identify where vault
+integration has been removed with high level examples migrating to the credential store cross
+referencing the main documentation as appropriate.
+
+At the end of all of the removals we will come back to the issue 
+https://issues.redhat.com/browse/WFLY-14943[WFLY-14943] to perform a final clean up and refactor
+of the documentation in relation to legacy security.
+
+== Release Note Content
+
+The legacy PicketBox Vault integration has now been removed from WildFly, please refer to
+https://docs.wildfly.org/25/Migration_Guide.html#Migration_PicketBox_Vault for information on 
+alternatives available utilising the WildFly Elytron credential store.
