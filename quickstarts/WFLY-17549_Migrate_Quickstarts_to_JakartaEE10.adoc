@@ -1,0 +1,169 @@
+= Migrate Quickstarts to Jakarta EE 10
+:author:            Eduardo Martins
+:email:             emartins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This proposal specifies the migration of Quickstarts to Jakarta EE 10
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-17549[WFLY-17549]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1840 [EAP7-1840]
+* https://issues.redhat.com/browse/WFLY-17289 [WFLY-17289]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [x] QE
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/quickstart
+* https://github.com/jboss-developer/jboss-eap-quickstarts
+
+=== Other Interested Projects
+
+* None
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+
+* [x] Bootable jar (local and cloud deployment)
+* [x] OpenShift S2I
+
+== Requirements
+
+=== Hard Requirements
+
+* On WFLY-17289 we migrated a subset of the Quickstarts to Jakarta EE 10, now we should do the same for all other Quickstarts:
+** batch-processing
+** bean-validation-custom-constraint
+** bmt
+** contacts-jquerymobile
+** ejb-multi-server
+** ejb-remote
+** ejb-security-context-propagation
+** ejb-security-programmatic-auth
+** ejb-throws-exception
+** ejb-timer
+** ejb-txn-remote-call
+** ha-singleton-deployment
+** ha-singleton-service
+** helloworld-jms
+** helloworld-mdb
+** helloworld-mutual-ssl
+** helloworld-mutual-ssl-secured
+** helloworld-singleton
+** hibernate
+** http-custom-mechanism
+** jaxrs-jwt
+** jaxws-ejb
+** jaxws-retail
+** jsonp
+** jta-crash-rec
+** jts
+** logging
+** mail
+** messaging-clustering-singleton
+** security-domain-to-domain
+** servlet-async
+** servlet-filterlistener
+** shopping-cart
+** spring-resteasy
+** tasks-jsf
+** websocket-endpoint
+** wsat-simple
+** wsba-coordinator-completion-simple
+** wsba-participant-completion-simple
+
+=== Nice-to-Have Requirements
+
+* N/A
+
+=== Non-Requirements
+
+* N/A
+
+== Test Plan
+
+* TODO
+
+== Community Documentation
+
+* The shared asciidoc sections added to the Quickstarts repository by WFLY-17289, with respect to this proposal enhancements, should now be included too in the READMEs of the Quickstarts related with this proposal.
+
+== Release Note Content
+
+* The following Quickstarts were migrated to Jakarta EE 10:
+** batch-processing
+** bean-validation-custom-constraint
+** bmt
+** contacts-jquerymobile
+** ejb-multi-server
+** ejb-remote
+** ejb-security-context-propagation
+** ejb-security-programmatic-auth
+** ejb-throws-exception
+** ejb-timer
+** ejb-txn-remote-call
+** ha-singleton-deployment
+** ha-singleton-service
+** helloworld-jms
+** helloworld-mdb
+** helloworld-mutual-ssl
+** helloworld-mutual-ssl-secured
+** helloworld-singleton
+** hibernate
+** http-custom-mechanism
+** jaxrs-jwt
+** jaxws-ejb
+** jaxws-retail
+** jsonp
+** jta-crash-rec
+** jts
+** logging
+** mail
+** messaging-clustering-singleton
+** security-domain-to-domain
+** servlet-async
+** servlet-filterlistener
+** shopping-cart
+** spring-resteasy
+** tasks-jsf
+** websocket-endpoint
+** wsat-simple
+** wsba-coordinator-completion-simple
+** wsba-participant-completion-simple
+
+Please note that the following Quickstarts were migrated to Jakarta EE 10 previously and delivered with JBoss EAP 8 Beta:
+** cmt
+** ee-security
+** helloworld
+** helloworld-ws
+** jaxrs-client
+** kitchensink
+** numberguess
+** servlet-security
+** temperature-converter
+** thread-racing
+** todo-backend
+** websocket-hello
