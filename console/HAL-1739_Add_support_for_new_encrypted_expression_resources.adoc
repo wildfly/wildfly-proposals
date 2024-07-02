@@ -1,0 +1,71 @@
+= Add support for new encrypted expression resources
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+Support pluggable expression resolvers.
+Support an expression resolver backed by a credential store.
+
+This would be the new recommended capability to store and secure configuration strings for users who are used to using old vault to mask (secure) other string than passwords (e.g. usernames, file paths, urls, ...)
+
+The implementation will not be storing the encrypted values within the credential store as that is a store of credentials and not a generic store of strings, instead the encrypted values will be stored in the management model in-line as an expression. A configured expression resolver will then handle the decryption of these expressions using a specific key stored within the CredentialStore.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1739[HAL-1739]
+* {issue-base-url}/EAP7-1936[EAP7-1936]
+
+=== Related Issues
+
+* n/a
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:spriadka@redhat.com[Simon Priadka]
+
+=== Testing By
+
+[x] Engineering
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+Add support in the console for the following new Elytron resources:
+
+* `/subsystem=elytron/secret-key-credential-store=*`
+* `/subsystem=elytron/expression=encryption`
+
+=== Affected UI
+
+* Configuration / Subsystems / Security / Other Settings / Stores / Secret Key Credential Store
+* Configuration / Subsystems / Security / Other Settings / Other Settings / Expression
+
+=== Affected Resources
+
+* `/subsystem=elytron/secret-key-credential-store=*`
+* `/subsystem=elytron/expression=encryption`
+
+== Test Plan
+
+New tests will be added to the test suite to test the new resources.
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
