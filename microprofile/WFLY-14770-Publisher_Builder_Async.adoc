@@ -1,0 +1,78 @@
+= WFLY-14770 Handle MicroProfile Reactive Streams Operators as an async return type
+:author:            Kabir Khan
+:email:             kkhan@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This RFE follows up on WFLY-13640 which introduced MicroProfile Reactive Streams Operators. Reactive Streams Operators provides a way to create instances of `Publisher` from the Reactive Streams specification and to do work on them while processing them. `Publisher` itself is handled as an asynchronous return type in REST endpoints, while `PublisherBuilder` from Reactive Streams Operators currently is not.
+
+At the moment users have to convert `PublisherBuilder` to `Publisher` by calling `PublisherBuilder.buildRs()` which is an unnecessary extra step.
+
+So as well as being able to do:
+----
+@GET
+Publisher test() {
+   return ReactiveStreams.of("x").buildRs();
+}
+----
+it should also be possible to do:
+----
+GET
+PublisherBuilder test() {
+   return ReactiveStreams.of("x");
+}
+----
+
+This seems important as PublisherBuilder is one of the valid types of the Reactive Messaging signatures, and https://issues.redhat.com/browse/WFLY-14798[WFLY-14798] which is to upgrade to Reactive Messaging 2.0 introduces more user-oriented use-cases (via `@Channel` and `Emitter`) to be able to interact with the Reactive Messaging streams
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-14770[WFLY-14770 - Make RestEasy handle methods returning PublisherBuilder from MicroProfile RSO asynchronously]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-14798[WFLY-14798 - Upgrade MicroProfile Reactive Messaging]
+* https://issues.redhat.com/browse/WFLY-14800[WFLY-14800 - Modernise the MicroProfile Reactive Messaging QuickStart for Reactive Messaging 2.0]
+=== Dev Contacts
+
+* mailto:kkhan@redhat.com[Kabir Khan]
+
+=== QE Contacts
+
+TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+[ ] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* RestEasy
+* WildFly's Reactive Streams Operators subsystem
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+It should be possible to simply return `PublisherBuilder` from REST endpoints, and have those be handled asynchronously, rather than having to convert to a `Publisher` as shown in the Overview section.
+
+=== Non-Requirements
+
+== Test Plan
+
+Tests will be provided in the WildFly testsuite.
+
+== Community Documentation
+
+Existing community documentation does not reference how to write code, however we should update the Reactive Messaging QuickStart to show this as part of https://issues.redhat.com/browse/WFLY-14800[WFLY-14800].
