@@ -1,0 +1,61 @@
+= EAP7-1571 / WFLY-14156 Remove MicroProfile REST Client from WildFly EE
+:author:            Alessio Soldano
+:email:             asoldano@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+This is about removing the MicroProfile REST Client functionalities from WildFly EE
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/WFLY-14156[WFLY-14156]
+* {issue-base-url}/EAP7-1571[EAP7-1571]
+
+=== Related Issues:
+
+
+=== Dev Contacts:
+
+* mailto:ehugonne@redhat.com[Emmanuel Hugonnet]
+* mailto:asoldano@redhat.com[Alessio Soldano]
+
+=== QE Contacts:
+
+* mailto:msvehla@redhat.com[Martin Svehla]
+
+=== Affected Projects or Components:
+
+* WildFly
+* RESTEasy
+
+== Requirements
+
+
+* The MicroProfile REST Client functionalities is provided in the full 'wildfly' feature pack only
+* Making rest-client api optional in 'resteasy-cdi' and removing it from the 'jaxrs' subsystem
+* Adding a new 'microprofile-rest-client' in the microprofile galleon pack
+* All RESTEasy functionalities unrelated to MicroProfile keep on working
+
+
+=== Test Plan
+
+The application server testsuite against the full feature pack distribution will keep on passing.
+
+=== Testing By
+
+[X] Engineering
+
+[ ] QE
+
+== Community Documentation
+
+Likely a note in the documentation of MicroProfile REST Client
+
