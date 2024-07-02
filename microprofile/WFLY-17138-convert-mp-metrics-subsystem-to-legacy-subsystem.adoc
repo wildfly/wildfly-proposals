@@ -1,0 +1,112 @@
+= WFLY-17138 - Convert MP Metrics Subsystem to Admin-only Mode
+:author:            Jason Lee
+:email:             jasondlee@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Red Hat has publicly stated our disagreement with the direction of MicroProfile Metrics and feel Micrometer, a de facto industry standard, provides a better metrics solution for our customers. To that end, Micrometer support will be added (via another JIRA) and, under this JIRA, MP Metrics support will be removed from standard configurations and module moved to "legacy" mode.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-17138[WFLY-17138]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-17144[WFLY-17144]
+* https://issues.redhat.com/browse/WFLY-17678[WFLY-17678]
+* https://issues.redhat.com/browse/EAP7-1686[EAP7-1686]
+* https://issues.redhat.com/browse/EAP7-1975[EAP7-1975]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
+
+=== Testing By
+* [X] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+
+=== Other Interested Projects
+
+* MicroProfile
+* MicroProfile Metrics
+* MicroProfile Fault Tolerance
+* MicroProfile Reactive Messaging
+* Micrometer
+
+=== Relevant Installation Types
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+MicroProfile Metrics subsystem will be removed from standard configs.
+
+A `MigrateOperation` will be added to remove the extension from existing server configs upon server startup (in admin-only mode).
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+While Micrometer is replacing MicroProfile Metrics in WildFly, it is a non-requirement to install the new extension/subsystem as part of the `MigrateOperation`. WildFly administrators will need to explicitly choose between Micrometer and the existing (and similar to MP Metrics) "base" metrics extension.
+
+== Backwards Compatibility
+
+Since this represents the removal of a subsystem, any deployment dependent on the APIs provided will no longer deploy or run.
+
+All other subsystems, except for those with optional integrations (see below) should be unaffected by this removal. Those subsystems will see a reduction in functionality commensurate with the removal of MicroProfile Metrics.
+
+=== Default Configuration
+
+The default configuration for MicroProfile configurations will be altered to remove the MicroProfile Metrics subsystem. Likewise, the relevant Galleon layers will also have the extension removed from their definitions.
+
+=== Importing Existing Configuration
+
+With the change of the subsystem to admin-only, existing configurations will fail to start in normal standalone modes. Such configurations will need to be started in admin mode to allow for the altering of the configuration, or the extension and subsystem will need to be removed manually.
+
+=== Deployments
+
+Deployments that use MicroProfile Metrics APIs directly will fail to deploy. These applications will need to be modified to remove this dependency.
+
+Applications that do not use the affected API directly should deploy and run without modification or issue.
+
+=== Interoperability
+
+Two other MicroProfile specs have optional integrations with Metrics, those being Fault Tolerance and Reactive Messaging. The WildFly extensions for these two specifications have been modified so as not to leverage this integration, allowing applications using those specs to continue to deploy and run. They will not, however, generate metrics data, so if the deployment environment is expecting this data, adjustments by administrators or developers will need to be made.
+
+== Test Plan
+
+Tests for MP Metrics under `testsuite/integration/microprofile`, `testsuite/integration/microprofile-tck`, and in the EAP MicroProfile TS (see https://github.com/jboss-eap-qe/eap-microprofile-test-suite)  will be removed.
+
+Other MicroProfile modules, such as MicroProfile Fault Tolerance and MicroProfile Reactive Messaging, have optional integration with MicroProfile Metrics. These modules will be modified to exclude testing this optional integration, as well in the EAP MicroProfile TS (see https://github.com/jboss-eap-qe/eap-microprofile-test-suite)
+
+The full test suite under `testsuite/integration/basic` will be used to help verify that no other subsystems have a hidden or unexpected dependency on MicroProfile Metrics.
+
+== Community Documentation
+
+The relevant sections on the community documentations will be removed as part of the feature implementation PR.
+
+== Release Note Content
+
+MicroProfile Metrics support has been removed. Any applications that depend on its API or functionality will need to be modified or migrated to another API, such as Micrometer.
