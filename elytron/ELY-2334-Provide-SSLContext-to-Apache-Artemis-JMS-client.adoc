@@ -1,0 +1,118 @@
+---
+categories:
+  - messaging
+  - elytron
+  - security
+---
+= Provide SSLContext to Apache Artemis JMS client
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently Apache Artemis provides the connection parameters to any client or broker via a connector. The goal is to be able to get the SSLContext from Elytron and pass it to the client connector to be used when the connection factory connects.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/ELY-2334[ELY-2334]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-683[EAP7-683]
+* https://issues.redhat.com/browse/EAP7-563[EAP7-563]
+* https://issues.redhat.com/browse/ENTMQBR-6558[ENTMQBR-6558]
+* https://issues.redhat.com/browse/WFLY-7232[WFLY-7232]
+* https://issues.apache.org/jira/browse/ARTEMIS-3756[ARTEMIS-3756]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [] Managed domain
+
+* [] OpenShift s2i
+
+* [] Bootable jar
+
+== Requirements
+
+Plug elytron so that the artemis client can load the SSLContext from elytron itself.
+Since the Artemis client needs to access the elytron context it has to load the configuraton file.
+Until ARTEMIS-3756 is fixed the path to the elytron client configuration file URL is passed using the 'wildfly-config-url' or 'wildfly.config.url' system property as for a 'standard' elytron usage.
+
+
+=== Hard Requirements
+
+=== Nice-to-Have Requirements
+
+Once ARTEMIS-3756 is fixed, use the 'wildfly-config-url' parameter from the connector to get the URL to the elytron client configuration file.
+
+=== Non-Requirements
+
+== Backwards Compatibility
+
+// Does this enhancement affect backwards compatibility with previously released
+// versions of WildFly?
+// Can the identified incompatibility be avoided?
+
+=== Default Configuration
+
+=== Importing Existing Configuration
+
+=== Deployments
+
+=== Interoperability
+
+== Implementation Plan
+
+Provide a SSLContextFactory implementation to Artemis so that the client has access to elytron provided SSLContexts.
+By extending the `org.apache.activemq.artemis.core.remoting.impl.ssl.DefaultSSLContextFactory` we are ensuring that it will provide backwards compatibility.
+
+
+== Security Considerations
+
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+
+== Test Plan
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
