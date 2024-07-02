@@ -1,0 +1,292 @@
+= [WFLY-15199] Remove legacy the security subystsem from the feature packs and convert to a skeleton,
+:author:            Darran Lofthouse
+:email:             darran.lofthouse@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+During the development of WildFly 11 a new security solution using WildFly Elytron was integrated
+into WildFly in parallel with the legacy security solution based on PicketBox.  This enhancement 
+is to complete the activities to de-activate the legacy security subsystem and remove it from the
+default configurations and Galleon feature packs.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-15199[WFLY-15199 - Remove legacy security configuration from all feature packs.]
+* https://issues.redhat.com/browse/WFLY-15301[WFLY-15301 - Convert the legacy security subsystem to a model only subsystem.]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1094[EAP7-1094]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+The `security` subsystem will be converted to a skeleton subsystem, this will mean that it can
+be used in domain mode to manage older servers but it can not be used for runtime configuration in
+WildFly 25 or later.
+
+All feature packs will be updated to remove the legacy security subsystem and any references to
+it's capabilities.
+
+The following subsystems will require additional configuration to default to WildFly Elytron
+security:
+
+ * ejb3
+ * iiop-openjdk
+ * messaging-activemq
+ * undertow
+ 
+For all subsystems that use a reference to a legacy security resource, these will remain usable in 
+`Stage.MODEL`  but will be flagged as deprecated. Where they are used in `Stage.RUNTIME` they 
+will result in an `OperationFailedException` as they can only be used on older hosts.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+== Test Plan
+
+The following table identifies the tests in WildFly Core and WildFly affected by the removal.
+
+.Test Case Updates
+|===
+|Test Case |Action
+
+|org.jboss.as.test.integration.web.security.WebSecuritySimpleRoleMappingSecurityManagerTestCase
+|Removed
+
+|org.jboss.as.test.integration.web.security.digest.WebSecurityDIGESTTestCase
+|Converted
+
+|org.jboss.as.test.integration.web.security.external.WebSecurityExternalAuthTestCase
+|Converted
+
+|org.jboss.as.test.integration.web.security.form.WebSecuritySimpleRoleMappingTestCase
+|Removed
+
+|org.jboss.as.test.integration.web.security.jaspi.WebSecurityJaspiTestCase
+|Removed
+
+|org.jboss.as.test.integration.web.security.jaspi.WebSecurityJaspiWithFailingAuthModuleTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.CustomLoginModuleTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.DatabaseLoginModuleTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.IdentityLoginModuleTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.LdapExtLikeAdvancedLdapLMTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.LdapExtLoginModuleTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.LdapExtPasswordCachingTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.LdapLoginModuleTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.MultipleCustomLoginModulesTest
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.RunAsLoginModuleTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.UsersRolesLoginModuleTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.jaas.JAASIdentityCachingTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.negotiation.SPNEGOLoginModuleTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.negotiation.AdvancedLdapLoginModuleTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.auditing.CustomAuditProviderModuleTest
+|Removed
+
+|org.jboss.as.test.integration.web.security.runas.WebSecurityRunAsTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15261[WFLY-15261]
+
+|org.jboss.as.test.integration.web.security.servlet.methods.DenyUncoveredHttpMethodsTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15261[WFLY-15261]
+
+|org.jboss.as.test.integration.jca.security.WildFlyActivationRaWithSecurityDomainTestCase
+|Removed
+
+|org.jboss.as.test.integration.jca.security.DsWithSecurityDomainTestCase
+|Removed
+
+|org.jboss.as.test.integration.jca.security.WildFlyActivationRaWithMixedSecurityTestCase
+|Removed
+
+|org.jboss.as.test.integration.jca.security.DsWithMixedSecurityTestCase
+|Removed
+
+|org.jboss.as.test.integration.jca.security.workmanager.WildFlyActivationRaWithWMSecurityDomainWorkManagerTestCase
+|Removed
+
+|org.jboss.as.test.integration.ejb.security.callerprincipal.GetCallerPrincipalWithNoDefaultSecurityDomainTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15262[WFLY-15262]
+
+|org.jboss.as.test.integration.ejb.security.RunAsPrincipalCustomDomainTestCase
+|Removed
+
+|org.jboss.as.test.integration.jca.security.IronJacamarActivationRaWithSecurityDomainTestCase
+|Removed
+
+|org.jboss.as.test.integration.management.api.security.SecurityDomainTestCase
+|Removed
+
+|org.jboss.as.test.integration.management.api.security.SecurityDomainDotNameTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.aselytron.SecurityDomainAsElytronSecurityRealmTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.cli.JsseTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.auditing.SecurityAuditingTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15263[WFLY-15263]
+
+|org.jboss.as.test.integration.security.jaspi.EESecurityAuthMechanismMultiConstraintsTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15264[WFLY-15264]
+
+|org.jboss.as.test.integration.security.jaspi.EESecurityAuthMechanismTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15264[WFLY-15264]
+
+|org.jboss.as.test.integration.security.jaspi.JASPIHttpSchemeServerAuthModelTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.jaspi.JaspiFormAuthTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.xacml.EjbXACMLAuthorizationModuleTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.xacml.JBossPDPInteroperabilityTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.xacml.JBossPDPServletInitializationTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.xacml.WebXACMLAuthorizationModuleTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.loginmodules.databases.ExternalDatabaseLoginTestCase
+|Removed
+
+|org.jboss.as.test.integration.security.context.ReuseAuthenticatedSubjectTestCase
+|Removed
+
+|org.wildfly.test.elytron.intermediate.SecurityDomainContextRealmTestCase
+|Removed
+
+|org.wildfly.test.elytron.intermediate.X509SecurityDomainContextRealmTestCase
+|Removed
+
+|org.wildfly.test.integration.vdx.standalone.MessagingTestCase.testWrongOrderOfElements
+|Ignored https://issues.redhat.com/browse/WFLY-15271[WFLY-15271]
+
+|org.jboss.as.test.iiop.security.IIOPSecurityInvocationTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15271[WFLY-15271]
+
+|org.jboss.as.test.clustering.cluster.sso.ReplicatedSingleSignOnTestCase
+|Removed
+
+|org.jboss.as.test.clustering.cluster.sso.remote.RemoteSingleSignOnTestCase
+|Removed
+
+|org.wildfly.test.manual.management.MPScriptTestCase.testFailure()
+|Removed
+
+|org.jboss.as.test.manualmode.security.SecuredDataSourceTestCase
+|Removed
+
+|org.jboss.as.testsuite.integration.secman.PBStaticMethodsTestCase
+|Removed
+
+|org.jboss.as.test.clustering.cluster.web.ReplicationForNegotiationAuthenticatorTestCase
+|Removed
+
+|org.jboss.as.security.service.SimpleSecurityServiceManagerMockTest
+|Removed
+
+|org.jboss.as.test.integration.security.jacc.context.PolicyContextTestCase
+|Ignored https://issues.redhat.com/browse/WFLY-15740[WFLY-15740]
+|===
+
+.Action Key
+|===
+|Action | Description
+
+|Ignored
+|Ignored to revisit.
+
+|Removed
+|Test case removed entirely.
+
+|Converted
+|Converted to use Elytron security exclusively.
+|===
+
+== Community Documentation
+
+After the removal is merged a full pass through the community documentation will be required to
+remove references to legacy security.
+
+== Release Note Content
+
+The legacy security subsystem has now been disabled for use at runtime and has been removed from
+the default configurations we ship and removed from the Galleon feature packs.  Users should 
+define their security resources within the `elytron` subsystem.
