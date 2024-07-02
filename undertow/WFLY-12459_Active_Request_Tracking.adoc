@@ -1,0 +1,143 @@
+= WFLY-12473 Active Request Tracking
+:author:            Flavia Rainone
+:email:             frainone@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-12459
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/UNDERTOW-1593
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+[ ] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+Undertow, WildFly Undertow Subsystem
+
+=== Other Interested Projects
+
+== Requirements
+The new feature consists of adding a way for users to retrieve active requests, ie.
+requests that haven't finished and are active on the server.
+There was a similar feature in EAP6 and the plan is to be able to provide something similar
+in EAP7 with Undertow.
+
+Since there is an added impact for tracking active requests, the feature has to be
+enabled to be used. To enable the feature, we are adding an attribute to Undertow
+subsystem, called `"active-request-statistics-enabled"`.
+
+That attribute can only be set to `true` if `"statistics-enabled"` is `true`.
+
+Once that feature is enabled, there is an added resource to undertow server
+called "active-request-tracker=enabled"
+As an example, look at the cli script below:
+
+....
+subsystem=undertow/set-attribute(name="active-request-statistics-enabled", "true")
+....
+
+As a result, we will have a new resource in the Undertow Subsystem with the name:
+
+.....
+subsystem=undertow/active-request-tracker=enabled
+.....
+
+This tracker can later be referenced for reading the active requests with the operations:
+....
+list-active-requests
+list-active-requests(format="same as an Undertow access log formatting")
+list-active-requests-with-id
+list-active-requests-full
+active-request-info(id="id")
+....
+See the example bellow:
+----
+subsystem=undertow/active-request-tracker=requestTracker:list-active-requests
+----
+
+The operation below will show just the requested attributes from the request:
+----
+subsystem=undertow/active-request-tracker=requestTracker:list-active-requests(attributes="bytes-sent,bytes-received")
+----
+
+Notice that, in order for the track to start tracking actual requests, it must be referenced as a filter inside the server as in:
+----
+/subsystem=undertow/server=default-server/host=default-host/filter-ref=requestTracker:add
+----
+
+The coresponding XML subsystem configuration is as follows:
+
+.standalone.xml
+[source,xml]
+----
+
+<subsystem xmlns="urn:jboss:domain:undertow:11.0" default-server="default-server" default-virtual-host="default-host" default-servlet-container="default" default-security-domain="other" statistics-enabled="true" activer-request-statistics-enabled="true">
+    <buffer-cache name="default"/>
+    <server name="default-server">
+        <http-listener name="default" socket-binding="http" redirect-socket="https" enable-http2="true"/>
+        <https-listener name="https" socket-binding="https" security-realm="ApplicationRealm" enable-http2="true"/>
+        <host name="default-host" alias="localhost">
+            <location name="/" handler="welcome-content"/>
+            <http-invoker security-realm="ApplicationRealm"/>
+            </host>
+    </server>
+    <servlet-container name="default">
+        <jsp-config/>
+        <websockets/>
+    </servlet-container>
+    <handlers>
+        <file name="welcome-content" path="${jboss.home.dir}/welcome-content"/>
+    </handlers>
+</subsystem>
+
+----
+
+=== Hard Requirements
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can
+not be delivered all in one go to suggest the strategy. If your feature falls
+into this category, please mention the Release Coordinators on the pull
+request so they are aware.
+////
+== Test Plan
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature.
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list
+of features containing a few words on each, use "Bullet point: <The few words>"
+////
