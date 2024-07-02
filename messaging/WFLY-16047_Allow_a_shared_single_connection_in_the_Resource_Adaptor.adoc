@@ -1,0 +1,127 @@
+---
+categories:
+  - messaging
+  - jca
+---
+=  Allow a shared single connection in the Resource Adapter
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-16047[WFLY-16047]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1871[EAP7-1871]
+* https://issues.redhat.com/browse/ENTMQBR-5133[ENTMQBR-5133]
+* https://issues.apache.org/jira/browse/ARTEMIS-3539[ARTEMIS-3539]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* Apache Artemis
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [] Managed domain
+
+* [] OpenShift s2i
+
+* [] Bootable jar
+
+== Requirements
+
+
+Currently the resource adapter creates a separate connection for each consumer. For example, then the activation specification for an MDB contains a maxSession attribute greater than 1, a connection is created for each MDB instance / thread.
+This enhancement would allow selectable enabling of shared connections, in which consumers of the same address could share a connection between multiple sessions.
+
+
+=== Hard Requirements
+
+Create and support a new *ActivationConfigProperty* called `singleConnection` to allow for connection sharing on a consumer.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+We don't define this behaviour at the management model level. Only the configuration of the activation of an MDB is affected.
+
+== Backwards Compatibility
+
+N/A
+
+=== Default Configuration
+
+=== Importing Existing Configuration
+
+=== Deployments
+
+=== Interoperability
+
+== Implementation Plan
+
+This is already supported by AMQ/Artemis.
+
+== Security Considerations
+
+N/A
+
+== Test Plan
+
+* test scenario 1:
+    - deploy the mdb test consumer (which is attached on JBEAP-21562) as it is (@ActivationConfigProperty(propertyName = "maxSession", propertyValue = "100"))
+    - check that there are 101 connections (that +1 connection is from EAP but as I see it is something else, not from MDB itself) and 100 consumers which is expected given all the explanation on JBEAP-21562 regarding the mdb connection vs the maxSession 1:1 mapping
+
+* test scenario 2:
+    - deploy a modified mdb test consumer with the new property for single connection (@ActivationConfigProperty(propertyName = "singleConnection", propertyValue = "true") but keep the maxSession = 100.
+    - check that there are 2 connections (again +1 from something else from EAP) and 100 consumers.
+
+* test scenario 3:
+    - deploy a modified mdb test consumer with maxSession = 1 and singleConnection = true
+    - Check that there are 1 connection and 1 consumer
+
+* test scenario 4:
+    - Create another application by duplicate the mdb test consumer code, set it as single connection and max session = 100 and deploy it.
+    - Check that there 2 connection,s one for each deployed mdb test consumer and and 100 consumers 1 from the 1st mdb deployed and 100 from the 2nd mdb which is expected as well.
+
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
