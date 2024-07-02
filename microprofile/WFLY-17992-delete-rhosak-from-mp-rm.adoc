@@ -1,0 +1,135 @@
+= Delete RHOSAK support in MicroProfile Reactive Messaging
+:author:            Kabir Khan
+:email:             kkhan@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+For EAP XP 4.0 we added support for Kafka provided by RHOSAK (Red Hat OpenShift Streams for Apache Kafka) to MicroProfile Reactive Messaging.
+
+The support consisted of:
+
+* Integrate MicroProfile Reactive Messaging with RHOSAK (https://issues.redhat.com/browse/WFLY-15006[WFLY-15006]) - This was an 'umbrella' issue for the introduction of RHOSAK as a technology preview. No work was needed in the server codebase specifically to support RHOSAK, apart from:
+** Configure Reactive Messaging Kafka connector to use SSLContext from the Elytron subsystem and allow SASL_PLAINTEXT and SASL_SSL protocols (https://issues.redhat.com/browse/WFLY-14987[WFLY-14987]) - While this was needed to support RHOSAK, it is also needed to connect to secured Kafka on bare metal, or to AMQ Streams on OpenShift.
+* Modernise the MicroProfile Reactive Messaging QuickStart for Reactive Messaging 2.0 (https://issues.redhat.com/browse/WFLY-14800[WFLY-14800]) - As well as updating the example to support MicroProfile Reactive Messaging 2.0, the OpenShift examples were enhanced to show how to connect to RHOSAK. The existing examples of how to connect to AMQ Streams were kept.
+* Full Support for RHOSAK integration (https://issues.redhat.com/browse/WFLY-15019[WFLY-15019]) - The intent here was to add automated tests for RHOSAK. As this issue has been open for a long time, this has not happened. Apart from that it built on the work done for (https://issues.redhat.com/browse/WFLY-14987[WFLY-14987]).
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-17992[WFLY-17992]
+
+=== Related Issues
+
+Previous work, as mentioned in the introduction:
+
+* Integrate MicroProfile Reactive Messaging with RHOSAK (https://issues.redhat.com/browse/WFLY-15006[WFLY-15006])
+* Configure Reactive Messaging Kafka connector to use SSLContext from the Elytron subsystem and allow SASL_PLAINTEXT and SASL_SSL protocols (https://issues.redhat.com/browse/WFLY-14987[WFLY-14987])
+* Modernise the MicroProfile Reactive Messaging QuickStart for Reactive Messaging 2.0 (https://issues.redhat.com/browse/WFLY-14800[WFLY-14800])
+* Full Support for RHOSAK integration (https://issues.redhat.com/browse/WFLY-15019[WFLY-15019])
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [x] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [ ] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* As there are no changes to the WildFly code base nor the WildFly testsuite to implement this change, the changes are to:
+** MicroProfile Reactive Messaging Quickstart:
+*** Remove the RHOSAK sections from the MicroProfile Reactive Messaging quickstart
+** QE testsuite:
+*** Remove any tests that might exist, possibly for (https://issues.redhat.com/browse/WFLY-15019[WFLY-15019])
+** Product Docs:
+*** Remove any mentions of RHOSAK
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+* It is not necessary to undo the work to connect to secured Kafka (https://issues.redhat.com/browse/WFLY-14987[WFLY-14987]), since that is useful in other scenarios:
+** Connecting to secure Kafka on bare metal
+** Connecting to AMQ Streams on OpenShift
+
+== Backwards Compatibility
+
+// Does this enhancement affect backwards compatibility with previously released
+// versions of WildFly?
+// Can the identified incompatibility be avoided?
+The backwards compatibility issue is due to the removal of RHOSAK support. If it were to resurface, WildFly will contain everything needed.
+
+From a configuration perspective, RHOSAK support consisted of microprofile property entries to connect to a secure Kafka instance. Whether that secure Kafka instance is provided by RHOSAK or by other means, makes no difference to the application server or the user applications.
+
+=== Default Configuration
+
+N/A
+
+=== Importing Existing Configuration
+
+N/A
+
+=== Deployments
+
+N/A
+
+=== Interoperability
+
+N/A
+
+== Security Considerations
+
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+No security implications to consider
+
+== Test Plan
+
+== Community Documentation
+The wildfly.org documentation in this area mentions 'secure Kafka' rather than RHOSAK, so no changes are needed.
+
+The quickstarts will need updating as mentioned.
+
+
+== Release Note Content
+
+Support for RHOSAK has been withdrawn. The MicroProfile Reactive Messaging for Kafka quickstart has been updated to no longer include instructions for how to connect to RHOSAK.
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
