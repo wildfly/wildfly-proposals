@@ -1,0 +1,72 @@
+= Add option to start stopped servers in suspended mode
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+This RFE is about adding an option to the dropdown menu to start servers in suspended mode.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1790[HAL-1790]
+* {issue-base-url}/EAP7-1553[EAP7-1553]
+
+=== Related Issues
+
+* n/a
+
+=== Dev Contacts
+
+* mailto:hpehl@redhat.com[Harald Pehl]
+
+=== QE Contacts
+
+* mailto:msvehla@redhat.com[Martin Svehla]
+
+=== Testing By
+
+[x] Engineering
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+* HAL
+
+== Requirements
+
+There are different places in the UI to start a server:
+
+* Topology drop down menu for a server group
+* Topology drop down menu for a server
+* Server group dropdown menu in Runtime / Server Groups
+* Server dropdown menu in Runtime / Server Groups / Server
+* Server dropdown menu in Runtime / Host / Server
+
+For all these dropdown menus an additional item "Start in suspended mode" needs to be added.
+
+=== Affected UI
+
+* Runtime / Topology
+* Runtime / Server Groups
+* Runtime / Server Groups / Server
+* Runtime / Host / Server
+
+=== Affected Resources
+
+* `/host=<host>/server=<server>`
+
+== Test Plan
+
+Tests will be added to the test suite that click on the new "Start in suspended mode" item and make sure the server in the right state.
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
