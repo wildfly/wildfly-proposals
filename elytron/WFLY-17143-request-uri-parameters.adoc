@@ -1,0 +1,246 @@
+= [Preview] Add the ability to specify that the OIDC Authentication Request should include request and request_uri parameters
+:author:            Prarthona Paul
+:email:             prpaul@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+OpenID Connect is an authentication mechanism that builds on OAuth 2.0 and allows a user to login to a web application using credentials established by an OpenID provider. Authentication requests sent using OpenID Connect can be signed and optionally encrypted by encoding query parameters in a JWT. This can be achieved using one of two auth request parameters: `request` and `request_uri`, which are both optional. The current version of `elytron-oidc-client` does not allow the user to specify `request` or `request_uri`. Instead, all requests are sent in using the OAuth 2.0 request syntax. 
+
+This RFE will add an attribute to the `elytron-oidc-client` subsystem called `authentication-request-format`, which can allow the user to specify if they will use either of the request parameters. Additionally, we will be adding supporting attributes called `request-object-signing-algorithm`, `request-object-encryption-alg-value` and `request-object-encryption-enc-value`, which will be used to specify if and how the request parameters will be signed and/or encrypted. All of these attributes will be added to the `secure-server`, `secure-deployment`, `provider` and `realm` resources, which the user can configure using either the `elytron-oidc-client` subsystem, or using a json file in deployment configuration.
+
+We will also be adding some keystore attributes, such as, `request-object-signing-keystore-file`, `request-object-signing-keystore-password`, `request-object-signing-key-password`, `request-object-signing-key-alias` and `request-object-signing-keystore-type` to the resources mentioned above. There are similar attributes that are currently available under the `credential` attribute. However, when they are configured outside of the `credentials` attribute, they will be used to sign Request Objects.
+
+According to the https://openid.net/specs/openid-connect-core-1_0.html#JWTRequests[OpenID docs], requests using `request` and `request_uri` parameters are represented as JWTs, which are respectively passed by value or by reference. Depending on the OpenID Provider, support for these parameters may or may not be available. 
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-17143[WFLY-17143]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/ELY-2584[ELY-2584]
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [x] Preview
+
+* [ ] Community
+
+* [ ] default
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly 
+* WildFly Elytron
+
+=== Other Interested Projects
+
+N/A
+
+=== Relevant Installation Types
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* Some new attributes named `authentication-request-format`, `request-object-signing-algorithm`, `request-object-encryption-alg-value` and `request-object-encryption-enc-value` will be added to the `secure-deployment`, `secure-server`, `realm` and `provider` resources under the `elytron-oidc-client` subsystem. The value for the `authentication-request-format` attribute will be a String with 3 acceptable values: 
+** oauth2: Indicating that the query parameters will be sent as usual following the oauth2 syntax. 
+** request: Indicating that the query will be sent as a JWT by value. 
+** request_uri: Indicating that the query will be sent as a reference to the JWT. 
+
+* The `authentication-request-format` attribute will specify if either `request` or the `request_uri` should be added to the auth request. This will be an optional attribute. The default value for this attribute will be set to `oauth2`, indicating that the request parameters will be sent regularly following the OAuth2 syntax.
+
+** For multiple `secure-server` or `secure-deployment` resources using the same `realm` or `provider`, the `authentication-request-format` can be specified at the higher level resource, such as, `provider` or `realm`. 
+
+** For multiple `secure-server` or `secure-deployment` resources using the same higher level resource, if the Request Object type is not the same for each deployment, then the `authentication-request-format` attribute can be set accordingly for the individual lower level resources. 
+
+* According to the https://openid.net/specs/openid-connect-core-1_0.html#JWTRequests[OIDC specs], only one of the two parameters can be specified at a time. If `request` is added, then `request_uri` MUST NOT be used in the same request. However, the user can choose to specify neither by setting `authentication-request-format` to `oauth2` or not setting it at all. 
+
+* The `request` and `request_uri` parameters MUST NOT be included in Request Objects.
+
+* The Request Object MAY be signed or unsigned (plaintext) and can be specified by value or by reference. The user can specify the algorithm used to sign the JWT request using the `request-object-signing-algorithm` attribute which will also be added to the resources specified above. This algorithm must be one of the Request Object signature algorithms supported by the OpenID provider. 
+
+** The values for `request-object-signing-algorithm` attribute are of type `String`. Default value for this attribute would be `none`, specifying that the request would be sent as a plaintext. In order to sign the jwt using an algorithm other than `none`, the user must specify the KeyPair used. This can be done using the `request-object-signing-keystore-file`, `request-object-signing-keystore-password`, `request-object-signing-key-password`, `request-object-signing-key-alias` and `request-object-signing-keystore-type` attributes. The algorithm for the KeyPair must match the algorithm used to sign the JWT. The keystore should be of type `JKS` or type `PKCS12` and can be generated using `keytool` on the linux terminal. 
+
+** The certificate for the KeyPair used to sign the JWT must be shared with the OpenID provider either by importing it from the keystore, or by uploading a jwksUrl. 
+
+** When configuring the client in deployment or subsystem settings, the `public-client` attribute must be set to `false` and client credentials must be specified as well using the `credentials` attribute. Client keys must be uploaded to the admin console of the OpenID Provider.
+
+* The request object may also be encrypted. To specify that the Request Object will be encrypted, the user needs to specify the relevant algorithms using `request-object-encryption-alg-value` and `request-object-encryption-enc-value`. Encryption is done using https://openid.net/specs/draft-jones-json-web-encryption-02.html#[JWE]. 
+
+** The values for the `request-object-encryption-alg-value` and the `request-object-encryption-enc-value` attributes are of type `String`. The default value for the attributes are undefined, which specifies that the request object will not be encrypted. 
+ 
+** The request object will only be encrypted if both `request-object-encryption-alg-value` and `request-object-encryption-enc-value` are specified. The values for these attributes must be part of the encryption algorithms and content encryption methods supported by the OpenID provider. These values can also be found by sending a GET request to the discovery url or by looking at the client configurations on the admin console of the OpenID provider. An example of what the GET request would return can be seen below (diaplaying attributes relevant to Request Objects only): 
+```
+...
+"request_object_signing_alg_values_supported":["PS384","ES384","RS384","HS256","HS512","ES256","RS256","HS384","ES512","PS256","PS512","RS512","none"],"request_object_encryption_alg_values_supported":["RSA-OAEP","RSA-OAEP-256","RSA1_5"],"request_object_encryption_enc_values_supported":["A256GCM","A192GCM","A128GCM","A128CBC-HS256","A192CBC-HS384","A256CBC-HS512"],
+...
+"request_parameter_supported":true,"request_uri_parameter_supported":true,"require_request_uri_registration":true,
+...
+```
+
+** The JWT must be signed first and then encrypted to make a nested JWT and the key used to encrypt the JWT must be the realm public key shared by the OpenID provider. The key algorithm must be the same as the encrypting algorithm. Signing and encrypting algorithms can be of different types (i. e. ES-256 for signing and RSA-OAEP for encrypting is allowed). The realm key for encrypting the JWT can be obtained by sending a GET request to the `jwksUri` obtained from the `discoveryUrl`(http://localhost:8080/realms/myrealm/.well-known/openid-configuration). For more information about how Keycloak supports Request Object Encryption, please refer to https://issues.redhat.com/browse/KEYCLOAK-18630[this issue] and the following changes made to the Keycloak source code: 
+
+*** https://github.com/keycloak/keycloak/pull/8243[Request object encryption support]
+*** https://github.com/keycloak/keycloak/pull/8261[Configurable constraints for request object encryption]
+
+** An example of the attributes obtained from the `jwksUri` of an OpenID provider can be seen below. Please note that the actual values for some of the fields have been truncated for readability: 
+```
+{"keys":[
+    {"kid":"I0ogHMugKrowsGS5StX8Ihx1qKSaH3QLVHl6FsVSVxE",
+    "kty":"RSA",
+    "alg":"RSA-OAEP",
+    "use":"enc",
+    "n":"vAHUwV28fDBXQpo390nm...",
+    "e":"AQAB",
+    "x5c":["MIICnTCCAYUCBgG..."],
+    "x5t":"EE4X1HpptqoAkDqMokwRwqliJFY","x5t#S256":"bfhIzItRxe9PKE7uPUJMpP4A-AozTWxMVPNwbzUhs2Y"},
+    
+    {"kid":"TSLvxRZEuxTmFgYdrs3ve7-0-DghC-ChN724HB2fGOc",
+    "kty":"RSA",
+    "alg":"RS256",
+    "use":"sig","n":"jL35-5e67PukEk_...",
+    "e":"AQAB",
+    "x5c":["MIICnTCCAYUCBgGL..."],
+    "x5t":"hNGOdZ0Nszq4Oqj1TB-usasLP1I","x5t#S256":"KNsx334iBpN5oPEEYSCf1Q-TlmG69AOUghRRFa9VuWY"}
+]}
+```
+* The authentication request can send the Request Object in one of two ways: 
+
+** By value: The `request` parameter is added to the query and its value is the Request Object itself. 
+
+** The request string can be added to the auth request by adding the whole string: 
+
+```
+    http://localhost:8080/realms/myrealm/protocol/openid-connect/auth?
+    response_type=code&
+    client_id=wildfly&
+    scope=openid&
+    redirect_uri=http%3A%2F%2Flocalhost%3A8090%2Fsimple-webapp-oidc%2Fsecured&
+    request=eyJhbGciOiJSU0EtT0FFUCI...
+```
+** By reference: This is useful when the `request` string is too large and a number of other https://openid.net/specs/openid-connect-core-1_0.html#RequestUriRationale[reasons]. In this case, the Request Object is passed as a reference parameter string using the `request_uri` parameter. The url references the Request Object, which the OpenID provider can use to download the Request Object itself. The entire Request_URI MUST NOT exceed 512 ASCII characters. 
+
+** The `request_uri` value can be obtained by sending POST request to the `pushed_authentication_request_endpoint` of the OpenID provider. This can be also obtained using the discoveryUrl. The content for the POST request contains the value of the signed and/or encrypted Request Object and the content type for this request is "application/x-www-form-urlencoded". 
+
+** Please see the following resources for more information on Keycloak's implemetation of PAR. 
+
+*** https://issues.redhat.com/browse/KEYCLOAK-18353[Jira Issue]
+*** https://github.com/keycloak/keycloak/pull/8144[Implementation in source code]
+*** https://github.com/keycloak/keycloak-community/blob/main/design/pushed-authorization-requests.md[Documentation]
+
+** A successful request will return 201 http code along with a JWT, which contains the value of the `request_uri` and its expiry time.  
+
+** When included in the auth request, the request_uri would be specified as: 
+    
+```
+    http://localhost:8080/realms/myrealm/protocol/openid-connect/auth?
+    response_type=code&
+    client_id=wildfly&
+    scope=openid&
+    request_uri=urn%3Aietf%3Aparams%3Aoauth%3Arequest_uri%3Ad11a6442-d9ca-4db8-a885-f9f43673f859&
+    redirect_uri=http%3A%2F%2Flocalhost%3A8090%2Fsimple-webapp-oidc%2Fsecured
+```
+
+** The base64-encoded SHA-256 hash `23GkurKxf5T0Y-mnPFCHqWOMiZi4VS138cQO_V7PZHAdM` will allow the provider to cache the token for future use. It is a hash of the contents of the Request Object.
+
+* According to the OpenID docs, if the same parameter exists both in the Request Object and the OAuth Authorization Request parameters, the parameter in the Request Object is used.
+
+* The feature must deal with cases where the OpenId Provider does not support request parameters by recognizing `request_not_supported` error and dealing with it accordingly.
+
+* It should be possible to specify that these parameters should be included in the Authentication Request via deployment configuration using the `oidc.json` file inside the `WEB-INF` directory of the web application and `elytron-oidc-client` subsystem configuration.
+
+The `request` attribute is specified through the deployment configuration as follows: 
+```
+{
+    "client-id" : "myclient",
+    "provider-url" : "${env.OIDC_PROVIDER_URL:http://localhost:8080}/realms/myrealm",
+    "public-client" : "false",
+    "authentication-request-format" : "request",
+    "principal-attribute" : "preferred_username",
+    "ssl-required" : "EXTERNAL"
+    "credentials" : {
+        "secret" : "CLIENT_SECRET"
+    }
+}
+``` 
+The `request` attribute is specified through the `elytron-oidc-client` subsystem as follows: 
+```
+    /subsystem=elytron-oidc-client/secure-deployment:add(client_id=myclient, provider-url="http://localhost:8090/", authentication-request-format="request")
+```
+
+The `request_uri` attribute is specified through the deployment configuration as follows: 
+```
+{
+    "client-id" : "myclient",
+    "provider-url" : "${env.OIDC_PROVIDER_URL:http://localhost:8080}/realms/myrealm",
+    "public-client" : "false",
+    "authentication-request-format" : "request_uri",
+    "principal-attribute" : "preferred_username",
+    "ssl-required" : "EXTERNAL"
+    "credentials" : {
+        "secret" : "CLIENT_SECRET"
+    }
+}
+```
+The `request` attribute is specified through the `elytron-oidc-client` subsystem as follows: 
+```
+    /subsystem=elytron-oidc-client/secure-deployment:add(client_id=myclient, provider-url="http://localhost:8090/", authentication-request-format="request_uri")
+``` 
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+== Backwards Compatibility
+
+N/A
+
+=== Default Configuration
+
+By default, neither `request` or `request_uri` would be specified and the value for `authentication-request-format` would be `oauth2`. 
+
+== Test Plan
+
+* WildFly Elytron Tests: Integration test cases implemented for functionality. 
+* WildFly Testsuite: Test cases will be added to check for subsystem parsing. 
+** Additional integration tests will be added to test the full functionality of the `elytron-oidc-subsystem` when `request` or `request_uri` are configured. 
+** Tests will be performed using signed (using symmetric and asymmetric keys), unsigned, encrypted and plaintext JWT requests, with the request specified both by value and by reference. 
+* Tests will be added for both subsystem and deployment configurations. 
+* Tests may be added to ensure that server configuration fails when the stability level is not specified appropriately. 
+
+== Community Documentation
+Documentation for the new `request` and `request_uri` attributes will be added to https://github.com/wildfly/wildfly/blob/main/docs/src/main/asciidoc/_admin-guide/subsystem-configuration/Elytron_OIDC_Client.adoc[Elytron OpenID Connect Client Subsystem Configuration].
+
+== Release Note Content
+This feature allows authentication requests to be sent as a signed and encrypted request object using request and request_uris. 
