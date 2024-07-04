@@ -25,6 +25,7 @@ end
 class MetadataChecker
   def initialize
     @categories = load_all_categories()
+    @stability_levels = ["experimental", "preview", "community", "default"]
   end
 
   def check pr_number, front_matter
@@ -44,12 +45,16 @@ class MetadataChecker
     else
       system("gh pr edit #{pr_number} --remove-label missing-issue")
     end
-    stability_level_error = check_stability_level(pr_number, front_matter)
-    if stability_level_error.length() > 0
-      errors << stability_level_error
-      system("gh pr edit #{pr_number} --add-label invalid-stability-level")
-    else
+    begin
+      stability_level, err = check_stability_level(pr_number, front_matter)
       system("gh pr edit #{pr_number} --remove-label invalid-stability-level")
+      # remove any previous stability-levels
+      @stability_levels.map { | level | system("gh pr edit #{pr_number} --remove-label stability-level/#{level}") }
+      system("gh pr edit #{pr_number} --add-label stability-level/#{stability_level}")
+    rescue => error
+      errors << error.message
+      system("gh pr edit #{pr_number} --add-label invalid-stability-level")
+      @stability_levels.map { | level | system("gh pr edit #{pr_number} --remove-label stability-level/#{level}") }
     end
 
     errors
@@ -78,13 +83,11 @@ class MetadataChecker
   end
 
   def check_stability_level pr_number, front_matter
-    stability_levels = ["experimental", "preview", "community", "default"]
-
-    errors = []
-    unless (front_matter.key? "stability-level") && (stability_levels.include? front_matter["stability-level"])
-      errors << "Invalid field: stability-level"
+    unless (front_matter.key? "stability-level") && (@stability_levels.include? front_matter["stability-level"])
+      raise "Invalid field: stability-level"
+    else
+      return front_matter["stability-level"]
     end
-    errors
   end
 
   def load_all_categories
