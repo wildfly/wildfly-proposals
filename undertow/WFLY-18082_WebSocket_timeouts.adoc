@@ -1,0 +1,144 @@
+---
+categories:
+ - core
+ - management
+---
+= [Preview] Allow to specify WebSocket timeout per listener irrespective of listener general r/w timeouts
+:author:            Bartosz Baranowski
+:email:             bbaranow@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-18082[WFLY-18082]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/UNDERTOW-2333[UNDERTOW-2333]
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [x] Preview
+
+* [ ] Community
+
+* [ ] default
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:msvehla@redhat.com[Martin Svehla]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [x] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+Add ability to specify timeout(r/w) values for websockets irrespective of general values specified for transport.
+
+=== Hard Requirements
+
+=== Nice-to-Have Requirements
+// Requirements in this section do not have to be met to merge the proposed functionality.
+// Note: Nice-to-have requirements that don't end up being implemented as part of
+// the work covered by this proposal should be moved to the 'Future Work' section.
+
+
+=== Non-Requirements
+// Use this section to explicitly discuss things that readers might think are required
+// but which are not required.
+
+=== Future Work
+
+None predicted
+
+== Backwards Compatibility
+
+Shouldnt be any problem. web-socket-x-timeout should have no default value, so default/configured values for regular timeout will take precedence.
+
+=== Default Configuration
+
+No need given above. However, user should be able to configure different timeouts based on needs, general for each listener and possibly specific for WebSocket on given transport
+
+<subsystem xmlns="urn:jboss:domain:undertow:14.0" ...>
+
+    <server name="default-server">
+       <http-listener name="default" socket-binding="http" redirect-socket="https" enable-http2="true" read-timeout="10000" websocket-read-timeout="500000" websocket-write-timeout="15000"/>
+       <https-listener name="https" socket-binding="https" ssl-context="applicationSSC" enable-http2="true" websocket-write-timeout="15000"/>
+    ....
+    </server>
+  ....
+</subsystem>
+
+
+
+
+=== Importing Existing Configuration
+
+Shouldnt be a problem. WebSocket r/w timeouts have no default values.
+
+=== Deployments
+
+=== Interoperability
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+
+== Security Considerations
+
+None. If not specified, WebSockets will use default IO timeouts.
+
+== Test Plan
+
+Unit test exist in undertow code/PR.
+
+== Community Documentation
+
+Good to mention. Should be self explanatory via CLI/model attribute description.
+
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
