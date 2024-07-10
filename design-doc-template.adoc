@@ -4,8 +4,16 @@ categories:
 # - core
 # - management
 # if missing, add it to _data/widfly-categories and use its id
+#
+# Specify the stability level of the feature.
+# Values can be one of: experimental preview community default
+stability-level: 
+# Specify the main issue of the feature
+# Most of the time, it will be a issue in https://issues.redhat.com/browse/WFLY
+# or https://issues.redhat.com/browse/WFCORE 
+issue: 
 ---
-= [Experimental|Preview|Community|default]Template <INSERT TITLE HERE>
+= <INSERT TITLE HERE>
 :author:            Your Name
 :email:             your.email@redhat.com
 :toc:               left
@@ -13,116 +21,78 @@ categories:
 :idprefix:
 :idseparator:       -
 
+__<The entire document should be one to two pages long. We will write each analysis document as if it is a conversation with a future developer. This requires a good writing style, with full sentences organized into paragraphs. Bullets are acceptable only for visual style, not as an excuse for writing sentence fragments.>__
+
 == Overview
 
-== Issue Metadata
+__<Define the requirement here. Be clear and succinct, you should be able to clearly define the context or problem in two or three paragraphs (if not sentences). Try to define the problem in the overall context and not to get into too much technical detail at this point.>__
 
-=== Issue
 
-* https://issues.redhat.com/browse/WFCORE[WFCORE-XXXX]
+== Affected Projects or Components
 
-=== Related Issues
-
-* https://issues.redhat.com/browse/WFLY[WFLY-XXXX]
-
-=== Stability Level
-// Choose the planned stability level for the proposed functionality
-* [ ] Experimental
-
-* [ ] Preview
-
-* [ ] Community
-
-* [ ] default
-
-=== Dev Contacts
-
-* mailto:{email}[{author}]
-
-=== QE Contacts
-
-=== Testing By
-// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
-// Discuss with QE during the Kickoff state to decide this
-* [ ] Engineering
-
-* [ ] QE
-
-=== Affected Projects or Components
+__<List the projects or components that are affected by the feature. List them using their Git repositories.>__
 
 === Other Interested Projects
 
 === Relevant Installation Types
-// Remove the x next to the relevant field if the feature in question is not relevant
-// to that kind of WildFly installation
-* [x] Traditional standalone server (unzipped or provisioned by Galleon)
 
-* [x] Managed domain
+__<List the installation types thar are relevant for the features and remove any that are not relevant>__.
 
-* [x] OpenShift s2i
-
-* [x] Bootable jar
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
 
 == Requirements
 
-=== Hard Requirements
-
-=== Nice-to-Have Requirements
-// Requirements in this section do not have to be met to merge the proposed functionality.
-// Note: Nice-to-have requirements that don't end up being implemented as part of
-// the work covered by this proposal should be moved to the 'Future Work' section.
-
+__<Describe the requirements that must be fullfilled by this feature.>__
 
 === Non-Requirements
-// Use this section to explicitly discuss things that readers might think are required
-// but which are not required.
+
+__<Use this section to explicitly discuss things that readers might think are required but which are not required.>__ 
 
 === Future Work
-// Use this section to discuss requirements that are not addressed by this proposal
-// but which may be addressed in later proposals.
+
+__<Use this section to discuss requirements that are not addressed by this proposal but which may be addressed in later proposals.>__
 
 == Backwards Compatibility
 
-// Does this enhancement affect backwards compatibility with previously released
-// versions of WildFly?
-// Can the identified incompatibility be avoided?
+__<Does this enhancement affect backwards compatibility with previously released versions of WildFly? Can the identified incompatibility be avoided?>__
 
 === Default Configuration
 
+__<What is the impact of this feature in the default configuration(s) provided by WildFly?>__
+
 === Importing Existing Configuration
+
+TBD
 
 === Deployments
 
+__<Does this feature change the behavior of deployments in incompatible ways?>__
+
 === Interoperability
 
-//== Implementation Plan
-////
-Delete if not needed. The intent is if you have a complex feature which can 
-not be delivered all in one go to suggest the strategy. If your feature falls 
-into this category, please mention the Release Coordinators on the pull 
-request so they are aware.
-////
+__<Is this feature impacting interoperability?>__
+
+== Implementation Plan
+
+__<This section is optional. If you have a complex feature which can not be delivered all in one go, suggest the strategy.>__
 
 == Security Considerations
 
-////
-Identification if any security implications that may need to be considered with this feature
-or a confirmation that there are no security implications to consider.
-////
+__<What impact on security does this feature have?>__
 
 == Test Plan
 
-== Community Documentation
-////
-Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
-////
+__<How do you plan to test this feature?>__
+
+== Documentation Plan
+
+__<Describe how this feature will be documented or illustrated. Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the feature will bring additional content (such as quickstarts, guides, etc.). Indicate which of these will happen>__
+
 == Release Note Content
-////
-Draft verbiage for up to a few sentences on the feature for inclusion in the
-Release Note blog article for the release that first includes this feature. 
-Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
-This content will be edited, so there is no need to make it perfect or discuss
-what release it appears in.  "See Overview" is acceptable if the overview is
-suitable. For simple features best covered as an item in a bullet-point list 
-of features containing a few words on each, use "Bullet point: <The few words>" 
-////
+
+__<Draft verbiage for up to a few sentences on the feature for inclusion in the Release Note blog article for the release that first includes this feature.__
+__Example article: https://www.wildfly.org/news/2024/01/25/WildFly31-Released/.__
+__This content will be edited, so there is no need to make it perfect or discuss what release it appears in.>__ 
