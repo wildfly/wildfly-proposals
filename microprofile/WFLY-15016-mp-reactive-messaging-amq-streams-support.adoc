@@ -19,7 +19,7 @@ Most of the work has been done in the related issues below, so this RFE is more 
 
 === Related Issues
 
-* https://issues.redhat.com/browse/WFLY-14932[WFLY-14932 - Upgrade to MicroProfile Reactive Messaging 2.0] - This version introduces the new `@Channel` annotation, which makes it easier for users to get data into/from the Reactive Messaging Streams
+* https://issues.redhat.com/browse/WFLY-14798[WFLY-14798 - Upgrade to MicroProfile Reactive Messaging 2.0] - This version introduces the new `@Channel` annotation, which makes it easier for users to get data into/from the Reactive Messaging Streams
 * https://issues.redhat.com/browse/WFLY-14932[WFLY-14932 - Configuration of Reactive Messaging Kafka messages] - The API introduced here allows you to get information about how Kafka handled a message, and to influence how messages are sent to Kafka. Most importantly it enables the use of a key for the messages sent to Kafka, which in turn inside Kafka are stored as records. Being able to query them, and not simply use Kafka as a messaging system is important.
 * https://issues.redhat.com/browse/WFLY-14987[WFLY-14987 - Ability to use an Elytron SSL Context in the Kafka connector] - The Kafka instance set up by AMQ Streams might be secured using SSL with unsigned certificates, so we need a way to specify the truststore.
 * https://issues.redhat.com/browse/WFLY-13640[WFLY-13640 - Provide Support for MicroProfile Reactive Messaging 1.0 for Kafka] - This was the original issue bringing Reactive Messaging 1.0 into WildFly. Some testing was done against AMQ Streams on OpenShift.
@@ -29,7 +29,10 @@ Most of the work has been done in the related issues below, so this RFE is more 
 * mailto:{email}[{author}]
 
 === QE Contacts
-TBD
+* mailto:jstourac@redhat.com[Jan Stourac]
+* mailto:mnovak@redhat.com[Miroslav Novak]
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
+
 
 === Testing By
 // Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
@@ -39,7 +42,9 @@ TBD
 * [x] QE
 
 === Affected Projects or Components
-WildFly
+* WildFly
+* SmallRye Reactive Messaging
+* Apache Kafka Client
 
 === Other Interested Projects
 
@@ -67,8 +72,8 @@ WildFly
 === Nice-to-Have Requirements
 
 === Non-Requirements
-
-TBD as we identify pain points during testing. I am not intimately familiar with Kafka/AMQ Streams.
+* If AMQ Streams supports https://github.com/strimzi/strimzi-kafka-oauth[Strimzi OAuth], this RFE does not introduce support for that:
+** we support the SSL/SASL security mechanisms in the Kafka documentation
 
 == Test Plan
 For WildFly we test what we can as indicated in the linked <<Related Issues>>.
