@@ -1,0 +1,26 @@
+name: Feature Development
+description: Define an issue for the feature development of a WildFly RFE.
+labels: ['feature']
+projects: ['wildfly/7']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Create an issue for tracking development of an RFE. Please enter a description for this issue and a point of 
+        contact for this issue.
+        > :warning: **This is not where a request for enhancement would be filed. This is for developing already defined RFE's.**
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A description of the feature.
+    validations:
+      required: true
+  - type: input
+    id: issue-contact
+    attributes:
+      label: Issue Contact
+      description: The person who is the point of contact for moving this feature forward.
+    validations:
+      required: true
+
