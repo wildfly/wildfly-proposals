@@ -1,0 +1,32 @@
+name: Feature Request
+description: A feature request for WildFly
+title: "[RFE]: "
+labels: ["feature"]
+projects: ["wildfly/7"]
+body:
+  - type: input
+    id: jira
+    attributes:
+      label: JIRA
+      description: A link to the main feature request JIRA
+      placeholder: ex. https://issues.redhat.com/browse/WFLY-XXX
+    validations:
+      required: true
+  - type: dropdown
+    id: stability
+    attributes:
+      label: Stability
+      description: The stability level proposed for the feature
+      options:
+        - community
+        - preview
+        - experimental
+      default: 0
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A description of the feature
+
