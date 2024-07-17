@@ -1,0 +1,85 @@
+= remote+tls is not supported by EJBClient and remote-outbound-connection
+:email:             tomasz.adamski@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+=== Issue
+* https://issues.redhat.com/browse/WFLY-13828
+* https://issues.redhat.com/browse/WFCORE-5718
+
+=== Dev Contacts
+
+* mailto:tadamski@redhat.com
+
+=== QE Contacts
+
+=== Testing By
+[x] Engineering
+
+[] QE
+
+=== Affected Projects or Components
+EJB
+Remoting
+
+== Introduction
+Customers would like to be able to configure EJB to use remote+tls protocol. This feature is already implemented in remoting but the configuration has to be added to jboss-ejb-client library and WildFly in order to make it work.
+
+== Implementation
+
+After the change users would be able to configure remote+tls protocol in remoting subsystem's connector on server side:
+
+[source]
+----
+<subsystem xmlns="urn:jboss:domain:remoting:4.1">
+   (...)
+   <connector name="foo-connector" socket-binding="foo-socket-binding" ssl-context="foo-server-ssl-context" protocol="remote+tls" sasl-authentication-factory="foo-sasl-authentication"/>
+   (...)
+   </subsystem>
+----
+
+and connect from standalone client:
+
+----
+    Properties props = new Properties();
+    props.put(Context.INITIAL_CONTEXT_FACTORY,
+        "org.wildfly.naming.client.WildFlyInitialContextFactory");
+    props.put(Context.PROVIDER_URL, String.format("%s://%s:%d", "remote+tls", "foo-server", foo-port));
+    props.put(Context.SECURITY_PRINCIPAL, "foo");
+    props.put(Context.SECURITY_CREDENTIALS, "fooSecret");
+----
+
+or other Wildfly instance with proper remoting and Elytron configuration:
+===
+
+----
+        <subsystem xmlns="urn:jboss:domain:remoting:6.0">
+            (...)
+            <outbound-connections>
+                <remote-outbound-connection name="foo-outbound-connection" outbound-socket-binding-ref="foo-outbound-socket-binding" authentication-context="foo-auth-context"/>
+            </outbound-connections>
+        </subsystem>
+        
+        (...)
+        
+        <subsystem xmlns="urn:wildfly:elytron:16.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
+            <authentication-client>
+                <authentication-configuration name="foo-auth-config" authentication-name="foo" host="127.0.0.1" protocol="remote+tls" port="54449" realm="foo-properties-realm" sasl-mechanism-selector="DIGEST-MD5">
+                    <credential-reference clear-text="ejbRemoteTestsPasswordOverriding"/>
+                </authentication-configuration>
+                <authentication-context name="foo-auth-context">
+                    <match-rule authentication-configuration="foo-auth-config" ssl-context="foo-server-ssl-context"/>
+                </authentication-context>
+            </authentication-client>
+ 
+        
+----
+
+== Test Plan
+
+https://gitlab.mw.lab.eng.bos.redhat.com/jbossqe-eap/test-plans/-/merge_requests/631
+
+== Community Documentation
+None
