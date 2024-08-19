@@ -1,0 +1,122 @@
+= Support Transactions during WildFly’s graceful shutdown
+:author:   		 Manuel Finelli
+:email:    		 jfinelli@redhat.com
+:toc:      		 left
+:icons:    		 font
+:idprefix:
+:idseparator:  	 -
+
+== Overview
+
+When employing WildFly in cloud environments, Narayana (and, thus, the Transactions subsystem) has some [hard requirements](https://jbossts.blogspot.com/2022/04/narayana-on-cloud-part-1.html) that need to be satisfied. The goal of this proposal is to outline how distributed transactions should be safely terminated during the graceful shutdown of WildFly, considering both cloud environments and the baremetal scenario.
+
+=== Current Issues
+
+This section provides a summary of the current logic governing the graceful shutdown of WildFly's Transactions subsystem. They do not propose any changes but serve the sole purpose of offering context to reviewers who may not be familiar with the Transactions subsystem of WildFly.
+
+1.1 WildFly’s graceful shutdown logic does not take into consideration that hosting entities can be shut down indefinitely, i.e. there will not be any restart after shutdown. From the point of view of WildFly’s Transactions subsystem, this scenario might develop into a data integrity issue. In fact, transactions might result in:
+* Heuristics, which can leave data in an inconsistent state
+* An in-doubt state, which might not be completed during suspension (i.e. WildFly’s state before shutdown)
+
+The reason behind this behaviour is that the suspension logic of Narayana, the framework behind WildFly’s Transactions subsystem, is premised on the assumption that it will eventually be resumed after it gets suspended. During suspension, Narayana attempts the completion of all transactions before leaving their recovery for later.
+
+NOTE: Heuristic transactions cannot be resolved automatically thus they are left untouched during suspension and then they will be reported to the administrator when Narayana gets resumed.
+
+_In cloud environments_, when hosting entities (e.g. containers, pods, virtual machines) are scaled down and their state is erased (e.g. their file system, ip address, and memory are deleted) WildFly cannot guarantee that all transactions will be completed and a data integrity issue might occur.
+
+NOTE: There are additional complications when hosting entities crash (i.e. an unintentional shutdown occurs). This extreme scenario is beyond what WildFly can handle; on baremetal then it is expected to be handled by administrative processes and in the case of a cloud environment, the environment must provide the ability to recover the hosting entity from crashes. In this extreme case, the state of the hosting entity (e.g. its file system, ip address, etc.) should be recovered by the cloud environment without the intervention of the administrator. In K8s, for example, the employment of StatefulSet creates a stable environment where crashes are handled automatically. If a particular cloud environment does not provide a guarantee similar to StatefulSet, it is not possible to employ WildFly’s Transaction Subsystem. *As there are no solutions to solve this extreme scenario within WildFly (as it is impossible to control the lifecycle of the host from WildFly), this proposal is only concerned with problem 1.1.*
+
+== Issue Metadata
+
+=== Issue
+
+* [WFLY-17742](https://issues.jboss.org/browse/WFLY-17742)
+
+=== Dev Contacts
+
+* mailto:{jfinelli@redhat.com}[{Manuel Finelli}]
+
+=== QE Contacts
+
+* mailto:{istraka@redhat.com}[{Ivan Straka}]
+
+=== Testing By
+
+* [ ] Engineering
+* [X] QE
+
+=== Affected Projects or Components
+
+* [wildfly-core](https://github.com/wildfly/wildfly-core)
+* [wildfly](https://github.com/wildfly/wildfly)
+* [narayana](https://github.com/jbosstm/narayana)
+
+=== Relevant Installation Types
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* The Transactions subsystem should be enhanced to handle in-doubt and heuristic transactions. The behaviour of WildFly during suspension will vary based on the graceful shutdown's timeout:
+** For a negative timeout: WildFly will postpone suspension until all in-doubt transactions are completed, and transactions with heuristic outcomes are resolved; this ensures data integrity in various scenarios, such as cloud environments
+** For a positive timeout: WildFly will postpone suspension for the specified duration; during this time window, WildFly should apply the same behaviour defined in the case of a negative timeout
+* The administrator needs to receive notifications when the Transactions subsystem is causing delays in the graceful shutdown of WildFly, achieved through integration with the existing logging mechanism. This is especially true when a negative timeout is used (i.e. indefinite graceful shutdown). Moreover, internal details like [ServerActivity](https://github.com/wildfly/wildfly-core/blob/22.0.2.Final/server/src/main/java/org/jboss/as/server/suspend/ServerActivity.java) do not need to be prominent. Part of working out such a notification would be how to consistently describe a ServerActivity to the administrator in an understandable manner without exposing internal technical implementation details
+** Sufficient information about expired, in-doubt, and heuristic transactions should be reported as soon as they are known (so not waiting for shutdown) to inform the administrator about the state of the transactions subsystem and allow them to manually reconcile expired and heuristic transactions (keeping in mind the effect of a positive timeout)
+* From a set point forward, the transactions subsystem should only focus on completing "left-over" transactions without accepting new ones. This is only possible if the implementation of this proposal would stop the creation of transactions when the suspend hook is invoked. Other subsystems that handle their requests in a transactional context should implement their graceful shutdown taking into consideration the lifecycle of the transactions they initiated. For example, the EJB subsystem follows this logic
+
+NOTE: The previous hard requirements are inspired from the functionalities already implemented in the transactional_recovery module of the [Kubernetes Operator of WildFly](https://github.com/wildfly/wildfly-operator/blob/main/controllers/transaction_recovery.go). This proposal does not seek to improve the overall design/behaviour of those functionalities. For an overview of the features implemented in the transactional module of the Operatore, please refer to the [official documentation](https://github.com/wildfly/wildfly-operator/blob/main/doc/user-guide.adoc#transaction-recovery-during-scaledown).
+
+* The Management Model of WildFly will not be modified
+
+=== Nice-to-Have Requirements
+
+* The sequence to suspend](https://github.com/wildfly/wildfly-core/blob/22.0.1.Final/server/src/main/java/org/jboss/as/server/suspend/SuspendController.java#L62) ServerActivity implementations during WildFly’s graceful shutdown should be Last In First Out (LIFO), i.e. the last ServerActivity implementation that was registered during startup should be the first one to get suspended.
+
+=== Non Requirements
+
+* As discussed previously, in a cloud environment, when the hosting entity crashes, its state should be recovered by the cloud environment without the intervention of the administrator
+* Further developments should be undertaken to modify the graceful shutdown of the EJB subsystem to make it transaction-aware
+
+== Implementation Plan
+
+*Aim of the proposal*. The Transactions subsystem's suspension needs to be modified to to properly delay WildFly’s graceful shutdown as long as there are transactions to complete. Of course, the administrator will be notified when subsystems are delaying WildFly’s suspension. This is especially true when a negative timeout is used (i.e. indefinite graceful shutdown). Moreover, internal details like 'ServerActivity' do not need to be prominent. Part of working out such a notification would be how to consistently describe a ServerActivity to the administrator in an understandable manner without exposing internal technical implementation details.
+
+=== Narayana
+
+Narayana will internally handle the lifecycle of transactions during suspension. From the point of view of the integrating party, Narayana should provide a blocking API to suspend itself and it should return control only when there are no transactions left to complete. Moreover, Narayana needs to provide a switch to suspend the creation of new transactions, which needs to be used only when no new transactions are needed.
+
+=== WildFly
+
+At the moment, WildFly’s graceful shutdown cannot be employed in cloud environments out of the box, especially when it comes to handling transactions during its suspension. In fact, as proved with WildFly’s Kubernetes Operator, before scaling down a pod hosting WildFly, all transactions must be completed.
+Even though WildFly’s graceful shutdown already gives the possibility to wait indefinitely, the Transactions subsystem does not really take advantage of this feature.
+
+==== Modifications to WildFly’s Graceful Shutdown (wildfly-core)
+
+Following, modifications to WildFly’s graceful shutdown are discussed in more detail.
+
+* This proposal introduces the need for some sort of ordering semantic to WildFly’s graceful shutdown. For more details, refer to [WFCORE-6739](https://issues.redhat.com/browse/WFCORE-6739)
+* *FIFO or LIFO ->* At the moment, the order to suspend SAIs in WildFly’s graceful shutdown is FIFO, i.e. the first SAI that gets registered at boot time is also the first SAI to get suspended. This logic does not respect the dependencies among MSC services forced during WildFly’s boot time. [The sequence to suspend](https://github.com/wildfly/wildfly-core/blob/22.0.1.Final/server/src/main/java/org/jboss/as/server/suspend/SuspendController.java#L62) SAIs during WildFly’s graceful shutdown should be Last In First Out (LIFO), i.e. the last SAI that was registered during startup should be the first SAI to get suspended. From the Transactions subsystem’s point of view, this would ensure that dependent subsystems get pre-suspended (and, subsequently, suspended) before the Transactions subsystem
+
+== Test Plan
+
+*wildfly-core.* As this proposal will not introduce new functionalities in wildfly-core, new testing is not needed.
+
+*Transactions SAI.* Testing should be developed to make sure that in-doubt, heuristic, and in-flight transactions delay WildFly’s graceful shutdown. As a first step, we can test only WildFly on bare metal and then, if and when WildFly’s operator will be updated with modifications from this proposal, further testing might be developed in the cloud testing framework
+ 
+== Community Documentation
+
+The following points should be considered in the documentation:
+* As WildFly’s graceful shutdown should be modified, WildFly’s documentation should reflect the different behaviour. Moreover, it should be mentioned that, in a cloud environment, when the hosting entity crashes, its state should be recovered by the cloud environment without the intervention of the administrator
+
+== Release Note Content
+
+* Graceful shutdown is modified to take into account cases where WildFly will not be restarted/resumed. In particular, to complete a graceful shutdown, all transactions must now complete their life cycles
+* It should be mentioned that, in a cloud environment, when the hosting entity crashes, its state should be recovered by the cloud environment without the intervention of the administrator
+
