@@ -1,0 +1,139 @@
+= WildFly Feature Development Process
+
+WildFly features can have one of four different maturity levels, “Experimental”, “Preview”, “Community” and an unnamed default level.
+
+Promotion from one level to another, or initial feature incorporation at a given level, requires meeting various standards in the basic areas of requirements analysis, implementation, testing and documentation. The following table outlines the various standards for each of the maturity levels.
+
+[cols="5"]
+|===
+| | Experimental | Preview | Community | Default
+
+//-------
+| *Feature Team*
+|Component lead or other SME
+|Experimental plus:
+
+3rd party with a different perspective, able to question the feature requirements and API
+| same as Preview
+| same as Community
+//-------
+
+
+//-------
+| *Requirement Analysis*
+| Issue tracker with an understandable description with an orientation toward what/why and not just how
+|Approved WildFly Proposals document
+
+Nice-to-have requirements allowed.
+|Preview plus:
+
+Nice-to-have requirements have been converted to non-requirements or are moved to a future work section.
+|Same as Community
+//-------
+
+//-------
+| *Implementation*
+|Primary use cases covered.
+
+Code style standards followed.
+
+Management API has experimental metadata
+
+Feature not used at runtime if not in experimental level
+
+New libraries not provisioned if not in appropriate stability level ???
+
+Third party libraries in Final version??
+|All hard requirements in analysis covered
+
+Management API has preview metadata
+
+Feature not used at runtime if not in preview level
+
+New libraries not provisioned if not in appropriate stability level ???
+|Stable API and behavior.
+
+All hard requirements in analysis covered
+
+Management API has community metadata
+
+Feature not used at runtime if not in community level
+
+New libraries not provisioned if not in appropriate stability level ???
+|Stable API and behavior
+
+All hard requirements in analysis covered
+//-------
+
+//-------
+| *Domain Transformation*
+| Encouraged |Encouraged |Encouraged |Required
+//-------
+
+
+//-------
+| *Component Validation*
+|Acceptable Open Source License
+|Experimental plus:
+
+Uses maintained components
+
+Java components available from Maven repositories (JBoss Nexus or Maven Central)
+|Preview plus:
+
+Uses up-to-date maintained components
+|Community plus:
+
+Identified maintainer
+//-------
+
+
+//-------
+| *Test Plan*
+|Not required
+|Required -- TODO what it means
+|Same as Preview
+|Community plus:
+
+Formal test plan approved by a professional Quality Engineer with subject matter expertise
+//-------
+
+
+//-------
+| *Test Development*
+|Standard subsystem tests.
+
+Smoke tests of main functional areas.
+|Standard subsystem tests.
+
+Test coverage as per test plan.
+| Same as Experimental
+| Community plus:
+
+Domain transformation tests
+//-------
+
+
+//-------
+| *Test Verification*
+| Code review and CI
+| Same as Experimental
+| Same as Preview
+| Community plus:
+
+Verification by a professional Quality Engineer with subject matter expertise
+//-------
+
+
+//-------
+| *Documentation*
+|Understandable JIRA description.
+
+Correct management API metadata
+| Experimental plus:
+
+Documentation content as per analysis.
+| Same as Preview
+| Same as Community
+//-------
+|===
