@@ -1,0 +1,221 @@
+---
+categories:
+ - management
+---
+= [Community] [WFCORE-6830] Additional management attributes to contrain HTTP management interface resource utilisation.
+:author:            Darran Lofthouse
+:email:             darran.lofthouse@jboss.org
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Previously under https://issues.redhat.com/browse/WFCORE-6825[WFCORE-6825] an update was made to the HTTP management interface
+to allow the following system properties to be set to configure the constraints applied to the HTTP management interface:
+
+ * `org.wildfly.management.backlog`
+ * `org.wildfly.management.connection-high-water`
+ * `org.wildfly.management.connection-low-water`
+ * `org.wildfly.management.no-request-timeout`
+
+ If the system properties were not set these would defalt to:
+
+  * backlog = 50
+  * connection-high-water = 100
+  * connection-low-water = 75
+  * no-request-timeout = 60000
+
+This proposal is to add attributes to the management model for the HTTP management interface at the "Community" stability level
+to enable these to be configured directly in the management model.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-6830[WFCORE-6830]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFCORE-6825[WFCORE-6825] - The original issue to add the system properties.
+* https://issues.redhat.com/browse/WFCORE-6829[WFCORE-6829] - A new community level schema for the core management model.
+* https://issues.redhat.com/browse/WFLY-19715[WFLY-19715] - Task to document the new attributes.
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [ ] Preview
+
+* [*] Community
+
+* [ ] default
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [*] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly Core
+* WildFly
+
+=== Other Interested Projects
+
+The https://github.com/wildfly-extras/creaper[Creaper] project is also impacted by the changes as adding a community
+level schema impacts version detection in this project as reported under
+https://github.com/wildfly-extras/creaper/issues/236[Issue#236].
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+Four new attributes will be added to the HTTP management interface to configure the supported resource constraints that
+can be applied:
+
+ * `backlog`
+ * `connection-high-water`
+ * `connection-low-water`
+ * `no-request-timeout`
+
+ The resulting resource will look like:
+
+[source]
+----
+ /core-service=management/management-interface=http-interface:read-resource(include-defaults=true)
+{
+    "outcome" => "success",
+    "result" => {
+        "allowed-origins" => undefined,
+        "backlog" => 50,
+        "connection-high-water" => 100,
+        "connection-low-water" => 75,
+        "console-enabled" => true,
+        "constant-headers" => undefined,
+        "http-authentication-factory" => "management-http-authentication",
+        "http-upgrade" => {
+            "enabled" => true,
+            "sasl-authentication-factory" => "management-sasl-authentication"
+        },
+        "http-upgrade-enabled" => true,
+        "no-request-timeout" => 60000,
+        "sasl-protocol" => "remote",
+        "secure-socket-binding" => undefined,
+        "server-name" => undefined,
+        "socket-binding" => "management-http",
+        "ssl-context" => undefined
+    }
+}
+----
+
+When persisted to the configuration file the resulting XML will look like:
+
+[source,xml]
+----
+<management-interfaces>
+    <http-interface http-authentication-factory="management-http-authentication"
+        backlog="51" no-request-timeout="60001"
+        connection-high-water="101" connection-low-water="76">
+
+        <http-upgrade enabled="true" sasl-authentication-factory="management-sasl-authentication"/>
+        <socket-binding http="management-http"/>
+    </http-interface>
+</management-interfaces>
+----
+
+=== Nice-to-Have Requirements
+
+None
+
+=== Non-Requirements
+
+The purpose of this feature request is to expose management model attributes to configure existing behaviour within the
+application server, this feature request is not intended to revisit the existing behaviour which is already available at
+all stability levels.
+
+=== Future Work
+
+The only possible future work could be to promote one or all of these new attributes to a higher stability level.
+
+A change such as this should likely be constrained to:
+
+ * Removing the stability level qualifier from the attribute definitions allowing them to be used at the default stability level.
+ * Moving the XML schema definitions and parsing to an appropriate schema at the default stability level.
+
+== Backwards Compatibility
+
+In considering backwards compatibility if an attribute is defined on the HTTP management interface AND the
+corresponding system property is set then the system property should take precedence.
+
+=== Default Configuration
+
+The new attributes will not be present in the default configuration, instead the default values will remain in use.
+
+=== Importing Existing Configuration
+
+As the attributes are optional and defined with default values the changes here will not impact the ability to import
+and existing configuration.
+
+=== Deployments
+
+N/A
+
+=== Interoperability
+
+N/A
+
+== Security Considerations
+
+Security constraints are already defined on the management interfaces, these new attributes do not require further constraints.
+
+== Test Plan
+
+The original issue https://issues.redhat.com/browse/WFCORE-6825[WFCORE-6825] already added a test case to the `manualmode`
+testsuite `org.wildfly.core.test.standalone.mgmt.ManagementInterfaceResourcesTestCase`, this test uses the system properties
+to define the resource constraints and then checks that the constraints are applied.  This test will be enhanced so that in
+addition to the testing it performs using system properties the same tests are repeated setting the constraints as attributes
+in the management model.
+
+WildFly Core also contains two test cases which test the parsing and marshalling of the management model from XML and back
+for the management interfaces:
+
+ * `org.jboss.as.core.model.test.mgmt_interfaces.StandaloneMgmtInterfacesTestCase`
+ * `org.jboss.as.core.model.test.mgmt_interfaces.HostMgmtInterfacesTestCase`
+
+These test cases will both have a test added to parse and marshall a configuration with all of the new attributes defined.
+
+== Community Documentation
+
+Under https://issues.redhat.com/browse/WFLY-19715[WFLY-19715] documented will be added describing the new attributes
+and how they can be used.
+
+== Release Note Content
+
+Previously under https://issues.redhat.com/browse/WFCORE-6825[WFCORE-6825] four system properties with default values were
+added to enable the constraints affecting the HTTP management interface to be configured. Under
+https://issues.redhat.com/browse/WFCORE-6830[WFCORE-6830] four new attributes have been added to the HTTP management interface
+(`backlog`, `connection-high-water`, `connection-low-water`, `no-request-timeout`) to allow these constraints to be configured
+directly in the management model.
+
+These new attributes are available for servers running at the `Community` stability level or lower.
