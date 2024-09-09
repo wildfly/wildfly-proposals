@@ -86,7 +86,6 @@ Since https://issues.redhat.com/browse/WFCORE-6206[WFCORE-6206], there is `insta
 
 * https://issues.redhat.com/browse/WFLY-19130[WFLY-19130] - [Community] Publish Wildfly channel and manifest during project build
 ** http://docs.wildfly.org/wildfly-proposals/build/WFLY-19130_publish_Wildfly_channel_manifest.html[Analysis Document]
-* https://issues.redhat.com/browse/WFCORE-6206[WFCORE-6206] - Add new module to allow an integration of an Installation Manager
 
 === Stability Level
 
@@ -137,6 +136,13 @@ Since https://issues.redhat.com/browse/WFCORE-6206[WFCORE-6206], there is `insta
 * Changing the type of distributions during an update is not supported (in other words, it is not possible to download the zip for WildFly 33.0.0.Final and update the installation to WildFly Preview)
 * Trimming an existing installation coming from WildFly distributions with Galleon layers is not supported.
 
+=== Future Work
+
+This feature is `experimental`.
+
+To make it a `preview` or `community` feature, we will pay attention to the user experience. In particular, the distributions should be "self-updatable" and should not need
+to rely on the external download of Prospero to be updated. Promotion to `preview` or `community` would involve the integration of Prospero library into WildFly (as a JBoss module or a separate feature pack). The user interface could also be directly the `prospero` cli tool, a streamlined CLI focused on updates, or additional commands provided within `jboss-cli` tool.
+
 === Implementation Plan
 
 The channel metadata are stored in the `.installation` directory when a WildFly server is provisioned.
@@ -146,12 +152,6 @@ This is covered by https://issues.redhat.com/browse/WFLY-19221[WFLY-19221] and p
 Prospero will be updated to cover the additional use cases from this proposal.
 In particular, it would have to be able to let a user chose a new "target" channel to update to.
 This is covered by https://github.com/wildfly-extras/prospero/issues/749.
-
-While it would be possible for users to download Prospero separately to apply updates to their installations, it will provide a better user experience
-if the tooling is included directly in the distributions.
-This means that Prospero library will be added to the WildFly distribution as a JBoss module. 
-The CLI script that the user will use could be the `prospero` script or a simplified CLI script that only exposes the functionality required for updating an installation
-(and not for doing a full installation)
 
 ==== Galleon Universe
 
