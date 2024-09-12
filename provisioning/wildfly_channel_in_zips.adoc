@@ -1,6 +1,7 @@
 ---
 categories:
 - provisioning
+stability-level: experimental
 ---
 = [Experimental] Update WildFly download distributions using channels
 :author:            Jeff Mesnil
