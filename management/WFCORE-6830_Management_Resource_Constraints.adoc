@@ -20,7 +20,7 @@ to allow the following system properties to be set to configure the constraints 
  * `org.wildfly.management.connection-low-water`
  * `org.wildfly.management.no-request-timeout`
 
- If the system properties were not set these would defalt to:
+ If the system properties were not set these would default to:
 
   * backlog = 50
   * connection-high-water = 100
@@ -167,6 +167,16 @@ A change such as this should likely be constrained to:
 
 In considering backwards compatibility if an attribute is defined on the HTTP management interface AND the
 corresponding system property is set then the system property should take precedence.
+
+For each of the system properties if defined and if the attribute is supported at the current stability level  a message in the
+following format will be logged to inform the administrator that they should move to using the new attribute definitions.
+
+[source]
+----
+14:58:13,878 INFO  [org.jboss.as.controller.management-deprecated] (Controller Boot Thread) WFLYCTL0515: The system
+property 'org.wildfly.management.backlog' is deprecated and may be removed in a future version, attribute 'backlog' on
+resource '/core-service=management/management-interface=http-interface' should be used instead.
+----
 
 === Default Configuration
 
