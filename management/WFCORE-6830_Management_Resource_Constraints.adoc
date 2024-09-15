@@ -162,6 +162,8 @@ A change such as this should likely be constrained to:
 
  * Removing the stability level qualifier from the attribute definitions allowing them to be used at the default stability level.
  * Moving the XML schema definitions and parsing to an appropriate schema at the default stability level.
+ * The community documentation can be simplified to remove references to the stability level
+ `Community` once supported at all stability levels.
 
 == Backwards Compatibility
 
@@ -233,6 +235,10 @@ These test cases will both have a test added to parse and marshall a configurati
 
 Under https://issues.redhat.com/browse/WFLY-19715[WFLY-19715] documented will be added describing the new attributes
 and how they can be used.
+
+The documentation will also clarify that the default values are still applicable when
+running at the stability level of `Default` and include information about the system
+properties that can be used.
 
 == Release Note Content
 
