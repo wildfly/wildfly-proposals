@@ -185,6 +185,20 @@ N/A
 
 N/A
 
+== Admin Clients
+
+The JBoss CLI utilises low level management operations when updating the http-management-interface, these dynamically
+take into account the results of calling :read-resource-description so these new attributes will be automatically
+supported by the CLI when the server is running at the `Community` stability level or lower.
+
+The admin console does contain a screen dedicated to the management of the HTTP management interface available at
+http://localhost:9990/console/index.html#standalone-server[HTTP Management Interface].  This screen is dynamically rendered
+based on the attributes defined on the HTTP management interface resource, this means that when the server is running at
+a stability level that supports these new attributes the admin console will automatically support them - in other cases they
+will not be present in the view.
+
+No follow up tasks are required for either admin client.
+
 == Security Considerations
 
 Security constraints are already defined on the management interfaces, these new attributes do not require further constraints.
