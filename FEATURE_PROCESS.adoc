@@ -75,7 +75,7 @@ All hard requirements in analysis covered
 | *Admin Clients*
 (HAL / JBoss CLI)
 
-| Management model changes must be compatible with the lowe level model
+| Management model changes must be compatible with the lower level model
 manipulation capabilities of the admin clients.
 
 Breakage of high level client functionality is undesirable but accepted.
