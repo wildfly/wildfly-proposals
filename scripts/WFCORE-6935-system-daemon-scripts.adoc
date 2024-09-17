@@ -1,0 +1,195 @@
+---
+categories:
+- scripts
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/614
+feature-team:
+ developer: yersan
+ sme: jamezp
+  -
+ outside-perspective: jasondlee
+  -
+promoted-by:
+---
+
+= [default] Improve systemd service units
+:author:            Yeray Borges
+:email:             yborgess@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The server can be installed as a Linux service by using two types of init daemon services:
+
+* Init, also known as System V init, or SysVinit: The server is shipped with the required files to install it as an Init daemon service under `$WFLY_HOME/docs/contrib/scripts/init.d`. These scripts are provided as community contributed scripts only. These System V init scripts allows the users to install an archive based server installation as a Linux service. However, these System V init scripts are discouraged since have been already deprecated in several Linux distributions (for example Debian/Ubuntu/Centos) and replacing in favor of Systemd scripts.
+
+* Systemd (System daemon): The server is shipped with the required files to install it as a System daemon service at `$WFLY_HOME/docs/contrib/scripts/systemd`. Similarly to Init scripts, these scripts are provided as community contributed scripts only. These Systemd units are supplied with a basic configuration and are only meant for standalone instances.
+
+The goal of this feature is to allow the users to configure and install a server installation as a Systemd service for standalone and domain mode using Systemd units developed and maintained by WildFly team and its community instead of just a pure community contributed scripts only.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-6935[WFCORE-6935]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-2067[EAP7-2067]
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [ ] Preview
+
+* [ ] Community
+
+* [X] default
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:msvehla@redhat.com[Martin Svehla]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [X] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [ ] OpenShift s2i
+
+* [ ] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* We will provide two types of Systemd units: one for standalone mode and another for domain mode.
+* The provided Systemd files are meant to install a server as System units and not as User units.
+** Although they can be easily adapted to launch the server as a User unit by removing the User/Group directives and moving them to the expected directory where they can be launched as User unit.
+* The Systemd unit files will be provided in the `$WFLY_HOME/bin/systemd/` directory.
+* The Systemd unit files from the contrib directory will be deprecated in favor of the new ones.
+* By default, the Systemd scripts will provide the following configuration options:
+** Configuration of the JAVA_HOME environment variable.
+** Configuration of the location of server launch script (standalone.sh, domain.sh, etc).
+** Configuration of the server configuration file to use (standalone.xml, domain.xml, etc).
+** Configuration of the Host Controller configuration file to use (host.xml, host-primary.xml, etc).
+** Configuration of the console log file.
+** Configuration of the IP address WildFly binds to.
+** Configuration of the suspend timeout.
+** Configuration of additional server options passed to the WildFly launch command.
+** Configuration of the user and group that will run the server.
+* The Systemd unit files will be provided with a default configuration assuming that the server is installed in `/opt/wildfly` and will use `wildfly:wildfly` as the `user:group` that will launch the server. We will also provide a simple bash script to easily overwrite this default configuration with a custom one:
+** The script will be available at `$WFLY_HOME/bin/systemd/generate-systemd-unit.sh`
+** The script will generate the selected Systemd units based on the user choice, whether we want to generate a standalone or domain mode Systemd unit.
+** The script will initialize the server home to use based on the current location of the Systemd script directory.
+** The script will allow the user to define which default `user:group` will launch the server.
+** The script will use a template file and will replace the default values with the user provided ones generating the final Systemd unit files in the `$WFLY_HOME/bin/systemd/` directory.
+** The script will provide a description of the next steps to perform to install the generated Systemd unit files in the current Operating system.
+*** The installation of these generated Systemd unit files will be done by the user manually.
+
+
+=== Nice-to-Have Requirements
+* N/A
+// Requirements in this section do not have to be met to merge the proposed functionality.
+// Note: Nice-to-have requirements that don't end up being implemented as part of
+// the work covered by this proposal should be moved to the 'Future Work' section.
+
+
+=== Non-Requirements
+* We will not provide a script to install the generated Systemd unit files in the current Operating system. This is always a manual process that need to be done by the user and that requires administrator privileges.
+
+=== Future Work
+* N/A
+// Use this section to discuss requirements that are not addressed by this proposal
+// but which may be addressed in later proposals.
+
+== Backwards Compatibility
+* Systemd scripts from the contrib directory will be deprecated in favor of the new ones.
+
+=== Default Configuration
+* Java Home:
+** /usr/lib/jvm/jre
+* Server launch script:
+** /opt/wildfly/bin/standalone.sh (standalone variant)
+** /opt/wildfly/bin/domain.sh (domain mode variant)
+* Server configuration file:
+** standalone.xml
+** domain.xml
+* Host Controller configuration file:
+** Empty by default, which means it will get the default configuration used by the domain mode launch script.
+* Console Log file:
+** /opt/wildfly/standalone/log/service-console.log
+** /opt/wildfly/domain/log/service-console.log
+* Bind address:
+** 0.0.0.0
+* Suspend Timeout:
+** Empty value, which means there is no timeout configured.
+* Additional server launch command options:
+** Empty value
+* Default user and group
+** wildfly / wildfly
+
+
+
+=== Importing Existing Configuration
+
+* N/A
+
+=== Deployments
+
+* N/A
+
+=== Interoperability
+
+* N/A
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+
+== Security Considerations
+
+* N/A
+
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+
+== Test Plan
+
+* The Systemd scripts will be manually tested on a Linux system.
+
+== Community Documentation
+
+* A community documentation will be provided in the WildFly documentation describing how to generate the custom Systemd units and how to install the as Systemd service in Linux system.
+
+== Release Note Content
+
+* New Systemd scripts are provided to install WildFly as a System daemon service in Linux systems as a standalone and domain mode.
