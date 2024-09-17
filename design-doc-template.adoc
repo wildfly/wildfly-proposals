@@ -117,7 +117,7 @@ Depending on the selected stability level, the appropriate section below should 
 Depending on the stability level, the test plan required may vary. see below:
 ////
 
-** Experimental - no test plan is required. Unit / integration tests may still be added as needed during development.
+** Experimental - no test plan is required. Basic unit / integration tests should be added during development.
 
 ** Preview - a brief high-level description of the testing approach should be added here, including types of tests added (unit, integration, smoke, component, subsystem, etc.) Note that not all test types are required for a particular feature, so include a description of what is being tested and the approach chosen to perform the testing.
 
