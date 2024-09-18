@@ -1,0 +1,167 @@
+---
+categories:
+- quickstarts
+- kubernetes
+---
+= [Community]Template Instructions to run quickstarts on Kubernetes
+:author:            Kabir Khan
+:email:             kkhan@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Recently we did a big overhaul of a set of the quickstarts. This cleaned up, and unified, the instructions for how to run them on the different platforms we support, and introduces upstream testing on OpenShift CI.
+
+Since the OpenShift CI instance we were using is going away, and we have not found an alternative place to run on OpenShift, we introduced testing on Kubernetes as part of https://issues.redhat.com/browse/WFLY-19334[WFLY-19334 - Add PR testing of Quickstarts on Kubernetes]. This has the benefit of being a lot easier to test on GitHub Actions.
+
+Following from this, it makes sense to promote the usage of Kubernetes to our users since it is easier to download Kubernetes than to obtain an OpenShift instance.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY[WFLY-19335]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY[WFLY-19334 - Add PR testing of Quickstarts on Kubernetes]
+* https://issues.redhat.com/browse/WFLY-19337[WFLY-19337 - Enable the ejb-txn-remote-call quickstart on Kubernetes CI testing] - at the time of writing this quickstart is not working yet on the Kubernetes CI.
+* At the time of writing these quickstarts are not working yet on the Kubernetes CI:
+** https://issues.redhat.com/browse/WFLY-19336[WFLY-19336 - Enable the ejb-txn-remote-call quickstart on Kubernetes CI testing ]
+** https://issues.redhat.com/browse/WFLY-19337[WFLY-19337 - Enable the ejb-txn-remote-call quickstart on Kubernetes CI testing]
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [ ] Preview
+
+* [x] Community
+
+* [ ] default
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+Just the Quickstarts
+
+=== Other Interested Projects
+
+None that I am aware of
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [ ] OpenShift s2i
+
+* [x] Bootable jar
+
+The choices here aren't really relevant since for Kubernetes we don't rely on OpenShift CI. Instead we provide an image that contains the built server. For one set of the quickstarts this is a 'traditional' server provisioned using WildFly Glow and the WildFly Maven Plugin, and for the other set of quickstarts the server is a bootable jar, again provisioned using WildFly Glow and the WildFly Maven Plugin.
+
+== Requirements
+
+=== Hard Requirements
+
+* The quickstarts mentioned in the Overview section must:
+** Have instructions in the README for how to deploy and test the application using Helm on Kubernetes
+** Have tests runnable on GitHub Actions that perform the same steps as the instructions in the README
+* The instructions to deploy on Kubernetes are overall quite similar to how to deploy on OpenShift, except:
+** `kubectl` is used instead of `oc` when interacting with Kubernetes
+*** There is no need to log in to Kubernetes, so there is no `kubectl login` equivalent of `oc login`
+** Some of the quickstarts require installing things to Kubernetes beforehand
+*** When these prerequisites are different in Kubernetes to OpenShift, the README should reflect that
+** Kubernetes does not have s2i, instead we build the image using `mvn wildfly:image`, and tag and push that to the Kubernetes registry
+*** This adds a requirement for the user to have Podman or Docker available since `mvn wildfly:image` delegates to those tools
+*** When installing the Helm chart we disable s2i with `--set build.enabled=false` and specify the image pushed to the Kubernetes registry with `--set image.name=<image name>`
+** Kubernetes does not have routes
+*** When installing the Helm chart we disable exposing routes with `--set deploy.route.enabled=false`
+*** After installing the Helm chart the instructions will tell the user to use a Kubernetes port forward, in order to access the cluster remotely
+*** URLS to access the server both as a user and when running the tests will reference the URL resulting from the port forward (generally this is `http://localhost:8080`)
+
+
+=== Nice-to-Have Requirements
+// Requirements in this section do not have to be met to merge the proposed functionality.
+// Note: Nice-to-have requirements that don't end up being implemented as part of
+// the work covered by this proposal should be moved to the 'Future Work' section.
+
+
+=== Non-Requirements
+// Use this section to explicitly discuss things that readers might think are required
+// but which are not required.
+
+=== Future Work
+// Use this section to discuss requirements that are not addressed by this proposal
+// but which may be addressed in later proposals.
+Going forward, quickstarts being 'enhanced' as per the Overview will need to include instructions on how to run on Kubernetes, if they are runnable on OpenShift (as far as possible)
+
+== Backwards Compatibility
+
+// Does this enhancement affect backwards compatibility with previously released
+// versions of WildFly?
+// Can the identified incompatibility be avoided?
+No incompatibility
+
+=== Default Configuration
+
+No change
+
+=== Importing Existing Configuration
+
+No change
+
+=== Deployments
+
+No change
+
+=== Interoperability
+
+No change
+
+== Security Considerations
+
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+None
+
+== Test Plan
+
+The instructions in the READMEs will be tested (in fact they already are!) by the Kubernetes Ci running on GitHub Actions.
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
+The community documentation in this case, is the READMEs. So the instructions updated as part of this RFE will cover this aspect.
+
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
+Several of the WildFly Quickstarts now include instructions for how to run and test on Kubernetes.
