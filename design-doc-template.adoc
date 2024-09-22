@@ -103,6 +103,10 @@ into this category, please mention the Release Coordinators on the pull
 request so they are aware.
 ////
 
+== Admin Clients
+
+__<Identify the level of compatibility this feature will have with the existing admin clients (JBoss CLI and the Admin Console / HAL). Identify any follow up work that will be required in the clients and link issues created to track this work.>__
+
 == Security Considerations
 
 ////

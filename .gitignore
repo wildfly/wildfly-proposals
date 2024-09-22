@@ -30,6 +30,8 @@ transaction.log
 *.swp
 /.gitk-tmp.*
 atlassian-ide-plugin.xml
+# VSCode Files
+.vscode
 # temp files
 *~
 # maven versions plugin
