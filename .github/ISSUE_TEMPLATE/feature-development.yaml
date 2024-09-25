@@ -20,7 +20,7 @@ body:
     id: issue-contact
     attributes:
       label: Issue Contact
-      description: The person who is the point of contact for moving this feature forward.
+      description: The GitHub id of the person who is the point of contact for moving this feature forward.
     validations:
       required: true
 
