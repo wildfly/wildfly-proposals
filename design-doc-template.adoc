@@ -1,18 +1,34 @@
 ---
+// Add any category for this proposal as a yaml list, e.g.
+// - core
+// - management
+// if missing, add it to _data/wildfly-categories and use its id
 categories:
-# Add any category for this proposal as a yaml list, e.g.
-# - core
-# - management
-# if missing, add it to _data/widfly-categories and use its id
-#
-# Specify the stability level of the feature.
-# Values can be one of: experimental preview community default
-stability-level: 
-#Specify the Feature Development tracker issue for the feature.
-# This must be an issue tracked in https://github.com/orgs/wildfly/projects/7/views/1.
-# To create a Feature Development tracker issue, go to  https://github.com/wildfly/wildfly-proposals/issues/new/choose 
-# and select 'Feature Development'
-issue: 
+// Specify the stability level of the feature.
+// Values can be one of: experimental preview community default
+stability-level:
+// Specify the Feature Development tracker issue for the feature.
+// This must be an issue tracked in https://github.com/orgs/wildfly/projects/7/views/1.
+// To create a Feature Development tracker issue, go to  https://github.com/wildfly/wildfly-proposals/issues/new/choose
+// and select 'Feature Development'
+issue:
+// Provide the github ids of the members of the feature team, organized by role.
+// Provide a single id for the 'assignee' role. Use a yaml list for the 'sme' and
+// 'outside-perspective' roles, even if there is only one person in a role.
+feature-team:
+ developer:
+ sme:
+  -
+ outside-perspective:
+  -
+// If this issue tracks the promotion to a higher stability level of a previously
+// completed feature, provide the URL of the https://github.com/wildfly/wildfly-proposals/issues
+// issue that was used to track the previous feature.
+promotes:
+// This should be blank during initial development of a feature. It may be used
+// after the feature is completed if a subsequent issue is field to track promotion
+// of this feature to a higher stability level
+promoted-by:
 ---
 = <INSERT TITLE HERE>
 :author:            Your Name
@@ -28,11 +44,18 @@ __<The entire document should be one to two pages long. We will write each analy
 
 __<Define the requirement here. Be clear and succinct, you should be able to clearly define the context or problem in two or three paragraphs (if not sentences). Try to define the problem in the overall context and not to get into too much technical detail at this point.>__
 
-== Related Issues
+=== User Stories
+
+__<Provide one or more brief user stories that illustrate the intended users of
+ the feature and the goal they will seek to achieve by using the feature.>__
+
+== Issue Metadata
+
+=== Related Issues
 
 __<List the issues related to this feature>__
 
-== Affected Projects or Components
+=== Affected Projects or Components
 
 __<List the projects or components that are affected by the feature. List them using their Git repositories.>__
 
@@ -40,7 +63,7 @@ __<List the projects or components that are affected by the feature. List them u
 
 === Relevant Installation Types
 
-__<List the installation types thar are relevant for the features and remove any that are not relevant>__.
+__<List the installation types that are relevant for the features and remove any that are not relevant>__.
 
 * Traditional standalone server (unzipped or provisioned by Galleon)
 * Managed domain
@@ -49,7 +72,22 @@ __<List the installation types thar are relevant for the features and remove any
 
 == Requirements
 
-__<Describe the requirements that must be fullfilled by this feature.>__
+__<Describe the requirements that must be fulfilled by this feature.>__
+
+__<For analyses of a promotion of an existing feature to
+'preview' or 'community' stability, only list new requirements; existing
+ requirements from the feature being promoted are assumed to continue unless
+ otherwise noted in the 'Changed requirements' section. Other analyses, including
+ those for promotion to the 'default' stability level, must list all requirements.>__
+
+=== Changed requirements
+
+__<Only relevant for analyses of a promotion of an existing feature to
+ 'preview' or 'community stability. Other analyses should remove this section.>__
+
+__<For any existing requirements from the feature being promoted that are
+ being changed or removed, describe the change.>__
+
 
 === Non-Requirements
 
@@ -73,7 +111,7 @@ __<Does the proposed work affect the ability to run WildFly running an existing 
 
 === Deployments
 
-__<Does this feature change the behavior of deployments in incompatible ways?>__
+__<Does this feature change the behavior of deployments in incompatible ways? If yes please detail what is the deployment issue observed when no change is done, and what is the change needed to solve the deployment issue>__
 
 === Interoperability
 
@@ -91,6 +129,7 @@ __<Identify the level of compatibility this feature will have with the existing 
 
 __<What impact on security does this feature have?>__
 
+[[test_plan]]
 == Test Plan
 
 __<Depending on the selected stability level, the appropriate section below should be completed, including a brief description of how testing is to be performed in accordance with the selected stability level. The non-relevant sections may be removed as needed.>__
@@ -98,7 +137,7 @@ __<Depending on the selected stability level, the appropriate section below shou
 Depending on the stability level, the test plan required may vary. see below:
 ////
 
-** Experimental - no test plan is required. Basic unit / integration tests should be added during development.
+** Experimental - No test plan is required. Basic unit / integration tests should be added during development.
 
 ** Preview - a brief high-level description of the testing approach should be added here, including types of tests added (unit, integration, smoke, component, subsystem, etc.) Note that not all test types are required for a particular feature, so include a description of what is being tested and the approach chosen to perform the testing.
 

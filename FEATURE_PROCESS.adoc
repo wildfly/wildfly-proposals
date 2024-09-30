@@ -1,5 +1,133 @@
 = WildFly Feature Development Process
 
+The WildFly Feature Development Process defines the procedure that must be followed during the _development_ of features that appear in any of the following:
+
+* The standard WildFly distribution.
+* The WildFly quickstarts.
+* The WildFly Docker and OpenShift images.
+* Standard end-user tooling documented for use with standard WildFly.
+* WildFly Preview, if the feature is at `community` stability or higher.
+* Feature packs that WildFly Glow suggests to users. (WildFly Glow may introduce the concept of "incubating" feature packs that users can opt into having Glow suggest. Development of such feature packs need not follow this process, but they *must not* provide features at `community` or higher stability).
+
+This process should be followed for:
+
+* The introduction of a feature at an initial stability level.
+* Further feature development at the same stability level.
+* AND for the promotion to another stability level.
+
+*_This process should be followed once a developer anticipates beginning work on a feature in the next three months._* The intent is to use the process to track active or soon-to-be-active development.
+
+NOTE: Requesting new features or recording ideas for new features are *not* part of this process. Feature requests are handled by simply filing an issue in the relevant project JIRA, typically https://issues.redhat.com/projects/WFLY/summary[WFLY, window=_blank].
+
+== The Process
+
+Feature development proceeds in five stages:
+
+=== Kickoff
+
+When a developer intends to begin work on a feature they should do the following:
+
+* If one doesn't already exist, file an issue in the relevant project JIRA, typically https://issues.redhat.com/projects/WFLY/summary[WFLY, window=_blank], https://issues.redhat.com/projects/WFCORE/summary[WFCORE, window=_blank] or https://issues.redhat.com/projects/HAL/summary[HAL, window=_blank]. These issues are important as they allow users and developers to follow what has happened in a particular code base.
+* [[planning_issue]]File an issue with the https://github.com/orgs/wildfly/projects/7[WildFly Feature Planning project, window=_blank]. To do this create an issue using the https://github.com/wildfly/wildfly-proposals/issues/new?assignees=&labels=feature&projects=wildfly%2F7&template=feature-development.yaml[Feature Development issue template, window=_blank]. This issue is important because:
+** It is what allows effective coordination of overall feature development for a WildFly release from a single, publicly visible, point.
+** It allows users to see an overall roadmap for WildFly features.
+* Draft a minimal feature analysis, based on the current https://github.com/wildfly/wildfly-proposals/blob/main/design-doc-template.adoc[design-doc-template, window=_blank]. This should include the expected stability level, links to the issues above, and enough Overview and User Story information to give people interested in being part of the feature team a sense of what would be involved.
+* Submit a draft analysis PR to the https://github.com/wildfly/wildfly-proposals[`wildfly-proposals` repository, window=_blank].
+* Send an email to the mailto:wildfly-dev@lists.jboss.org[`wildfly-dev@lists.jboss.org`] mail list telling people about the upcoming work and asking for volunteers to participate in the feature team. (If you don't have a `wildfly-dev` list subscription, visit the https://lists.jboss.org/admin/lists/wildfly-dev.lists.jboss.org/[list subscription page, window=_blank] to create one.)
+
+NOTE: All of the above are required, including new issues and analysis documents, even if the work being done is a promotion of an existing feature from one stability level to another.
+
+When the above tasks are complete, change the `Status` field of the WildFly Feature Planning project Issue to `Planning`.
+
+=== Planning
+
+The `Planning` stage of a feature consists of <<feature-team,feature team>> formation and enough discussion of the feature among the team that they can agree on a target feature stability level and target WildFly release in which they expect to *complete* the feature.
+
+NOTE: The target WildFly release is just a planning target and is not a commitment.
+
+Update the feature analysis document with the planned stability level (if it has changed) and the GitHub ids of the feature team members.
+
+If there is an available value that matches the target WildFly release, set the `Development Window` field in the <<planning_issue,WildFly Feature Planning project issue>> to that value.
+
+NOTE: The expectation is there will always be `Development Window` values available for the next two WildFly releases. If teams expect to target a later release than that and there's no value available, that's ok; just don't set it.
+
+NOTE: If the feature team has discussed the target release but are uncertain and don't want to set a `Development Window` value until further work has been done, that's ok; just don't set it.
+
+When the above tasks are complete, change the `Status` field of the WildFly Feature Planning project Issue to `In Progress`.
+
+NOTE: Changes to the `Development Window` field of a WildFly Feature Planning project issue should always reflect the consensus of the feature team.
+
+=== In Progress
+
+The main work on the feature happens in this stage. The feature team works to meet the <<requirements,requirements>> that apply to the feature's target stability.
+
+Feature teams are encouraged to engage in widely visible public discussion of their work, perhaps via a thread in `wildfly-dev@lists.jboss.org` or perhap via a thread in the https://wildfly.zulipchat.com/#narrow/stream/174184-wildfly-developers[Zulip `wildfly-developers` channel, window=_blank].
+
+If, during the course development, the feature team changes their estimate of the target WildFly release when the feature will be completed, they should update the `Development Window` field in the <<planning_issue,WildFly Feature Planning project issue>>.
+
+When the team has confirmed that all development work on the feature is complete and all <<requirements,requirement>> are met, change the `Status` field of the <<planning_issue,WildFly Feature Planning project issue>> to `Ready for Merge`.
+
+=== Ready for Merge
+
+An issue being in the `Ready for Merge` state indicates that the feature team has formally validated that the <<requirements,requirements>> have been met.
+
+An issue being in this state is a signal to the release coordinator for the release and to the other WildFly mergers that the pull requests associated with the feature can be merged.
+
+=== Done
+
+The release coordinator moves the issue to `Done` status when all work associated with the feature has been merged.
+
+== Feature Promotion
+
+If a feature has been included in a WildFly release at a lower stability level and then a developer wishes to promote it to a higher stability level in a later release, the promotion should be done following the same processes as are followed for any other feature. There will of course be differences in the details of the work to be done, but the process steps are the same.
+
+=== Special Requirements for `preview` Stability
+
+When a feature is brought in at `preview` stability, this implies a commitment to our users that we expect to eventually move it to `community` stability or higher. To help ensure we keep that commitment, during development of the `preview` feature, the feature team should discuss with the leaders of the relevant technology area a rough plan for how that promotion will happen. Some information about that plan *must* appear in the `Future Work` section of the feature's analysis document.
+
+A primary goal here is to either identify a particular person who intends to carry the work forward, or at least get a commitment from a team that _someone_ will. A brief description of the expected future work will help clarify what may be required.
+
+There is no requirement to do this for `experimental` features, although developers are strongly discouraged from introducing experimental features they don't intend to personally take to at least `preview` if the experiment is successful. There is also no requirement to do this for `community` features, as `community` is a valid final stability level for a feature.
+
+[[feature-team]]
+== The Feature Team
+
+A feature team consists of people in the following roles:
+
+=== Developer
+
+There is a single person in this role: the primary developer of the feature. Other members of the team may do development work, but the developer plays a leading role.
+
+=== Subject Matter Experts
+
+Multiple people can participate in this role. SMEs are knowledgeable in a technology area impacted by the feature.
+
+All feature teams must have at least one person in the Subject Matter Expert role.
+
+SMEs are expected to review all aspects of the feature analysis, implementation, test and documentation.
+
+=== Outside Perspective
+
+Multiple people can participate in this role. The Outside Perspective role is meant to serve three main purposes:
+
+* Attempt to bring a 'user' perspective to the feature team. The end user of the feature is unlikely to have anything close to the expertise of the Developer or a Subject Matter Expert, so things that seem understandable or intuitive to people in those roles may not be so for an end user.
+* Attempt to avoid 'group think' in the development team. The feature may be being developed in accordance with existing plans by a team that does work in the feature's technical area, with the Developer and a Subject Matter Expert part of that team. There's nothing wrong with this, but it's useful to have someone involved who was not part of creating those plans.
+* Perhaps bring a different kind of expertise to the team; for example expertise is usability design.
+
+Ideally a person in the Outside Perspective role would not be deeply knowledgeable in the feature's general technical area, although at times only people with some level of knowledge will be available. A person in the Outside Perspective role *must not* be someone who is part of a team that works in the feature's technical area.
+
+A person in the Outside Perspective role is not expected to do deep technical review of the feature implementation or tests. (Of course, they are welcome to do this if they choose.) They should focus on:
+
+* The Overview, User Stories and Requirements sections of the feature analysis.
+* The feature documentation, including any ancillary material like quickstarts or user guides.
+* Any end-user accessible API associated with the feature.
+* For features at `community` stability or above, a person in the Outside Perspective role should perform manual verification of the feature (i.e. try it out).
+
+All feature teams for features at `preview` stability or higher must have at least one person in the Outside Perspective role. Features at `experimental` stability are not required to have anyone in the Outside Perspective role. However, once experimental features are in a release, if not before, authors of experimental features are expected to directly engage with the community to solicit feedback on their feature.
+
+[[requirements]]
+== The Requirements
+
 WildFly features can have one of four different maturity levels, “Experimental”, “Preview”, “Community” and an unnamed default level.
 
 Promotion from one level to another, or initial feature incorporation at a given level, requires meeting various standards in the basic areas of requirements analysis, implementation, testing and documentation. The following table outlines the various standards for each of the maturity levels.
@@ -14,8 +142,9 @@ Promotion from one level to another, or initial feature incorporation at a given
 |Experimental plus:
 
 3rd party with a different perspective, able to question the feature requirements and API
-| same as Preview
-| same as Community
+| Same as Preview
+| Same as Community
+Involvement in SME or Outside Perspective roles by people with Quality Engineering and Technical Writing expertise
 //-------
 
 
@@ -24,10 +153,9 @@ Promotion from one level to another, or initial feature incorporation at a given
 | Issue tracker with an understandable description with an orientation toward what/why and not just how
 |Approved WildFly Proposals document
 
-Nice-to-have requirements allowed.
-|Preview plus:
+Future Work section describing a plan for promotion to Community.
 
-Nice-to-have requirements have been converted to non-requirements or are moved to a future work section.
+|Approved WildFly Proposals document
 |Same as Community
 //-------
 
@@ -41,7 +169,7 @@ Management API has experimental metadata
 
 Feature not used at runtime if not in experimental level
 
-New libraries not provisioned if not in appropriate stability level ???
+New libraries not provisioned if not in appropriate stability level
 
 Third party libraries in Final version??
 |All hard requirements in analysis covered
@@ -50,7 +178,7 @@ Management API has preview metadata
 
 Feature not used at runtime if not in preview level
 
-New libraries not provisioned if not in appropriate stability level ???
+New libraries not provisioned if not in appropriate stability level
 |Stable API and behavior.
 
 All hard requirements in analysis covered
@@ -59,7 +187,7 @@ Management API has community metadata
 
 Feature not used at runtime if not in community level
 
-New libraries not provisioned if not in appropriate stability level ???
+New libraries not provisioned if not in appropriate stability level
 |Stable API and behavior
 
 All hard requirements in analysis covered
@@ -116,9 +244,9 @@ Identified maintainer
 
 //-------
 | *Test Plan*
-|Not required
-|Required -- TODO what it means
-|Same as Preview
+|Not required.
+|A brief high-level description of the testing approach should be provided, including types of tests added (unit, integration, smoke, component, subsystem, etc.)
+|Preview plus descrption of the following additional testing as relevant: Manual tests, Miscellaneous checks, Integration tests, Compatibility tests. See https://docs.wildfly.org/wildfly-proposals/design-doc-template.html#test_plan[the design-doc-template, window=_blank] for details.
 |Community plus:
 
 Formal test plan approved by a professional Quality Engineer with subject matter expertise
@@ -129,11 +257,11 @@ Formal test plan approved by a professional Quality Engineer with subject matter
 | *Test Development*
 |Standard subsystem tests.
 
-Smoke tests of main functional areas.
+Basic unit / integration tests of the main functional areas.
 |Standard subsystem tests.
 
 Test coverage as per test plan.
-| Same as Experimental
+| Same as Preview
 | Community plus:
 
 Domain transformation tests
@@ -147,7 +275,7 @@ Domain transformation tests
 | Same as Preview
 | Community plus:
 
-Verification by a professional Quality Engineer with subject matter expertise
+Verification by a professional Quality Engineer with subject-matter expertise
 //-------
 
 
@@ -163,3 +291,4 @@ Documentation content as per analysis.
 | Same as Community
 //-------
 |===
+

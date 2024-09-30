@@ -12,17 +12,18 @@ layout: base
     </h1>
   <div class="grid__item width-10-12 doc-content">
 
-    {% unless pages.categories == empty %}
+    {% unless page.categories == nil or page.categories == empty %}
     <div style="padding-bottom: 2em;">In&nbsp;
     {% for cat in page.categories %}
     <a href="{{ site.baseurl}}/#{{ cat }}">{{ cat }}</a>
     {% endfor %}
     </div>
     {% endunless %}
+    {% unless page.issue == nil or page.issue == empty %}
     <div style="padding-bottom: 2em;">Tracked by
       <a href="{{ page.issue }}">{{ page.issue }}</a>
     </div>
-
+    {% endunless %}
     {{ content }}
   </div>
 </div>
