@@ -8,9 +8,10 @@ categories:
 # Specify the stability level of the feature.
 # Values can be one of: experimental preview community default
 stability-level: 
-# Specify the main issue of the feature
-# Most of the time, it will be a issue in https://issues.redhat.com/browse/WFLY
-# or https://issues.redhat.com/browse/WFCORE 
+#Specify the Feature Development tracker issue for the feature.
+# This must be an issue tracked in https://github.com/orgs/wildfly/projects/7/views/1.
+# To create a Feature Development tracker issue, go to  https://github.com/wildfly/wildfly-proposals/issues/new/choose 
+# and select 'Feature Development'
 issue: 
 ---
 = <INSERT TITLE HERE>
@@ -27,6 +28,9 @@ __<The entire document should be one to two pages long. We will write each analy
 
 __<Define the requirement here. Be clear and succinct, you should be able to clearly define the context or problem in two or three paragraphs (if not sentences). Try to define the problem in the overall context and not to get into too much technical detail at this point.>__
 
+== Related Issues
+
+__<List the issues related to this feature>__
 
 == Affected Projects or Components
 
