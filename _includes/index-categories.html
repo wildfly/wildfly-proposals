@@ -29,7 +29,7 @@
     <ul>
       {% if page.categories contains cat.id %}
       <li><a href="{{ site.baseurl }}{{ page.url }}">
-        {% if page.stability-level != "default" or page.stability-level != "community" %}
+        {% if page.stability-level != "default" %}
         [{{ page.stability-level }}]&nbsp;
         {% endif %}
 
