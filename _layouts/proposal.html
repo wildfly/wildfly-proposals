@@ -4,7 +4,12 @@ layout: base
 
 <div class="post-page grid-wrapper">
   <div class="grid__item width-10-12">
-    <h1 class="title">{{page.title}}</h1>
+    <h1 class="title">
+      {% if page.stability-level != "default"  %}
+      [{{ page.stability-level }}]&nbsp;
+      {% endif %}
+      {{page.title}}
+    </h1>
   <div class="grid__item width-10-12 doc-content">
 
     {% unless pages.categories == empty %}
@@ -14,6 +19,9 @@ layout: base
     {% endfor %}
     </div>
     {% endunless %}
+    <div style="padding-bottom: 2em;">Tracked by
+      <a href="{{ page.issue }}">{{ page.issue }}</a>
+    </div>
 
     {{ content }}
   </div>

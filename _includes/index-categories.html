@@ -28,7 +28,13 @@
     {% for page in site.pages %}
     <ul>
       {% if page.categories contains cat.id %}
-      <li><a href="{{ site.baseurl }}{{ page.url }}">{{ page.title }}</a></li>
+      <li><a href="{{ site.baseurl }}{{ page.url }}">
+        {% if page.stability-level != "default" %}
+        [{{ page.stability-level }}]&nbsp;
+        {% endif %}
+
+        {{ page.title }}
+      </a></li>
       {% endif %}
     </ul>
     {% endfor %}
