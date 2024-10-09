@@ -1,8 +1,10 @@
 ---
 categories:
-  - elytron
+ - elytron
+ - security
+stability-level: preview
 ---
-== [Preview] Adding the ability to configure additional scope value for an authentication request
+= Adding the ability to configure additional scope value for an authentication request
 :author:            Prarthona Paul
 :email:             prpaul@redhat.com
 :toc:               left

@@ -2,8 +2,9 @@
 categories:
   - wf-galleon
   - maven
+stability-level: community
 ---
-= [Community] Publish WildFly channel manifest
+= Publish WildFly channel manifest
 :author:            Bartosz Spyrko-Smietanko
 :email:             bspyrkos@redhat.com
 :toc:               left
@@ -131,7 +132,7 @@ Following three channels will be created as part of this proposal:
 
 |===
 
-==== Manifest metadata Requirements
+=== Manifest metadata Requirements
 
 The manifest file defines a few metadata fields:
 * name - human readable name of the manifest. Should contain the version of the server.

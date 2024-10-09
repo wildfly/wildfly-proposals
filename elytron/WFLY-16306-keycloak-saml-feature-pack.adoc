@@ -1,3 +1,7 @@
+---
+categories:
+ - security
+---
 = WFLY-16306: Keycloak Galleon Feature Pack
 :author:            Farah Juma
 :email:             fjuma@redhat.com

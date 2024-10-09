@@ -29,8 +29,8 @@
     <ul>
       {% if page.categories contains cat.id %}
       <li><a href="{{ site.baseurl }}{{ page.url }}">
-        {% if page.stability-level != "default" %}
-        [{{ page.stability-level }}]&nbsp;
+        {% if page.stability-level != nil and page.stability-level != "default" %}
+        [{{ page.stability-level | upcase }}]&nbsp;
         {% endif %}
 
         {{ page.title }}

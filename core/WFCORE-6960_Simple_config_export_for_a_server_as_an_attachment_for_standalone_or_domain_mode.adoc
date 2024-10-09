@@ -2,8 +2,9 @@
 categories:
  - core
  - management
+stability-level: default
 ---
-= [Community] Simple config export for a server as an attachment for standalone or domain mode 
+= Simple config export for a server as an attachment for standalone or domain mode
 :author:            Emmanuel Hugonnet
 :email:             ehugonne@redhat.com
 :toc:               left

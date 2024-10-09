@@ -5,8 +5,9 @@ categories:
 
 # Add any category for this proposal
 # if missing, add it to _data/widfly-categories and use its id
+stability-level: preview
 ---
-= [Preview] Scan for usage of API elements annotated with annotations indicating unstable API
+= Scan for usage of API elements annotated with annotations indicating unstable API
 :author:            Kabir Khan
 :email:             kkhan@redhat.com
 :toc:               left

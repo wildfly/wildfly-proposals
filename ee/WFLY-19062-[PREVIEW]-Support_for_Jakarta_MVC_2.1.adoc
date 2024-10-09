@@ -1,8 +1,9 @@
 ---
 categories:
   - ee
+stability-level: preview
 ---
-=  [Preview] Standard WildFly support for Jakarta MVC 2.1
+=  Standard WildFly support for Jakarta MVC 2.1
 :author:            Brian Stansberry
 :email:             brian.stansberry@redhat.com
 :toc:               left
