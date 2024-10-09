@@ -1,0 +1,201 @@
+---
+categories:
+- microprofile
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/623
+feature-team:
+ developer: kabir
+ sme:
+  -
+ outside-perspective:
+  -
+---
+= [default] MicroProfile Platform 7.0
+:author:            Kabir Khan
+:email:             kkhan@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+This RFE is about updating WildFLy to support MicroProfile Platform 7.0. We currently support MicroProfile Platform 6.1.
+////
+
+////
+
+
+The major.minor versions of the individual specs are shown below. Micro updates are strictly for TCK fixes, and we should use the latest for the TCKs as these versions become available.
+
+Aside from the below information, both the 6.1 and 7.0 MicroProfile Platform version include the Jakarta EE 10 Core Profile.
+
+[cols="1,1,1,1,1"]
+|===
+|Spec | MP 6.1 Spec Version | Current Spec WildFly Version | MP 7.0 Spec Version | Updated Functionality (y/n)
+
+|Config
+|3.1
+|3.1
+|3.1
+|n
+
+|Fault Tolerance
+|4.0
+|4.0
+|4.1
+|y https://issues.redhat.com/browse/WFLY-19592[WFLY-19592]
+
+|Health
+|4.0
+|4.0
+|4.0
+|n
+
+|JWT
+|2.1
+|2.1
+|2.1
+|n
+
+|OpenAPI
+|3.1
+|3.1
+|4.0
+|y https://issues.redhat.com/browse/WFLY-19591[WFLY-19591]
+
+|Rest Client
+|3.0
+|3.0
+|4.0
+|y https://issues.redhat.com/browse/WFLY-19589[WFLY-19589]
+
+|Telemetry +
+|1.1
+|1.1
+|2.0
+|y https://issues.redhat.com/browse/WFLY-19589[WFLY-19589]
+
+|===
+
+There is no additional work in this RFE beyond what is done by the individual spec update RFEs, i.e. it is just an umbrella issue.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-19588[WFLY-19588]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-19592[WFLY-19592 - MicroProfile Fault Tolerance 4.1]
+* https://issues.redhat.com/browse/WFLY-19591[WFLY-19591 - MicroProfile OpenAPI 4.0]
+* https://issues.redhat.com/browse/WFLY-19589[WFLY-19589 - MicroProfile REST Client 4.0]
+* https://issues.redhat.com/browse/WFLY-19589[WFLY-19589 - MicroProfile Telemetry 2.0]
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [ ] Preview
+
+* [ ] Community
+
+* [x] default
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:fburzigo@redhat.com[Fabio Burzigotti]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+WildFly will be updated to pull in the corresponding versions of the Eclipse Microprofile specification jars, as well as the SmallRye jars and dependencies needed to implement each version.
+
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+* All components will be upgraded to the latest micro versions of the Eclipse Microprofile specification jars, as well as the SmallRye jars and dependencies needed to implement each version, as indicated in the table in the link:#overview[Overview].
+** Upgrading the components will provide the latest TCKs
+
+=== Nice-to-Have Requirements
+// Requirements in this section do not have to be met to merge the proposed functionality.
+// Note: Nice-to-have requirements that don't end up being implemented as part of
+// the work covered by this proposal should be moved to the 'Future Work' section.
+None
+
+=== Non-Requirements
+// Use this section to explicitly discuss things that readers might think are required
+// but which are not required.
+None
+
+=== Future Work
+// Use this section to discuss requirements that are not addressed by this proposal
+// but which may be addressed in later proposals.
+
+== Backwards Compatibility
+// Does this enhancement affect backwards compatibility with previously released
+// versions of WildFly?
+// Can the identified incompatibility be avoided?
+Where one of the specifications being upgraded is not backwards compatible, it should be pointed out in the analysis of the individual specification upgrade.
+
+=== Default Configuration
+Where one of the specifications being upgraded changes the default configuration, it should be pointed out in the analysis of the individual specification upgrade.
+
+=== Importing Existing Configuration
+
+Where one of the specifications being upgraded changes how it works with existing configuration, it should be pointed out in the analysis of the individual specification upgrade.
+
+=== Deployments
+
+Deployments should be able to use the full MicroProfile Platform 7 feature set.
+
+
+== Admin Clients
+
+Where one of the specifications being upgraded changes its configuration so that extra work is needed in the CLI or HAL, it should be pointed out in the analysis of the individual specification upgrade.
+
+
+== Security Considerations
+
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+I don't believe there are any security implications to consider.
+
+== Test Plan
+* TCKs will be updated to the latest corresponding version. Having checked the upgrades to the individual specifications, the respective TCKs tests cover the added/changed functionality, apart from the exceptions listed below.
+* The TCKs will run at default stabiilty level
+* Where one of the specifications being upgraded needs additional testing beyond what is done by the TCK, it should be pointed out in the analysis of the individual specification upgrade.
+
+== Community Documentation
+* Community documentation for the subsystems in question will be updated to reflect the new versions, and any potential differences in behaviour.
+
+== Release Note Content
+MicroProfile specifications have been updated to the versions that are part of MicroProfile Platform 7.0. (See the table in the link:#overview[Overview] if exact versions are needed)
+
+MicroProfile OpenTracing has been removed from the MicroProfile 6 platform, in favour of MicroProfile Telemetry.
