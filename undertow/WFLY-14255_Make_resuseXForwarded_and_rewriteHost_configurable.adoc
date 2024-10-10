@@ -1,4 +1,9 @@
-= [Preview]Make ReuseXForwarded and RewriteHost configurable
+---
+categories:
+ - undertow
+stability-level: preview
+---
+= Make ReuseXForwarded and RewriteHost configurable
 :author:            Bartosz Baranowski
 :email:             bbaranow@redhat.com
 :toc:               left

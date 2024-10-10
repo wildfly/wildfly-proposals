@@ -4,8 +4,9 @@ categories:
   - management
 # Add any category for this proposal
 # if missing, add it to _data/widfly-categories and use its id
+stability-level: community
 ---
-= [Community] Ability to reload a server to a different stability level
+= Ability to reload a server to a different stability level
 :author:            Kabir Khan
 :email:             kkhan@redhat.com
 :toc:               left

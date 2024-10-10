@@ -2,8 +2,9 @@
 categories:
  - core
  - management
+stability-level: community
 ---
-= [Community] Aliases for standard configuration files
+= Aliases for standard configuration files
 :author:            Michal Petrov
 :email:             mpetrov@redhat.com
 :toc:               left

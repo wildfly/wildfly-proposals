@@ -1,4 +1,9 @@
-= [Preview]modify ajp-listener to allow specifying pattern for ajp request attributes
+---
+categories:
+ - undertow
+stability-level: preview
+---
+= Modify ajp-listener to allow specifying pattern for ajp request attributes
 :author:            Bartosz Baranowski
 :email:             bbaranow@redhat.com
 :toc:               left

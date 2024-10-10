@@ -2,8 +2,9 @@
 categories:
  - elytron
  - security
+stability-level: community
 ---
-= [Community] SSLContext to support delegation to alternate instances based on peer information
+= SSLContext to support delegation to alternate instances based on peer information
 :author:            Diana Krepinska
 :email:             dvilkola@redhat.com
 :toc:               left

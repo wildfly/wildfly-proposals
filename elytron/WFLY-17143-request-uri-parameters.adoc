@@ -1,4 +1,10 @@
-= [Preview] Add the ability to specify that the OIDC Authentication Request should include request and request_uri parameters
+---
+categories:
+ - elytron
+ - security
+stability-level: preview
+---
+= Add the ability to specify that the OIDC Authentication Request should include request and request_uri parameters
 :author:            Prarthona Paul
 :email:             prpaul@redhat.com
 :toc:               left
