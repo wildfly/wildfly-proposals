@@ -1,0 +1,64 @@
+= Add Json Merge Patch support
+:author:            Jim Ma
+:email:             ema@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          json merge patch,resteasy,jaxrs
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+This feature is to support JSON Merge Patch spec as described in: https://tools.ietf.org/html/rfc7386
+With Json merge patch support, the client can send a json http request with Content-Type "application/merge-patch+json",
+and the json merge request will be directly apply to the target resource with the merge function as spec described.
+
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/EAP7-1494 [EAP7-1494]
+* {issue-base-url}/WFLY-13412 [WFLY-13412]
+
+=== Related Issues
+
+* {issue-base-url}/RESTEASY-2567 [RESTEASY-2567]
+
+=== Dev Contacts
+
+* mailto:ema@redhat.com[Jim Ma]
+
+=== QE Contacts
+
+* mailto:jkasik@redhat.com[Jan Kasik]
+
+=== Testing By
+
+[ ] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+
+* RESTEasy, Wildfly
+
+=== Other Interested Projects
+https://tools.ietf.org/html/rfc7386
+
+== Requirement
+
+=== Hard Requirements
+
+* RESTEasy includes this feature support and is installed in WFLY/EAP
+  Since this feature was released in Resteasy 4.1.0.Final, it is available in both WildFly upstream and EAP 8 through Resteasy 6.2.x.
+* The PatchMethodFilter is enabled (not explicitly set resteasy.patchfilter.disabled to true)
+
+== Test Plan
+
+The feature is tested in RESTEasy codebase. It can be checked with running the latest RESTEasy release
+testsuite against target WildFly container.
+
+== Community Documentation
+
+The RESTEasy user guide has the section "JSON Patch and JSON Merge Patch" to explain the usage.
