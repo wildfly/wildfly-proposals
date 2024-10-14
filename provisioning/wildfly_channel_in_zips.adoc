@@ -2,6 +2,7 @@
 categories:
 - provisioning
 stability-level: experimental
+issue: https://issues.redhat.com/browse/WFLY-19221
 ---
 = [Experimental] Update WildFly download distributions using channels
 :author:            Jeff Mesnil
