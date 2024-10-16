@@ -72,7 +72,7 @@ The purpose of this feature is to enrich the management model with a new operati
 
 == Requirements
 
-Enrich the management model with a new operation *read-config-as-xml-file* equivalent to the existing *read-config-as-xml* that would return a stream to be either displayed or saved to a file on the machine where the JBoss CLI is running on.
+Enrich the management model with a new operation *read-config-as-xml-file* equivalent to the existing *read-config-as-xml* that would return a stream to be either displayed or saved to a file on the machine where the JBoss CLI is running.
 This operation should replace the existing '*read-config-as-xml*' operation without the escaping issues in the long term.
 It should work for a standalone server as for a domain server.
 
