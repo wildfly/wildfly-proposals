@@ -1,0 +1,144 @@
+---
+categories:
+- webservices
+stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/631
+feature-team:
+ developer: ema
+ sme:
+  - ema
+ outside-perspective:
+  -
+promotes:
+promoted-by:
+---
+= Add support for webservice throttling feature
+:author:            Jim Ma
+:email:             ema@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+CXF provides throttling feature to limit the request traffic to the websevice endpoint.This new feature to integrate and enable this thorttling feature in WFLY
+webservice subystem.
+
+=== User Stories
+The throttling feature allows server to limit the number of request when the server is busy or there are a lot of faults by some requests. 
+This feature can protect server from being overwhelmed and server resource is used out. 
+
+== Issue Metadata
+
+- https://issues.redhat.com/browse/WFLY-19469[WFLY-19469]
+
+=== Related Issues
+
+- https://issues.redhat.com/browse/EAP7-2223[EAP7-2223]
+
+=== Affected Projects or Components
+
+- https://github.com/jbossws/jbossws-cxf[jbossws-cxf]
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+ 
+== Requirements
+* WildFly webservice subsystem is installed/provisioned and enabled
+* This feature is enabled and configured with jaxws-endpoint-config.xml packaged in user's deployment
+[source,xml]
+ <?xml version="1.0" encoding="UTF-8"?>
+<jaxws-config xmlns="urn:jboss:jbossws-jaxws-config:4.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:javaee="http://java.sun.com/xml/ns/javaee"
+  xsi:schemaLocation="urn:jboss:jbossws-jaxws-config:4.0 schema/jbossws-jaxws-config_4_0.xsd">
+  <endpoint-config>
+    <config-name>org.jboss.test.ws.jaxws.cxf.throttling.HelloImpl</config-name>
+    <property>
+      <property-name>cxf.features</property-name>
+      <property-value>##throttlingFeature</property-value>
+    </property>
+    <property>
+      <property-name>##throttlingFeature</property-name>
+      <property-value>org.jboss.wsf.stack.cxf.features.throttling.JBossWSThrottlingFeature</property-value>
+    </property>
+    <property>
+      <property-name>##throttlingFeature.throttlingManager</property-name>
+      <property-value>##throttlingManager</property-value>
+    </property>
+    <property>
+      <property-name>##throttlingManager</property-name>
+      <property-value>org.jboss.wsf.stack.cxf.features.throttling.RateLimitThorttlingManager</property-value>
+    </property>
+    <property>
+      <property-name>##throttlingManager.period</property-name>
+      <property-value>30</property-value>
+    </property>
+    <property>
+      <property-name>##throttlingManager.permitsPerPeriod</property-name>
+      <property-value>5</property-value>
+    </property>
+  </endpoint-config>
+</jaxws-config>
+
+
+=== Non-Requirements
+
+This is feature is added in current the jbossws-cxf-server artifact, there is no need to add or enable other module or module dependency 
+for this feature.
+
+=== Future Work
+
+
+
+== Backwards Compatibility
+
+This is new feature added. There is no backward compatible issue. 
+
+=== Default Configuration
+
+No WFLY configuration change is needed. 
+
+=== Importing Existing Configuration
+
+There is no migration issue for this new added feature.
+
+=== Deployments
+
+No behavior change of deployments in incompatible ways.
+
+=== Interoperability
+
+No interoperability issue.
+
+
+== Admin Clients
+
+There is no admin client needed to manipulate this feature or behavior of this feature. 
+
+== Security Considerations
+
+This feature won't impact security.
+
+== Test Plan
+** Community
+
+There are already tests in jbossws community project and these tests and resources can be reused or changed
+for other purpose:
+ https://github.com/jbossws/jbossws-cxf/tree/main/modules/testsuite/cxf-tests/src/test/java/org/jboss/test/ws/jaxws/cxf/throttling[Tests]，
+ https://github.com/jbossws/jbossws-cxf/tree/main/modules/testsuite/cxf-tests/src/test/resources/jaxws/cxf/throttling/WEB-INF[ThrottlingConfiguration]
+
+*** Manual tests: The above test can be checked manually by running jbossws cxf test with 'mvn clean install -Dtest=ThrottlingTestCase -Dwildfly.version=${WFLY_VERSION}'
+*** Miscellaneous checks:To check server performance, we can compare this test with throttling feature and create another test without these jaxws-endpoint-config.xml to enable throttling feature
+                         With same threads and same amount of requests to compare the sever response time.
+*** Integration tests - This test is an integration test and can be still kept in jbossws project to check as jbossws CI run this test against WFLY upstream SNAPSHOT version every day.
+
+== Community Documentation
+This feature documentation in jbossws project : https://jbossws.github.io/documentation/7.2.0.Final/JBossWS-CXF/#throtlling
+This can be imported or rephrased in WFLY documentation.
+
+== Release Note Content
+Webservice Thorttling feature - This throttling feature allows server to limit the number of request when the server is busy or there are a lot of faults by some malicious requests.
