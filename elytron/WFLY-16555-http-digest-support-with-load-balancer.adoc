@@ -1,0 +1,132 @@
+= WFLY-16555 Support HTTP Digest when fronted by load balancer
+:author:            Diana Krepinska
+:email:             dvilkola@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+When the auth-method DIGEST is specified in the login-config section of the web.xml of an application, requests to this application do not get a session cookie in return until there is an authenticated session. In a load balanced environment, this becomes problematic as the response to the DIGEST challenge risks being sent to another node than the one that sent the challenge, which leads to authentication failure.
+
+This RFE will add new parameter to elytron subsystem to enable session based nonce manager to avoid this problem. The nonce manager will then save its state to the underlying HTTP session to enable shared access to generated nonces.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-16555[WFLY-16555]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/JBEAP-22980[JBEAP-22980]
+* https://issues.redhat.com/browse/ELY-2359[ELY-2359]
+
+=== Dev Contacts
+
+* mailto:dvilkola@redhat.com[Diana Krepinska]
+
+=== QE Contacts
+
+TODO
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly[WildFly]
+* https://github.com/wildfly-security/wildfly-elytron[WildFly Elytron]
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+Provide a new configuration parameter that allows HTTP Digest authentication to work as expected in a load balanced environment.
+
+=== Hard Requirements
+
+HTTP Digest authentication works as expected when fronted by load balancer.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Backwards Compatibility
+
+// Does this enhancement affect backwards compatibility with previously released
+// versions of WildFly?
+// Can the identified incompatibility be avoided?
+This RFE introduces new parameter that can configure the Nonce manager to persist its state into HTTP session.
+The default value of this new parameter will be false so there are no backwards compatibility issues.
+
+
+=== Default Configuration
+
+By default the HTTP Digest authentication will not use session based nonce manager.
+
+=== Importing Existing Configuration
+
+=== Deployments
+
+=== Implementation Plan
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can
+not be delivered all in one go to suggest the strategy. If your feature falls
+into this category, please mention the Release Coordinators on the pull
+request so they are aware.
+////
+
+New configuration option `org.wildfly.security.http.session-digest`  will be possible to configure in properties of `configurable-http-server-mechanism-factory` to enable nonce manager's state to be saved into the HTTP session in order for it to be shared between the nodes. If this value is true, the nonce manager will save its state into the HTTP session that is being handled by Infinispan. All nodes will obtain existing nonces and highest nonce counts from the HTTP session like shown in the sequence diagram below. Since all nodes will have access to the generated nonces/nonce counts, the HTTP digest authentication will be working as expected.
+
+New class PersistentNonceManager will be added that extends NonceManager. The methods that both nonce managers share will be moved to NonceManagerUtils. When PersistentNonceManager is used, it has to have attributes that will be updated based on information from the request's session. A method `refreshInfoFromSessionNonceManager` will be added for this purpose and it will be invoked at the beginning of each `evaluateRequest` method in DigestAuthenticationMechanism. New state will be saved to request's session after each request was finished processing, so at the end of `prepareResponse` method.
+
+image::images/SequenceDiagramSessionBasedDigestNonceManager.png[Sequence Diagram]
+
+== Security Considerations
+
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+This RFE will provide new option for HTTP DIGEST authentication to work with a load balancer.
+
+== Test Plan
+
+Functional and integration tests will be added to wildfly-elytron and wildfly projects.
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
+PR with community documentation will be submitted to wildfly repository.
+
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature.
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list
+of features containing a few words on each, use "Bullet point: <The few words>"
+////
+You can now configure HTTP Digest mechanism to save its state in HTTP session so it works in a cluster when fronted by load balancer.
