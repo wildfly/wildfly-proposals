@@ -1,0 +1,91 @@
+= @Stateful Jakarta Enterprise Bean instance externalization to remote Infinispan cluster
+:author:            Paul Ferraro
+:email:             paul.ferraro@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently, WildFly only supports the use of embedded Infinispan for persisting/replicating @Stateful Jakarta Enterprise Bean instances.
+This implementation cannot fully support cross-site replication, since the inability to invalidate entries across sites means that site failback can result in loss of state.
+This feature will add the ability to persist @Stateful Jakarta Enterprise Bean instances in a remote Infinispan cluster via the HotRod protocol, where cross-site replication is fully supported.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-16345[WFLY-16345]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-14953[WFLY-14953]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [X] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* Add hotrod-bean-management resource to distributable-ejb subsystem
+** New resource will contain a required attribute referencing a remote-cache-container from the Infinispan subsystem
+* Add hotrod-based bean management provider implementation
+** Implementation will require no strong nor weak affinity, unless near-caching is enabled, where beans should have weak affinity to the local node.
+** Passivation/activation semantics will be the same as the embedded bean management implementation when using a persistent cache configuration
+
+=== Nice-to-Have Requirements
+
+* Support near-caching of SFSB instances, using a configured max-active-beans
+
+=== Non-Requirements
+
+* No support for ProtoStream marshalling of SFSB instances at this time
+
+== Backwards Compatibility
+
+N/A
+
+== Security Considerations
+
+Security of the hotrod connection is already managed by the Infinispan subsystem.
+
+== Test Plan
+
+* Add remote Infinispan variants of SFSB failover and timeout tests.
+
+== Community Documentation
+
+* Update distributable-ejb documentation to include configuring a hotrod-bean-management provider.
+
+== Release Note Content
+
+* WildFly now supports externalization of @Stateful Jakarta Enterprise Bean instances to a remote Infinispan cluster via the HotRod protocol.
