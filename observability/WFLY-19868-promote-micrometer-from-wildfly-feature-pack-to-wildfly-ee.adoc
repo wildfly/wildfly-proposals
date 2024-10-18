@@ -1,0 +1,110 @@
+---
+categories:
+- observability
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/642
+feature-team:
+ developer: jasondlee
+ sme:
+  -
+ outside-perspective:
+  -
+promotes:
+promoted-by:
+---
+= [Default] Promote Micrometer from the wildfly Feature Pack to wildfly-ee
+:author:            Jason Lee
+:email:             jasondlee@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Micrometer is a feature that is offered in WildFly for some time. After discussion, we have deemed it stable and important enough to offer longer term support for it, so it will be promoted to the `wildfly-ee` feature pack. See https://docs.wildfly.org/34/Admin_Guide.html#Relationship_to_Feature_Packs[here] for a discussion of the relationship between the various WildFly feature packs.
+
+=== User Stories
+
+Administrators and users would like to use Micrometer for capturing and reporting system and application metrics and would like long-term support.
+
+== Issue Metadata
+
+Issue: https://issues.redhat.com/browse/WFLY-19868
+
+=== Related Issues
+
+N/A
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+* The feature will be removed from the `wildfly` feature pack.
+* The feature will be added to the `wildfly-ee` feature pack.
+* Tests will be moved from `testsuite/integration/microprofile` to `testsuite/integration/basic`
+
+=== Changed requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+=== Future Work
+
+N/A
+
+== Backwards Compatibility
+
+There should be no backward compatibility issues, as the `wildfly` feature pack builds off the `wildfly-ee` feature pack.
+
+=== Default Configuration
+
+Default configurations will remain unchanged.
+
+=== Importing Existing Configuration
+
+Existing configurations will work unchanged.
+
+=== Deployments
+
+Deployments will be unaffected by and unaware of this change.
+
+=== Interoperability
+
+There are no interoperability issues expected.
+
+== Implementation Plan
+
+No special implementation plan is required, as this will be delivered in a single release.
+
+== Admin Clients
+
+N/A
+
+== Security Considerations
+
+No new security concerns will be introducted.
+
+[[test_plan]]
+== Test Plan
+
+This feature is already extensively tested. The only changes required here will be moving those existing tests to filesystem locations more appropriate for the feature pack (e.g., `testsuite/integration/microprofile` to `testsuite/integration/basic`).
+
+== Community Documentation
+
+The Admin Guide must be updated to reflect the subsystem's change in status (specifically section 2.2.1, `Relationship to feature-packs`).
+
+== Release Note Content
+
+Micrometer has been promoted to the `wildfly-ee` feature pack.
