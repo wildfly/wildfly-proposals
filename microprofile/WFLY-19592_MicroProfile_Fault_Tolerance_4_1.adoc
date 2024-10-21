@@ -1,0 +1,133 @@
+---
+categories:
+- microprofile
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/626
+feature-team:
+ developer: rhusar
+ sme:
+  - rhusar
+ outside-perspective:
+  - fabiobrz
+promotes:
+promoted-by:
+---
+= WFLY-19592 [MP Platform 7] MicroProfile Fault Tolerance 4.1
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The goal is to integrate MicroProfile (MP) Fault Tolerance (FT) 4.1 specification from the MP Platform 7.0 to WildFly at default stability level.
+To certify functionality, the MP FT TCK is run as part of the WildFly testsuite.
+
+=== User Stories
+
+User wants to deploy an application using MicroProfile Fault Tolerance 4.1 from MicroProfile Platform 7.0.
+Users electing to employ MicroProfile Telemetry metrics will have MicroProfile Fault Tolerance metrics collected as well.
+
+== Issue Metadata
+
+* https://issues.redhat.com/browse/WFLY-19592[WFLY-19592 MicroProfile Fault Tolerance 4.1]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-19588[WFLY-19588 Implement MicroProfile Platform 7] – MP Platform parent issue
+* https://issues.redhat.com/browse/WFLY-19590[WFLY-19590 MicroProfile Telemetry 2.0] – dependency of this issue for full Telemetry metrics integration
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly[WildFly]
+
+=== Other Interested Projects
+
+* https://github.com/eclipse/microprofile-fault-tolerance[Eclipse MicroProfile Fault Tolerance] – MP Specification and TCK sources
+* https://github.com/smallrye/smallrye-fault-tolerance[SmallRye Fault Tolerance] – implementation
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+* Upgrade MP FT specification modules to 4.1.
+* Upgrade SmallRye FT to 6.5.x.
+* Enable collecting metrics with MP Telemetry when the subsystem is available in the server configuration.
+
+=== Changed requirements
+
+* N/A
+
+=== Non-Requirements
+
+* N/A
+
+=== Future Work
+
+None.
+
+== Backwards Compatibility
+
+The specification and the implementation do not introduce any incompatibilities from the previous version (MP FT 4.0).
+
+=== Default Configuration
+
+There are no changes to the existing configuration.
+
+=== Importing Existing Configuration
+
+The subsystem does not have any configuration, so existing subsystem configuration is not affected.
+
+=== Deployments
+
+The specification and the implementation do not introduce any incompatibilities from the previous version relevant to deployments.
+
+=== Interoperability
+
+* N/A
+
+== Implementation Plan
+
+For the integration with Telemetry metrics to function,
+the integration of its https://issues.redhat.com/browse/WFLY-19590[subsystem and modules] is required.
+Implementation will be done in the created `mp-7-wip` https://github.com/wildfly/wildfly/tree/mp-7-wip[branch] in WildFly upstream repository.
+
+== Admin Clients
+
+* No effect on the existing clients, there are no model changes.
+
+== Security Considerations
+
+* No security implications of this integration.
+
+[[test_plan]]
+== Test Plan
+
+Manual testing, apart from initial exploratory testing,
+will be performed to validate existing MP FT quickstart still functions and behaves as expected.
+
+The following test suites will be used to validate this change:
+
+* MicroProfile Fault Tolerance TCK tests will be added and executed by CI as part of the WildFly testsuite (in `testsuite/integration/microprofile-tck/fault-tolerance` module)
+* WildFly-specific behavior and configuration is covered by existing tests in the WildFly testsuite (in `testsuite/integration/microprofile` module)
+* Upstream https://github.com/smallrye/smallrye-fault-tolerance/tree/main/testsuite[implementation] testsuite is executed.
+* The corresponding MicroProfile tests from https://github.com/jboss-eap-qe/eap-microprofile-test-suite[EAP MicroProfile test suite]
+
+== Community Documentation
+
+References to the MP FT specifications in the existing documentation will be updated to reflect the updated versions.
+ 
+== Release Note Content
+
+[quote]
+----
+MicroProfile Fault Tolerance support in WildFly has been updated to version 4.1, implemented by SmallRye Fault Tolerance project version 6.5.
+This new release brings bug fixes and updates to MP FT support, as well as adding support for Telemetry metrics.
+----
