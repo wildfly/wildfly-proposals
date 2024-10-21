@@ -21,6 +21,9 @@ categories:
   - name: Embedded
     id: embedded
     description: Embedding WildFly in another process
+  - name: Helm Charts
+    id: helm-charts
+    description: WildFly Helm Charts
   - name: IIOP
     id: iiop
     description: Internet InterORB Protocol and CORBA
