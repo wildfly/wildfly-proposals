@@ -42,7 +42,7 @@ promoted-by:
 
 == Overview
 
-This RFE is about updating WildFLy to support MicroProfile Platform 7.0. We currently support MicroProfile Platform 6.1.
+This RFE is about updating WildFly to support MicroProfile Platform 7.0. We currently support MicroProfile Platform 6.1.
 ////
 
 ////
@@ -96,7 +96,7 @@ Aside from the below information, both the 6.1 and 7.0 MicroProfile Platform ver
 |1.1
 |1.1
 |2.0
-|y https://issues.redhat.com/browse/WFLY-19589[WFLY-19589]
+|y https://issues.redhat.com/browse/WFLY-19589[WFLY-19590 (WildFly Preview)] + https://issues.redhat.com/browse/WFLY-19846[WFLY-19846 - Promote to default stability]
 
 |===
 
@@ -117,7 +117,7 @@ The main work is in these individual spec updates:
 * https://issues.redhat.com/browse/WFLY-19592[WFLY-19592 - MicroProfile Fault Tolerance 4.1]
 * https://issues.redhat.com/browse/WFLY-19591[WFLY-19591 - MicroProfile OpenAPI 4.0]
 * https://issues.redhat.com/browse/WFLY-19589[WFLY-19589 - MicroProfile REST Client 4.0]
-* https://issues.redhat.com/browse/WFLY-19589[WFLY-19589 - MicroProfile Telemetry 2.0]
+* https://issues.redhat.com/browse/WFLY-19589[WFLY-19590 - MicroProfile Telemetry 2.0 (WildFly Preview)] + https://issues.redhat.com/browse/WFLY-19846[WFLY-19846 - Promote MicroProfile Telemetry 2.0 to WildFly Standard]
 
 
 === Affected Projects or Components
@@ -128,7 +128,6 @@ WildFly will be updated to pull in the corresponding versions of the Eclipse Mic
 
 === Relevant Installation Types
 
-__<List the installation types that are relevant for the features and remove any that are not relevant>__.
 
 * Traditional standalone server (unzipped or provisioned by Galleon)
 * OpenShift Source-to-Image (S2I)
@@ -136,7 +135,7 @@ __<List the installation types that are relevant for the features and remove any
 
 == Requirements
 
-* All components will be upgraded to the latest micro versions of the Eclipse Microprofile specification jars, as well as the SmallRye jars and dependencies needed to implement each version, as indicated in the table in the link:#overview[Overview].
+* All components will be upgraded to the version streams of the Eclipse Microprofile specification jars and TCK, as well as the SmallRye jars and dependencies needed to implement each version, as indicated in the table in the link:#overview[Overview]. Note that although we've just given the minor versions of the specification jars, there may be some micro upgrades. Those are generally just TCK fixes.
 ** Upgrading the components will provide the latest TCKs
 
 === Changed requirements
