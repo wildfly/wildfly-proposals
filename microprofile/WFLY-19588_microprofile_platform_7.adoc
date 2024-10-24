@@ -1,0 +1,202 @@
+---
+// Add any category for this proposal as a yaml list, e.g.
+// - core
+// - management
+// if missing, add it to _data/wildfly-categories and use its id
+categories:
+- microprofile
+// Specify the stability level of the feature.
+// Values can be one of: experimental preview community default
+stability-level: default
+// Specify the Feature Development tracker issue for the feature.
+// This must be an issue tracked in https://github.com/orgs/wildfly/projects/7/views/1.
+// To create a Feature Development tracker issue, go to  https://github.com/wildfly/wildfly-proposals/issues/new/choose
+// and select 'Feature Development'
+issue: https://github.com/wildfly/wildfly-proposals/issues/623
+// Provide the github ids of the members of the feature team, organized by role.
+// Provide a single id for the 'assignee' role. Use a yaml list for the 'sme' and
+// 'outside-perspective' roles, even if there is only one person in a role.
+feature-team:
+ developer: kabir
+ sme:
+  -
+ outside-perspective:
+  -
+// If this issue tracks the promotion to a higher stability level of a previously
+// completed feature, provide the URL of the https://github.com/wildfly/wildfly-proposals/issues
+// issue that was used to track the previous feature.
+promotes:
+// This should be blank during initial development of a feature. It may be used
+// after the feature is completed if a subsequent issue is field to track promotion
+// of this feature to a higher stability level
+promoted-by:
+---
+= MicroProfile Platform 7.0
+:author:            Kabir Khan
+:email:             kkhan@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+
+== Overview
+
+This RFE is about updating WildFly to support MicroProfile Platform 7.0. We currently support MicroProfile Platform 6.1.
+////
+
+////
+
+
+The major.minor versions of the individual specs are shown below. Micro updates are strictly for TCK fixes, and we should use the latest for the TCKs as these versions become available.
+
+Aside from the below information, both the 6.1 and 7.0 MicroProfile Platform version include the Jakarta EE 10 Core Profile.
+
+[cols="1,1,1,1,1"]
+|===
+|Spec | MP 6.1 Spec Version | Current Spec WildFly Version | MP 7.0 Spec Version | Updated Functionality (y/n)
+
+|Config
+|3.1
+|3.1
+|3.1
+|n
+
+|Fault Tolerance
+|4.0
+|4.0
+|4.1
+|y https://issues.redhat.com/browse/WFLY-19592[WFLY-19592]
+
+|Health
+|4.0
+|4.0
+|4.0
+|n
+
+|JWT
+|2.1
+|2.1
+|2.1
+|n
+
+|OpenAPI
+|3.1
+|3.1
+|4.0
+|y https://issues.redhat.com/browse/WFLY-19591[WFLY-19591]
+
+|Rest Client
+|3.0
+|3.0
+|4.0
+|y https://issues.redhat.com/browse/WFLY-19589[WFLY-19589]
+
+|Telemetry +
+|1.1
+|1.1
+|2.0
+|y https://issues.redhat.com/browse/WFLY-19589[WFLY-19590 (WildFly Preview)] + https://issues.redhat.com/browse/WFLY-19846[WFLY-19846 - Promote to default stability]
+
+|===
+
+There is no additional work in this RFE beyond what is done by the individual spec update RFEs, i.e. it is just an umbrella issue.
+
+=== User Stories
+
+A user can use WildFly knowing that the specs making up the MicroProfile Platform have the versions in MicroProfile Platform 7.
+
+== Issue Metadata
+
+* https://issues.redhat.com/browse/WFLY-19588[WFLY-19588 - Implement MicroProfile Platform 7]
+
+=== Related Issues
+
+The main work is in these individual spec updates:
+
+* https://issues.redhat.com/browse/WFLY-19592[WFLY-19592 - MicroProfile Fault Tolerance 4.1]
+* https://issues.redhat.com/browse/WFLY-19591[WFLY-19591 - MicroProfile OpenAPI 4.0]
+* https://issues.redhat.com/browse/WFLY-19589[WFLY-19589 - MicroProfile REST Client 4.0]
+* https://issues.redhat.com/browse/WFLY-19589[WFLY-19590 - MicroProfile Telemetry 2.0 (WildFly Preview)] + https://issues.redhat.com/browse/WFLY-19846[WFLY-19846 - Promote MicroProfile Telemetry 2.0 to WildFly Standard]
+
+
+=== Affected Projects or Components
+
+WildFly will be updated to pull in the corresponding versions of the Eclipse Microprofile specification jars, as well as the SmallRye jars and dependencies needed to implement each version.
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+* All components will be upgraded to the version streams of the Eclipse Microprofile specification jars and TCK, as well as the SmallRye jars and dependencies needed to implement each version, as indicated in the table in the link:#overview[Overview]. Note that although we've just given the minor versions of the specification jars, there may be some micro upgrades. Those are generally just TCK fixes.
+** Upgrading the components will provide the latest TCKs
+
+=== Changed requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+=== Future Work
+
+When the next MicroProfile Platform version comes along, we are likely to support that (depending on how this lines up with WildFly releases).
+
+== Backwards Compatibility
+
+Where one of the specifications being upgraded is not backwards compatible, it should be pointed out in the analysis of the individual specification upgrade.
+
+=== Default Configuration
+
+__<Does the proposed work change the default value of any current configuration attributes? Does it change the configuration generated by any current Galleon layers?>__
+
+=== Importing Existing Configuration
+
+Where one of the specifications being upgraded changes how it works with existing configuration, it should be pointed out in the analysis of the individual specification upgrade.
+
+=== Deployments
+
+Deployments should be able to use the full MicroProfile Platform 7 feature set.
+
+=== Interoperability
+
+Where one of the specifications being upgraded changes its interoperability, it should be pointed out in the analysis of the individual specification upgrade.
+
+== Implementation Plan
+
+We will merge the individual spec upgrades to this https://github.com/wildfly/wildfly/tree/mp-7-wip[feature branch] as they become available and have undergone peer review.
+
+Once we have all the spec upgrades in this branch, and each individual RFE has satisfied all the requirements, we will merge this branch into the main WildFly branch.
+
+== Admin Clients
+
+Where one of the specifications being upgraded changes its configuration so that extra work is needed in the CLI or HAL, it should be pointed out in the analysis of the individual specification upgrade.
+
+== Security Considerations
+
+I don't believe there are any security implications to consider. If the upgrade of an individual spec introduces security implications, those should be pointed out in its analysis.
+
+[[test_plan]]
+== Test Plan
+
+* TCKs will be updated to the latest corresponding version. Having checked the upgrades to the individual specifications, the respective TCKs tests cover the added/changed functionality, apart from the exceptions listed below.
+* The TCKs will run at default stability level
+* Where one of the specifications being upgraded needs additional testing beyond what is done by the TCK, it should be pointed out in the analysis of the individual specification upgrade.
+
+
+== Community Documentation
+
+* Community documentation for the subsystems in question will be updated to reflect the new versions, and any potential differences in behaviour.
+
+== Release Note Content
+
+MicroProfile specifications have been updated to the versions that are part of MicroProfile Platform 7.0. (See the table in the link:#overview[Overview] if exact versions are needed)
+
