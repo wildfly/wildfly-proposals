@@ -1,0 +1,139 @@
+---
+categories:
+- microprofile
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/647
+feature-team:
+ developer: pferraro
+ sme:
+  - pferraro
+ outside-perspective:
+  -
+promotes:
+promoted-by:
+---
+
+:IssueId: WFLY-19591
+:ParentIssueId: WFLY-19588
+:OldOpenAPIVersion: 3.0
+:NewOpenAPIVersion: 3.1
+:OldMicroProfileOpenAPIVersion: 3.1
+:NewMicroProfileOpenAPIVersion: 4.0
+:MicroProfileOpenAPIReleaseNotesAnchor: release_notes_40
+:SmallRyeOpenAPIVersion: 4.0.x
+:MicroProfilePlatformVersion: 7.0
+
+= MicroProfile OpenAPI {NewMicroProfileOpenAPIVersion}
+:author:            Paul Ferraro
+:email:             paul.ferraro@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WildFly currently provides MicroProfile OpenAPI {OldMicroProfileOpenAPIVersion} support to applications to expose an `/openapi` endpoint that serves an OpenAPI {OldOpenAPIVersion} document of the application's Jakarta RESTful Web Services.
+This feature request upgrades support for this specification to version {NewMicroProfileOpenAPIVersion} as part of version {MicroProfilePlatformVersion} of the MicroProfile platform specification.
+
+Most notably, this release of the https://download.eclipse.org/microprofile/microprofile-open-api-{NewMicroProfileOpenAPIVersion}/microprofile-openapi-spec-{NewMicroProfileOpenAPIVersion}.html[MicroProfile OpenAPI specification] generates OpenAPI documentation conforming to https://github.com/OAI/OpenAPI-Specification/blob/{NewOpenAPIVersion}.0/versions/{NewOpenAPIVersion}.0.md[version {NewOpenAPIVersion} of the OpenAPI specification].
+
+For details, see the https://download.eclipse.org/microprofile/microprofile-open-api-{NewMicroProfileOpenAPIVersion}/microprofile-openapi-spec-{NewMicroProfileOpenAPIVersion}.html#{MicroProfileOpenAPIReleaseNotesAnchor}[Release Notes].
+
+=== User Stories
+
+A user would like to expose an endpoint that serves an OpenAPI {NewOpenAPIVersion} document describing the Jakarta RESTful Web Services of their application.
+
+== Issue Metadata
+
+* https://issues.redhat.com/browse/{IssueId}[{IssueId}]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/{ParentIssueId}[{ParentIssueId}]
+
+=== Affected Projects or Components
+
+* WildFly Quickstarts (updates to version numbers references only)
+
+=== Other Interested Projects
+
+* https://github.com/eclipse/microprofile-open-api[Eclipse MicroProfile OpenAPI]
+* https://github.com/smallrye/smallrye-open-api[SmallRye OpenAPI]
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+* Upgrade version of MicroProfile OpenAPI specification API from {OldMicroProfileOpenAPIVersion} to {NewMicroProfileOpenAPIVersion}.
+* Upgrade version of SmallRye OpenAPI to the final {SmallRyeOpenAPIVersion} release that implements the new spec version.
+
+=== Changed requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+=== Future Work
+
+N/A
+
+== Backwards Compatibility
+
+=== Default Configuration
+
+N/A
+
+=== Importing Existing Configuration
+
+N/A
+
+=== Deployments
+
+See https://download.eclipse.org/microprofile/microprofile-open-api-{NewMicroProfileOpenAPIVersion}/microprofile-openapi-spec-{NewMicroProfileOpenAPIVersion}.html#{MicroProfileOpenAPIReleaseNotesAnchor}[Release Notes] for the list of incompatible changes between the current and previous versions of the MicroProfile OpenAPI specification.
+
+=== Interoperability
+
+N/A
+
+== Implementation Plan
+
+The implementation of MicroProfile OpenAPI {NewMicroProfileOpenAPIVersion} is provided by SmallRye OpenAPI {SmallRyeOpenAPIVersion}.
+The implemetation plan consist of simple version upgrade of the following components:
+
+* org.eclipse.microprofile.openapi API
+* org.eclipse.microprofile.openapi TCK
+* io.smallrye.openapi
+
+== Admin Clients
+
+N/A
+
+== Security Considerations
+
+N/A
+
+[[test_plan]]
+== Test Plan
+
+The following testsuites will be used to validate this feature:
+
+* Version {NewMicroProfileOpenAPIVersion} of the MicroProfile OpenAPI TCK
+* The existing MicroProfile OpenAPI tests within WildFly's MicroProfile integration testsuite.
+* The MicroProfile OpenAPI tests from https://github.com/jboss-eap-qe/eap-microprofile-test-suite
+
+== Community Documentation
+
+References the MicroProfile OpenAPI and OpenAPI specifications need to be updated to reflect the current versions.
+ 
+== Release Note Content
+
+Support for the MicroProfile OpenAPI specification was updated from {OldMicroProfileOpenAPIVersion} to {NewMicroProfileOpenAPIVersion}.
+
