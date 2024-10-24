@@ -153,8 +153,7 @@ Depending on the stability level, the test plan required may vary. see below:
 == Community Documentation
 
 __<Describe how this feature will be documented or illustrated. Generally a feature should have documentation as part of the PR to wildfly main, or as a follow up PR if the feature is in wildfly-core. In some cases though the feature will bring additional content (such as quickstarts, guides, etc.). Indicate which of these will happen>__
- +** Default - This stability level is reserved and requires approval by a professional Quality Engineer with subject matter expertise.
- 
+
 == Release Note Content
 
 __<Draft verbiage for up to a few sentences on the feature for inclusion in the Release Note blog article for the release that first includes this feature.__
