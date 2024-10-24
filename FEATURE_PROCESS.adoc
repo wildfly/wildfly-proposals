@@ -32,7 +32,7 @@ When a developer intends to begin work on a feature they should do the following
 ** It is what allows effective coordination of overall feature development for a WildFly release from a single, publicly visible, point.
 ** It allows users to see an overall roadmap for WildFly features.
 * Draft a minimal feature analysis, based on the current https://github.com/wildfly/wildfly-proposals/blob/main/design-doc-template.adoc[design-doc-template, window=_blank]. This should include the expected stability level, links to the issues above, and enough Overview and User Story information to give people interested in being part of the feature team a sense of what would be involved.
-* Submit a draft analysis PR to the https://github.com/wildfly/wildfly-proposals[`wildfly-proposals` repository, window=_blank].
+* Submit an analysis PR to the https://github.com/wildfly/wildfly-proposals[`wildfly-proposals` repository, window=_blank].
 * Send an email to the mailto:wildfly-dev@lists.jboss.org[`wildfly-dev@lists.jboss.org`] mail list telling people about the upcoming work and asking for volunteers to participate in the feature team. (If you don't have a `wildfly-dev` list subscription, visit the https://lists.jboss.org/admin/lists/wildfly-dev.lists.jboss.org/[list subscription page, window=_blank] to create one.)
 
 NOTE: All of the above are required, including new issues and analysis documents, even if the work being done is a promotion of an existing feature from one stability level to another.
