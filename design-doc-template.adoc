@@ -143,6 +143,7 @@ Depending on the stability level, the test plan required may vary. see below:
 
 ** Community - this level should include everything in the 'Preview' stability level, plus the following additional testing as relevant:
 *** Manual tests: briefly describe checks to be performed during one-time exploratory testing. The purpose of this testing is to check corner cases and other cases that are not worth implementing as automated tests. Typical checks are: bad configurations are easy to reveal, attribute descriptions and error messages are clear, names are descriptive and consistent with similar resources, default values are reasonable.
+    If there is an existing quickstart affected by the feature, manual checks include following the quickstart's guide and verifying functionality.
 *** Miscellaneous checks: Manual checks for significant changes in server performance, memory and disk footprint should be described here. These checks are not always relevant, but consideration of these impacts, and others, are strongly encouraged and should be described here. Fully qualified test case names should be provided along with a brief description of what the test is doing.
 *** Integration tests - at the 'Community' stability level, complete integration tests should be provided.
 *** Compatibility tests - if backwards compatibility is relevant to the feature, then describe how the testing is performed.
