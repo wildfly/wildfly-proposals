@@ -174,7 +174,11 @@ I don't believe there are any security implications to consider. If the upgrade 
 
 == Community Documentation
 
-* Community documentation for the subsystems in question will be updated to reflect the new versions, and any potential differences in behaviour.
+* https://github.com/wildfly/wildfly/blob/main/docs/src/main/asciidoc/WildFly_and_WildFly_Preview.adoc?plain=1#L159-L169 has 'MicroProfile 7 support in WildFLy Preview' section that should be removed.
+** Beyond that I don't see any relevant mentions of 'MicroProfile', 'Platform' or '6.1' that would indicate we mentioned 'MicroProfile Platform 6.1' as the currently supported version of the platform.
+* There is a list of version of the individual specifications here https://github.com/wildfly/wildfly/blob/main/docs/src/main/asciidoc/Getting_Started_Guide.adoc?plain=1#L119-L129
+** This table will be updated to list the new versions
+
 
 == Release Note Content
 
