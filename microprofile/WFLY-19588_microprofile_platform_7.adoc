@@ -156,6 +156,8 @@ We will merge the individual spec upgrades to this https://github.com/wildfly/wi
 
 Once we have all the spec upgrades in this branch, and each individual RFE has satisfied all the requirements, we will merge this branch into the main WildFly branch.
 
+If any of the upgrades of the individual specifications requires changes in the WildFly quickstarts, this should be pointed out in the analysis document for the component upgrade.
+
 == Admin Clients
 
 Where one of the specifications being upgraded changes its configuration so that extra work is needed in the CLI or HAL, it should be pointed out in the analysis of the individual specification upgrade.
@@ -170,6 +172,8 @@ I don't believe there are any security implications to consider. If the upgrade 
 * TCKs will be updated to the latest corresponding version. Having checked the upgrades to the individual specifications, the respective TCKs tests cover the added/changed functionality, apart from the exceptions listed below.
 * The TCKs will run at default stability level
 * Where one of the specifications being upgraded needs additional testing beyond what is done by the TCK, it should be pointed out in the analysis of the individual specification upgrade.
+* If an upgrade requires changes to the quickstarts, and this results in needing to change the test case for that quickstart, it should be pointed out in the analysis document for the component upgrade.
+
 
 
 == Community Documentation
