@@ -85,6 +85,7 @@ None to my knowledge
 It must be possible to turn the tracing on. To do this a resource called `subsystem=microprofile-reactive-messaging-smallrye/opentelemetry-tracing=config` is introduced.
 
 This resource contains an attribute called `{connector-lower}-connector`, which allows us to control if and how tracing is enabled. It is an enumeration with the following values:
+
 * `NEVER` - This is the default value of the attribute, and also the value that will be used if the `opentelemetry-tracing=config` child resource is not present in the subsystem. This is the same behaviour that has been available today, i.e. `mp.messaging.connector.smallrye-{connector-lower}.tracing-enabled` is forced to be `false` in such a way that user's MicroProfile Config properties can never set it to `true`.
 * `OFF` - `mp.messaging.connector.smallrye-{connector-lower}.tracing-enabled` is set to `false`, but a user can override it to set it to `true`.
 * `ON` - `mp.messaging.connector.smallrye-{connector-lower}.tracing-enabled` is set to `true`, but a user can override it to set it to `false`.
@@ -131,7 +132,7 @@ N/A
 
 == Implementation Plan
 
-A single pull request to WildFLy will be created containing everything.
+A single pull request to WildFly will be created containing everything.
 
 == Admin Clients
 It is a simple resource with an attribute, so no work is needed in JBoss CLI/HAL
@@ -142,24 +143,6 @@ None, beyond the consideration that the collector of the traces will receive a l
 
 [[test_plan]]
 == Test Plan
-
-__<Depending on the selected stability level, the appropriate section below should be completed, including a brief description of how testing is to be performed in accordance with the selected stability level. The non-relevant sections may be removed as needed.>__
-////
-Depending on the stability level, the test plan required may vary. see below:
-////
-
-** Experimental - No test plan is required. Basic unit / integration tests should be added during development.
-
-** Preview - a brief high-level description of the testing approach should be added here, including types of tests added (unit, integration, smoke, component, subsystem, etc.) Note that not all test types are required for a particular feature, so include a description of what is being tested and the approach chosen to perform the testing.
-
-** Community - this level should include everything in the 'Preview' stability level, plus the following additional testing as relevant:
-*** Manual tests: briefly describe checks to be performed during one-time exploratory testing. The purpose of this testing is to check corner cases and other cases that are not worth implementing as automated tests. Typical checks are: bad configurations are easy to reveal, attribute descriptions and error messages are clear, names are descriptive and consistent with similar resources, default values are reasonable.
-*** Miscellaneous checks: Manual checks for significant changes in server performance, memory and disk footprint should be described here. These checks are not always relevant, but consideration of these impacts, and others, are strongly encouraged and should be described here. Fully qualified test case names should be provided along with a brief description of what the test is doing.
-*** Integration tests - at the 'Community' stability level, complete integration tests should be provided.
-*** Compatibility tests - if backwards compatibility is relevant to the feature, then describe how the testing is performed.
-
-** Default - This stability level is reserved and requires approval by a professional Quality Engineer with subject matter expertise.
-
 Two main tests will be created in WildFly's https://github.com/wildfly/wildfly/tree/main/testsuite/integration/microprofile[testsuite/integration/microprofile] module:
 
 1. We test all the combinations of the `{connector-lower}-connector` in the new
