@@ -118,7 +118,7 @@ The following test suites will be used to validate this change:
 * MicroProfile Fault Tolerance TCK tests will be added and executed by CI as part of the WildFly testsuite (in `testsuite/integration/microprofile-tck/fault-tolerance` module)
 * WildFly-specific behavior and configuration is covered by existing tests in the WildFly testsuite (in `testsuite/integration/microprofile` module)
 * Upstream https://github.com/smallrye/smallrye-fault-tolerance/tree/main/testsuite[implementation] testsuite is executed.
-* The corresponding MicroProfile tests from https://github.com/jboss-eap-qe/eap-microprofile-test-suite[EAP MicroProfile test suite]
+* The corresponding MicroProfile tests from https://github.com/jboss-eap-qe/eap-microprofile-test-suite[EAP MicroProfile test suite], also covering MicroProfile Fault tolerance -> MicroProfile Telemetry integration.
 
 == Community Documentation
 
