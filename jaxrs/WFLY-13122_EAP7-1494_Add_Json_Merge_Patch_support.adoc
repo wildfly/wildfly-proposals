@@ -1,3 +1,17 @@
+---
+categories:
+- jaxrs
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/664
+feature-team:
+ developer: ema
+ sme:
+  - ema
+ outside-perspective:
+  -
+promotes:
+promoted-by:
+---
 = Add Json Merge Patch support
 :author:            Jim Ma
 :email:             ema@redhat.com
@@ -20,6 +34,10 @@ when the context parameter `resteasy.patchfilter.legacy=true` is set.
 The JSON merge patch functionality in Resteasy can be completely disabled by setting the context parameter `resteasy.patchfilter.disabled=true`. 
 When this parameter is enabled, any JSON merge patch requests will be ignored.
 
+=== User Stories
+
+When user want to merge a JSON object to the target JSON object by specifying the merge part the user wants to make, instead of providing the full updated version of the json content.
+
 == Issue Metadata
 
 === Issue
@@ -31,26 +49,17 @@ When this parameter is enabled, any JSON merge patch requests will be ignored.
 
 * {issue-base-url}/RESTEASY-2567 [RESTEASY-2567]
 
-=== Dev Contacts
-
-* mailto:ema@redhat.com[Jim Ma]
-
-=== QE Contacts
-
-* mailto:jkasik@redhat.com[Jan Kasik]
-
-=== Testing By
-
-[ ] Engineering
-
-[x] QE
-
 === Affected Projects or Components
 
-* RESTEasy, Wildfly
+- https://github.com/resteasy/resteasy[resteasy]
 
 === Other Interested Projects
-https://tools.ietf.org/html/rfc7386
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
 
 == Requirements
 
@@ -59,11 +68,56 @@ https://tools.ietf.org/html/rfc7386
 * RESTEasy includes this feature support and is installed in WFLY/EAP
 * The PatchMethodFilter is enabled (not explicitly set resteasy.patchfilter.disabled to true)
 
-== Test Plan
+=== Non-Requirements
 
-The feature is tested in RESTEasy codebase. It can be checked with running the latest RESTEasy release
-testsuite against target WildFly container.
+This is feature is added in current the resteasy artifact, there is no need to add or enable other module or module dependency
+for this feature.
+
+=== Future Work
+
+== Backwards Compatibility
+
+This is new feature added. There is no backward compatible issue.
+
+=== Default Configuration
+
+No WFLY configuration change is needed.
+
+=== Importing Existing Configuration
+
+There is no migration issue for this new added feature.
+
+=== Deployments
+
+No behavior change of deployments in incompatible ways.
+
+=== Interoperability
+
+No interoperability issue.
+
+
+== Admin Clients
+
+There is no admin client needed to manipulate this feature or behavior of this feature.
+
+== Security Considerations
+
+This feature won't impact security.
+
+== Test Plan
+** Community
+There are already tests in resteasy community project and these tests and resources can be reused or changed
+for other purpose:
+https://github.com/resteasy/resteasy/blob/main/testsuite/integration-tests/src/test/java/org/jboss/resteasy/test/resource/patch/StudentJsonMergePatchTest.java[Tests]，
+
+*** Manual tests: The above test can be checked manually by running resteasy test with 'mvn clean install -Dtest=StudentJsonMergePatchTest '
+*** Miscellaneous checks:To check server performance, we can compare this test with the test to update all json content
+With same threads and same amount of requests to compare the sever response time.
+*** Integration tests - This test is an integration test and can be still kept in resteasy project to check as the CI run this test against WFLY upstream SNAPSHOT version every day.
 
 == Community Documentation
+This feature documentation in Reteasy project : https://docs.resteasy.dev/6.2/userguide/#_json_patch_and_json_merge_patch
+This can be imported or rephrased in WFLY documentation.
 
-The RESTEasy user guide has the section "JSON Patch and JSON Merge Patch" to explain the usage.
+== Release Note Content
+Jons Merget patch feature - This feature allows the client to send a json http request with Content-Type "application/merge-patch+json", and the json merge request will be directly merge to the target resource.
