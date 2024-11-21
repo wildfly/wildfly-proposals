@@ -23,6 +23,7 @@ promoted-by:
 == Overview
 
 The goal is to integrate MicroProfile (MP) Fault Tolerance (FT) 4.1 specification from the MP Platform 7.0 to WildFly at default stability level.
+The specification is implemented by SmallRye (SR) FT project.
 To certify functionality, the MP FT TCK is run as part of the WildFly testsuite.
 
 === User Stories
@@ -58,8 +59,21 @@ Users electing to employ MicroProfile Telemetry metrics will have MicroProfile F
 == Requirements
 
 * Upgrade MP FT specification modules to 4.1.
-* Upgrade SmallRye FT to 6.5.x.
+* Upgrade SmallRye FT to latest relevant version that implements this spec.
 * Enable collecting metrics with MP Telemetry when the subsystem is available in the server configuration.
+** Simultaneous metrics collection:
+Historically, when WildFly removed MP Metrics support,
+we have provided an optional Micrometer integration in SR FT in order to keep providing metrics collection support.
+This integration is not defined by the FT spec.
+The MP FT 4.1 spec defined MP Telemetry metrics collection.
+The spec also defines concurrent collection when both MP Metrics and MP Telemetry is available.
+Analogously, when both subsystems are available, we will collect metrics also with Micrometer.
+While this is helpful for instance as an upgrade path,
+simultaneous metrics collection might not be desirable in all situations.
+For that purpose, we will be supporting MP Config properties to fine-tune metrics collectors in use.
+These properties `smallrye.faulttolerance.micrometer.disabled` and `smallrye.faulttolerance.opentelemetry.disabled`
+are now supported by upstream SR FT (since SR FT 6.6.3 and 6.7.0) and documented.
+Note, that this is in addition to an existing spec-defined MP Config property to disable metrics collection by MP FT altogether.
 
 === Changed requirements
 
