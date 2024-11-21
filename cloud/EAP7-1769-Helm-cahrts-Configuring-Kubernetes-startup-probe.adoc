@@ -20,7 +20,7 @@ feature-team:
 
 == Overview
 
-The probes (Liveness and Readiness) added by the Helm Chart uses the following default values:
+The probes (Liveness and Readiness) added by the Helm Chart use the following kubernetes default values:
 
 [literal]
 failureThreshold: 3
