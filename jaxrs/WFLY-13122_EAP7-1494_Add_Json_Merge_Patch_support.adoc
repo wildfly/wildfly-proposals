@@ -1,18 +1,21 @@
 ---
 categories:
-- jaxrs
+  - jaxrs
 stability-level: default
 issue: https://github.com/wildfly/wildfly-proposals/issues/664
 feature-team:
  developer: ema
  sme:
+  - jamezp
+  - ronsigal
+  - liweinan
   - ema
  outside-perspective:
   -
 promotes:
 promoted-by:
 ---
-= Add Json Merge Patch support
+= Add JSON Merge Patch support
 :author:            Jim Ma
 :email:             ema@redhat.com
 :toc:               left
@@ -24,14 +27,14 @@ promoted-by:
 
 == Overview
 This feature is to support JSON Merge Patch spec as described in: https://tools.ietf.org/html/rfc7386
-With Json merge patch support, the client can send a json http request with Content-Type "application/merge-patch+json",
-and the json merge request will be directly apply to the target resource with the merge function as spec described.
+With JSON merge patch support, the client can send a JSON http request with Content-Type "application/merge-patch+json",
+and the JSON merge request will be directly apply to the target resource with the merge function as spec described.
 
-Resteasy provides two implementation for JSON merge patch. One based on jsonp(abbreviation jsonp will be used in this page) and another one is based on 
-json-patch and jackson2(abbreviation jackson2 will be used in this page). By default, Resteasy uses jsonp implementation, while the jackson2 implementation is only enabled 
+RESTEasy provides two implementation for JSON merge patch. One based on jsonp(abbreviation jsonp will be used in this page) and another one is based on
+json-patch and jackson2(abbreviation jackson2 will be used in this page). By default, RESTEasy uses jsonp implementation, while the jackson2 implementation is only enabled
 when the context parameter `resteasy.patchfilter.legacy=true` is set.
 
-The JSON merge patch functionality in Resteasy can be completely disabled by setting the context parameter `resteasy.patchfilter.disabled=true`. 
+The JSON merge patch functionality in RESTEasy can be completely disabled by setting the context parameter `resteasy.patchfilter.disabled=true`.
 When this parameter is enabled, any JSON merge patch requests will be ignored.
 
 === User Stories
@@ -65,12 +68,12 @@ When user want to merge a JSON object to the target JSON object by specifying th
 
 === Hard Requirements
 
-* RESTEasy includes this feature support and is installed in WFLY/EAP
+* RESTEasy includes this feature support and is installed in WFLY
 * The PatchMethodFilter is enabled (not explicitly set resteasy.patchfilter.disabled to true)
 
 === Non-Requirements
 
-This is feature is added in current the resteasy artifact, there is no need to add or enable other module or module dependency
+This is feature is added in current the RESTEasy artifact, there is no need to add or enable other module or module dependency
 for this feature.
 
 === Future Work
@@ -81,7 +84,10 @@ This is new feature added. There is no backward compatible issue.
 
 === Default Configuration
 
-No WFLY configuration change is needed.
+The `resteasy-patchfilter-disabled` attribute will be added to jaxrs subsystem, but this attribute is optional.
+The jaxrs subsystem version will be upgraded from 3.0 to 3.1 for adding this attribute.
+The https://issues.redhat.com/browse/WFLY-19981[WFLY-19981] is for adding this configuration in jaxrs subsystem.
+
 
 === Importing Existing Configuration
 
@@ -106,18 +112,18 @@ This feature won't impact security.
 
 == Test Plan
 ** Community
-There are already tests in resteasy community project and these tests and resources can be reused or changed
+There are already tests in RESTEasy community project and these tests and resources can be reused or changed
 for other purpose:
 https://github.com/resteasy/resteasy/blob/main/testsuite/integration-tests/src/test/java/org/jboss/resteasy/test/resource/patch/StudentJsonMergePatchTest.java[Tests]，
 
-*** Manual tests: The above test can be checked manually by running resteasy test with 'mvn clean install -Dtest=StudentJsonMergePatchTest '
-*** Miscellaneous checks:To check server performance, we can compare this test with the test to update all json content
+*** Manual tests: The above test can be checked manually by running RESTEasy test with 'mvn clean install -Dtest=StudentJsonMergePatchTest '
+*** Miscellaneous checks:To check server performance, we can compare this test with the test to update all JSON content
 With same threads and same amount of requests to compare the sever response time.
-*** Integration tests - This test is an integration test and can be still kept in resteasy project to check as the CI run this test against WFLY upstream SNAPSHOT version every day.
+*** Integration tests - This test is an integration test and can be still kept in RESTEasy project to check as the CI run this test against WFLY upstream SNAPSHOT version every day.
 
 == Community Documentation
-This feature documentation in Reteasy project : https://docs.resteasy.dev/6.2/userguide/#_json_patch_and_json_merge_patch
+This feature documentation in RESTEasy project : https://docs.resteasy.dev/6.2/userguide/#_json_patch_and_json_merge_patch
 This can be imported or rephrased in WFLY documentation.
 
 == Release Note Content
-Jons Merget patch feature - This feature allows the client to send a json http request with Content-Type "application/merge-patch+json", and the json merge request will be directly merge to the target resource.
+JSON Merge Patch feature - This feature allows the client to send a JSON http request with Content-Type "application/merge-patch+json", and the JSON merge request will be directly merge to the target resource.
