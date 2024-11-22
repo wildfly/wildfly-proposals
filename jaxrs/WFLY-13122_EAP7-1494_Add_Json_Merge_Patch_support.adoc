@@ -9,9 +9,8 @@ feature-team:
   - jamezp
   - ronsigal
   - liweinan
-  - ema
  outside-perspective:
-  -
+  - honza-kasik
 promotes:
 promoted-by:
 ---
@@ -51,6 +50,8 @@ When user want to merge a JSON object to the target JSON object by specifying th
 === Related Issues
 
 * {issue-base-url}/RESTEASY-2567 [RESTEASY-2567]
+* {issue-base-url}/WFLY-19981 [WFLY-19981]
+* {issue-base-url}/WFLY-19833 [WFLY-19833]
 
 === Affected Projects or Components
 
@@ -69,7 +70,10 @@ When user want to merge a JSON object to the target JSON object by specifying th
 === Hard Requirements
 
 * RESTEasy includes this feature support and is installed in WFLY
-* The PatchMethodFilter is enabled (not explicitly set resteasy.patchfilter.disabled to true)
+* The PatchMethodFilter is enabled by default. It can be disabled by setting the resteasy.patchfilter.disabled configuration to true.
+* The `resteasy-patchfilter-disabled` configuration will be added to jaxrs subsystem, but this configuration is optional.
+The jaxrs subsystem version will be upgraded from 3.0 to 3.1 for this change.
+The https://issues.redhat.com/browse/WFLY-19981[WFLY-19981] is for adding this configuration item in jaxrs subsystem.
 
 === Non-Requirements
 
@@ -84,10 +88,8 @@ This is new feature added. There is no backward compatible issue.
 
 === Default Configuration
 
-The `resteasy-patchfilter-disabled` attribute will be added to jaxrs subsystem, but this attribute is optional.
-The jaxrs subsystem version will be upgraded from 3.0 to 3.1 for adding this attribute.
-The https://issues.redhat.com/browse/WFLY-19981[WFLY-19981] is for adding this configuration in jaxrs subsystem.
-
+As this feature is enabled by default without any configuration in the jaxrs subsystem, thus it doesn't need to be
+declared in the default configuration.
 
 === Importing Existing Configuration
 
@@ -104,24 +106,39 @@ No interoperability issue.
 
 == Admin Clients
 
-There is no admin client needed to manipulate this feature or behavior of this feature.
+There is no admin client work needed to supporting manipulating this feature or the behavior of this feature.
 
 == Security Considerations
 
-This feature won't impact security.
+JSON Merge Patch is specifically designed for updating/merging with existing resources, but not for creating.
+It assumes that the resource already exists and modifies it by applying the merge content.
+JSON Merge Patch has the same security impact as the JSON content update with a http POST request.
+User should take care of all security things like validating
+the JSON content before/after the JSON merge, or taking measures to securely handle JSON data and mitigate potential security vulnerabilities.
 
 == Test Plan
 ** Community
-There are already tests in RESTEasy community project and these tests and resources can be reused or changed
-for other purpose:
-https://github.com/resteasy/resteasy/blob/main/testsuite/integration-tests/src/test/java/org/jboss/resteasy/test/resource/patch/StudentJsonMergePatchTest.java[Tests]，
+*** Manual tests:
+    ***** Create the JAXRS resource can process JSON merge patch request
+    ***** Manually send JSON merge patch request with CRUL or other tool to check if the server result is expected
 
-*** Manual tests: The above test can be checked manually by running RESTEasy test with 'mvn clean install -Dtest=StudentJsonMergePatchTest '
-*** Miscellaneous checks:To check server performance, we can compare this test with the test to update all JSON content
-With same threads and same amount of requests to compare the sever response time.
-*** Integration tests - This test is an integration test and can be still kept in RESTEasy project to check as the CI run this test against WFLY upstream SNAPSHOT version every day.
+*** Miscellaneous checks:To evaluate server performance, compare the server's response time when handling a JSON merge request against the response time for
+         updating the entire JSON content to achieve the same result.
+*** Integration tests
+    ***** Create JAXRS resource can process JSON merge patch
+    ***** Create client to send JSON merge patch request and check if the JSON Content is updated on server
+    ***** Set the `<resteasy-patchfilter-disabled>true</resteasy-patchfilter-disabled>` in jaxrs subsystem and check if JSON merge patch still work
+
+             ```
+               <subsystem xmlns="urn:jboss:domain:jaxrs:3.0">
+                  <resteasy-patchfilter-disabled>true</resteasy-patchfilter-disabled>
+               </subsystem>
+             ```
+
+    ***** Or set `resteasy.patchfilter.disabled=true` in web context parameter to `true`  and check if JSON merge patch is disabled as expected.
 
 == Community Documentation
+There will be new section in RESTEasy project to explain how to use this feature and disable this feature.
 This feature documentation in RESTEasy project : https://docs.resteasy.dev/6.2/userguide/#_json_patch_and_json_merge_patch
 This can be imported or rephrased in WFLY documentation.
 
