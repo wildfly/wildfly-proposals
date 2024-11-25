@@ -142,4 +142,4 @@ The Helm Chart docs will include a description of the uses of the Startup Probe.
 
 == Release Note Content
 
-Added the ability to configure a Startup Probe using WildFly Helm Charts.
+Increased default timeouts for startup probe and added the ability to configure a all probes (startup, readiness and liveness)  using WildFly Helm Charts.
