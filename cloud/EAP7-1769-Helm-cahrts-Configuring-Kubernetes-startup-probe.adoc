@@ -88,16 +88,24 @@ As a user, I want to delay the initial liveness and readiness check using an Sta
 
 === Default Configuration
 
-* The proposal for the default Startup Probe configuration is the following:
+* The proposal for the default configurations is following:
 +
-[source,yaml]
-startupProbe:
-  httpGet:
-    path: /health/live
-    port: admin
-  initialDelaySeconds: 5
-  failureThreshold: 36
-  periodSeconds: 5
+[source,yaml]  
+livenessProbe:
+    httpGet:
+      path: /health/live
+      port: admin
+  readinessProbe:
+    httpGet:
+      path: /health/ready
+      port: admin
+  startupProbe:
+    httpGet:
+      path: /health/live
+      port: admin
+    initialDelaySeconds: 5
+    failureThreshold: 36
+    periodSeconds: 5
 
 === Importing Existing Configuration
 
