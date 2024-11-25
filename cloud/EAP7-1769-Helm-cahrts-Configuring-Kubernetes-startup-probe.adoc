@@ -41,7 +41,7 @@ In such a case, users could be tempted to increase the `initialDelaySeconds` or 
 The alternative to those issues is to have the ability to configure a Startup Probe. The Startup Probe can be used to delay the initial checks done by the liveness and readiness probes, allowing some configuration without compromising them.
 
 The goal of this RFE is to define the default initial configuration of a Startup Probe so users can tweak it when required.
-
+For consistency sake same configuration shall also be introduced for liveness and readiness probes
 
 === User Stories
 
