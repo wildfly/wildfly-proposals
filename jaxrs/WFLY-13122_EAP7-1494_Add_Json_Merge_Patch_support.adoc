@@ -140,7 +140,7 @@ the JSON content before/after the JSON merge, or taking measures to securely han
 == Community Documentation
 There will be new section in RESTEasy project to explain how to use this feature and disable this feature.
 This feature documentation in RESTEasy project : https://docs.resteasy.dev/6.2/userguide/#_json_patch_and_json_merge_patch
-This can be imported or rephrased in WFLY documentation.
+This will be ported into the WildFly 35 documentation:https://docs.wildfly.org/35/Developer_Guide.html#Jakarta_RESTful_Web_Services_Reference_Guide
 
 == Release Note Content
 JSON Merge Patch feature - This feature allows the client to send a JSON http request with Content-Type "application/merge-patch+json", and the JSON merge request will be directly merge to the target resource.
