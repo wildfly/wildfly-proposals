@@ -5,10 +5,10 @@ stability-level: default
 issue: https://github.com/wildfly/wildfly-proposals/issues/614
 feature-team:
  developer: yersan
- sme: jamezp
-  -
- outside-perspective: jasondlee
-  -
+ sme: 
+  - jamezp
+ outside-perspective: 
+  - jasondlee
 promoted-by:
 ---
 
