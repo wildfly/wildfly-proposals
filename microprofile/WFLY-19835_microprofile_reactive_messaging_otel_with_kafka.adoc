@@ -98,8 +98,8 @@ It must be possible to turn the tracing on. To do this a resource called `subsys
 This resource contains an attribute called `{connector-lower}-connector`, which allows us to control if and how tracing is enabled. It is an enumeration with the following values:
 
 * `NEVER` - This is the default value of the attribute, and also the value that will be used if the `opentelemetry-tracing=config` child resource is not present in the subsystem. This is the same behaviour that has been available today, i.e. the MicroProfile Config properties mentioned in the link:#overview[Overview] will not have any effect, and tracing will be disabled.
-* `OFF` - By default tracing will be disabled, but a user can use the MicroProfile Config properties from the link:#overview[Overview] to turn on tracing for a connector or individual channel in an application.
-* `ON` - Similar to `OFF` but the default is to enable tracing for all channels, unless overridden for the application with the MicroProfile Config properties from the link:#overview[Overview].
+* `OFF` - By default tracing will be disabled, but a user can use the MicroProfile Config properties from the link:#overview[Overview] to turn on tracing for a connector or individual channel in an application. We will discuss how the properties are resolved below.
+* `ON` - Similar to `OFF` but the default is to enable tracing for all channels, unless overridden for the application with the MicroProfile Config properties from the link:#overview[Overview]. We will discuss how the properties are resolved below.
 * `ALWAYS` - Tracing is enabled for all channels, and can not be turned off with the MicroProfile Config properties from the link:#overview[Overview].
 
 The MicroProfile Config properties in the  link:#Overview[Overview], are all booleans, and the values have these meanings:
@@ -108,6 +108,18 @@ The MicroProfile Config properties in the  link:#Overview[Overview], are all boo
 * `true` - OpenTelemetry tracing is enabled
 
 When tracing is enabled, and the OpenTelemetry subsystem is configured to connect to a tracing collector, the traces should be available from there.
+
+=== Calculating whether tracing should happen
+
+If the `{connector-lower}-connector` attribute is `NEVER` or `ALWAYS`, tracing will always be totally disabled or enabled, and the MicroProfile Config properties from the link:#overview[Overview] will have no effect.
+
+Thus, they only work if the tracing is `{connector-lower}-connector` is `OFF` or `ON`. In this case the resolution works as follows for each channel:
+
+* If the channel is a {connector} channel it will check the channel level `mp.messaging.incoming.[channel-name].tracing-enabled` or `mp.messaging.outgoing.[channel-name].tracing-enabled` property, depending on if the channel is incoming or outgoing. If this has a value the value will be used. Otherwise, we go on to the next step.
+* We then check the `mp.messaging.connector.smallrye-{connector-lower}.tracing-enabled` connector level property for the {connector} connector. If this has a value the value will be used. Otherwise, we go on to the next step.
+* Finally, we check the value of the `{connector-lower}-connector` attribute, and use its value. `OFF` returns `false`, and `ON` returns `true`.
+
+In each of the above steps, if the found value is `false`, tracing is not enabled. If it is `true`, tracing is enabled.
 
 
 === Changed requirements
