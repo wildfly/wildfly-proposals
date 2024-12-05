@@ -1,0 +1,124 @@
+---
+categories:
+- microprofile
+- observability
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/619
+feature-team:
+ developer: jasondlee
+ sme:
+  -
+ outside-perspective:
+  - Marek Kopecky
+  - Rahuul Chettri
+promotes: https://issues.redhat.com/browse/WFLY-19590
+promoted-by: https://github.com/wildfly/wildfly-proposals/issues/619
+---
+= [Default] Promote MicroProfile Telemetry 2.0 to WildFly Standard
+:author:            Jason Lee
+:email:             jasondlee@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+MicroProfile Telemetry 2.0 shipped with WildFly Preview 34. To meet WildFly and product roadmap goals, this feature needs to be migrated to the WildFly feature pack, and its stability level promoted to `DEFAULT`.
+
+=== User Stories
+
+User wants to deploy an application using MicroProfile Telemetry 2.0, which adds support for OpenTelemetry Metrics and OpenTelemetry Logging, as well as updating underlying OpenTelemetry library versions, which brings in bug fixes and miscellaneous features.
+
+== Issue Metadata
+
+- https://issues.redhat.com/browse/WFLY-19846[]
+
+=== Related Issues
+
+- https://issues.redhat.com/browse/WFLY-19835[WFLY-19835 - Integrate OpenTelemetry with the MP Reactive Messaging Kafka connector]
+- https://issues.redhat.com/browse/WFLY-19836[WFLY-19836 - Integrate OpenTelemetry with the MP Reactive Messaging AMQP connector]
+
+=== Affected Projects or Components
+
+- MicroProfile Fault Tolerance
+- AMQP
+- Kafka
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+* WildFly must fully support MicroProfile Telemetry 2.0:
+** Tracing - Existing support
+** Metrics - New feature
+** Logs - New feature
+* OpenTelemetry versions must be updated to match those required by MicroProfile Telemetry 2.0
+
+=== Changed requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+=== Future Work
+
+* Add a quickstart covering the new spec
+
+== Backwards Compatibility
+
+* There are no known breaking API changes. The underlying update to OpenTelemetry 1.39.0, though, does update the semantic conventions used in describing the exported spans. Users updating their applications and environments to MicroProfile Telemetry 2.0 should expect some breakage in their dashboards, as the span attributes may have changed as a result of the upgrade. See https://github.com/open-telemetry/semantic-conventions/blob/main/docs/non-normative/http-migration.md[]
+* One other note: If a deployment makes use of the environment variable `OTEL_SDK_DISABLED`, the specified behavior has changed: https://microprofile.io/specifications/telemetry/2-0/[]
+
+=== Default Configuration
+
+* The default configuration will be unchanged and continue to work as is.
+
+=== Deployments
+
+Deployment behavior will be unaffected.
+
+=== Interoperability
+
+* There are no Interoperability issues, per se, but this update does introduce functionality (OpenTelemetry Metrics) that overlaps functionality provided by both the WildFly Metrics and Micrometer subsystems. Having multiple metrics libraries enabled simultaneous is likely unwanted due to -- if nothing else -- the performance implications of duplicate metrics gathering. This overlap and steps for mitigation should be discussed in the docs. 
+
+== Implementation Plan
+
+N/A. Will be delivered in one release.
+
+== Admin Clients
+
+N/A
+
+== Security Considerations
+
+This change will have no effect on security. As stated in the MicroProfile Telemetry 1.0, there is no baked in notion of security with OpenTelemetry, so systems administrators will need to make sure that the endpoint for the push publication is properly configured, and that the receiving system -- whatever it may, e.g. and OpenTelemetry Collector -- is secured as desired and appropriate for that system. Such a configuration is outside the scope of the work here.
+
+[[test_plan]]
+== Test Plan
+
+There are a number of tests already in WildFly and various downstream repositories. The WildFly test suite will be modified to add test coverage for the newly added observability signals, metrics and logging. Those tests reside in `testsuite/integration/microprofile`.
+
+Additionally, the MicroProfile Telemetry TCK, located in `testsuite/integration/microprofile-tck/telemetry`, will be updated to run the new MicroProfile Telemetry 2.0 TCK.
+
+== Community Documentation
+
+MicroProfile Telemetry already has some documentation in the community guides covering the tracing aspect. This documentation will be updated to cover metrics and logging as well.
+
+For more information on getting started with these new features, see the MicroProfile Telemetry specification:
+
+* https://download.eclipse.org/microprofile/microprofile-telemetry-2.0/microprofile-telemetry-spec-2.0.html#metrics[Metrics]
+* https://download.eclipse.org/microprofile/microprofile-telemetry-2.0/microprofile-telemetry-spec-2.0.html#logs[Logs]
+
+== Release Note Content
+
+"MicroProfile Telemetry support in WildFly has been updated to version 2.0. This new release brings bug fixes and updates to OpenTelemetry tracing support, as well as adding support for metrics and logging."
