@@ -1,0 +1,137 @@
+---
+categories:
+ - ee
+stability-level: preview
+issue: https://github.com/wildfly/wildfly-proposals/issues/608
+feature-team:
+ developer: bstansberry
+ sme:
+  - yrodiere
+ outside-perspective:
+  - jasondlee
+# If this issue tracks the promotion to a higher stability level of a previously
+# completed feature, provide the URL of the https://github.com/wildfly/wildfly-proposals/issues
+# issue that was used to track the previous feature.
+promotes:
+# This should be blank during initial development of a feature. It may be used
+# after the feature is completed if a subsequent issue is field to track promotion
+# of this feature to a higher stability level
+promoted-by:
+---
+= <INSERT TITLE HERE>
+:author:            Brian Stansberry
+:email:             bstansbe@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+
+== Overview
+
+In WildFly 34 we link:https://issues.redhat.com/browse/WFLY-19397[introduced] `preview` stability support for link:https://jakarta.ee/specifications/data/1.0/jakarta-data-1.0[Jakarta Data] into WildFly Preview. Here we propose making it available in standard WildFly, also at `preview` stability. This will allow a larger part of our user base to use the technology.
+
+While Jakarta Data will first appear in Jakarta EE as part of EE 11, its API is not bound to the EE 11 variants of other EE APIs, and our implementation, Hibernate Data Repositories, is part of Hibernate ORM 6.6, which implements the EE 10 Jakarta Persistence 3.1 specification. I've discussed with the ORM team whether this should work in an EE 10 server and they confirmed that it will and are in favor of making it more widely available to WildFly users.
+
+=== User Stories
+
+I'm an application developer and I'd like to be less concerned with the mechanics of manipulating persistent data. I'd like to define my entities and then write an interface that describes the CRUD and data access operations I need. I code against that interface and let WildFly take care of generating the interface implementation that deals with the DB.  I'm fine with having less flexibility with the portions of my app that work this way, including limitations like:
+* A simpler query language.
+* No lazy loading  -- or only explicit lazy loading by using Hibernate ORM native APIs.
+* More limited support for dynamic queries than is available with alternatives like the Criteria API.
+* And so on.
+I recognize that for portions of my application where these limitations are unacceptable I can still use standard Jakarta Persistence or native Hibernate ORM APIS.
+
+I'm an application developer and am familiar with the Repository pattern from use of Spring Data. I'd like to use that pattern in WildFly in non-Spring applications.
+
+I'm an application developer who's used Deltaspike Data, which uses a repository pattern. But it doesn't support EE > 8, so I'm looking for a similar technology to run on the latest WildFly releases.
+
+== Issue Metadata
+
+=== Related Issues
+
+https://issues.redhat.com/browse/WFLY-19776
+
+=== Affected Projects or Components
+
+https://github.com/wildfly/wildfly
+
+=== Other Interested Projects
+
+https://github.com/hal/console
+
+=== Relevant Installation Types
+
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+* The JBoss Modules modules required for the `jakarta-data` subsystem and the Jakarta Data API will be made available through `wildfly-ee` feature pack.
+** These modules will be shared with the `wildfly-preview` feature pack. (This is the norm for `wildfly-ee` modules).
+* The `jakarta-data` Galleon layer will be made available through the `wildfly-ee` feature pack.
+** This layer will be shared with the `wildfly-preview` feature pack. (This is the norm for `wildfly-ee` layers).
+* The Jakarta Data API artifact *must not* be part of the standard WildFly user boms. We limit the user boms to `community` stability artifacts.
+* The Jakarta Data API artifact must contintue to be part of the WildFly Preview user boms.
+* The wildfly-tck-runners Jakarta Data runner will be modified to test the `wildfly` feature pack by default, while allowing testing of `wildfly-preview`.
+* The `jakarta-data` subsystem will be added to the OOTB *WildFly Preview* `standalone.xml`, `standalone-ha.xml`, `standalone-full.xml` and `standalone-full-ha.xml` files, along with their corresponding `domain.xml` profiles. (_NOTE: this is a 'nice-to-have' requirement and may be dropped before this feature is merged. If so this requirement will be removed._)
+
+
+=== Non-Requirements
+
+* Inclusion of the `jakarta-data` subsystem in any OOTB standard WildFly configuration file.
+* Any quickstart.
+* Testing beyond passing the Jakarta Data TCK.
+
+=== Future Work
+
+* Promotion of Jakarta Data to `community` stability
+** Addition of a quickstart.
+** Addition of basic integration smoke testing.
+* Any HAL support not provided as part of this work.
+
+== Backwards Compatibility
+
+
+=== Default Configuration
+
+No incompatible changes; adds new functionality.
+
+=== Importing Existing Configuration
+
+No incompatible changes.
+
+=== Deployments
+
+No incompatible changes.
+
+=== Interoperability
+
+No impact on interoperability.
+
+== Admin Clients
+
+No impact on the CLI. Low level operations related to this subsystem will work the same as any others. No existing high level commands will be impacted. No new high level commands are needed.
+
+HAL impact is unclear. If HAL automatically picks up and displays new extensions, no work is needed. If HAL does not intend to handle extensions that only exist at `preview` stability, no work is needed. Otherwise, work on HAL may be desirable, but optional. (Note that the extension has no attributes and will not be in any OOTB config, so its significance to a HAL user is low.)
+
+== Security Considerations
+
+Under the covers this is just another way of interacting with a database via Hibernate ORM, so it doesn't introduce anything fundamentally new.
+
+[[test_plan]]
+== Test Plan
+
+The plan is to test this by executing and passing the Jakarta Data 1.0 TCK.
+
+== Community Documentation
+
+* Addition of basic content in the Admin Guide 'Subsystem Configurations' section, consistent with other subsystems that expose no configuration attributes.
+* Addition of a section in the Developer Guide, providing content along the lines of the link:https://www.wildfly.org/news/2024/10/10/jakarta-data/[Introducing Jakarta Data in WildFly Preview] blog post.
+ 
+== Release Note Content
+
+Application developers can now deploy applications that use link:https://jakarta.ee/specifications/data/1.0/jakarta-data-1.0[Jakarta Data] in standard WildFly. This feature is provided at `preview` stability.
