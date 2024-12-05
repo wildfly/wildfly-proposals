@@ -1,0 +1,125 @@
+---
+categories:
+ - ejb
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/669
+feature-team:
+ developer: Tomasz Adamski
+ sme:
+  -
+ outside-perspective:
+  -
+---
+= [WFLY-19816] Support regex expressions in cointainer interceptors mapping
+:author:            Tomasz Adamski
+:email:             tomasz.adamski@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Apart from Jakarta EE interceptors, which are mandated by the spec and run after all server specific interceptors, WildFly allows for configuration of container interceptors, which are run before those server specific interceptors. WildFly support for regular expression in Jakarta EE interceptors is already implemented and supported. Such functionality is not supported for container interceptors though. This seems an oversight as there is no reason why regular expressions should be not supported for container interceptors.
+
+
+=== User Stories
+
+Users would like to be able to configure container interceptors using regular expressions in the same way they can do it for Jakarta EE interceptors.
+
+== Issue Metadata
+
+=== Related Issues
+
+https://issues.redhat.com/browse/WFLY-6979 - this is the implementation for Jakarta EE interceptors
+
+=== Affected Projects or Components
+
+https://github.com/wildfly/wildfly
+https://github.com/wildfly/wildfly-core
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+The proposed solution is to clone regular interceptor support from Jakarta EE interceptors to container interceptors. 
+
+The behavior of those interceptors would be as follows:
+
+Users would have to enable regular expressions in ejb3 subsystems:
+
+[source]
+----
+    <subsystem xmlns="urn:jboss:domain:ejb3:10.0">
+    (...)
+    <allow-ejb-name-regex value="true"/>
+----
+[source]
+
+After that there would be possibility to use regular expressions in names of ejb3 container interceptors f.e.:
+
+[source]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+<jboss xmlns="http://www.jboss.com/xml/ns/javaee"
+       xmlns:jee="http://java.sun.com/xml/ns/javaee"
+       xmlns:ci ="urn:container-interceptors:1.0">
+
+    <jee:assembly-descriptor>
+        <ci:container-interceptors>
+            <jee:interceptor-binding>
+                <ejb-name>\.[A-C][^r]*rTest</ejb-name>
+                <interceptor-class>org.jboss.as.test.integration.ejb.container.interceptor.regex.RegexInterceptor</interceptor-class>
+            </jee:interceptor-binding>
+        </ci:container-interceptors>
+    </jee:assembly-descriptor>
+</jboss>
+----
+[source]
+
+
+== Backwards Compatibility
+
+I'm not anticipating backward compatibility issues. This is the new functionality and the configurations that were valid before, that is without regular expression, should work just fine after this feature is merged.
+
+=== Default Configuration
+
+* no change
+
+=== Importing Existing Configuration
+
+* no impact
+
+=== Deployments
+
+* no
+
+=== Interoperability
+
+* no
+
+
+== Admin Clients
+
+* no impact on admin clients
+
+
+[[test_plan]]
+== Test Plan
+
+This feature is already implemented,tested for Jakarta EE interceptors and for this configuration it is working fine. I suggest clonning existing Jakarta EE interceptors integration tests to verify the behavior of container interceptors.
+
+== Community Documentation
+
+I don't think additional community documentation is required for this feature.
