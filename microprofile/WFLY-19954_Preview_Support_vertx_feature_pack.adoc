@@ -1,0 +1,232 @@
+---
+categories:
+  - microprofile
+stability-level: preview
+issue: https://github.com/wildfly/wildfly-proposals/issues/662
+feature-team:
+ developer: gaol
+ sme:
+  - kabir
+  - fl4via
+  - jasondlee
+ outside-perspective:
+  -
+promotes:
+promoted-by:
+---
+
+= Add the vertx extension/subsystem from wildfly-vertx-feature-pack to WildFly Preview Feature Pack
+:author:            Lin Gao
+:email:             lgao@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:wildfly_vertx_feature_pack_with_link: https://github.com/wildfly-extras/wildfly-vertx-feature-pack[wildfly-vertx-feature-pack]
+:vertx_options_with_link: https://github.com/eclipse-vertx/vert.x/blob/4.5.10/src/main/java/io/vertx/core/VertxOptions.java[VertxOptions]
+:filesystem_options_with_link: https://github.com/eclipse-vertx/vert.x/blob/4.5.10/src/main/java/io/vertx/core/file/FileSystemOptions.java[FileSystemOptions]
+:address_resolver_options_with_link: https://github.com/eclipse-vertx/vert.x/blob/4.5.10/src/main/java/io/vertx/core/dns/AddressResolverOptions.java[AddressResolverOptions]
+== Overview
+
+The demand comes from https://github.com/smallrye/smallrye-reactive-messaging/discussions/2725[a discussion in smallrye-reactive-messaging] to ask the capability to configure the vertx options used in the microprofile-reactive-messaging subsystem, and there is a {wildfly_vertx_feature_pack_with_link} ready to fulfill, integrate it to WildFly should satisfy the requirement.
+
+The goal of the {wildfly_vertx_feature_pack_with_link} is to be the central place to provide the Vertx instance within WildFly server for other subsystems which may need it, example subsystems are https://github.com/wildfly/wildfly/tree/main/microprofile/telemetry-smallrye[microprofile-telemetry] and https://github.com/wildfly/wildfly/tree/main/microprofile/reactive-messaging-smallrye[microprofile-reactive-messaging]. Currently, they create their own vertx instances (microprofile-reactive-messaging creates one per deployment). Advice from the VertX team is to have only one shared instance for everything.
+
+=== User Stories
+
+The Vertx instance used by microprofile-reactive-messaging subsystem is constructed by: `Vertx.vertx()`, which uses the default {vertx_options_with_link}. Some users may want to customize the options used to construct the Vertx instance for their own reasons. Like updating `maxEventLoopExecuteTime` to control how long Vertx will log a warning message when it detects that the event loop threads are blocked; or updating `eventLoopPoolSize` to control how many event loop threads will be created; or updating `preferNativeTransport` on if native transport is preferred on any Vertx I/O operations, and more.
+
+== Issue Metadata
+
+=== Issue
+* https://issues.redhat.com/browse/WFLY-19954 - Add the vertx extension/subsystem from wildfly-vertx-feature-pack to WildFly Preview Feature Pack
+
+=== Related Issues
+* https://github.com/smallrye/smallrye-reactive-messaging/discussions/2725
+* https://github.com/smallrye/smallrye-reactive-messaging/issues/2771
+* https://github.com/smallrye/smallrye-opentelemetry/issues/380
+
+=== Stability Level
+* [ ] Experimental
+* [X] Preview
+* [ ] Community
+* [ ] default
+
+=== Dev Contacts
+* mailto:{email}[{author}]
+
+=== QE Contacts
+* TBD
+
+=== Testing By
+* [x] Engineering
+* [ ] QE
+
+=== Affected Projects or Components
+* https://github.com/wildfly/wildfly
+* https://github.com/wildfly-extras/wildfly-vertx-feature-pack
+
+=== Other Interested Projects
+* https://github.com/smallrye/smallrye-reactive-messaging
+* https://github.com/smallrye/smallrye-opentelemetry
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+* [x] Managed domain
+* [x] OpenShift s2i
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+As normally it is sufficient to have one Vertx instance for everything, the vertx subsystem provides either nothing or one Vertx instance according to the configuration. Users can set up a Vertx instance using WildFly management model, and it is exposed to the CDI container, other subsystems that want to consume it can opt in.
+
+The vertx extension and subsystem will be integrated to `preview/feature-pack` in `Preview` stability level.
+
+==== Configure the {vertx_options_with_link} in vertx subsystem
+The {vertx_options_with_link} is used to customize the options to construct a Vertx instance. The following fields in primitive types are selected to configure as attributes in the vertx subsystem with address `/subsystem=vertx/vertx-option=xx`:
+
+.Attributes in address: `/subsystem=vertx/vertx-option=xxx`
+[frame=all, grid=all]
+|===
+^| Field Name ^| Data Type ^| Source Class ^| Resource Attribute Name ^| Note
+
+| eventLoopPoolSize | int | {vertx_options_with_link} | event-loop-pool-size | number of event loop threads to be used
+| workerPoolSize | int | {vertx_options_with_link} | worker-pool-size | number of threads in the worker pool
+| internalBlockingPoolSize | int | {vertx_options_with_link} | internal-blocking-pool-size | number of threads in the internal blocking pool
+| preferNativeTransport | boolean | {vertx_options_with_link} | prefer-native-transport | If native transport is preferred or not
+| blockedThreadCheckInterval | long | {vertx_options_with_link} | blocked-thread-check-interval | blocked thread check interval
+| blockedThreadCheckIntervalUnit | TimeUnit | {vertx_options_with_link} | blocked-thread-check-interval-unit | blocked thread check interval time unit
+| maxEventLoopExecuteTime | long | {vertx_options_with_link} | max-eventloop-execute-time | max event loop thread execution time
+| maxEventLoopExecuteTimeUnit | TimeUnit | {vertx_options_with_link} | max-eventloop-execute-time-unit | max event loop thread execution time unit
+| maxWorkerExecuteTime | long | {vertx_options_with_link} | max-worker-execute-time | max worker thread execution time
+| maxWorkerExecuteTimeUnit | TimeUnit | {vertx_options_with_link} | max-worker-execute-time-unit | max worker thread execution time unit
+| warningExceptionTime | long | {vertx_options_with_link} | warning-exception-time | max time a thread can be blocked before stack traces get logged
+| warningExceptionTimeUnit | TimeUnit | {vertx_options_with_link} | warning-exception-time-unit | the time unit for warningExceptionTime
+| classPathResolvingEnabled | boolean | {filesystem_options_with_link} | classpath-resolving-enabled | whether classpath resolving is enabled
+| fileCachingEnabled | boolean | {filesystem_options_with_link} | file-cache-enabled | whether file caching is enabled for class path resolving
+| fileCacheDir | String | {filesystem_options_with_link} | file-cache-dir | file cache directory, defaults to `${jboss.server.temp.dir}/vertx-cache`
+| addressResolverOptions | AddressResolverOptions | {vertx_options_with_link} | address-resolver-option | reference to the AddressResolverOptions name
+
+|===
+
+Options in {address_resolver_options_with_link} are grouped to the address `/subsystem=vertx/address-resolver-option=xxx`, this can also be merged into `/subsystem=vertx/vertx-option=xxx` too if that is more user-friendly.
+
+.Attributes for AddressResolverOptions in address: `/subsystem=vertx/address-resolver-option=xxx`
+[frame=all, grid=all]
+|===
+^| Field Name ^| Data Type ^| Source Class ^| Resource Attribute Name ^| Note
+
+| hostsValue | Buffer | {address_resolver_options_with_link} | hosts-value | the hosts configuration file value
+| hostsRefreshPeriod | int | {address_resolver_options_with_link} | hosts-refresh-period | the hosts configuration refresh period in millis
+| servers | List<String> | {address_resolver_options_with_link} | servers | list of DNS servers
+| optResourceEnabled | boolean | {address_resolver_options_with_link} | opt-resource-enabled | if an optional record is automatically included in DNS queries
+| cacheMinTimeToLive | int | {address_resolver_options_with_link} | cache-min-time-to-live | the cache min TTL in seconds
+| cacheMaxTimeToLive | int | {address_resolver_options_with_link} | cache-max-time-to-live | the cache max TTL in seconds
+| cacheNegativeTimeToLive | int | {address_resolver_options_with_link} | cache-negative-time-to-live | the cache negative TTL in seconds
+| queryTimeout | long | {address_resolver_options_with_link} | query-time-out | the query timeout in milliseconds
+| maxQueries | int | {address_resolver_options_with_link} | max-queries | the maximum number of queries to be sent during a resolution
+| rdFlag | boolean | {address_resolver_options_with_link} | rd-flag | the DNS queries Recursion Desired flag value
+| searchDomains | List<String> | {address_resolver_options_with_link} | search-domains | the list of search domains
+| ndots | int | {address_resolver_options_with_link} | n-dots | the ndots value
+| rotateServers | boolean | {address_resolver_options_with_link} | rotate-servers | if the dns server selection uses round-robin
+| roundRobinInetAddress | boolean | {address_resolver_options_with_link} | round-robin-inet-address | if the inet address selection uses round-robin
+
+|===
+
+==== Expose the Vertx instance to CDI container
+When the `/subsystem=vertx/vertx=vertx:add()` is executed, there is a Vertx instance set up and exposed to CDI container with a selected qualifier:
+
+```java
+@Any @io.smallrye.common.annotation.Identifier.Literal.of("vertx");
+```
+
+The exposed Vertx instance is mainly used by other subsystems which needs a Vertx instance, like https://github.com/wildfly/wildfly/tree/main/microprofile/telemetry-smallrye[microprofile-telemetry] and https://github.com/wildfly/wildfly/tree/main/microprofile/reactive-messaging-smallrye[microprofile-reactive-messaging], and they don't need to depend on this feature pack from the source code perspective.
+
+The idea of introducing the qualifier is to make CDI lookup side can opt in until this feature pack has high stability level.
+
+The qualifier was selected after discussions with SmallRye team on the related issues above.
+
+==== Get the Vertx instance with the capability name in other subsystems
+The Vertx instance is also a MSC Service so that other services can access it with the capability name:
+[source,java]
+----
+CapabilityServiceBuilder<?> sb = context.getCapabilityServiceTarget().addService();
+Supplier<VertxProxy> vertxProxySupplier = sb.requiresCapability("org.wildfly.extension.vertx", VertxProxy.class);
+----
+NOTE: The Vertx MSC Service is only available when it is set up.
+
+=== Nice-to-Have Requirements
+As the Vertx instance is exposed to the CDI container, it would be good if it can be accessed in the application codes. As the usage of the Vertx instance in application code is undefined, a warning log message can be printed to notify that it is experimental.
+
+=== Changed requirements
+N/A
+
+=== Non-Requirements
+There is no plan currently of a clustered Vertx instance within WildFly, so some clustering related options will not be configured using `vertx` subsystem, including `EventBusOptions`.
+
+`MetricsOptions` is not required to configure.
+`TracingOptions` is not required to configure.
+
+Other options which are not listed above are not configured using vertx subsystem.
+
+=== Future Work
+The initial stability level is targeting `Preview`, and the plan is to promote it to higher stability level after some baking time in community.
+
+New attributes maybe added in the future according to the changes in the {vertx_options_with_link}, the vertx subsystem needs to be updated manually to match the new fields.
+
+== Backwards Compatibility
+N/A
+
+=== Default Configuration
+The `vertx` extension/subsystem needs to be activated explicitly to work:
+[source,shell]
+----
+if (outcome != success) of /subsystem=vertx:read-resource
+  echo INFO: Adding vertx subsystem.
+  /extension=org.wildfly.extension.vertx:add
+  /subsystem=vertx:add
+  :reload
+else
+  echo INFO: vertx subsystem already in configuration, subsystem not added.
+end-if
+----
+
+There is no Vertx instance set up by default, users need to do it explicitly like:
+[source,shell]
+----
+/subsystem=vertx/vertx=vertx:add()
+----
+
+=== Importing Existing Configuration
+There is https://github.com/wildfly/wildfly/blob/34.0.0.Final/observability/opentelemetry/src/main/java/org/wildfly/extension/opentelemetry/OpenTelemetrySubsystemRegistrar.java#L183-L187[a system property of `vertx.disableDnsResolver` set] in opentelemetry subsystem to address DNS resolving failures under k8s environment, which is used to construct the `HostnameResolver` when the Vertx instance is constructed. There is no API to set in Vertx now, so we will add that to the feature pack as well to avoid regressions.
+
+=== Deployments
+N/A
+
+=== Interoperability
+N/A
+
+== Implementation Plan
+The {wildfly_vertx_feature_pack_with_link} repository is hosted under https://github.com/wildfly-extras/[wildfly-extras] GitHub organization. It contains the source codes for all subsystem functionalities, unit tests and integration tests, including the tests on the vertx subsystem management model operations.
+
+We may consider moving it to WildFly codebase in the future when it becomes mature enough and has a higher stability level.
+
+== Admin Clients
+N/A
+
+== Security Considerations
+N/A
+
+[[test_plan]]
+== Test Plan
+The unit tests and integration tests including the management model tests will be done in the feature pack repository.
+
+The smoke tests will be added to WildFly repository together with the integration PR.
+
+== Community Documentation
+The user guides will be on the https://github.com/wildfly-extras/wildfly-vertx-feature-pack/wiki[Wiki page] of {wildfly_vertx_feature_pack_with_link} git repository.
+
+== Release Note Content
+N/A
