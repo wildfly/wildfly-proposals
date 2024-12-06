@@ -1,0 +1,156 @@
+---
+categories:
+- microprofile
+- jaxrs
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/640
+feature-team:
+ developer: jamezp
+ sme:
+  - jamezp
+ outside-perspective:
+  - marekkopecky
+promotes: https://issues.redhat.com/browse/WFLY-19866
+promoted-by: https://github.com/wildfly/wildfly-proposals/issues/640
+---
+= Promote MicroProfile REST Client 4.0 from Preview to Default Stability Level
+:author:            James R. Perkins
+:email:             jperkins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This document is about promoting the http://download.eclipse.org/microprofile/microprofile-rest-client-4.0/microprofile-rest-client-spec-4.0.html[MicroProfile REST Client 4.0]
+from a stability level of `preview` to a stability level of `default`.
+
+As you'll see in the release notes below, not much was added to the MicroProfile REST Client 4.0 API. There are only two
+new methods added to the `RestClientBuilder` API.
+
+=== User Stories
+
+A user wants to use the MicroProfile REST Client version 4.0 or use MicroProfile Platform 7.0.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-19866[WFLY-19866] - Promotion from `preview` to `default`
+* https://issues.redhat.com/browse/WFLY-19589[WFLY-19589] - Integration of MicroProfile REST Client 4.0 into WildFly Preview
+* https://issues.redhat.com/browse/WFLY-19588[WFLY-19588] - MicroProfile Platform 7.0
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly
+
+=== Other Interested Projects
+
+Any project wanting either the MicroProfile REST Client version 4.0 or MicroProfile Platform 7.0. There are two new
+methods on the `RestClientBuilder` for user convenience.
+
+* `baseUri(String)`: This was added as an alternative to `baseUri(URI)` and `baseUrl(URL)`. It allows a simple
+`java.lang.String` to be used instead of having to create a `java.net.URI` or `java.net.URL` first.
+* `header(String, Object)`: Adds a header to which will be used on all requests with the built client. Headers added via
+this method will be merged with the headers added via `@ClientHeaderParam` annotations, `@HeaderParam` annotations, and
+`ClientHeadersFactory` implementations.
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+The MicroProfile REST Client API and the RESTEasy MicroProfile implementation must be upgraded to be compliant with the
+https://download.eclipse.org/microprofile/microprofile-7.0/microprofile-spec-7.0.html[MicroProfile 7.0 Specification].
+
+There are no specific integration requirements as this is about upgrading an API and implementation.
+
+=== Changed requirements
+
+The only change here is migrating from the MicroProfile REST Client 3.0 API to the MicroProfile REST Client 4.0 API and
+RESTEasy MicroProfile 2.1 to RESTEasy MicroProfile 3.0.
+
+=== Non-Requirements
+
+N/A
+
+=== Future Work
+
+N/A
+
+== Backwards Compatibility
+
+There are no backwards compatibility issues. The new API has only added two new methods to the `RestClientBuilder` API.
+
+=== Default Configuration
+
+There are currently no configuration options for the integration and no new ones will be added.
+
+=== Importing Existing Configuration
+
+There is no issue using a current WildFly configuration with this change.
+
+=== Deployments
+
+There is no incompatible changes to the API or implementation. Deployments will simply see the newer versions available
+on their class path.
+
+=== Interoperability
+
+N/A
+
+== Implementation Plan
+
+The implementation plan is to simply upgrade versions of the required components.
+
+One note is that TCK POM configuration needed some changes. However, that is only for testing.
+
+== Admin Clients
+
+This change has no affect on admin clients. There are no model changes.
+
+== Security Considerations
+
+There would be no changes to security considerations for this upgrade.
+
+[[test_plan]]
+== Test Plan
+
+The test plan here is to rely on the MicroProfile REST Client TCK and the tests in
+https://github.com/resteasy/resteasy-microprofile[RESTEasy MicroProfile]. There are TCK tests for all the new features
+and some new TCK tests that were previously missed in the last TCK release.
+
+Some of the other MicroProfile TCK's and integration tests use the the MicroProfile REST Client. Some indirect testing
+will happen there as well.
+
+These TCK's run as part of a full WildFly build.
+
+There will not be any manual testing at this time as these new features are simply convenience methods for existing
+methods. New TCK tests were also added for these. Therefore, there is some build-in integration testing.
+
+== Community Documentation
+
+There seems to be no documentation for the MicroProfile REST Client short of noting the version. The version matrix
+documentation will be updated.
+ 
+== Release Note Content
+
+In this release there was an alignment with https://jakarta.ee/specifications/restful-ws/3.1/jakarta-restful-ws-spec-3.1[Jakarta RESTful Web Services 3.1]
+to be compatible with Jakarta EE 10.
+
+* There was a clarification about closing the REST client when being injected via CDI (https://github.com/eclipse/microprofile-rest-client/issues/348[348]).
+* The RestClientBuilder added a new method, baseUri(String) (https://github.com/eclipse/microprofile-rest-client/issues/334[334]).
+* The RestClientBuilder also added a new header(String, Object) method for adding headers to the built REST Client. The headers will be merged with headers added via other means (https://github.com/eclipse/microprofile-rest-client/issues/283[283]).
+
+Two New Helper Methods:
+
+* `baseUri(String)`: This was added as an alternative to `baseUri(URI)` and `baseUrl(URL)`. It allows a simple
+`java.lang.String` to be used instead of having to create a `java.net.URI` or `java.net.URL` first.
+* `header(String, Object)`: Adds a header to which will be used on all requests with the built client. Headers added via
+this method will be merged with the headers added via `@ClientHeaderParam` annotations, `@HeaderParam` annotations, and
+`ClientHeadersFactory` implementations.
