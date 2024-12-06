@@ -1,0 +1,188 @@
+---
+// Add any category for this proposal as a yaml list, e.g.
+// - core
+// - management
+// if missing, add it to _data/wildfly-categories and use its id
+categories:
+- microprofile
+// Specify the stability level of the feature.
+// Values can be one of: experimental preview community default
+stability-level: default
+// Specify the Feature Development tracker issue for the feature.
+// This must be an issue tracked in https://github.com/orgs/wildfly/projects/7/views/1.
+// To create a Feature Development tracker issue, go to  https://github.com/wildfly/wildfly-proposals/issues/new/choose
+// and select 'Feature Development'
+issue: https://github.com/wildfly/wildfly-proposals/issues/637
+// Provide the github ids of the members of the feature team, organized by role.
+// Provide a single id for the 'assignee' role. Use a yaml list for the 'sme' and
+// 'outside-perspective' roles, even if there is only one person in a role.
+feature-team:
+ developer: kabir
+ sme:
+  -
+ outside-perspective:
+  -
+// If this issue tracks the promotion to a higher stability level of a previously
+// completed feature, provide the URL of the https://github.com/wildfly/wildfly-proposals/issues
+// issue that was used to track the previous feature.
+promotes:
+// This should be blank during initial development of a feature. It may be used
+// after the feature is completed if a subsequent issue is field to track promotion
+// of this feature to a higher stability level
+promoted-by:
+---
+// Other properties
+:connector: AMQP
+:connector-lower: amqp
+:issue-id: WFLY-19836
+
+= Integrate OpenTelemetry with the MP Reactive Messaging {connector} connector
+:author:            Kabir Khan
+:email:             your.email@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+
+
+== Overview
+
+SmallRye Reactive Messaging's {connector} connector allows for integration with OpenTelemetry tracing so that we can track messages sent to and received from {connector} via this connector.
+
+In SmallRye Reactive Messaging, a set of MicroProfile Config properties are used to control whether tracing happens on a reactive messaging channel. These are:
+
+* `mp.messaging.connector.smallrye-{connector-lower}.tracing-enabled` - This is a connector level property. At present this is set to `false` in a `ConfigSource` set up by the integration with an `ordinal` value set to the maximum value. The result of this is that the user can never enable tracing to happen (since any attempt to set this property to `true` would be overridden by the mentioned `ConfigSource`).
+* The above property may in turn be overridden by the following channel level properties.
+** `mp.messaging.outgoing.<channel-name>.tracing-enabled` - Channel level property, controlling the OpenTelemetry tracing integration for an outgoing channel.
+** `mp.messaging.incoming.<channel-name>.tracing-enabled` - Channel level property, controlling the OpenTelenetry integration for an incoming channel.
+
+The way the SmallRye Reactive Messaging configuration system works is that it will first check for relevant channel level properties. If those are not present, it will look for the related connector level property, and if that is not available it will use a default.
+
+Internally in SmallRye Reactive Messaging, the default value for the tracing integration is that it is always enabled for a channel if not specified with above properties.
+
+This RFE is about allowing users to enable tracing via OpenTelemetry in WildFly, and also to be able to continue to ban it.
+
+
+=== User Stories
+
+Users wish to be able to trace messages sent to/from {connector} via reactive messaging using MicroProfile Telemetry.
+
+== Issue Metadata
+
+* https://issues.redhat.com/browse/{issue-id}[{issue-id}] - Integrate OpenTelemetry with the MP Reactive Messaging {connector} connector
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-19846[WFLY-19846] - Promote MicroProfile Telemetry 2.0 to WildFly Standard
+
+
+=== Affected Projects or Components
+* https://github.com/wildfly/wildfly/ - All integration work is done here
+* https://github.com/smallrye/smallrye-reactive-messaging - contains the implementation of the Reactive Messaging connectors. No work is expected to be needed here, unless bugs are found.
+
+=== Other Interested Projects
+None to my knowledge
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+It must be possible to turn the tracing on. To do this a resource called `subsystem=microprofile-reactive-messaging-smallrye/opentelemetry-tracing=config` is introduced. This adds a capability requirement on the MicroProfile Telemetry subsystem, which in turn requires the OpenTelemetry subsystem. The OpenTelemetry subsystem configures how tracing happens.
+
+This resource contains an attribute called `{connector-lower}-connector`, which allows us to control if and how tracing is enabled. It is an enumeration with the following values:
+
+* `NEVER` - This is the default value of the attribute, and also the value that will be used if the `opentelemetry-tracing=config` child resource is not present in the subsystem. This is the same behaviour that has been available today, i.e. the MicroProfile Config properties mentioned in the link:#overview[Overview] will not have any effect, and tracing will be disabled.
+* `OFF` - By default tracing will be disabled, but a user can use the MicroProfile Config properties from the link:#overview[Overview] to turn on tracing for a connector or individual channel in an application. We will discuss how the properties are resolved below.
+* `ON` - Similar to `OFF` but the default is to enable tracing for all channels, unless overridden for the application with the MicroProfile Config properties from the link:#overview[Overview]. We will discuss how the properties are resolved below.
+* `ALWAYS` - Tracing is enabled for all channels, and can not be turned off with the MicroProfile Config properties from the link:#overview[Overview].
+
+The MicroProfile Config properties in the  link:#Overview[Overview], are all booleans, and the values have these meanings:
+
+* `false` - OpenTelemetry tracing is not enabled
+* `true` - OpenTelemetry tracing is enabled
+
+When tracing is enabled, and the OpenTelemetry subsystem is configured to connect to a tracing collector, the traces should be available from there.
+
+=== Calculating whether tracing should happen
+
+If the `{connector-lower}-connector` attribute is `NEVER` or `ALWAYS`, tracing will always be totally disabled or enabled, and the MicroProfile Config properties from the link:#overview[Overview] will have no effect.
+
+Thus, they only work if the tracing is `{connector-lower}-connector` is `OFF` or `ON`. In this case the resolution works as follows for each channel:
+
+* If the channel is a {connector} channel it will check the channel level `mp.messaging.incoming.[channel-name].tracing-enabled` or `mp.messaging.outgoing.[channel-name].tracing-enabled` property, depending on if the channel is incoming or outgoing. If this has a value the value will be used. Otherwise, we go on to the next step.
+* We then check the `mp.messaging.connector.smallrye-{connector-lower}.tracing-enabled` connector level property for the {connector} connector. If this has a value the value will be used. Otherwise, we go on to the next step.
+* Finally, we check the value of the `{connector-lower}-connector` attribute, and use its value. `OFF` returns `false`, and `ON` returns `true`.
+
+In each of the above steps, if the found value is `false`, tracing is not enabled. If it is `true`, tracing is enabled.
+
+=== Changed requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+=== Future Work
+
+N/A
+
+== Backwards Compatibility
+
+If not configured, the default is the same as the existing behaviour, which is to not enable tracing, and to not allow users to enable it.
+
+=== Default Configuration
+
+No change, and the behaviour is the same as before, which is to not enable tracing.
+
+=== Importing Existing Configuration
+
+Existing configurations will have the same behaviour as today. i.e. tracing is not enabled, and can not be turned on.
+
+=== Deployments
+
+No change.
+
+=== Interoperability
+
+N/A
+
+== Implementation Plan
+
+A single pull request to WildFly will be created containing everything.
+
+== Admin Clients
+It is a simple resource with an attribute, so no work is needed in JBoss CLI/HAL
+
+== Security Considerations
+
+None, beyond the consideration that the collector of the traces will receive a lot of the data, and so must be secured as well.
+
+[[test_plan]]
+== Test Plan
+
+A unit test will be added in WildFly's `wildfly-microprofile-reactive-messaging-config` to make sure that the combinations of the new `{connector-lower}-connector` attribute and the MicroProfile Config properties controlling tracing yield the expected final value (e.g. if `{connector-lower}-connector=NEVER`, we check that the resulting value is always `false` no matter what we specify for the MicroProfile Config properties).
+
+Two main tests will be created in WildFly's https://github.com/wildfly/wildfly/tree/main/testsuite/integration/microprofile[testsuite/integration/microprofile] module:
+
+1. We test all the combinations of the `{connector-lower}-connector` in the new
+ `subsystem=microprofile-reactive-messaging-smallrye/opentelemetry-tracing=config` resource, and values of `mp.messaging.connector.smallrye-{connector-lower}.tracing-enabled` set via the user's MicroProfile Config, and make sure that the resulting value of `mp.messaging.connector.smallrye-{connector-lower}.tracing-enabled` in the final MicroProfile Config used for the deployment has the resulting value specified in the link:#Requirements[Requirements] section. We only do this for the connector level attribute since the same code is used to handle the value of `{connector-lower}-connector` at runtime. The mentioned unit test has more coverage.
+2. Testing tracing. The aim here is to test some combinations, and not all.
+a. Ensure that tracing does not happen when tracing is disabled by setting `{connector-lower}-connector=NEVER`
+b. Ensure that tracing happens when `{connector-lower}-connector=OFF` but is turned on for the deployment by specifying `mp.messaging.connector.smallrye-{connector-lower}.tracing-enabled=true`. Both sent and received messages will be traced.
+c. When `{connector-lower}-connector=ON`, and `mp.messaging.incoming.<channel-name>.tracing-enabled=false`, tracing will onlyt happen on the outgoing channel
+
+== Community Documentation
+
+The current https://github.com/wildfly/wildfly/blob/main/docs/src/main/asciidoc/_admin-guide/subsystem-configuration/MicroProfile_Reactive_Messsaging_SmallRye.adoc[MicroProfile Reactive Messaging Document] will be enhanced to cover the new resource and its attributes, and how those values combine with the relevant MicroProfile Config Properties to control whether OpenTelemetry tracing happens.
+
+
+== Release Note Content
+
+You can now enable OpenTelemetry tracing for the MicroProfile Reactive Messaging {connector} connector.
