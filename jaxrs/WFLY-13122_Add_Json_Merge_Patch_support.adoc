@@ -1,0 +1,138 @@
+---
+categories:
+  - jaxrs
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/664
+feature-team:
+ developer: ema
+ sme:
+  - jamezp
+  - ronsigal
+  - liweinan
+ outside-perspective:
+  - honza-kasik
+promotes:
+promoted-by:
+---
+= Add JSON Merge Patch support
+:author:            Jim Ma
+:email:             ema@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          json merge patch,resteasy,jaxrs
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+This feature is to support JSON Merge Patch spec as described in: https://datatracker.ietf.org/doc/html/rfc7396
+With JSON merge patch support, the client can send a JSON http request with Content-Type "application/merge-patch+json",
+and the JSON merge request will be directly apply to the target resource with the merge function as spec described.
+
+RESTEasy provides two implementation for JSON merge patch. One based on jsonp(abbreviation jsonp will be used in this page) and another one is based on
+json-patch and jackson2(abbreviation jackson2 will be used in this page). By default, RESTEasy uses jsonp implementation, while the jackson2 implementation is only enabled
+when the context parameter `resteasy.patchfilter.legacy=true` is set.
+
+The JSON merge patch functionality in RESTEasy can be completely disabled by setting the context parameter `resteasy.patchfilter.disabled=true`.
+When this parameter is enabled, any JSON merge patch requests will be ignored.
+
+=== User Stories
+
+When user want to merge a JSON object to the target JSON object by specifying the merge part the user wants to make, instead of providing the full updated version of the json content.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/WFLY-13412[WFLY-13412]
+
+=== Related Issues
+
+* {issue-base-url}/RESTEASY-2567[RESTEASY-2567]
+* {issue-base-url}/WFLY-19981[WFLY-19981]
+* {issue-base-url}/WFLY-19833[WFLY-19833]
+
+=== Affected Projects or Components
+
+- https://github.com/resteasy/resteasy[resteasy]
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* RESTEasy includes this feature support and is installed in WFLY
+* The PatchMethodFilter is enabled by default. It can be disabled by setting the resteasy.patchfilter.disabled configuration to true.
+* The `resteasy-patchfilter-disabled` configuration will be added to jaxrs subsystem, but this configuration is optional.
+The jaxrs subsystem schema version will be upgraded for this change.
+The https://issues.redhat.com/browse/WFLY-19981[WFLY-19981] is for adding this configuration item in jaxrs subsystem.
+
+=== Non-Requirements
+
+This is feature is added in current the RESTEasy artifact, there is no need to add or enable other module or module dependency
+for this feature.
+
+=== Future Work
+
+== Backwards Compatibility
+
+This is new feature added. There is no backward compatible issue.
+
+=== Default Configuration
+
+As this feature is enabled by default without any configuration in the jaxrs subsystem, thus it doesn't need to be
+declared in the default configuration.
+
+=== Importing Existing Configuration
+
+There is no migration issue for this new added feature.
+
+=== Deployments
+
+No behavior change of deployments in incompatible ways.
+
+=== Interoperability
+
+No interoperability issue.
+
+
+== Admin Clients
+
+There is no admin client work needed to supporting manipulating this feature or the behavior of this feature.
+
+== Security Considerations
+
+JSON Merge Patch is specifically designed for updating/merging with existing resources, but not for creating.
+It assumes that the resource already exists and modifies it by applying the merge content.
+JSON Merge Patch has the same security impact as the JSON content update with a http POST request.
+User should take care of all security things like validating
+the JSON content before/after the JSON merge, or taking measures to securely handle JSON data and mitigate potential security vulnerabilities.
+
+== Test Plan
+** Community
+*** Manual tests:
+    ***** Create the JAXRS resource can process JSON merge patch request
+    ***** Manually send JSON merge patch request with CRUL or other tool to check if the server result is expected
+
+*** Miscellaneous checks:To evaluate server performance, compare the server's response time when handling a JSON merge request against the response time for
+         updating the entire JSON content to achieve the same result.
+*** Integration tests
+    ***** Create JAXRS resource can process JSON merge patch
+    ***** Create client to send JSON merge patch request and check if the JSON Content is updated on server
+    ***** Execute CLI `/subsystem=jaxrs:write-attribute(name=resteasy-patchfilter-disabled, value=true)` to disable JSON merge patch and check if it still works
+    ***** Or set `resteasy.patchfilter.disabled=true` in web context parameter to `true`  and check if JSON merge patch is disabled as expected.
+
+== Community Documentation
+There will be new section in RESTEasy project to explain how to use this feature and disable this feature.
+This feature documentation in RESTEasy project : https://docs.resteasy.dev/6.2/userguide/#_json_patch_and_json_merge_patch
+This will be ported into the WildFly 35 documentation: https://docs.wildfly.org/35/Developer_Guide.html#Jakarta_RESTful_Web_Services_Reference_Guide
+
+== Release Note Content
+JSON Merge Patch feature - This feature allows the client to send a JSON http request with Content-Type "application/merge-patch+json", and the JSON merge request will be directly merge to the target resource.
