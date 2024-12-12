@@ -18,7 +18,7 @@ promotes:
 # of this feature to a higher stability level
 promoted-by:
 ---
-= <INSERT TITLE HERE>
+= Jakarta Data support in standard WildFly
 :author:            Brian Stansberry
 :email:             bstansbe@redhat.com
 :toc:               left
