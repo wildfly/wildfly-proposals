@@ -12,12 +12,12 @@ feature-team:
 promotes:
 promoted-by:
 ---
+
+= Integrate OpenTelemetry with the MP Reactive Messaging AMQP connector
 // Other properties
 :connector: AMQP
 :connector-lower: amqp
 :issue-id: WFLY-19836
-
-= Integrate OpenTelemetry with the MP Reactive Messaging {connector} connector
 :author:            Kabir Khan
 :email:             your.email@redhat.com
 :toc:               left
