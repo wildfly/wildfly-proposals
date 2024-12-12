@@ -6,12 +6,14 @@ issue: https://github.com/wildfly/wildfly-proposals/issues/647
 feature-team:
  developer: pferraro
  sme:
-  - pferraro
+  -
  outside-perspective:
   -
 promotes:
 promoted-by:
 ---
+
+= MicroProfile OpenAPI 4.0
 :IssueId: WFLY-19591
 :ParentIssueId: WFLY-19588
 :OldOpenAPIVersion: 3.0
@@ -21,8 +23,6 @@ promoted-by:
 :MicroProfileOpenAPIReleaseNotesAnchor: release_notes_40
 :SmallRyeOpenAPIVersion: 4.0.x
 :MicroProfilePlatformVersion: 7.0
-
-= MicroProfile OpenAPI 4.0
 :author:            Paul Ferraro
 :email:             paul.ferraro@redhat.com
 :toc:               left
