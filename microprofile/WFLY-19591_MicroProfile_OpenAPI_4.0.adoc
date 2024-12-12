@@ -12,7 +12,6 @@ feature-team:
 promotes:
 promoted-by:
 ---
-
 :IssueId: WFLY-19591
 :ParentIssueId: WFLY-19588
 :OldOpenAPIVersion: 3.0
