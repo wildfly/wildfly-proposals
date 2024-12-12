@@ -1,0 +1,190 @@
+---
+categories:
+- wf-galleon
+stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/625
+feature-team:
+ developer: jfdenise
+ sme:
+  -
+ outside-perspective:
+  -
+---
+= [community] WildFly Glow, introduce spaces to structure discovered Galleon feature-packs
+:author:            Jean-Francois Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Today WildFly Glow retrieves, for a given WildFly version, the Galleon feature-packs compatible with WildFly from a single location.
+There is a need for a finer grain way to structure feature-packs to reflect their "maturity" level.
+
+We are here defining a generic solution that would allow users to expand the WildFly Glow discovery outside of the "default" space.
+
+A good example would be the introduction of an 'experimental' space that would contain Galleon feature-packs that we know are not finalized and are expected to evolve in an incompatible way.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-19855[WFLY-19855]
+
+=== Related Issues
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [ ] Preview
+
+* [x] Community
+
+* [ ] default
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+https://github.com/wildfly/wildfly-glow[WildFly Glow], https://github.com/wildfly/wildfly-galleon-feature-packs[WildFly Galleon feature-packs repository] 
+and https://github.com/wildfly/wildfly-maven-plugin[WildFly Maven Plugin] projects.
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== WildFly Glow additional spaces
+
+The current https://github.com/wildfly/wildfly-galleon-feature-packs[location] where WildFly Glow retrieves the feature-packs is defined as the 'default' space. 
+This space is always enabled. That is where WildFly Galleon feature-packs and feature-packs known to be mature are registered.
+
+We are adding the ability to add spaces to the discovery context. A space contains additional feature-packs that come in addition to the feature-packs 
+registered in the `default` space.
+
+=== Space implementation
+
+Spaces are located in the sub-directory `spaces` of the current https://github.com/wildfly/wildfly-galleon-feature-packs[location].
+
+Although a limited number of spaces are going to be defined (perhaps only one) an 
+unbounded number of spaces can be defined. To allow for spaces discovery from the tools, some metadata is defined to list the known spaces.
+
+The spaces sub-directory:
+
+* The spaces https://github.com/jfdenise/wildfly-galleon-feature-packs/tree/incubating-space-poc/spaces[directory].
+* The https://github.com/jfdenise/wildfly-galleon-feature-packs/blob/incubating-space-poc/spaces/spaces.yaml[spaces.yaml] metadata file.
+
+A space is composed of:
+
+* A set of directories containing Galleon provisioning.xml files for both bare-metal and cloud for both WildFly and WildFly Preview. Each directory 
+is named with the WildFly version it targets. For example '34.0.0.Final'. Example of an https://github.com/jfdenise/wildfly-galleon-feature-packs/tree/incubating-space-poc/spaces/incubating[incubating] space
+
+* A https://github.com/jfdenise/wildfly-galleon-feature-packs/blob/incubating-space-poc/spaces/incubating/versions.yaml[versions.yaml] file that contains the list of WildFly versions for which we have additional feature-packs.
+
+* For a given WildFly version, the additional feature-packs are added to Galleon `provisioning.xml` files:
+** bare-metal https://github.com/jfdenise/wildfly-galleon-feature-packs/blob/incubating-space-poc/spaces/incubating/34.0.0.Final-SNAPSHOT/provisioning-bare-metal.xml[provisioning.xml file]
+** cloud https://github.com/jfdenise/wildfly-galleon-feature-packs/blob/incubating-space-poc/spaces/incubating/34.0.0.Final-SNAPSHOT/provisioning-cloud.xml[provisioning.xml file]
+** preview/bare-metal https://github.com/jfdenise/wildfly-galleon-feature-packs/blob/incubating-space-poc/spaces/incubating/34.0.0.Final-SNAPSHOT/tech-preview/provisioning-bare-metal.xml[provisioning.xml file]
+** preview/cloud https://github.com/jfdenise/wildfly-galleon-feature-packs/blob/incubating-space-poc/spaces/incubating/34.0.0.Final-SNAPSHOT/tech-preview/provisioning-cloud.xml[provisioning.xml file]
+
+=== The `experimental` space
+
+This proposal defines the space `experimental` in which Galleon feature-packs that are not yet stable can be registered.
+Feature-packs registered in this space don't offer any guarantee in term of backward compatibility. They can break in a next release. They can even 
+be unregistered.
+A good first candidate for this space is the https://github.com/wildfly-extras/wildfly-ai-feature-pack[WildFly AI feature-pack] 
+that is currently under development.
+
+=== Moving from the `experimental` space to the 'default' space
+
+For a new WildFly major release, a feature-pack in the 'experimental' space can be removed and added to the default space. 
+Such feature-pack should only contain features that are at least at the community stability level.
+
+=== Expanding discovery to some additional spaces
+
+This is a user action. By defaults, only the default space is seen by the WildFly Glow discovery. 
+Other spaces are not seen by WildFly Glow. Spaces need to be explicitly added to the discovery context.
+
+==== WildFly Glow command line
+
+All commands that can expand the discovery context are evolved with the `--spaces=<list of space names>` option. 
+
+==== WildFly Maven Plugin
+
+The following XML configuration can be added to the `<discover-provisioning-info>` XML element:
+
+```
+<discover-provisioning-info>
+  <spaces>
+    <space>[space name]</space>
+    ...
+  </spaces>
+</discover-provisioning-info>
+```
+
+=== Hard Requirements
+
+* A user should be able to specify additional spaces in which Galleon feature-packs are registered.
+* The https://github.com/wildfly/wildfly-galleon-feature-packs/blob/release/release_process.md[release process] in use to update the know feature-packs must take into account the additional spaces.
+* The https://github.com/wildfly/wildfly-galleon-feature-packs[WildFly Galleon feature-packs repository] CI must take into account spaces and execute automated tests when new feature-packs are added to spaces.
+
+=== Nice-to-Have Requirements
+// Requirements in this section do not have to be met to merge the proposed functionality.
+// Note: Nice-to-have requirements that don't end up being implemented as part of
+// the work covered by this proposal should be moved to the 'Future Work' section.
+None
+
+=== Non-Requirements
+// Use this section to explicitly discuss things that readers might think are required
+// but which are not required.
+None
+
+=== Future Work
+// Use this section to discuss requirements that are not addressed by this proposal
+// but which may be addressed in later proposals.
+* Possibly define a space for the "preview" stability level
+
+== Backwards Compatibility
+// Does this enhancement affect backwards compatibility with previously released
+// versions of WildFly?
+// Can the identified incompatibility be avoided?
+This evolution is backward compatible
+
+== Test Plan
+
+* Some tests are added to WildFly Glow and WildFly Maven plugin to cover the options allowing to set spaces.
+
+== Community Documentation
+
+WildFly Glow community documentation is evolved with:
+
+* Documentation on how to enable spaces
+* Documentation of the existing spaces. The registered feature-packs and layers they are defining are documented. 
+
+== Release Note Content
