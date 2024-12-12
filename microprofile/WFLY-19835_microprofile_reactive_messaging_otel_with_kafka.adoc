@@ -1,34 +1,15 @@
 ---
-// Add any category for this proposal as a yaml list, e.g.
-// - core
-// - management
-// if missing, add it to _data/wildfly-categories and use its id
 categories:
 - microprofile
-// Specify the stability level of the feature.
-// Values can be one of: experimental preview community default
 stability-level: default
-// Specify the Feature Development tracker issue for the feature.
-// This must be an issue tracked in https://github.com/orgs/wildfly/projects/7/views/1.
-// To create a Feature Development tracker issue, go to  https://github.com/wildfly/wildfly-proposals/issues/new/choose
-// and select 'Feature Development'
 issue: https://github.com/wildfly/wildfly-proposals/issues/636
-// Provide the github ids of the members of the feature team, organized by role.
-// Provide a single id for the 'assignee' role. Use a yaml list for the 'sme' and
-// 'outside-perspective' roles, even if there is only one person in a role.
 feature-team:
  developer: kabir
  sme:
   -
  outside-perspective:
   -
-// If this issue tracks the promotion to a higher stability level of a previously
-// completed feature, provide the URL of the https://github.com/wildfly/wildfly-proposals/issues
-// issue that was used to track the previous feature.
 promotes:
-// This should be blank during initial development of a feature. It may be used
-// after the feature is completed if a subsequent issue is field to track promotion
-// of this feature to a higher stability level
 promoted-by:
 ---
 // Other properties
