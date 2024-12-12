@@ -22,7 +22,7 @@ promoted-by:
 :SmallRyeOpenAPIVersion: 4.0.x
 :MicroProfilePlatformVersion: 7.0
 
-= MicroProfile OpenAPI {NewMicroProfileOpenAPIVersion}
+= MicroProfile OpenAPI 4.0
 :author:            Paul Ferraro
 :email:             paul.ferraro@redhat.com
 :toc:               left
