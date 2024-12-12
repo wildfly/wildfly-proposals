@@ -12,12 +12,12 @@ feature-team:
 promotes:
 promoted-by:
 ---
+
+= Integrate OpenTelemetry with the MP Reactive Messaging Kafka connector
 // Other properties
 :connector: Kafka
 :connector-lower: kafka
 :issue-id: WFLY-19835
-
-= Integrate OpenTelemetry with the MP Reactive Messaging {connector} connector
 :author:            Kabir Khan
 :email:             your.email@redhat.com
 :toc:               left
