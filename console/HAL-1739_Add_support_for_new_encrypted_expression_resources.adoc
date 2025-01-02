@@ -1,3 +1,10 @@
+---
+categories:
+  - console
+  - elytron
+  - management
+  - security
+---
 = Add support for new encrypted expression resources
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

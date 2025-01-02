@@ -1,3 +1,9 @@
+---
+categories:
+  - microprofile
+  - migration
+  - observability
+---
 = WFLY-17138 - Convert MP Metrics Subsystem to Admin-only Mode
 :author:            Jason Lee
 :email:             jasondlee@redhat.com

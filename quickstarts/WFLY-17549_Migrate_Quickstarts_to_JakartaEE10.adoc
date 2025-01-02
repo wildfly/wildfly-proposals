@@ -1,3 +1,8 @@
+---
+categories:
+  - ee
+  - quickstarts
+---
 = Migrate Quickstarts to Jakarta EE 10
 :author:            Eduardo Martins
 :email:             emartins@redhat.com

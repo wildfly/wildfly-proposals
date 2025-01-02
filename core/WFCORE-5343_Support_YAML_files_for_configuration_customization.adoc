@@ -1,3 +1,8 @@
+---
+categories:
+  - core
+  - management
+---
 = Support for YAML files to customize WildFly configuration
 :author:            Emmanuel Hugonnet
 :email:             ehugonne@redhat.com

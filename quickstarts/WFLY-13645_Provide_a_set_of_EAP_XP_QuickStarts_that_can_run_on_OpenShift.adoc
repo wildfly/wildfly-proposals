@@ -1,3 +1,8 @@
+---
+categories:
+  - cloud
+  - quickstarts
+---
 = Provide a set of EAP XP QuickStarts that can run on OpenShift
 :author:            Eduardo Martins
 :email:             emartins@redhat.com

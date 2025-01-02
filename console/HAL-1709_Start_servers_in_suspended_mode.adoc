@@ -1,3 +1,9 @@
+---
+categories:
+  - console
+  - core
+  - management
+---
 = Add option to start stopped servers in suspended mode
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

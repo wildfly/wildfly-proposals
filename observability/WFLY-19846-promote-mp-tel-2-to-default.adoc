@@ -14,7 +14,7 @@ feature-team:
 promotes: https://issues.redhat.com/browse/WFLY-19590
 promoted-by: https://github.com/wildfly/wildfly-proposals/issues/619
 ---
-= [Default] Promote MicroProfile Telemetry 2.0 to WildFly Standard
+= Promote MicroProfile Telemetry 2.0 to WildFly Standard
 :author:            Jason Lee
 :email:             jasondlee@redhat.com
 :toc:               left

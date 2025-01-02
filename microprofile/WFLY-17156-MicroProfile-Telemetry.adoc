@@ -1,3 +1,8 @@
+---
+categories:
+  - microprofile
+  - observability
+---
 = WFLY-17156 - MicroProfile Telemetry
 :author:            Jason Lee
 :email:             jasondlee@redhat.com

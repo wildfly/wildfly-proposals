@@ -1,3 +1,9 @@
+---
+categories:
+  - console
+  - core
+  - management
+---
 = HAL-1827 Update the server installation using the Web Console
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

@@ -1,4 +1,8 @@
-= EAP7-1571 / WFLY-14156 Remove MicroProfile REST Client from WildFly EE
+---
+categories:
+  - microprofile
+---
+= WFLY-14156 Remove MicroProfile REST Client from WildFly EE
 :author:            Alessio Soldano
 :email:             asoldano@redhat.com
 :toc:               left

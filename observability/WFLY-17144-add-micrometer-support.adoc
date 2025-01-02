@@ -1,3 +1,7 @@
+---
+categories:
+  - observability
+---
 = Add Micrometer Support to WildFly
 :author:            Jason Lee
 :email:             jasondlee@redhat.com

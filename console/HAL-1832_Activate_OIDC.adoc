@@ -1,3 +1,9 @@
+---
+categories:
+  - console
+  - elytron
+  - security
+---
 = HAL-1832 Activate OIDC in the console
 :author:            Harald Pehl
 :email:             hpehl@redhat.com
