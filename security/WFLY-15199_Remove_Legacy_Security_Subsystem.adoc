@@ -1,4 +1,9 @@
-= [WFLY-15199] Remove legacy the security subystsem from the feature packs and convert to a skeleton,
+---
+categories:
+  - migration
+  - security
+---
+= WFLY-15199 Remove legacy the security subsystem from the feature packs and convert to a skeleton
 :author:            Darran Lofthouse
 :email:             darran.lofthouse@redhat.com
 :toc:               left

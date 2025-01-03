@@ -1,4 +1,9 @@
-= Can not get core MBeans such as jboss.as and jboss.as.expr from application on WildFly when RBAC enabled
+---
+categories:
+  - management
+  - security
+---
+= Access core MBeans from application with RBAC enabled
 :author:            Kabir Khan
 :email:             kkhan@redhat.com
 :toc:               left
@@ -8,7 +13,7 @@
 
 == Overview
 
-The RFE was opened outlining a possible regression compared to previous releases in that when RBAC is enabled, it is no longer possible to invoke core MBeans (exposed by the JMX facade) on the platform MBean server. This tightening up was actually a good thing, which closed a security hole allowing non-authenticated users access to the MBean server which would allow them to modify server configuration from within their deployments.
+The RFE was opened outlining a possible regression compared to previous releases in that when RBAC is enabled, it is no longer possible to invoke core MBeans (exposed by the JMX facade, typically in the jboss.as and jboss.as.expr JMX domains) on the platform MBean server. This tightening up was actually a good thing, which closed a security hole allowing non-authenticated users access to the MBean server which would allow them to modify server configuration from within their deployments.
 
 Following investigation, it is possible to call core MBeans via the platform MBean server, if the user configures the server and application. No WildFly code changes are needed for this to work.
 

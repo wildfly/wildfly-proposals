@@ -1,3 +1,9 @@
+---
+categories:
+  - console
+  - elytron
+  - security
+---
 = Configure enhanced mapping of X509Certificate to the underlying identity
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

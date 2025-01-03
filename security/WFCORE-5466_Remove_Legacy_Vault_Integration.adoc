@@ -1,3 +1,8 @@
+---
+categories:
+  - migration
+  - security
+---
 = WFCORE-5466 Remove Legacy Vault Integration
 :author:            Darran Lofthouse
 :email:             darran.lofthouse@redhat.com

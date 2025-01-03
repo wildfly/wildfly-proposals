@@ -4,7 +4,7 @@ categories:
 stability-level: community
 issue: https://github.com/wildfly/wildfly-proposals/issues/586
 ---
-= [WFCORE-6830] Additional management attributes to contrain HTTP management interface resource utilisation.
+= WFCORE-6830 Additional management attributes to contrain HTTP management interface resource utilisation.
 :author:            Darran Lofthouse
 :email:             darran.lofthouse@jboss.org
 :toc:               left

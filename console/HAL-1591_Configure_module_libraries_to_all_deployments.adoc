@@ -1,3 +1,8 @@
+---
+categories:
+  - console
+  - modules
+---
 = Configure module libraries to all deployments running in a server
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

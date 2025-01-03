@@ -1,4 +1,8 @@
-= [WFLY-13793] Allow for a remote jms queue / topic not to use legacy amq1 prefix
+---
+categories:
+  - messaging
+---
+= WFLY-13793 Allow for a remote jms queue / topic not to use legacy amq1 prefix
 :author:            Chao Wang
 :email:             chaowan@redhat.com
 :toc:               left

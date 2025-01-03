@@ -1,3 +1,8 @@
+---
+categories:
+  - cloud
+  - transactions
+---
 = Transaction heuristic state should be reported in a better way
 :author:            Ondrej Chaloupka
 :email:             ochaloup@redhat.com

@@ -1,3 +1,7 @@
+---
+categories:
+  - migration
+---
 = JBoss EAP 7.4 Server Migration Tool
 :author:            Eduardo Martins
 :email:             emartins@redhat.com

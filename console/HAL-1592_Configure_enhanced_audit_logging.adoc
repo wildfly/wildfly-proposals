@@ -1,3 +1,9 @@
+---
+categories:
+  - console
+  - elytron
+  - logging
+---
 = Configure Enhanced Audit Logging
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

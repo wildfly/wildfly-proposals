@@ -1,3 +1,9 @@
+---
+categories:
+  - console
+  - security
+  - undertow
+---
 = Configure SSL Certificate revocation using OCSP
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

@@ -1,3 +1,8 @@
+---
+categories:
+  - microprofile
+  - quickstarts
+---
 = Delete RHOSAK support in MicroProfile Reactive Messaging
 :author:            Kabir Khan
 :email:             kkhan@redhat.com
@@ -8,7 +13,7 @@
 
 == Overview
 
-For EAP XP 4.0 we added support for Kafka provided by RHOSAK (Red Hat OpenShift Streams for Apache Kafka) to MicroProfile Reactive Messaging.
+For EAP XP 4.0 we added support for Kafka provided by RHOSAK (Red Hat OpenShift Streams for Apache Kafka) to MicroProfile Reactive Messaging. However, Red Hat has discontinued RHOSAK, and their customers are being asked to use AMQ Streams on OpenShift instead. So WildFly should drop its support.
 
 The support consisted of:
 
