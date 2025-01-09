@@ -1,3 +1,7 @@
+---
+categories:
+  - messaging
+---
 = Add an attribute to be able to configure max-read-page-bytes
 :author:            Emmanuel Hugonnet
 :email:             ehugonne@redhat.com

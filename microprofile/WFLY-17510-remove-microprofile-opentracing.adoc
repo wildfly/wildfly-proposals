@@ -1,3 +1,8 @@
+---
+categories:
+  - microprofile
+  - migration
+---
 = WFLY-17510: Convert MicroProfile OpenTracing subsystem to Admin-Only Mode
 :author:            Jason Lee
 :email:             jasondlee@redhat.com

@@ -1,3 +1,8 @@
+---
+categories:
+  - console
+  - messaging
+---
 = Expose JMS bridge statistics about messages that have been processed
 :author:            Harald Pehl
 :email:             hpehl@redhat.com

@@ -1,3 +1,8 @@
+---
+categories:
+  - migration
+  - security
+---
 = WFLY-14922 Remove PicketLink Subsystem from WildFly
 :author:            Farah Juma
 :email:             fjuma@redhat.com

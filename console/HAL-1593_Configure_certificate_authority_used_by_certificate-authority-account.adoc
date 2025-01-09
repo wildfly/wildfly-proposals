@@ -1,3 +1,9 @@
+---
+categories:
+  - console
+  - elytron
+  - security
+---
 = Configure the certificate authority used by a certificate-authority-account
 :author:            Harald Pehl
 :email:             hpehl@redhat.com
