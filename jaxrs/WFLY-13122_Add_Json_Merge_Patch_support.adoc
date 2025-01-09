@@ -14,7 +14,7 @@ feature-team:
 promotes:
 promoted-by:
 ---
-= Add JSON Merge Patch support
+= JSON Merge Patch support
 :author:            Jim Ma
 :email:             ema@redhat.com
 :toc:               left

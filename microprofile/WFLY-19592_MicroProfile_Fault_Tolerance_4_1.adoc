@@ -12,7 +12,7 @@ feature-team:
 promotes:
 promoted-by:
 ---
-= WFLY-19592 [MP Platform 7] MicroProfile Fault Tolerance 4.1
+= WFLY-19592 MicroProfile Fault Tolerance 4.1
 :author:            Radoslav Husar
 :email:             rhusar@redhat.com
 :toc:               left

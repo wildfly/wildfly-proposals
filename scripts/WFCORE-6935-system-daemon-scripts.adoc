@@ -12,7 +12,7 @@ feature-team:
 promoted-by:
 ---
 
-= [default] Improve systemd service units
+= Improve systemd service units
 :author:            Yeray Borges
 :email:             yborgess@redhat.com
 :toc:               left
