@@ -109,13 +109,7 @@ We'll introduce the following new configuration options:
 
 
 
-* `post-logout-path`: This option designates the path component of a URL
-the user has registered as the `post_logout_redirect_uri` in the OP.
-Elytron uses it to generate an appropriate URL for a redirect call.
-There is no default value. If left unset it is not used.
-- The text can not be an empty string.
-- It is expected that the text start with a forward slash (e.g. "/").
-- It can be a sequence of path segments (e.g. "/call/back/home")
+* `post-logout-uri`: The URI to which the user will be redirected after a logout has been performed.  A post-logout-uri redirection is only performed when the logout is RP-initiated.  The value must have been previously registered with the OpenId Provider, as a  post_logout_redirect_uris parameter.  The post-logout-uri value must exactly match one of post_logout_redirect_uris values already registered with the OpenId Provider.
 
 
 ==== Front-Channel Logout and Back-Channel Logout
