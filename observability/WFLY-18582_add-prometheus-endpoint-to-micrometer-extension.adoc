@@ -1,0 +1,123 @@
+---
+categories:
+- observability
+stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/590
+feature-team:
+ developer: jasondlee
+ sme:
+  - jamezp
+ outside-perspective:
+  - kabir
+---
+= [Community] WFLY-18582 - Add prometheus endpoint to micrometer extension
+:author:            Jason Lee
+:email:             jasondlee@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Micrometer replaced Micrometer Metrics as the user-facing metrics library provided by WildFly. As part of that
+transition, the export behavior moved from a pull-based Prometheus-like format to push-based mechanism using the
+OpenTelemetry Protocol. Based on feedback from users who still desire to use the pull-based approach, this change will
+add support for the Prometheus Registry in addition to or in place of the OTLP Registry.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-18582[WFLY-18582]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-2234[EAP7-2234]
+* https://issues.redhat.com/browse/EAP7-2235[EAP7-2235]
+
+
+=== Affected Projects or Components
+
+Only the Micrometer subsystem and related tests will be affected
+
+=== Other Interested Projects
+
+- OpenShift has an interest in Prometheus metrics
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* OpenShift Source-to-Image (S2I)
+* Managed domain
+* Bootable jar
+
+== Requirements
+
+* Existing servers, if configured to use Micrometer (e.g., the `endpoint` property has been set), will be migrated to be
+  an OTLP-based configuration. Since OTLP is the only current option, there is no ambiguity in this migration.
+* Existing servers with the extension enabled but with no endpoint set will not be changed. That is to say, Micrometer
+  will continue to use a no-op registry.
+* Support for a new registry, `PrometheusRegistry`, will be added.
+** It can be added as the only registry, or it can be added _in addition to_ the OTLP Registry
+** The registry will expose two model attribute:
+*** `context`: the context (e.g., `/prometheus`) on which the metrics will be exposed. This is undefined by default and
+  must be specifed by the administrator when adding the resource.
+*** `security-enabled`: whether to secure the context using the user and roles defined in the application server. The context
+  will be secured by default
+** If the user would like to use `/metrics`, the WildFly metrics extension must be disabled first to avoid a naming conflict.
+* Prometheus will not be suppported in domain mode, so attempts to add the new resource in domain mode will be rejected.
+** This non-support in domain mode should be noted in the description of the add operation in `LocalDescriptions.properties`.
+
+
+=== Non-Requirements
+
+* Adding other arbitrary `MeterRegistry` types
+
+== Backwards Compatibility
+
+* Existing servers should continue to operate as is, using any existing OTLP configuration without manual intervention.
+
+=== Default Configuration
+
+This resource will not be part of any OOTB config or added by default as part of any existing Galleon layer, so there's no compatibility impact on default configurations.
+
+=== Importing Existing Configuration
+
+* See above.
+
+=== Deployments
+
+Deployments will be unaffected by this change, as it is of interest only to system administrators or metrics dashboard maintainers.
+
+=== Interoperability
+
+== Security Considerations
+
+If `security-enabled` is set to true:
+
+* Users must authenticate to the management interface
+* As each metric is read, the system will verify that the authenticated user has access to that particular metric before returning the value.
+** All metrics that are disallowed for the user per the security policy will return a zero
+
+[[test_plan]]
+== Test Plan
+
+* Tests will be added to `testsuite/integration/microprofile/`
+** Verify basic Prometheus support
+*** A user application will be deployed to a running server (via Arquillian)
+*** Prometheus metrics will be scraped to verify that application metrics are being exported
+*** JVM/System metrics will also be verified by a scrape
+** Verify security can be enabled
+*** Access to the endpoint will be verified with security disabled
+*** Security will be enabled, and access checks will be verified:
+**** Unauthenticated requests will be verified to be rejected
+**** Properly authenticated requests will be verified to be allowed
+
+== Community Documentation
+
+The WildFly Administration Guide will be updated to include this new support.
+
+== Release Note Content
+
+The Micrometer extension has been modified to add support for the Prometheus Registry, allowing for pull-based/scraping of metrics information for deployments where that is preferred.
