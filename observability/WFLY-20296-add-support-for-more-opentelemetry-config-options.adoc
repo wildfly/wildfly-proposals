@@ -1,0 +1,142 @@
+---
+categories:
+- observability
+stability-level: community
+# Specify the Feature Development tracker issue for the feature.
+# This must be an issue tracked in https://github.com/orgs/wildfly/projects/7/views/1.
+# To create a Feature Development tracker issue, go to  https://github.com/wildfly/wildfly-proposals/issues/new/choose
+# and select 'Feature Development'
+issue: https://github.com/wildfly/wildfly-proposals/issues/683
+feature-team:
+ developer: jasondlee
+ sme:
+  -
+ outside-perspective:
+  -
+promotes:
+promoted-by:
+---
+= WFLY-20296 - Add support for more OpenTelemetry configuration options
+:author:            Jason Lee
+:email:             jasondlee@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+While every aspect of OpenTelemetry is technically configurable via MP Telemetry and MP Config, there have been several requests for more direct support for the various options in the management model. The RFE will identify and implement the options most likely to be of general interest to WildFly users.
+
+=== User Stories
+
+- As an application developer, I would like greater control in how OpenTelemetry is configured in the server without having to depend on an external library (e.g., MicroProfile Config).
+
+== Issue Metadata
+
+- https://issues.redhat.com/browse/WFLY-20296[]
+
+=== Related Issues
+
+- https://issues.redhat.com/browse/WFLY-18290[]
+- https://issues.redhat.com/browse/WFLY-19919[]
+- https://issues.redhat.com/browse/JBEAP-27199[]
+
+=== Affected Projects or Components
+
+This change will affect only the OpenTelemetry subsystem
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+* Additional configuration options should include:
+** General
+*** TLS server certificate (`otel.exporter.otlp.certificate`) - The path to the server certificate on disk
+*** TLS client certificate (`otel.exporter.otlp.client.certificate`) - The path to the client certificate on disk
+*** Client key (`otel.exporter.otlp.client.key`)- The path to the key on disk
+*** Compression (`otel.exporter.otlp.compression`) - Currently, otel only supports 'gzip'
+** Metrics
+*** Export interval (`otel.metric.export.interval`) - The interval, in milliseconds, between the start of two export attempts.
+** Logs
+*** Schedule delay (`otel.blrp.schedule.delay`) - The interval, in milliseconds, between two consecutive exports
+*** Max queue size (`otel.blrp.max.queue.size`) - The maximum queue size.
+*** Max batch size (`otel.blrp.max.export.batch.size`) - The maximum batch size.
+*** Export timeout (`otel.blrp.export.timeout`) - The maximum allowed time, in milliseconds, to export data.	3
+* Changes to the management model should be split out based on signal types
+** For ease of use by users, the structure of the updated XML should reflect this
+** Existing trace-specific configuration options should be moved to the trace child element
+** The shape of the management model should be flat, using a list of attributes, rather than nested resources
+*** Each attribute will be declared on the existing `OpenTelemetrySubsystemRegistrar`. No new child resources should be created.
+*** Attribute groups will be used to group properties by signal type to make the XML file and admin console more user-friendly
+** Shared properties (e.g., the OpenTelemetry Collector endpoint) should be exposed on the root element.
+*** Signal-specific overrides need not be supported
+* All new properties added will have, as defaults, values described in the relevant OpenTelemetry documentation (see the official docs https://opentelemetry.io/docs/languages/java/configuration/[here])
+* Support should not depend on, e.g., MicroProfile Telemetry or MicroProfile Config
+* Any configured properties should still be able to be overridden via the existing MicroProfile support (this is the current default behavior)
+* While it is acceptable to relate WildFly management model attributes to their respective system property in the OpenTelemetry documentation to help explain their intent, the system property is an implementation detail that should not necessarily be leaked in the model to avoid as much coupling as is possible.
+
+=== Changed requirements
+
+N/A
+
+=== Non-Requirements
+
+While unifying observability configuration (i.e., that of the OpenTelemetry and Micrometer subsystems) has been requested and might be of interest to users and administrators, that is a non-goal for this RFE.
+
+=== Future Work
+
+N/A
+
+== Backwards Compatibility
+
+This change will, of necessity, change the management model of the subsystem. Despite this change, existing configurations should continue to work unchanged. Furthermore, existing configurations should be automatically migrated to the new model/schema once a relevant change has made to the configuration.
+
+=== Default Configuration
+
+No default values will be changed.
+
+=== Importing Existing Configuration
+
+Existing configurations should be supported unchanged.
+
+=== Deployments
+
+Deployments should see no change in behavior.
+
+=== Interoperability
+
+No interoperability concerns are foreseen.
+
+== Implementation Plan
+
+N/A
+
+== Admin Clients
+
+N/A
+
+== Security Considerations
+
+In general, this should have no impact on security. However, one of the proposed changes includes adding support for configuring TLS certificates for communicating with the OpenTelemetry Collector. The use of these TLS certificates will allow the server to both secure communications with the Collector, and verify that the collector is, indeed, the correct receiver for the signals. This will have a positive impact on the data security for the subsystem and user applications.
+
+[[test_plan]]
+== Test Plan
+
+The existing tests under `testsuite/integration/microprofile` will be extended to cover the relevant newly added properties. Not all properties (such as those affecting publish rates or batch sizes) need extensive integration testing. Others, though, such as the TLS properties, will need thorough testing, both positive and negative.
+
+== Community Documentation
+
+The existing documentation in the Administration Guide will be augmented to cover the new options
+
+== Release Note Content
+
+"The management model for the OpenTelemetry subsystem has been updated and expanded to expose more direct control over the
+behavior of the subsystem."
