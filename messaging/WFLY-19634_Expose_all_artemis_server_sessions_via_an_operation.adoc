@@ -1,0 +1,118 @@
+---
+categories:
+  - messaging
+stability-level: community
+issue:https://github.com/wildfly/wildfly-proposals/issues/674
+feature-team:
+ developer: ehsavoie
+ sme:
+  -
+ outside-perspective:
+  -
+promotes:
+promoted-by:
+---
+= Expose all artemis server sessions via an operation
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:          messaging,jms
+:idseparator:       -
+
+== Overview
+
+The goal of this feature is to expose an Apache Artemis server management operation that list all the sessions currently alive on the server in a JSON format.
+
+=== User Stories
+
+As a user I can list all the sessions currently alive on the embedded Apache Artemis server by connection.
+With this new operation I can list all the sessions currently alive on the embedded Apache Artemis server, not just per connection.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-19634[WFLY-19634]
+
+=== Related Issues
+
+=== Affected Projects or Components
+
+ * WildFly
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+Expose the maangement operation *listAllSessionsAsJSON* from Apache Activemq Artemis through WildFly management API as an operation.
+
+=== Changed requirements
+
+__<Only relevant for analyses of a promotion of an existing feature to
+ 'preview' or 'community stability. Other analyses should remove this section.>__
+
+__<For any existing requirements from the feature being promoted that are
+ being changed or removed, describe the change.>__
+
+
+=== Non-Requirements
+
+=== Future Work
+
+== Backwards Compatibility
+
+=== Default Configuration
+
+=== Importing Existing Configuration
+
+=== Deployments
+
+=== Interoperability
+
+== Implementation Plan
+
+Create a new operation `list-all-sessions-as-json` with takes no parameters and returns a String containing all the sessions in JSON format.
+
+== Admin Clients
+
+
+== Security Considerations
+
+
+[[test_plan]]
+== Test Plan
+
+* Changes in Wildfly management model will be covered in WF testsuite with new test:
+ - org.jboss.as.test.integration.messaging.mgmt.JMSServerManagementTestCase#testListAllSessions which creates 2 JMS sessions and checks that we are getting 4 sessions in the list, 2 of them being jms marked.
+
+
+** Experimental - No test plan is required. Basic unit / integration tests should be added during development.
+
+** Preview - a brief high-level description of the testing approach should be added here, including types of tests added (unit, integration, smoke, component, subsystem, etc.) Note that not all test types are required for a particular feature, so include a description of what is being tested and the approach chosen to perform the testing.
+
+** Community - this level should include everything in the 'Preview' stability level, plus the following additional testing as relevant:
+*** Manual tests: briefly describe checks to be performed during one-time exploratory testing. The purpose of this testing is to check corner cases and other cases that are not worth implementing as automated tests. Typical checks are: bad configurations are easy to reveal, attribute descriptions and error messages are clear, names are descriptive and consistent with similar resources, default values are reasonable.
+    If there is an existing quickstart affected by the feature, manual checks include following the quickstart's guide and verifying functionality.
+*** Miscellaneous checks: Manual checks for significant changes in server performance, memory and disk footprint should be described here. These checks are not always relevant, but consideration of these impacts, and others, are strongly encouraged and should be described here. Fully qualified test case names should be provided along with a brief description of what the test is doing.
+*** Integration tests - at the 'Community' stability level, complete integration tests should be provided.
+*** Compatibility tests - if backwards compatibility is relevant to the feature, then describe how the testing is performed.
+
+** Default - This stability level is reserved and requires approval by a professional Quality Engineer with subject matter expertise.
+
+== Community Documentation
+
+* Covered by operation description in management model.
+
+== Release Note Content
+
+__<Draft verbiage for up to a few sentences on the feature for inclusion in the Release Note blog article for the release that first includes this feature.__
+__Example article: https://www.wildfly.org/news/2024/01/25/WildFly31-Released/.__
+__This content will be edited, so there is no need to make it perfect or discuss what release it appears in.>__ 
