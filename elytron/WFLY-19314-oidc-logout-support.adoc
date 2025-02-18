@@ -101,29 +101,22 @@ The use of `id_token_hint` is recommended by the spec.
 
 We'll introduce the following new configuration options:
 
-* `logout-path`: This option designates the path component of a URL.  It is the path component of the RP's URL to trigger a logout of the user.  Elytron uses it to identify a logout request and take the appropriate action internally.  The default values is `/logout`.
+* `logout-path`: This option designates the path component of a URL.  It is the path component to trigger a logout of the user.  Elytron uses it to identify a logout request and take the appropriate action internally.  The default values is `/logout`.
 - The option can not be declared as an empty string or "/" only
 - It is expected that the text start with a forward slash (e.g. "/").
 - It can be a sequence of path segments (e.g. "/call/back/home")
-- It cannot be identical to the text declared in `logout-callback-path`
 
+==== RP-Initiated Logout
+For RP-Initiated Logout, we'll introduce the following new configuration option:
 
-
-* `post-logout-uri`: The URI to which the user will be redirected after a logout has been performed.  A post-logout-uri redirection is only performed when the logout is RP-initiated.  The value must have been previously registered with the OpenId Provider, as a  post_logout_redirect_uris parameter.  The post-logout-uri value must exactly match one of post_logout_redirect_uris values already registered with the OpenId Provider.
+* `post-logout-uri`: This attribute must be an absolute URI.  It must be registered with the OpenId Provider.  This URI will be called after logout is executed.
 
 
 ==== Front-Channel Logout and Back-Channel Logout
 
 For Front-Channel and Back-Channel Logout, we'll introduce the following new configuration options:
 
-* `logout-callback-path`: This option designates the path component of a URL the user has registered with the OP as either a `frontchannel.logout.url` or a `backchannel.logout.url`.  Elytron uses it internally to identify a front-channel or back-channel request and takes the appropriate internal action.  The default values is `/logout/callback`.
-- The option can not be declared as an empty string or "/" only
-- It is expected that the text start with a forward slash (e.g. "/").
-- It can be a sequence of path segments (e.g. "/call/back/home")
-- It cannot be identical to the text declared in `logout-path`
-- The path segment cannot end with the same path as `logout-path`
-(e.g.  if logout-path="/logout" and logout-callback-path="/callback/logout" will give an invalid result.  logout-callback-path="/callback/logout/now" is a valid path.
-
+* `logout-callback-path`: This attribute must be an absolute URI.  It must be registered with the OpenId Provider.  This URI will be called after logout has been executed.
 
 * `logout-session-required`: A boolean value that indicates whether `elytron-oidc-client` should enforce
 both `sid` and `iss` parameters when processing front-channel logout requests and should enforce the `sid`
@@ -134,11 +127,13 @@ so that subsequent requests from the user will force the session to be invalidat
 
 === Testing Configuration option values.
 Tests will be created to check the restrictions to the configuration option values.  An exception will be thrown when the value is invalid.
+
+* `logout-path`
 - The value can not be the empty string
 - The value can not be "/" only
-- The value must start with the "/" character
-- The value of `logout-path` and `logout-callback-path` can not be identical.
-- The ending subpath of `logout-callback-path` can not be identical to `logout-path`.  (e.g. logout-path="/logout" and logout-callback-path="/callback/logout" is an invalid setting of `logout-callback-path`.
+- It must start with the "/" character
+* `post-logout-uri` and `logout-callback-path`
+-  Both must start with `http`.
 
 === Nice-to-Have Requirements
 // Requirements in this section do not have to be met to merge the proposed functionality.
