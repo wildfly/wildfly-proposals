@@ -30,6 +30,7 @@ promotes:
 # of this feature to a higher stability level
 promoted-by:
 ---
+
 = <INSERT TITLE HERE>
 :author:            Your Name
 :email:             your.email@redhat.com
