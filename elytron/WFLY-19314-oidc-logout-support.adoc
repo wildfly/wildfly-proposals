@@ -2,6 +2,8 @@
 categories:
   - elytron
   - security
+stability-level: preview
+issue: https://github.com/wildfly/wildfly-proposals/issues/676
 ---
 = [Preview] WFLY-19314 Logout Support for OIDC
 :author:            Farah Juma
