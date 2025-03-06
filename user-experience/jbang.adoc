@@ -1,0 +1,90 @@
+---
+categories:
+- user-experience
+stability-level: experimental
+issue: https://github.com/wildfly/wildfly-proposals/issues/688
+feature-team:
+ developer: jmesnil
+ sme:
+  - jfdenise
+ outside-perspective:
+  -
+---
+= Run WildFly application from JBang
+:author:            Jeff Mesnil
+:email:             jmesnil@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+https://www.jbang.dev[JBang] is a tool to create, edit and run self-contained source-only Java programs with unprecedented ease.
+
+Having the ability to build and run a WildFly application from JBang would simplify the onboarding experience of WildFly and make it very simple to prototype applications.
+
+This would not be a replacement for a full-fledge applications (based on a Maven projects, with tests, etc.) but a simple approach to get code up and running and experiment with simple Java applications.
+
+JBang allows integration with 3rd-party tools between the compilation of the classes and its execution.
+We can inject Glow at that step to discover all the capabilities required by the classes, provision WildFly and package a Bootable Jar that would be executed by JBang.
+
+From a single `.java` file, we could then run a fully-functional WildFly application with a simple `jbang run myapp.java`.
+
+== Overview
+
+The goal is to extend https://github.com/wildfly/wildfly-glow[WildFly Glow] so that it would be called by JBang during its build process to discover all the capabilities required by the classes, provision WildFly and package a Bootable Jar.
+
+=== User Stories
+
+As a Java developer, I want to prototype a simple applications running on WildFly from a single Java source. I don't need to create a whole Maven project and configure its pom.xml to get started.
+
+
+== Issue Metadata
+
+The whole feature is self-contained in WildFly Glow and is tracked by https://github.com/wildfly/wildfly-glow/pull/113
+
+
+=== Affected Projects or Components
+
+- https://github.com/wildfly/wildfly-glow[WildFly Glow]
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Bootable jar
+
+Althought WildFly Glow is able to deliver different installation types, for the integration with JBang, only
+the `Bootable Jar` installation type make sense.
+
+== Requirements
+
+* Add https://www.jbang.dev/documentation/guide/latest/integration.html[JBang integration] to WildFly Glow
+
+== Non Requirements
+
+* This feature is meant for rapid prototyping and is not a replacement for full-fledged WildFly applications or moderately complex applications.
+
+=== Future Work
+
+* Depending on the user reception, future enhancements could be added to further streamline prototyping WildFly applications with JBang
+
+== Backwards Compatibility
+
+Not relevant
+
+=== Deployments
+
+For this integration, the `.java` file run by JBang is deployed in WildFly as a Web archive.
+
+[[test_plan]]
+== Test Plan
+
+Add integration tests to WildFly Glow to verify that JBang is able to build and deploy a WildFly application
+
+== Community Documentation
+
+https://docs.wildfly.org/wildfly-glow/[WildFly Glow documentation] will be enhanced with a section that illustrates how to run a WildFly applications from JBang.
+
+== Release Note Content
+
+You can now run a WildFly application from https://www.jbang.dev[JBang]. To learn more about this feature, please read the https://docs.wildfly.org/wildfly-glow#jbang[JBang integration section] in WildGly Glow Documentation.
