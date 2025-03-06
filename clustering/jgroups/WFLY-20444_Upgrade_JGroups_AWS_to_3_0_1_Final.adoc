@@ -1,0 +1,119 @@
+---
+categories:
+  - clustering
+  - cloud
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/690
+feature-team:
+ developer: rhusar
+ sme:
+  - rhusar
+ outside-perspective:
+  - istraka
+promotes:
+promoted-by:
+---
+= WFLY-20444 Upgrade JGroups AWS to 3.0.1.Final and software.amazon.awssdk to 2.30.32
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Upgrade the JGroups AWS to 3.0.1.Final and software.amazon.awssdk to 2.30.32.
+See proposal for WFLY-8770 for initial integration motivation.
+
+=== User Stories
+
+Users want to configure a discovery protocol in AWS environment using S3 as a cluster information store
+and use system properties and environmental variables to configure the protocol dynamically.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-20444[WFLY-20444] Upgrade JGroups AWS to 3.0.1.Final and software.amazon.awssdk to 2.30.32
+* https://issues.redhat.com/browse/WFLY-8770[WFLY-8770] Integrate aws.S3_PING discovery protocol (original integration issue)
+
+// RFE Jira: https://issues.redhat.com/browse/EAP7-2106
+
+=== Affected Projects or Components
+
+* WildFly Clustering
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+Upgrade the protocol jar and corresponding dependencies to latest tested versions available.
+Protocol configuration in the server profile can be as minimal as `<protocol name="org.jgroups.protocols.aws.S3_PING" module="org.jgroups.aws"/>`
+and configured using properties and variables supported by the https://github.com/jgroups-extras/jgroups-aws?tab=readme-ov-file#configurations-properties[protocol].
+
+=== Changed requirements
+
+* N/A
+
+=== Non-Requirements
+
+* N/A
+
+=== Future Work
+
+* N/A
+
+== Backwards Compatibility
+
+* No backwards incompatible changes.
+
+=== Default Configuration
+
+* No changes to the default configuration.
+
+=== Importing Existing Configuration
+
+* No effects on existing configurations.
+
+=== Deployments
+
+* N/A
+
+=== Interoperability
+
+* N/A
+
+== Implementation Plan
+
+* N/A
+
+== Admin Clients
+
+* N/A
+
+== Security Considerations
+
+* No security implications.
+
+[[test_plan]]
+== Test Plan
+
+Update existing QE AWS tests with the new protocol and provide appropriate environmental properties for the AWS access and run the test.
+
+== Community Documentation
+
+Documentation is included in upstream PR.
+
+== Release Note Content
+
+----
+https://github.com/jgroups-extras/jgroups-aws[JGroups AWS] has been upgraded 3.0.1.Final and supports configuration of the protocol using system properties and environmental variables making it easier to configure in cloud environments.
+----
