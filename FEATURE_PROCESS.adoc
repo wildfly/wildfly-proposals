@@ -2,6 +2,9 @@
 categories: []
 ---
 = WildFly Feature Development Process
+:toc:               left
+:idprefix:
+:idseparator:       -
 
 The WildFly Feature Development Process defines the procedure that must be followed during the _development_ of features that appear in any of the following:
 
