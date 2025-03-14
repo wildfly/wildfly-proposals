@@ -1,0 +1,176 @@
+---
+categories:
+  - cdi-persistence
+stability-level: community
+issue: https://issues.redhat.com/browse/WFLY-19554
+feature-team:
+  developer: Scott Marlow
+  sme:
+   - https://github.com/starksm64
+   - https://github.com/gavinking
+  outside-perspective:
+   -
+promotes:
+promoted-by:
+---
+
+== Overview
+
+Implement the Jakarta Persistence & Jakarta Contexts and Dependency Injection (CDI) integration as per [https://jakarta.ee/specifications/webprofile/11/jakarta-webprofile-spec-11.0-m5#a441]
+
+This section specifies the requirements for Jakarta EE environments that integrate both Persistence and CDI.
+
+Several of the items described in this section are also available with the following (traditional) access methods, as specified in the sections Persistence Unit References and Persistence Context References of [https://jakarta.ee/specifications/platform/11/].
+  - the @Resource annotation with the JNDI lookup attribute.
+  - the JNDI lookup using JNDI API.
+
+The items available with these additional access methods are indicated inline.
+
+3.12.2. Injecting an Entity Manager Factory using CDI [https://jakarta.ee/specifications/webprofile/11/jakarta-webprofile-spec-11.0-m5#injecting-an-entity-manager-factory-using-cdi]
+
+A Jakarta EE container must feature built-in integration of Jakarta Persistence with the CDI bean manager, allowing injection of a container-managed entity manager using the annotation jakarta.inject.Inject.
+
+For each persistence unit, the (Persistence) container must make available a bean with:
+  - bean type EntityManagerFactory,
+  - the qualifiers specified by qualifier XML elements in persistence.xml, or jakarta.enterprise.inject.Default, if no qualifiers are explicitly specified,
+  - scope jakarta.enterprise.context.ApplicationScoped,
+  - bean name given by the name of the persistence unit,
+  - no interceptor bindings,
+  - a bean implementation which satisfies the requirements of the Persistence specification for a container-managed entity manager factory.
+  
+EntityManagerFactory must also be available via the additional (traditional) access methods specified above.
+
+Furthermore, the container must make available five beans with:
+  - bean types CriteriaBuilder, PersistenceUnitUtil, Cache, SchemaManager, and Metamodel, respectively,
+  - the qualifiers specified by qualifier XML elements in persistence.xml, or jakarta.enterprise.inject.Default, if no qualifiers are explicitly specified,
+  - scope jakarta.enterprise.context.Dependent,
+  - no interceptor bindings,
+  - a bean implementation which simply obtains the instance of the bean type by calling the appropriate getter method of the EntityManagerFactory bean.
+  - To access these bean types (CriteriaBuilder, PersistenceUnitUtil, Cache, SchemaManager, and Metamodel) from callsites that use @Resource or JNDI lookup, users must first obtain the EntityManagerFactory and then use the appropriate getter methods.
+
+=== persistence.xml Extended Schema 
+
+The Persistence specification schema includes an extension point that allows one to add elements for configuration of integration concerns. The required approach for declaring a CDI scope and qualifier elements is to use the cdi:scope and cdi:qualifier persistence-unit child elements. Its usage is illustrated in the following XML document.
+
+[source]
+----
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- persistence.xml -->
+
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
+          https://jakarta.ee/xml/ns/persistence/persistence_3_2.xsd"
+        version="3.2">
+
+    <persistence-unit name="my-unit">
+      <provider>org.jpa.SomePersistenceProvider</provider>
+      <jta-data-source>java:server/datasources/ExampleDS</jta-data-source>
+      <class>org.acme.Employee</class>
+      <properties>
+        <property name="jpa.ddl.auto" value="create-drop"/>
+        <property name="jpa.show_sql" value="true"/>
+        <property name="jpa.format_sql" value="true"/>
+      </properties>
+      <!-- CDI integration -->
+      <cdi:scope>com.example.jpa.ACustomScope</cdi:scope>
+      <cdi:qualifier>com.example.jpa.CustomQualifier</cdi:qualifier>
+  </persistence-unit>
+
+</persistence>
+----
+
+=== Additional EntityManagerFactory Properties
+
+The following additional properties correspond to the new elements and properties in the persistence.xml file when using the persistence-3.2 xsd schema and associated persistenceUnitExtType. When any of these properties are specified in the Map parameter passed to the createEntityManagerFactory method, their values override the values of the corresponding elements and properties in the persistence.xml file for the named persistence unit. They also override any defaults that the persistence provider might have applied.
+
+[cols="1,1,1"]
+|===
+|Property|Type|Corresponding element in persistence.xml|
+|jakarta.persistence.qualifiers, String[], qualifier
+|jakarta.persistence.scope, String, scope
+|=== 
+
+
+=== CDI Specification details for background understanding:
+
+Open the [https://jakarta.ee/specifications/webprofile/11/jakarta-webprofile-spec-11.0-m5#cdi-specification-references] for CDI Core Specification links
+
+=== User Stories
+
+Users looking to either update existing applications or create new applications that use CDI Injection to access EntityManagerFactory/EntityManager/CriteriaBuilder/PersistenceUnitUtil/Cache/SchemaManager/Metamodel bean types within their application code.
+This relies on CDI to locate the appropriate bean type instead of the Persistence container Persistence Unit Scope that can also be used referencing a persistence unit.  
+See [https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2#a12459] for details about the Persistence container Persistence Unit Scope feature.
+
+=== Compatibility between Jakarta Persistence & CDI integration
+
+==== Sharing of persistence contexts via JTA transactions between CDI injected persistence and other ways (e.g. @PersistenceContext)
+
+* What is shared between Container-managed Transaction-scoped Persistence Context and CDI Persistence inject (in either order) on same thread/unitName.  See [https://jakartaee/specifications/persistence/3.2/jakarta-persistence-spec-3.2#a11805]  Question is whether persistence context instances are shared?
+
+* What is shared between Container-managed Extended Persistence Context and CDI Persistence inject on same thread/unitName.  See [https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2#a11816]
+
+* SynchronizationType.UNSYNCHRONIZED Persistence Contexts are not joined to active transactions until application calls joinTransaction method.  Question, does CDI injection see `SynchronizationType.UNSYNCHRONIZED` Persistence Contexts that are not part of an active transaction?
+
+*  Are there any new error conditions that containers need to monitor for with the new CDI Persistence injection?
+
+
+== Issue Metadata
+
+=== Related Issues
+
+https://github.com/jakartaee/platform/pull/746
+
+=== Affected Projects or Components
+
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+TBD
+
+__<Describe the requirements that must be fulfilled by this feature.>__
+
+__<For analyses of a promotion of an existing feature to
+'preview' or 'community' stability, only list new requirements; existing
+ requirements from the feature being promoted are assumed to continue unless
+ otherwise noted in the 'Changed requirements' section. Other analyses, including
+ those for promotion to the 'default' stability level, must list all requirements.>__
+
+=== Deployments
+
+Not expected but TBD.
+
+=== Interoperability
+
+Not expected but TBD.
+
+== Implementation Plan
+
+Identify conditions for sharing persistence contexts at active transaction level.
+
+Add @Observes of jakarta.enterprise.inject.spi.AfterDeploymentValidation to do setup steps for CDI Persistence injection.
+
+== Security Considerations
+
+__<What impact on security does this feature have?>__
+
+No known impact on security.
+== Test Plan
+
+Must pass the Jakarta EE 11 Web Profile/Platform TCK including CDI Persistence tests.
+Identify any missing TCK tests.
+
+== Community Documentation
+
+Update the Persistence developer documentation to include CDI Persistence injection.
+
+== Release Note Content
+
+CDI Persistence injection has been added.
