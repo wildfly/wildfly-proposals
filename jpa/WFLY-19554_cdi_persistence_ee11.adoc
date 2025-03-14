@@ -1,0 +1,250 @@
+---
+categories:
+  - core
+  - persistence
+stability-level:
+  - community
+issue:
+https://issues.redhat.com/browse/WFLY-19554
+
+
+feature-team:
+ developer: https://github.com/scottmarlow/
+ sme: https://github.com/starksm64
+ sme: https://github.com/gavinking 
+promoted-by:
+:author:            Scott Marlow
+:email:             smarlow@redhat.com
+
+== Overview
+
+Implement the Jakarta Persistence & Jakarta Contexts and Dependency Injection (CDI) integration as per [https://jakarta.ee/specifications/webprofile/11/jakarta-webprofile-spec-11.0-m5#a441]
+
+This section specifies the requirements for Jakarta EE environments that integrate both Persistence and CDI.
+
+Several of the items described in this section are also available with the following (traditional) access methods, as specified in the sections Persistence Unit References and Persistence Context References of [https://jakarta.ee/specifications/platform/11/].
+  - the @Resource annotation with the JNDI lookup attribute.
+  - the JNDI lookup using JNDI API.
+
+The items available with these additional access methods are indicated inline.
+
+3.12.2. Injecting an Entity Manager Factory using CDI [https://jakarta.ee/specifications/webprofile/11/jakarta-webprofile-spec-11.0-m5#injecting-an-entity-manager-factory-using-cdi]
+
+A Jakarta EE container must feature built-in integration of Jakarta Persistence with the CDI bean manager, allowing injection of a container-managed entity manager using the annotation jakarta.inject.Inject.
+
+For each persistence unit, the (Persistence) container must make available a bean with:
+  - bean type EntityManagerFactory,
+  - the qualifiers specified by qualifier XML elements in persistence.xml, or jakarta.enterprise.inject.Default, if no qualifiers are explicitly specified,
+  - scope jakarta.enterprise.context.ApplicationScoped,
+  - bean name given by the name of the persistence unit,
+  - no interceptor bindings,
+  - a bean implementation which satisfies the requirements of the Persistence specification for a container-managed entity manager factory.
+  
+EntityManagerFactory must also be available via the additional (traditional) access methods specified above.
+
+Furthermore, the container must make available five beans with:
+  - bean types CriteriaBuilder, PersistenceUnitUtil, Cache, SchemaManager, and Metamodel, respectively,
+  - the qualifiers specified by qualifier XML elements in persistence.xml, or jakarta.enterprise.inject.Default, if no qualifiers are explicitly specified,
+  - scope jakarta.enterprise.context.Dependent,
+  - no interceptor bindings,
+  - a bean implementation which simply obtains the instance of the bean type by calling the appropriate getter method of the EntityManagerFactory bean.
+  - To access these bean types (CriteriaBuilder, PersistenceUnitUtil, Cache, SchemaManager, and Metamodel) from callsites that use @Resource or JNDI lookup, users must first obtain the EntityManagerFactory and then use the appropriate getter methods.
+
+=== persistence.xml Extended Schema 
+
+The Persistence specification schema includes an extension point that allows one to add elements for configuration of integration concerns. The required approach for declaring a CDI scope and qualifier elements is to use the cdi:scope and cdi:qualifier persistence-unit child elements. Its usage is illustrated in the following XML document.
+
+<?xml version="1.0" encoding="utf-8" ?>
+<!-- persistence.xml -->
+```
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
+          https://jakarta.ee/xml/ns/persistence/persistence_3_2.xsd"
+        version="3.2">
+
+    <persistence-unit name="my-unit">
+      <provider>org.jpa.SomePersistenceProvider</provider>
+      <jta-data-source>java:server/datasources/ExampleDS</jta-data-source>
+      <class>org.acme.Employee</class>
+      <properties>
+        <property name="jpa.ddl.auto" value="create-drop"/>
+        <property name="jpa.show_sql" value="true"/>
+        <property name="jpa.format_sql" value="true"/>
+      </properties>
+      <!-- CDI integration -->
+      <cdi:scope>com.example.jpa.ACustomScope</cdi:scope>
+      <cdi:qualifier>com.example.jpa.CustomQualifier</cdi:qualifier>
+  </persistence-unit>
+
+</persistence>
+```
+
+=== Additional EntityManagerFactory Properties
+
+The following additional properties correspond to the new elements and properties in the persistence.xml file when using the persistence-3.2 xsd schema and associated persistenceUnitExtType. When any of these properties are specified in the Map parameter passed to the createEntityManagerFactory method, their values override the values of the corresponding elements and properties in the persistence.xml file for the named persistence unit. They also override any defaults that the persistence provider might have applied.
+
+[cols="1,1,1"]
+|===
+|Property|Type|Corresponding element in persistence.xml
+|jakarta.persistence.qualifiers, String[], qualifier
+|jakarta.persistence.scope, String, scope
+|=== 
+
+
+=== CDI Specification details for background understanding:
+
+Open the [https://jakarta.ee/specifications/webprofile/11/jakarta-webprofile-spec-11.0-m5#cdi-specification-references] for CDI Core Specification links
+
+=== User Stories
+
+Users looking to either update existing applications or create new applications that use use CDI Injection to access EntityManagerFactory/EntityManager/CriteriaBuilder/PersistenceUnitUtil/Cache/SchemaManager/Metamodel bean types within their application code.  
+This relies on CDI to locate the appropriate bean type instead of the Persistence container Persistence Unit Scope that can also be used referencing a persistence unit.  
+See [https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2#a12459] for details about the Persistence container Persistence Unit Scope feature.
+
+=== Compatibility between Jakarta Persistence & CDI integration
+
+==== Use cases
+
+===== Existing Jakarta Transactions transaction
+1.  Application using existing Container-managed Transaction-scoped Persistence Context on current thread when injecting an EntityManager via CDI inject.  See [https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2#a11805]
+
+Does the CDI inject return the Persistence Context instance that is associated with the active transaction?
+Or does the CDI inject not see the EntityManager instance that is associated with the active transaction?
+
+The underlying question is whether EntityManager instances are shared between existing Persistence container managed use and the CDI injection of Persistence Contexts?
+
+2.  Application using existing Container-managed Extended Persistence Context on current thread when injecting an EntityManager via CDI inject.  See [https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2#a11816]
+
+Does the CDI inject return the Persistence Context instance that is associated with the active transaction?
+Or does the CDI inject not see the EntityManager instance that is associated with the active transaction?
+
+Again the underlying question is whether EntityManager instances are shared between existing Persistence container managed use and the CDI injection of Persistence Contexts?
+
+3.  Application CDI injects EntityManager with active transaction, is the EntityManager associated with the active transaction by CDI or the Persistence context?
+
+The underlying question is whether EntityManager instances are shared between the CDI injection of Persistence Contexts and existing Persistence container managed?
+
+4.  Application CDI injects EntityManager with active transaction.  Then uses one of the legacy access methods to access a Persistence Context (Container-managed Transaction-scoped Persistence Context), does the application get a new Persistence Context or the CDI injected Persistence Context?
+
+The underlying question is whether EntityManager instances are shared between the CDI injection of Persistence Contexts and existing Persistence container managed?
+
+5.  Application CDI injects EntityManager with active transaction.  Then uses one of the legacy access methods to access a Persistence Context (Container-managed Extended Persistence Context), does the application get a new Persistence Context or the CDI injected Persistence Context?
+
+The underlying question is whether EntityManager instances are shared between the CDI injection of Persistence Contexts and existing Persistence container managed?
+
+6.  SynchronizationType.UNSYNCHRONIZED Persistence Contexts are not joined to active transactions until application calls joinTransaction method.  Question, does CDI injection see SynchronizationType.UNSYNCHRONIZED Persistence Contexts?  Probably not expected to.
+
+
+== Issue Metadata
+
+=== Related Issues
+
+https://github.com/jakartaee/platform/pull/746
+
+==== Stop Stop Stop reading here.  Next update will have more content...
+
+=== Affected Projects or Components
+
+__<List the projects or components that are affected by the feature. List them using their Git repositories.>__
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+__<List the installation types that are relevant for the features and remove any that are not relevant>__.
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+__<Describe the requirements that must be fulfilled by this feature.>__
+
+__<For analyses of a promotion of an existing feature to
+'preview' or 'community' stability, only list new requirements; existing
+ requirements from the feature being promoted are assumed to continue unless
+ otherwise noted in the 'Changed requirements' section. Other analyses, including
+ those for promotion to the 'default' stability level, must list all requirements.>__
+
+=== Changed requirements
+
+__<Only relevant for analyses of a promotion of an existing feature to
+ 'preview' or 'community stability. Other analyses should remove this section.>__
+
+__<For any existing requirements from the feature being promoted that are
+ being changed or removed, describe the change.>__
+
+
+=== Non-Requirements
+
+__<Use this section to explicitly discuss things that readers might think are required but which are not required.>__ 
+
+=== Future Work
+
+__<Use this section to discuss requirements that are not addressed by this proposal but which may be addressed in later proposals.>__
+
+== Backwards Compatibility
+
+__<Does this enhancement affect backwards compatibility with previously released versions of WildFly? Can the identified incompatibility be avoided?>__
+
+=== Default Configuration
+
+__<Does the proposed work change the default value of any current configuration attributes? Does it change the configuration generated by any current Galleon layers?>__
+
+=== Importing Existing Configuration
+
+__<Does the proposed work affect the ability to run WildFly running an existing configuration? Is there anything else about the proposed work that may require changes to the WildFly server migration tool?>__
+
+=== Deployments
+
+__<Does this feature change the behavior of deployments in incompatible ways? If yes please detail what is the deployment issue observed when no change is done, and what is the change needed to solve the deployment issue>__
+
+=== Interoperability
+
+__<Is this feature impacting interoperability?>__
+
+== Implementation Plan
+
+__<This section is optional. If you have a complex feature which can not be delivered all in one go, suggest the strategy.>__
+
+== Admin Clients
+
+__<Identify the level of compatibility this feature will have with the existing admin clients (JBoss CLI and the Admin Console / HAL). Identify any follow up work that will be required in the clients and link issues created to track this work.>__
+
+== Security Considerations
+
+__<What impact on security does this feature have?>__
+
+[[test_plan]]
+== Test Plan
+
+__<Depending on the selected stability level, the appropriate section below should be completed, including a brief description of how testing is to be performed in accordance with the selected stability level. The non-relevant sections may be removed as needed.>__
+////
+Depending on the stability level, the test plan required may vary. see below:
+////
+
+** Experimental - No test plan is required. Basic unit / integration tests should be added during development.
+
+** Preview - a brief high-level description of the testing approach should be added here, including types of tests added (unit, integration, smoke, component, subsystem, etc.) Note that not all test types are required for a particular feature, so include a description of what is being tested and the approach chosen to perform the testing.
+
+** Community - this level should include everything in the 'Preview' stability level, plus the following additional testing as relevant:
+*** Manual tests: briefly describe checks to be performed during one-time exploratory testing. The purpose of this testing is to check corner cases and other cases that are not worth implementing as automated tests. Typical checks are: bad configurations are easy to reveal, attribute descriptions and error messages are clear, names are descriptive and consistent with similar resources, default values are reasonable.
+    If there is an existing quickstart affected by the feature, manual checks include following the quickstart's guide and verifying functionality.
+*** Miscellaneous checks: Manual checks for significant changes in server performance, memory and disk footprint should be described here. These checks are not always relevant, but consideration of these impacts, and others, are strongly encouraged and should be described here. Fully qualified test case names should be provided along with a brief description of what the test is doing.
+*** Integration tests - at the 'Community' stability level, complete integration tests should be provided.
+*** Compatibility tests - if backwards compatibility is relevant to the feature, then describe how the testing is performed.
+
+** Default - This stability level is reserved and requires approval by a professional Quality Engineer with subject matter expertise.
+
+== Community Documentation
+
+__<Describe how this feature will be documented or illustrated. Generally a feature should have documentation as part of the PR to wildfly main, or as a follow up PR if the feature is in wildfly-core. In some cases though the feature will bring additional content (such as quickstarts, guides, etc.). Indicate which of these will happen>__
+
+== Release Note Content
+
+__<Draft verbiage for up to a few sentences on the feature for inclusion in the Release Note blog article for the release that first includes this feature.__
+__Example article: https://www.wildfly.org/news/2024/01/25/WildFly31-Released/.__
+__This content will be edited, so there is no need to make it perfect or discuss what release it appears in.>__ 
