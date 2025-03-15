@@ -1,0 +1,112 @@
+---
+categories:
+  - undertow
+stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/695
+feature-team:
+ developer: bstansberry
+ sme:
+  - fl4via
+ outside-perspective:
+  -
+promotes: https://issues.redhat.com/browse/WFLY-14255
+promoted-by:
+---
+= Promote the undertow subsystem's reverse proxy HTTP header configurability to community stability
+:author:            Brian Stansberry
+:email:             bstansbe@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+[WFLY-14255](https://issues.redhat.com/browse/WFLY-14255) introduced two `preview` stability attributes to allow users to configure an `undertow` subsystem `reverse-proxy` resource to: 
+* reuse and append to any existing `X-Forwarded-*` HTTP headers instead of replacing them
+* set the `Host` header to the connection's remote end and create an `X-Forwarded-Host` header
+This feature is simply to promote the two subsystem attributes to `community` stability.
+
+=== User Stories
+
+__<Provide one or more brief user stories that illustrate the intended users of
+ the feature and the goal they will seek to achieve by using the feature.>__
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-20477
+* https://issues.redhat.com/browse/WFLY-14255
+* https://issues.redhat.com/browse/UNDERTOW-280
+
+=== Affected Projects or Components
+
+ * https://github.com/wildfly/wildfly
+
+=== Other Interested Projects
+
+* https://github.com/undertow-io/undertow
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+* A new `wildfly-undertow_comunity_14_0.xsd` will be added, along with the related UndertowSubsystemSchema enum and any necessary parser adjustments.
+
+=== Changed requirements
+
+None
+
+=== Non-Requirements
+
+None
+
+=== Future Work
+
+Potential promotion to `default` stability, if wanted.
+
+== Backwards Compatibility
+
+No impact. The `reverse-proxy` resource is not in any default configuration, and the attribute has no default value.
+
+=== Importing Existing Configuration
+
+No impact.
+
+=== Deployments
+
+No impact.
+
+=== Interoperability
+
+No impact.
+
+
+== Admin Clients
+
+No additional work should be required. These attributes are automatically configurable in clients if exposed by the server. Promoting them simply makes them exposed OOTB in standard WildFly.
+
+== Security Considerations
+
+None
+
+[[test_plan]]
+== Test Plan
+
+This feature is about configuration via the subsystem, so the testing will focus on that: standard subsystem testing of the parsing, Stage.MODEL processing and persistence of the attribute in a configuration element using `commmuntity` stability xsd.
+
+The Undertow behavior these attributes control has been part of Undertow for since 2014, in the Undertow 1.1 release.
+
+== Community Documentation
+
+Documentation via the wildscribe output. The Admin Guide's [Using WildFly as a static load balancer](https://docs.wildfly.org/35/Admin_Guide.html#using-wildfly-as-a-static-load-balancer) section doesn't get into the details of the resource attributes, deferring to the wildscribe output for that.
+
+== Release Note Content
+
+The `undertow` subsystem now allows configuring a reverse proxy handler to reuse existing `X-Forwarded-*` headers and to rewrite the `Host` header while adding an `X-Forwarded-Host` header. These capabilities have been available since WildFly 33 in a server running at the `preview` stability level. This feature is now provided at the `community` stability level, meaning it's available in the out-of-the-box stability level of standard WildFly.
