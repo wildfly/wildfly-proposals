@@ -17,7 +17,7 @@ class FrontMatterExtractor
         front_matter << lines.shift
       end
 
-      YAML.load!(front_matter.join("\n"))
+      YAML.load(front_matter.join("\n"))
     end
     raise "The YAML front matter is not present"
   end
