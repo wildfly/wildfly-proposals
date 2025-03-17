@@ -17,8 +17,9 @@ class FrontMatterExtractor
         front_matter << lines.shift
       end
 
-      YAML.load(front_matter.join("\n"))
+      YAML.load!(front_matter.join("\n"))
     end
+    raise "The YAML front matter is not present"
   end
 end
 
@@ -125,6 +126,7 @@ ARGV.each do |file|
       puts "✅ #{file}"
     end
   rescue => e
+    check_succeeds = false
     puts "Error reading file #{file}: #{e.message}"
   end
 end
