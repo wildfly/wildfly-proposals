@@ -1,6 +1,7 @@
 ---
 categories:
-  - cdi-persistence
+  - jpa
+  - weld
 stability-level: community
 issue: https://issues.redhat.com/browse/WFLY-19554
 feature-team:
@@ -9,24 +10,38 @@ feature-team:
    - https://github.com/starksm64
    - https://github.com/gavinking
   outside-perspective:
-   -
+   - James Perkins
 promotes:
 promoted-by:
 ---
 
 == Overview
 
-Implement the Jakarta Persistence & Jakarta Contexts and Dependency Injection (CDI) integration as per [https://jakarta.ee/specifications/webprofile/11/jakarta-webprofile-spec-11.0-m5#a441]
+=== 13.12 Jakarta Persistence & Jakarta Context and Dependency Injection (CDI) Integration [https://jakarta.ee/specifications/platform/11/jakarta-platform-spec-11.0-m5#a441]
+Implement the Jakarta Persistence & Jakarta Contexts and Dependency Injection (CDI) integration 
 
 This section specifies the requirements for Jakarta EE environments that integrate both Persistence and CDI.
 
-Several of the items described in this section are also available with the following (traditional) access methods, as specified in the sections Persistence Unit References and Persistence Context References of [https://jakarta.ee/specifications/platform/11/].
+Several of the items described in this section are also available with the following (traditional) access methods, as specified in the sections Persistence Unit References and Persistence Context References of [https://jakarta.ee/specifications/platform/11/jakarta-platform-spec-11.0-m5#a441].
   - the @Resource annotation with the JNDI lookup attribute.
   - the JNDI lookup using JNDI API.
 
 The items available with these additional access methods are indicated inline.
 
-3.12.2. Injecting an Entity Manager Factory using CDI [https://jakarta.ee/specifications/webprofile/11/jakarta-webprofile-spec-11.0-m5#injecting-an-entity-manager-factory-using-cdi]
+=== 13.12.1. Obtaining an Entity Manager using CDI [https://jakarta.ee/specifications/platform/11/jakarta-platform-spec-11.0-m5#obtaining-an-entity-manager-using-cdi]
+
+A Jakarta EE container must feature built-integration of Jakarta Persistence with the CDI bean manager, allowing injection of a container-managed entity manager factory using the annotation jakarta.inject.Inject.
+
+For each persistence unit, the container must make available a bean with:
+  - bean type EntityManager,
+  - the qualifiers specified by qualifier XML elements in persistence.xml, or jakarta.enterprise.inject.Default, if no qualifiers are explicitly specified,
+  - the scope specified by the scope XML element in persistence.xml, or jakarta.transaction.TransactionScoped if no scope is explicitly specified,
+  - no interceptor bindings,
+  - a bean implementation which satisfies the requirements of this specification for a container-managed entity manager.
+
+EntityManager must also be available via the additional access methods specified at the beginning of this section.
+
+=== 13.12.2. Injecting an Entity Manager Factory using CDI [https://jakarta.ee/specifications/platform/11/jakarta-platform-spec-11.0-m5#injecting-an-entity-manager-factory-using-cdi]
 
 A Jakarta EE container must feature built-in integration of Jakarta Persistence with the CDI bean manager, allowing injection of a container-managed entity manager using the annotation jakarta.inject.Inject.
 
@@ -48,7 +63,7 @@ Furthermore, the container must make available five beans with:
   - a bean implementation which simply obtains the instance of the bean type by calling the appropriate getter method of the EntityManagerFactory bean.
   - To access these bean types (CriteriaBuilder, PersistenceUnitUtil, Cache, SchemaManager, and Metamodel) from callsites that use @Resource or JNDI lookup, users must first obtain the EntityManagerFactory and then use the appropriate getter methods.
 
-=== persistence.xml Extended Schema 
+=== 13.12.3 persistence.xml Extended Schema [https://jakarta.ee/specifications/platform/11/jakarta-platform-spec-11.0-m5#persistence-xml-extended-schema]
 
 The Persistence specification schema includes an extension point that allows one to add elements for configuration of integration concerns. The required approach for declaring a CDI scope and qualifier elements is to use the cdi:scope and cdi:qualifier persistence-unit child elements. Its usage is illustrated in the following XML document.
 
@@ -80,21 +95,28 @@ The Persistence specification schema includes an extension point that allows one
 </persistence>
 ----
 
-=== Additional EntityManagerFactory Properties
+=== 13.12.4 Additional EntityManagerFactory Properties [https://jakarta.ee/specifications/platform/11/jakarta-platform-spec-11.0-m5#additional-entitymanagerfactory-properties]
 
 The following additional properties correspond to the new elements and properties in the persistence.xml file when using the persistence-3.2 xsd schema and associated persistenceUnitExtType. When any of these properties are specified in the Map parameter passed to the createEntityManagerFactory method, their values override the values of the corresponding elements and properties in the persistence.xml file for the named persistence unit. They also override any defaults that the persistence provider might have applied.
 
-[cols="1,1,1"]
-|===
-|Property|Type|Corresponding element in persistence.xml|
-|jakarta.persistence.qualifiers, String[], qualifier
-|jakarta.persistence.scope, String, scope
-|=== 
 
+.Additional EntityManagerFactory Properties
+|===
+|Property |Type |Element in persistence.xml
+
+|jakarta.persistence.qualifiers
+|String[]
+|qualifier
+
+|jakarta.persistence.scope
+|String
+|scope
+
+|===
 
 === CDI Specification details for background understanding:
 
-Open the [https://jakarta.ee/specifications/webprofile/11/jakarta-webprofile-spec-11.0-m5#cdi-specification-references] for CDI Core Specification links
+Open the [https://jakarta.ee/specifications/platform/11/jakarta-platform-spec-11.0-m5#cdi-specification-references] for CDI Specification links
 
 === User Stories
 
@@ -106,7 +128,7 @@ See [https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-
 
 ==== Sharing of persistence contexts via JTA transactions between CDI injected persistence and other ways (e.g. @PersistenceContext)
 
-* What is shared between Container-managed Transaction-scoped Persistence Context and CDI Persistence inject (in either order) on same thread/unitName.  See [https://jakartaee/specifications/persistence/3.2/jakarta-persistence-spec-3.2#a11805]  Question is whether persistence context instances are shared?
+* What is shared between Container-managed Transaction-scoped Persistence Context and CDI Persistence inject (in either order) on same thread/unitName.  See [https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2#a11805]  Question is whether persistence context instances are shared?
 
 * What is shared between Container-managed Extended Persistence Context and CDI Persistence inject on same thread/unitName.  See [https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2#a11816]
 
