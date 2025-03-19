@@ -8,7 +8,7 @@ feature-team:
  sme:
   - fl4via
  outside-perspective:
-  -
+  - jamezp
 promotes: https://issues.redhat.com/browse/WFLY-14255
 promoted-by:
 ---
@@ -29,8 +29,9 @@ This feature is simply to promote the two subsystem attributes to `community` st
 
 === User Stories
 
-__<Provide one or more brief user stories that illustrate the intended users of
- the feature and the goal they will seek to achieve by using the feature.>__
+I'm doing dev ops for a site and am using WildFly as a load balancer by configuring the `undertow` subsystem's `reverse-proxy` resource. I want existing `X-Forwarded-*` headers to be retained, appended to and passed on to the backend server. I want this to be usable out of the box in standard WildFly, without needing to enable `preview` stability features.
+
+I'm doing dev ops for a site and am using WildFly as a load balancer by configuring the `undertow` subsystem's `reverse-proxy` resource. I want backend servers to see their address as the `Host` header value, with the LB's address in the `X-Forwarded-Host` header. I want this to be usable out of the box in standard WildFly, without needing to enable `preview` stability features.
 
 == Issue Metadata
 
