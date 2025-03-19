@@ -24,7 +24,7 @@ jobs:
           cache-version: 0 # Increment this number if you need to re-download cached gems
       - name: Get all proposals files that have changed
         id: changed-proposals
-        uses: tj-actions/changed-files@v44
+        uses: tj-actions/changed-files@v46
         with:
           files: |
             **/*.adoc
