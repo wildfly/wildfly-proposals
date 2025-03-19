@@ -1,0 +1,155 @@
+---
+categories:
+ - undertow
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/670
+---
+= [WFLY-18581] Enable access logs with response times and thread info in our default configs
+:author:            Richard Opalka
+:email:             ropalka@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Access log is disabled by default in Undertow subsystem in all default configs.
+This proposal will add <access-log/> element under Undertow <subsystem/><server/><host/> element
+in all default configs. Access log will be enabled by default.
+
+== Issue
+
+* https://issues.redhat.com/browse/WFLY-18581[WFLY-18581]
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [ ] Preview
+
+* [ ] Community
+
+* [*] Default
+
+=== Dev Contacts
+
+* mailto:ropalka@redhat.com[Richard Opalka]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [*] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+
+=== Other Interested Projects
+
+N/A
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [ ] OpenShift s2i
+
+* [ ] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+<access-log/> element will be added to the Undertow subsystem under
+
+<server/><host/>
+
+element to activate logging of web server access. "record-request-start-time" attribute with value "true"
+will be added to the Undertow subsystem to
+
+<server/><ajp-listener/> 
+<server/><http-listener/> 
+<server/><https-listener/> 
+
+elements if those are available in the config.
+
+Configuration in default config files may look like:
+
+[source,xml]
+----
+<server name="default-server">
+    <http-listener name="default" socket-binding="http" redirect-socket="https" enable-http2="true" record-request-start-time="true"/>
+    <https-listener name="https" socket-binding="https" ssl-context="applicationSSC" enable-http2="true" record-request-start-time="true"/>
+    <host name="default-host" alias="localhost">
+        <location name="/" handler="welcome-content"/>
+        <access-log pattern="%h %l %u %t "%r" %s %b %T "%I" prefix="access."/>
+        <http-invoker http-authentication-factory="application-http-authentication"/>
+    </host>
+</server>
+----
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+=== Future Work
+
+No future work is planned.
+
+== Backwards Compatibility
+
+=== Default Configuration
+
+The <access-log/> element plus "record-request-start-time" attribute on 
+
+<ajp-listener/>
+<http-listener/>
+<https-listener/>
+
+elements (if configured) will be present in all default configurations.
+
+=== Importing Existing Configuration
+
+N/A
+
+=== Deployments
+
+N/A
+
+=== Interoperability
+
+N/A
+
+== Admin Clients
+
+All elements and attributes that will be added in default configs are available in WildFly for years. There is no further implementation necessary
+to expose this functionality via management operations or admin console. These are already supported just not enabled by default.
+
+== Security Considerations
+
+This feature will enhance users security. They will be able to track and analyze who was trying to access their web resources.
+
+== Test Plan
+
+This feature will be tested manually. Tester will start the server, access some existing or not existing resources on the web server
+and then check if the access was logged to the access log file.
+
+== Community Documentation
+
+No additional documentation is needed. Elements and attributes that will be used are already available and documented.
+
+== Release Note Content
+
+N/A
