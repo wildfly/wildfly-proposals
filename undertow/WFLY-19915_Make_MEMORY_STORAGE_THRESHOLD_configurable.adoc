@@ -1,0 +1,111 @@
+---
+categories:
+ - undertow
+stability-level: preview
+---
+= Make MEMORY_STORAGE_THRESHOLD configurable
+:author:            Marek Jusko
+:email:             mjusko@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Since UNDERTOW-2319 user can set he minimum size in bytes for storing content in memory before persisting to disk via MEMORY_STORAGE_THRESHOLD.
+This change should allow the property to be set in WFLY configuration.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-19915[WFLY-19915]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/UNDERTOW-2319[UNDERTOW-2319]
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [X] Preview
+
+* [ ] Community
+
+* [ ] default
+
+=== Affected Projects or Components
+
+* Undertow
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+* Being able to configure pattern via model/xml.
+[literal]
+<subsystem xmlns="urn:jboss:domain:undertow:14.0" default-server="some-server" default-servlet-container="myContainer" default-virtual-host="default-virtual-host" instance-id="some-id" statistics-enabled="true">
+    ...
+    <xs:complexType name="listener-type">
+        <xs:complexContent>
+            <xs:extension base="socket-options-type">
+                ...
+                <xs:attribute name="memory-storage-threshold" type="xs:long" default="16384"/>
+                ...
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+    ...
+</subsystem>
+
+Default value is set to 16384 bytes.
+
+== Backwards Compatibility
+
+The property has been moved so it can be configurable, the default value of 16384 bytes has previously been hardcoded in Undertow.
+
+=== Default Configuration
+
+No change.
+
+=== Importing Existing Configuration
+
+No, the value in Undertow has only been moved so it can become configurable.
+
+=== Deployments
+
+No. The default value stays the same.
+
+=== Interoperability
+
+Not affected.
+
+== Implementation Plan
+
+Will be done in the linked issue.
+
+== Admin Clients
+
+== Security Considerations
+
+None
+
+[[test_plan]]
+== Test Plan
+
+== Community Documentation
+
+Should be documented as part of model reference.
+
+== Release Note Content
+
+Allow configuration of MEMORY_STORAGE_THRESHOLD.
