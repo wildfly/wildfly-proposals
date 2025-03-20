@@ -1,0 +1,158 @@
+---
+categories:
+  - ejb
+  - core
+stability-level: default
+issue: https://issues.redhat.com/browse/WFCORE-5718
+feature-team:
+ developer: tadamski
+ sme:
+  - tadamski
+ outside-perspective:
+  - mkopecky
+promotes:
+promoted-by:
+---
+= remote+tls is not supported by EJBClient and remote-outbound-connection
+:email:             tadamski@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Customers would like to be able to configure EJB to use remote+tls protocol. This feature is already implemented in remoting but the configuration has to be added to jboss-ejb-client library and WildFly in order to make it work.
+
+=== User Stories
+
+Users want to configure communication between remote client and EJB bean. Their protocol of choice is 'remote+tls'.
+
+=== Issue
+* https://issues.redhat.com/browse/WFLY-13828
+* https://issues.redhat.com/browse/WFCORE-5718
+
+=== Dev Contacts
+
+* mailto:tadamski@redhat.com
+
+=== QE Contacts
+
+=== Testing By
+[x] Engineering
+
+[] QE
+
+=== Affected Projects or Components
+EJB
+Remoting
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* Bootable jar
+
+== Requirements
+
+Protocol 'remote+tls' should be available as one of the protocols in remoting subystem and EJB client configurations.
+
+=== Changed requirements
+
+* N/A
+
+=== Non-Requirements
+
+* N/A
+
+=== Future Work
+
+* N/A
+
+== Backwards Compatibility
+
+* No backwards incompatible changes.
+
+=== Default Configuration
+
+* No changes to the default configuration.
+
+=== Importing Existing Configuration
+
+* No effects on existing configurations.
+
+=== Deployments
+
+* N/A
+
+=== Interoperability
+
+* N/A
+
+== Implementation Plan
+
+* N/A
+
+== Admin Clients
+
+* N/A
+
+== Security Considerations
+
+* Protocol relies on the same underlying security configuration as currently avaliable secure protocols f.e. 'remote+https' - no implications expected.
+
+== Implementation
+
+After the change users would be able to configure remote+tls protocol in remoting subsystem's connector on server side:
+
+[source]
+----
+<subsystem xmlns="urn:jboss:domain:remoting:4.1">
+   (...)
+   <connector name="foo-connector" socket-binding="foo-socket-binding" ssl-context="foo-server-ssl-context" protocol="remote+tls" sasl-authentication-factory="foo-sasl-authentication"/>
+   (...)
+   </subsystem>
+----
+
+and connect from standalone client:
+
+----
+    Properties props = new Properties();
+    props.put(Context.INITIAL_CONTEXT_FACTORY,
+        "org.wildfly.naming.client.WildFlyInitialContextFactory");
+    props.put(Context.PROVIDER_URL, String.format("%s://%s:%d", "remote+tls", "foo-server", foo-port));
+    props.put(Context.SECURITY_PRINCIPAL, "foo");
+    props.put(Context.SECURITY_CREDENTIALS, "fooSecret");
+----
+
+or other Wildfly instance with proper remoting and Elytron configuration:
+===
+
+----
+        <subsystem xmlns="urn:jboss:domain:remoting:6.0">
+            (...)
+            <outbound-connections>
+                <remote-outbound-connection name="foo-outbound-connection" outbound-socket-binding-ref="foo-outbound-socket-binding" authentication-context="foo-auth-context"/>
+            </outbound-connections>
+        </subsystem>
+
+        (...)
+
+        <subsystem xmlns="urn:wildfly:elytron:16.0" final-providers="combined-providers" disallowed-providers="OracleUcrypto">
+            <authentication-client>
+                <authentication-configuration name="foo-auth-config" authentication-name="foo" host="127.0.0.1" protocol="remote+tls" port="54449" realm="foo-properties-realm" sasl-mechanism-selector="DIGEST-MD5">
+                    <credential-reference clear-text="ejbRemoteTestsPasswordOverriding"/>
+                </authentication-configuration>
+                <authentication-context name="foo-auth-context">
+                    <match-rule authentication-configuration="foo-auth-config" ssl-context="foo-server-ssl-context"/>
+                </authentication-context>
+            </authentication-client>
+
+----
+
+== Test Plan
+
+We are going to add relavant integration tests to WildFly testsuite. Furthermore, we are going to extend EJB Client testsuite so that remote+tls protocol is used as one of the protocols in basic tests profile.
+
+== Community Documentation
+None
