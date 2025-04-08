@@ -10,7 +10,7 @@ feature-team:
  outside-perspective:
   - kabir
 ---
-= [Community] WFLY-18582 - Add prometheus endpoint to micrometer extension
+= WFLY-18582 - Add prometheus endpoint to micrometer extension
 :author:            Jason Lee
 :email:             jasondlee@redhat.com
 :toc:               left
