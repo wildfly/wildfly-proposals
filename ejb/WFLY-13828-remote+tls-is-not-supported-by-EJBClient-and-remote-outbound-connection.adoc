@@ -13,7 +13,7 @@ feature-team:
 promotes:
 promoted-by:
 ---
-= remote+tls is not supported by EJBClient and remote-outbound-connection
+= Support for remote+tls by EJBClient and remote-outbound-connection
 :email:             tadamski@redhat.com
 :toc:               left
 :icons:             font
