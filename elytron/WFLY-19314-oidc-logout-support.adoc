@@ -144,6 +144,12 @@ Example
 
 * `back-channel-logout-session-invalidation-limit`: The maximum size for a bounded map when marking sessions for invalidation during back-channel logout. Once this maximum size has been reached, the eldest entry will be removed.  The default size is 16.
 
+* `provider-jwt-claims-typ`: The logout specification defines the default (JWT) Logout Token "typ"
+       string to be "logout+jwt".  If the OpenID Provider uses a different
+       string, it can be specified with this element.
+       - This is an optional parameter.  If defined, it can not be the empty string or null.
+       - Elytron checks for Keycloak's "typ", "Logout" and "logout+jwt" by default.
+
 === Testing Configuration option values.
 Tests will be created to check the restrictions to the configuration option values.  An exception will be thrown when the value is invalid.
 
