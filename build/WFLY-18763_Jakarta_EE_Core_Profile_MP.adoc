@@ -1,0 +1,116 @@
+---
+categories:
+  - ee
+  - wf-galleon
+  - microprofile
+---
+= Add standalone-core-microprofile.xml Example Configuration
+:author:            James Perkins
+:email:             jperkins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+In https://issues.redhat.com/browse/WFLY-17648[WFLY-17648] a new `ee-core-profile-server` was introduced. With this
+profile a `standalone-core.xml` example configuration file was also introduced. We should have a
+`standalone-core-microprofile.xml` example configuration file. This will will effectively be the `ee-core-profile-server`
+layer and the `microprofile-platform` layer.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-18763[WFLY-18763]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1998[EAP7-1998]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:msvehla@redhat.com[Martin Svehla]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [x] QE
+
+=== Affected Projects or Components
+
+* Only affects `docs/examples/configs`
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [ ] OpenShift s2i
+
+* [ ] Bootable jar
+
+This only affects the traditional server as it's an example configuration.
+
+== Requirements
+
+=== Hard Requirements
+
+* The following layers should be included in the example configuration file
+** `ee-core-profile-server`
+** `microprofile-platform`
+* The new configuration file should only be present in the `docs/examples/configs` directory and not directly available
+  in default configuration directories.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+* No standard configuration directories will contain this configuration file. It is solely an example.
+
+== Backwards Compatibility
+
+=== Default Configuration
+
+No default configuration changes will be made related to this issue.
+
+=== Importing Existing Configuration
+
+No incompatibility. This is an example configuration only.
+
+=== Deployments
+
+No incompatibility. This is an example configuration only.
+
+=== Interoperability
+
+No incompatibility. This is an example configuration only.
+
+== Security Considerations
+
+The standard WildFly security layer will be provided, along with its standard integration with the other subsystems
+(undertow, weld, jaxrs) that are included in the profile. There will be nothing novel here.
+
+
+== Test Plan
+
+The test plan is that the `standalone-core-microprofile.xml` will be tested in the `ExampleParseAndMarshalModelsTestCase`.
+
+== Community Documentation
+
+There is nothing to document in this case.
+
+== Release Note Content
+
+None.
