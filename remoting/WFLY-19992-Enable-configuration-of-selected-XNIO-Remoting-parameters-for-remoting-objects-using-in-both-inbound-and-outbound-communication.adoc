@@ -1,0 +1,129 @@
+---
+categories:
+- core
+- remoting
+stability-level:
+default
+issue:
+https://github.com/wildfly/wildfly-proposals/issues/667
+feature-team:
+ developer:
+ tadamski
+ sme:
+  -
+ outside-perspective:
+  -
+promotes:
+promoted-by:
+---
+= <INSERT TITLE HERE>
+:author:            Tomasz Adamski
+:email:             tadamski@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+During analysis of various support cases we found out that there is no possibility to configure all XNIO/Remoting options for connections that use remoting protocol (f.e. EJB). It it worth emphasizing that this issue doesn't deal merely with the lack of options parsing that has to be implemented. There are many objects that are created by remoting f.e. Endpoints or Channels, and, what is important in the context of this issue, they can be used in both inbound and outbound scenario. So the goal of this issue is to design and document the elegant way of configuring remoting options.
+
+There already is a discussion in {https://issues.redhat.com/browse/WFCORE-6873}[jira] regarding challenges and possible solutions of this problem. In this proposal I will be describing simplest possible fix that was discussed there, that is endpoint shared by inbound and outbound connections.
+
+=== User Stories
+
+User deploys many number of applications on WildFly - the number of them exceeds the default maximum number of channels for remoting protocol. All those application utilize a remoting connection. Users are getting: "Too many channels open" exception. They would like to configure their server so that the application works correctly.
+
+== Issue Metadata
+
+=== Related Issues
+
+https://issues.redhat.com/browse/WFCORE-6873
+
+=== Affected Projects or Components
+https://github.com/wildfly/wildfly-core Remoting component
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+ 
+* users would be able to configure selected options
+* users would be able to rely on one configuration file "standalone*.xml" for in server deployments
+* configuration available in standalone*.xml configuration - no additional configuration files are neccessary
+
+=== Non-Requirements
+
+* configuration of all available xnio/remoting options - current parser supports the list of options visible {https://github.com/wildfly/wildfly-core/blob/main/remoting/subsystem/src/main/java/org/jboss/as/remoting/RemotingSubsystemRootResource.java#L62}[here] - those are not all the options available, but we should add additional ones only based on customer requirements
+
+=== Future Work
+
+* extending the configuration so that different deployments could use diffent remoting object (see deployment plan)
+
+== Backwards Compatibility
+
+* if customers were relying on wildfly-config.xml that was provided to WildFly server for remoting configuration than it will cease to work (this was not the suggested solution though).
+
+=== Default Configuration
+
+* no changes
+
+=== Importing Existing Configuration
+
+* no need to import
+
+=== Deployments
+
+* no changes expected
+
+=== Interoperability
+
+* no changes expected
+
+== Implementation Plan
+
+I'm attaching relevant parts of my implementation plan that I wrote in WFCORE-6873:
+
+=== Current status
+There are number of XNIO objects created in default WildFly configuration (Endpoints, connectors) which have to be configured on both client and server side to make the configuration work. During the connection establishment, client and server negotiate the parameters, so if f.e. MAX_INBOUND_CHANNELS is set to high value on the server but MAX_OUTBOUND_CHANNELS is not explicitly set then the default value would still be used. Although, completely logical, it may be confusing to users who change configuration that the parameters they have modified are not used. Even with the knowledge above, it is not always clear what objects have to be changed to make the configuration work. For example, there is an endpoint configuration in the remoting subystem (not present in default subsystem configuration) that is meant to configure subsystem endpoint (that is the endpoint that is used by the subsystems and not management). The subystem endpoint is then used to create the http-connector that is used, among others, for remoting+http protocol invocations. The problem is that the properties configured at subsystem endpoint are not propagated to the http-connector. As a result, setting MAX_INBOUND_CHANNELS on the subsystem endpoint would not result in changing the number of channels, even if client side is configured correctly. In order to make server side work, the properties have to be configured on http-connector directly.
+
+There is no possibility to configure outbound endpoint in an elegant way. The outbound endpoint is obtained using Contextual API. By default, Endpoint provider looks for wildfly-config.xml file in the location provided by system variable and tries to parse this file. If no parameter is present then the empty endpoint is created.
+
+=== Considerations for the proposed solution
+
+We would like to avoid having many configuration files and keep the server configuration in standalone-*.xml file.
+Even with wildfly-config.xml, we can only configure one subsystem endpoint for outbound communication (via server-wide wildfly-config.xml) and another (via remoting subsystem) for inbound communication.
+On the other hand, it would be preferable to support minimal configuration that is suitable for our customer use cases. Since the configuration with one subsystem endpoint and without direct possibility of outbound endpoint configuration seems to work well for vast majority of our customer it seems feasible to add minimal extension that solves the bugs described above.
+
+=== Proposed solution
+I have proposed a solution that makes subsystem endpoint, which can be configured in remoting subsystem, to be the contextual enpoint for all outbound communication in all deployments in the server. This is very simple solution which allows only for basic configuration (essentially it enables customers to configure one subsystem endpoint which will be used for inbound and outbound communication by all deployments) but since as of now noone is asking for anything more complex and having a simplicity point in the consideration I would argue that this solution may actually be good enough. If at some point some customer asks about more complex configuration (f.e. having many different endpoints that can be used by different deployments and configured independently), we could proceed it as an another RFE.
+
+=== Possibilities of further extension
+
+As noted above, this proposal is a minimal solution that solves the problem - it enables users to configure Endpoint properties in one place but does not allow for any more complex configuration. For example a more comphrehensive fix to this problem may allow to configure a number of endpoints so that different endpoints can be chosen for inbound or outbound scenarios or chosen by various deployments. The problem with those more complex designs is that we don't have any user feedback that they need such configuration abilities and we may risk implementing non-trivial configuration extensions that would not be used. Because of that, I'm proposing to start with this simple solution first. If after it's introduction we obtain a feedback that more complex configuration is needed, we would follow in next RFE. In such scenario, we would have more data what configurations are needed by and we would be able to design the extension based on this feedback.
+
+== Admin Clients
+
+* Since the proposed does not modify management endpoint configuration it should not have an effect on admin clients.
+
+== Security Consideration
+
+[[test_plan]]
+== Test Plan
+
+* Suggested fix does not introduce any XML modification - it only wires remoting objects in a way so that the endpoint configured in remoting subsystem is "captured" also for outbound connection. Because of that, we may provide integration test that will emulate the behavior described in use case scenario and verify that the fix makes it work correctly.
+* Because this fix changes the way endpoints are configured (one endpoint for both inbound and outbound communication) it would also be prudent to create performance tests for this issue to make sure that this new design has no impact on performance.
+
+
+== Community Documentation
+
+The community documentation would have to add information about sharing an endpoint for inbound and outbound communication. Explanation of configuration in real world scenario, such as mentioned use case, is also necessary.
+ 
+== Release Note Content
+
