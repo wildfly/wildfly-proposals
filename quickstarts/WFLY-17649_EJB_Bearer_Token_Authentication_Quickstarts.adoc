@@ -1,0 +1,83 @@
+---
+categories:
+  - quickstarts
+  - bearer
+---
+= A quickstart to demonstrate securing EJB with SASL OAUTHBEARER
+:author:            Lin Gao
+:email:             lgao@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This quickstart tries to demonstrate how to configure authentication and authorization to secure the remote EJB invocations with bearer tokens.
+
+The https://www.keycloak.org/[Keycloak] will be used as the Identity Provider(IDP) during the demonstration with predefined identities information.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-17649[WFLY-17649]
+
+=== Related Issues
+
+
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[X] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* WildFly Quickstarts
+
+=== Other Interested Projects
+
+* NONE
+
+== Requirements
+
+=== Hard Requirements
+
+* Shows how to access a remote secured EJB from a remote Java client application.
+* It uses `OAUTHBEARER` SASL mechanism to secure the EJB.
+* This quickstart needs an external Identity Provider(IDP) to work, Keycloak with a predefined realm running in Docker is used for the authentication and authorization.
+* Shows how to configure the application server to secure the EJB.
+* Shows how to configure the remote Java client application to negotiate with an external bearer token issuer.
+* Shows the result of calling remote EJB which checks current identity information.
+* Shows how to configure the application server to propagate the authentication and authorization to another server.
+* Shows the result of calling remote EJB which checks current identity information and the identity information used to call another EJB in different server.
+* It should demonstrate the invocations with at least 2 identities.
+* It will be a multi modules Maven project.
+
+=== Nice-to-Have Requirements
+
+* It will be nice if this quickstart can use a Helm Charts to be built and deployed on OpenShift. The configuration for the Helm Chart should be provided inside the quickstart directory if any.
+
+=== Non-Requirements
+
+* NONE
+
+== Test Plan
+
+* There should be runtime testings to make sure the quickstart works in the corresponding version of the server.
+* The associated GitHub Action should be setup for this quickstart.
+
+== Community Documentation
+
+Community documentation will be provided by the README in the quickstart directory.
