@@ -1,0 +1,234 @@
+---
+categories:
+- elytron
+- security
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/719
+feature-team:
+ developer:
+  - darranl
+ sme:
+ outside-perspective:
+---
+= [WFCORE-7192] Brute Force Mitigation
+:author:            Darran Lofthouse
+:email:             darran.lofthouse@jboss.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The CVE https://nvd.nist.gov/vuln/detail/CVE-2025-2901[CVE-2025-2901] has been raised
+against WildFly as presently the default configuration does not provide any form of
+brute force mitigation, additionally we do not provide any options to enable such a
+mitigation.
+
+This proposal is to add a new utility to the WildFly Elytron project that can be used
+to mitigate against brute force attacks and also to enable it by default for
+security realms defined in the `elytron` subsystem.
+
+=== User Stories
+
+This proposal is describing a feature that will be enabled by default in future
+WildFly releases, there are no user stories to be defined.
+
+== Issue Metadata
+
+ * https://issues.redhat.com/browse/WFCORE-7192[WFCORE-7192]
+ * https://issues.redhat.com/browse/ELY-2891[ELY-2891]
+
+=== Related Issues
+
+ * https://issues.redhat.com/browse/WFCORE-7193[WFCORE-7193]
+
+=== Affected Projects or Components
+
+ * WildFly Elytron
+ * WildFly Core
+
+=== Other Interested Projects
+
+Other projects that use WildFly Elytron for authentication may be interested in
+applying this utility to their own authentication setup.
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+This proposal will be adding a utility to wrap security realms to temporarily disable an identity for
+a defined period of time after a defined number of failed authentication attempts. The failed authentication
+attempts will be tracked in an in-memory cache.
+
+The utility will be enabled by default for the following security realms:
+
+ * custom-realm
+ * custom-modifiable-realm
+ * filesystem-realm
+ * jaas-realm
+ * jdbc-realm
+ * ldap-realm
+ * properties-realm
+
+ By wrapping the security realms this utility will automatically be applied to the following
+ authentication mechanisms:
+
+  * SASL Digest
+  * SASL Scram
+  * SASL Plain
+  * HTTP Basic
+  * HTTP Digest
+  * HTTP Form
+  * HTTP Programmatic
+
+The wrapper will be applied automatically by the `elytron` subsystem, it will be possible to override the
+default behaviour by setting the following realm specific system properties:
+
+ * wildfly.elytron.realm.[REALM NAME].brute-force.enabled
+ * wildfly.elytron.realm.[REALM NAME].brute-force.max-failed-attempts
+ * wildfly.elytron.realm.[REALM NAME].brute-force.lockout-interval
+ * wildfly.elytron.realm.[REALM NAME].brute-force.session-timeout
+
+The `BruteForceWrapperRealm` will operate by consuming two events that are emitted from the authentication
+mechanisms:
+
+ * `RealmFailedAuthenticationEvent` - this event will be emitted when an authentication attempt fails.
+ * `RealmSuccessfulAuthenticationEvent` - this event will be emitted when an authentication attempt succeeds.
+
+=== General Operation
+
+==== Authentication Process
+
+During an authentication the `getRealmIdentity` methods of a `SecurityRealm` are used either to obtain
+or validate credentials depending on the authentication mechanism being used. The `BruteForceWrapperRealm`
+will intercept these calls.
+
+On intercepting a call to `getRealmIdentity` the wrapper will check if the identity is present in the cache
+of failed authentications and will check if the identity has been disabled. If the identity is disabled a
+dummy `RealmIdentity` will be returned that will always fail authentication. If the identity is not disabled
+then the wrapped realm will be called and the realm `RealmIdentity` will be returned.
+
+==== Event Handling
+
+
+
+
+=== Non-Requirements
+
+This proposal focusses on security realms used for username / password based authentication, other
+realm types are excluded.
+
+This proposal will not be adding functionality to persist state that can survive
+server restarts or replication of state to other nodes in a cluster. The utility will be managing state
+for the realm it has wrapped and this will not shared for other realms even if they contain the same
+identities.
+
+This proposal will also not be updating the management model to provide model based configuration of the
+utility.
+
+=== Future Work
+
+We will come back and add configuration to the management model in a future release
+https://issues.redhat.com/browse/WFCORE-7193[WFCORE-7193]. We may also look at information we can share
+at runtime using the management model and possibly even add management operations to remove disabled
+users from the cache or to clear the cache entirely.
+
+Another option to consider for later maybe the ability to emit notifications either in the case of audit
+events or some other mechanism that external tools can use to monitor.
+
+== Backwards Compatibility
+
+As this feature does not add any new configuration in principal there are no backwards compatibility
+issued, however if installations already receive many failed authentication attempts it may lead to those
+accounts being temporarily disabled.
+
+=== Default Configuration
+
+By default the default behaviour for the following security realms will be changed:
+
+ * custom-realm
+ * custom-modifiable-realm
+ * filesystem-realm
+ * jaas-realm
+ * jdbc-realm
+ * ldap-realm
+ * properties-realm
+
+Each of these will now be wrapped with a new `BruteForceMitigation` utility with the following settings:
+
+ * max-failed-attempts = 25
+ * lockout-interval = 15 minutes
+ * session-timeout = 1 hour
+
+=== Importing Existing Configuration
+
+N/A
+
+=== Deployments
+
+This proposal changes the default behaviour of the security realms listed above for both management and
+application authentication.
+
+=== Interoperability
+
+N/A
+
+== Implementation Plan
+
+A new `BruteForceWrapperRealm` will be added to the WildFly Elytron project to add capabilities for brute
+force mitigation, this utility can then be used by projects with integrate WildFly Elytron and integrated
+into their authentication process.
+
+WildFly Core being the project that integrated WildFly Elytron for WildFly as a whole will then utilise
+this utility within the `elytron` subsystem and apply it to the set of supported security realms.
+
+== Admin Clients
+
+__<Identify the level of compatibility this feature will have with the existing admin clients (JBoss CLI and the Admin Console / HAL). Identify any follow up work that will be required in the clients and link issues created to track this work.>__
+
+== Security Considerations
+
+This feature is specifically targeting a security use case of providing a mitigation for brute force
+attacks.
+
+[[test_plan]]
+== Test Plan
+
+__<Depending on the selected stability level, the appropriate section below should be completed, including a brief description of how testing is to be performed in accordance with the selected stability level. The non-relevant sections may be removed as needed.>__
+////
+Depending on the stability level, the test plan required may vary. see below:
+////
+
+** Experimental - No test plan is required. Basic unit / integration tests should be added during development.
+
+** Preview - a brief high-level description of the testing approach should be added here, including types of tests added (unit, integration, smoke, component, subsystem, etc.) Note that not all test types are required for a particular feature, so include a description of what is being tested and the approach chosen to perform the testing.
+
+** Community - this level should include everything in the 'Preview' stability level, plus the following additional testing as relevant:
+*** Manual tests: briefly describe checks to be performed during one-time exploratory testing. The purpose of this testing is to check corner cases and other cases that are not worth implementing as automated tests. Typical checks are: bad configurations are easy to reveal, attribute descriptions and error messages are clear, names are descriptive and consistent with similar resources, default values are reasonable.
+    If there is an existing quickstart affected by the feature, manual checks include following the quickstart's guide and verifying functionality.
+*** Miscellaneous checks: Manual checks for significant changes in server performance, memory and disk footprint should be described here. These checks are not always relevant, but consideration of these impacts, and others, are strongly encouraged and should be described here. Fully qualified test case names should be provided along with a brief description of what the test is doing.
+*** Integration tests - at the 'Community' stability level, complete integration tests should be provided.
+*** Compatibility tests - if backwards compatibility is relevant to the feature, then describe how the testing is performed.
+
+** Default - This stability level is reserved and requires approval by a professional Quality Engineer with subject matter expertise.
+
+== Community Documentation
+
+Content will be added to the "WildFly Elytron Security" guide describing how the new utility works, it's
+default out of the box behaviour and how it can be configured on a realm by realm basis using system
+properties.
+
+== Release Note Content
+
+TODO - Will revisit this section once we have confirmed the strategy.  We will need to advise of the
+existence of the feature as well as how to tune or disable it.
+
+__<Draft verbiage for up to a few sentences on the feature for inclusion in the Release Note blog article for the release that first includes this feature.__
+__Example article: https://www.wildfly.org/news/2024/01/25/WildFly31-Released/.__
+__This content will be edited, so there is no need to make it perfect or discuss what release it appears in.>__
