@@ -1,0 +1,224 @@
+---
+categories:
+- microprofile
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/731
+feature-team:
+ developer: kabir
+ sme:
+  - jmesnil
+  - jamezp
+  - jasondlee
+  - pferraro
+  - rhusar
+ outside-perspective:
+  - fabiobrz
+promotes:
+promoted-by:
+---
+= WFLY-19762 - Define and document our support for MicroProfile with multiple deployments
+:author:            Kabir Khan
+:email:             kkhan@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+We need to verify that we can have several .war deployments using the various MicroProfile components side-by-side. This is needed e.g. to ensure that they don't interfere with each other. Other deployment types are out of scope.
+
+In most cases this should be relatively straight-forward, with just some tests needed to show that it works in this scenario, possibly with some minor fixes to the components implementing the MicroProfile specification, or the WildFly server integration code.
+
+For these straight-forward cases, we will populate the following sections:
+
+* link:#affected-projects-or-components[Affected Projects or Components] - if changes are needed to the code of one of the components, that component will be mentioned here.
+* link:#requirements[Requirements] - components listed here are covered by this RFE, along with a brief description of the expected behaviours. if there are some corner cases, or something working  differently from how this would be naively interpreted, these will be mentioned here for the affected components. This may also include the link:#non-requirements[Non-Requirements] sub-section.
+* link:#related-issues[Related Issues] - for each MicroProfile specification included in *this* umbrella RFE, the issue tracking the work is listed here. Typically, these are issues with an 'incorporates' link from https://issues.redhat.com/browse/WFLY-19792. If any separate RFEs are needed those will be listed here.
+* link:#test_plan[Test Plan] - outlines the tests to be added to the WildFly testsuite to ensure that side-by-side deployment is tested for each component
+
+MicroProfile specifications implementations needing more extensive work, will have their own RFEs.
+
+
+
+
+=== User Stories
+
+As an example the user may want to deploy two applications using MicroProfile Config. Each application should only see their own config, and config specified at a 'higher' level such as via environment variables and system properties. For this case, each application should behave as if it is the only application deployed on the server.
+
+For OpenAPI, consumers of an OpenAPI document should assume that it describes all REST services accessible from associated virtual host. Whether these services are provided by one application or many should be opaque to the user. From the perspective of the application developer, an application should be able to define its OpenAPI model (via the mechanisms described in the spec) independently of any other applications that might be associated with the same virtual host.
+
+With MP Telemetry, using its MP Config support, it should be possible to deploy two applications to the same server, but have signals exported to different external services, should a user choose to do so. Signals are tagged per-application, so this seems unlikely, but it may be desirable in some scenarios (e.g., multitenant) to have signals physical separated downstream. We do not, though, have any tests to verify that this actually works.
+
+
+== Issue Metadata
+
+https://issues.redhat.com/browse/WFLY-19792[WFLY-19792 - Define and document our support for MicroProfile with multiple deployments]
+
+=== Related Issues
+
+MicroProfile Specification issues:
+
+* https://issues.redhat.com/browse/WFLY-19761[WFLY-19761 - Test MP Config in multiple deployments]
+* https://issues.redhat.com/browse/WFLY-19785[WFLY-19785 - Add MP Fault Tolerance test case with multiple concurrent deployments] - resolved a while ago
+* https://issues.redhat.com/browse/WFLY-19759[WFLY-19759 - Add a test testing more than one reactive messaging deployment in parallel] - this was done a while ago
+** https://issues.redhat.com/browse/WFLY-20605[WFLY-20605 - Update MicroProfile Reactive Messaging documentation to clarify only .war deployments supported]
+* https://issues.redhat.com/browse/WFLY-20567[WFLY-20567 - MicroProfile OpenAPI subsystem does not allow multiple deployments to use the same endpoint]
+* https://issues.redhat.com/browse/WFLY-20625[WFLY-20625 - Test MicroProfile Rest Client in multiple deployments]
+* https://issues.redhat.com/browse/WFLY-20626[WFLY-20626 - Add explicit tests for multiple war support for MP Telemetry]
+* https://issues.redhat.com/browse/WFLY-20804[WFLY-20804 - Test MicroProfile JWT in multiple deployments]
+* https://issues.redhat.com/browse/WFLY-20868[WFLY-20868 - Test MicroProfile LRA with multiple deployments]
+* https://issues.redhat.com/browse/WFLY-20869[WFLY-20869 - Document that there can only be one coordinator in an LRA setup]
+* https://issues.redhat.com/browse/WFLY-21006[WFLY-21006 - Update Observability docs to discuss multiple deployment]. Covers MP Telemetry, OpenTelemetry and Micrometer.
+
+=== Affected Projects or Components
+There are no changes needed in SmallRye, OpenTelemetry or Micrometer components for this effort.
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+It should be possible to deploy several .war applications using the same MicroProfile specification, and they should generally behave as if they were deployed on their own. i.e. a deployment should not be polluted by another deployment.
+
+The current scope is .war deployments. Other deployment types are not covered by this RFE.
+
+Component notes:
+
+* Microprofile Config
+** Each deployment will have access to config properties defined outside of the deployment (e.g. env vars, system properties, and properties set in the MicroProfile Config subsystem).
+** Further each deployment may define its own config properties via a `META-INF/microprofile-config.properties`, or custom `ConfigSource` and `ConfigSourceProvider` implementations. These own config properties are local to the deployment, and must only be visible from within this deployment. So if we have A.war and B.war, A.war should not see properties local to B.war and vice versa. Of course, A.war and B.war should have access to their own properties.
+* MicroProfile Fault Tolerance
+** Already tested with multiple .war deployment with metrics providers; expanding of the test case can be considered.
+** Each deployment behaves as if it were deployed on its own, however, metrics contribute to the same metric collector.
+* MicroProfile Reactive Messaging - This already has tests for multiple .war deployment, done as part of https://issues.redhat.com/browse/WFLY-19759[WFLY-19759] a while ago.
+* Microprofile Reactive Streams Operators - The integration is mainly about making some classes and a `ReactiveStreamsEngine` CDI bean provided by the `io.smallrye.reactive:mutiny-reactive-streams-operators` from the integration available for injection. `ReactiveStreamsEngine` has no state. Similarly, the exposed `ReactiveStreams` utility class, and the various `Builder`s and other classes do not have any state either. Thus, there is no risk of cross-deployment 'leakage'.
+* MicroProfile Health - This already has tests for multiple .war deployment.
+** Each .war contributes its healthiness checks to the global server healthiness.
+** When multiple .war archives are deployed, if at least *one* defines the `mp.health.disable-default-procedures` config to `true`, it affects the whole server configuration (as described in https://docs.wildfly.org/36/Admin_Guide.html#disabling-default-server-procedure["Disabling Default Server Procedures" documentation]). This multi-deployment behaviour is not specified in the MicroProfile Health specification.
+* MicroProfile OpenAPI
+** MP OpenAPI subsystem must install an OpenAPI endpoint and model per host (rather than per deployment) and allow applications to contribute components/paths/etc. during deployment.
+** "Global" properties of the OpenAPI model that are not concordant between applications will be provided by the following host-specific MP Config properties:
+*** mp.openapi.extensions.server._server-name_.host._host-name_.externalDocs.**
+*** mp.openapi.extensions.server._server-name_.host._host-name_.info.**
+** All existing extensions will continue to be supported (as verified by existing integration tests)
+* MicroProfile Rest Client
+** The MicroProfile Rest Client is a client side only API which creates proxy clients for interacting with REST end points.
+Given the underlying required API's are Jakarta EE API's, Jakarta Context and Dependency Inject and Jakarta REST, there
+is not much that needs to be done to ensure this works.
+** This also requires MicroProfile Config. No changes in the implementation are needed to have this work with multiple deployments.
+* MicroProfile Telemetry / OpenTelemetry
+** There are no explicit tests for multiple war deployments, but https://github.com/wildfly/wildfly/blob/main/testsuite/integration/expansion/src/test/java/org/wildfly/test/integration/observability/opentelemetry/ContextPropagationTestCase.java#L44-L52[`ContextPropagationTestCase`] does deploy two separate OpenTelemetry applications to test the propagation functionality, so multiple apps are tested implicitly
+** Explicit tests should be added, though, for a clearer, intentional verification of support: https://issues.redhat.com/browse/WFLY-20626[]
+** As a MicroProfile spec, any issues/concerns regarding MicroProfile Config will have relevance here, as the MicroProfile Telemetry spec explicitly depends on Config.
+* Micrometer
+** While not technically part of MicroProfile, we do include this in the discussion due to the obvious overlap.
+** There is already a set of tests that explicitly test multiple application deployment in WildFly, so this functionality is covered and verified as working.
+* MicroProfile JWT
+** MicroProfile JWT is built upon multiple Jakarta EE and MicroProfile APIs which are already engineered to be isolated per deployment. Security settings in WildFly are already deployment scoped.
+** To provide further isolation, the JWT integration within WildFly makes use of dynamically instantiated virtual security domains which are created on demand for deployments secured using JWT.
+** Configuration of JWT for a deployment is scoped to the deployment using MicroProfile Config.
+
+=== Non-Requirements
+
+There is no need to support MicroProfile components in .ear files, or any archives apart from .war files.
+
+Other deployment types *might* work in practice, but .wars are the only documented use case for now.
+
+=== Future Work
+
+If the MicroProfile specifications start supporting other deployment types, we will too.
+
+We might also consider supporting other deployment types for some MicroProfile specifications in the future as a WildFly-specific improvement. These could come in at one of the lower stability levels.
+
+== Backwards Compatibility
+
+There aren't really any backwards compatibility issues. This is mainly about testing, and fixing anything that may crop up during testing.
+
+Saying that, one possible backwards compatibility issue is that users may have been using MicroProfile functionality in other deployment types than .war. We are not changing anything to ban this, but are specifying that the scope is now just .war files. So users using other deployment types will be able to continue to do so, but, as is the case currently, at their own risk.
+
+=== Default Configuration
+
+There is no change to the default values of configuration attributes, nor any changes to the configuration generated by any current Galleon layers.
+
+=== Importing Existing Configuration
+
+There are no changes to the server configuration.
+
+=== Deployments
+
+There are no incompatible changes to the behaviour of deployments.
+
+=== Interoperability
+
+This does not affect interoperability.
+
+
+== Admin Clients
+
+No admin client issues.
+
+== Security Considerations
+
+There is no impact on security.
+
+[[test_plan]]
+== Test Plan
+Tests will be added to the `testsuite/integration/expansion` testsuite in WildFly to test multiple .war deployments for the following MicroProfile components as part of this RFE.
+
+* MicroProfile Config
+** A test will be created with two .war deployments. It will demonstrate that properties coming from outside the deployment are usable by both deployments, and that properties defined within each deployment are local to that deployment.
+* MicroProfile Fault Tolerance
+** A test exists in the WildFly testsuite with two .war deployments with different metrics providers, verifying that the basic MP functionality and the corresponding metrics collection works as expected.
+** The test for MicroProfile FT in the https://github.com/jboss-eap-qe/eap-microprofile-test-suite/tree/master/microprofile-lra/src/test/java/org/jboss/eap/qe/microprofile/lra[MicroProfile test suite] will be enhanced to split the current tests, so that each participant is deployed in a separate war
+* MicroProfile Reactive Messaging
+** The existing test deploys two similar applications. In one of them MicroProfile Config properties are used to map the Reactive Messaging channels to AMQP, and in the other the MicroProfile Config properties are used to map the channels to Kafka. A lot of the properties share their names, and the test checks that deployment A sends and receives data to/from AMQP, and that deployment B does the same with Kafka.
+* MicroProfile Reactive Streams Operators
+** No tests are required.
+** A possible test could be to expand the existing WildFly `ReactiveStreamsOperatorsInjectedReactiveEngineProviderSanityTestCase` and `ReactiveStreamsOperatorsNoReactiveEngineProviderSanityTestCase` tests so they deploy two copies of the application, however I don't think that is necessary.
+* MicroProfile OpenAPI
+** Add new test that verifies:
+*** 2 applications, deployed to the same virtual host, can both contribute to the OpenAPI document.
+**** Verify that deploy/undeploy of an individual application results in addition/removal of application-specific document contributions.
+*** Host-specific MP config properties appear in the OpenAPI document as expected
+*** Global OpenAPI model properties specified by both applications appear in the OpenAPI document if they match.
+* MicroProfile Rest Client
+** A test will be created which deploys two WAR's. The test will ensure the clients see their own configuration and work.
+* OpenTelemetry / MicroProfile Telemetry
+** A test will be added which deploys two applications, each with its own observability support.
+** The test will verify that each application's signals are correctly published
+** The test will also verify that duplicate signal names do not conflict in the system or the export (i.e., tags successfully and correctly differentiate between the deployments' signals)
+* Micrometer
+** This scenario is already covered and no additional testing needs have been identified at this time
+* MicroProfile JWT
+** Existing test cases focus on cases where end users wish to bypass the per deployment isolation for JWT activation and configuration, a new test case `JWTParallelDeploymentTestCase` will be added which will deploy two applications, each application will use distinct keys and the test case will verify that the use of the keys can not cross over between the two applications.
+* MicroProfile LRA
+** By design LRA is intended to support multiple participants working against one coordinator. These may all be in different .war files. Only one coordinator can be deployed, while several participants can be deployed. The participants do not interfere with each other
+** The test for MicroProfile LRA in the https://github.com/jboss-eap-qe/eap-microprofile-test-suite/tree/master/microprofile-lra/src/test/java/org/jboss/eap/qe/microprofile/lra[MicroProfile test suite] will be enhanced to split the current tests, so that each participant is deployed in a separate war
+
+
+== Community Documentation
+
+
+The community documentation will be updated as follows:
+
+* MicroProfile Config - it will point out that only .war deployments are supported, and that although it might work in other deployment types, the behaviour is undefined.
+* MicroProfile Fault Tolerance - it will point out that only .war deployments are supported, and that although it might work in other deployment types, the behaviour is undefined.
+* MicroProfile OpenAPI - update documentation to describe how to specify global OpenAPI model properties when multiple applications are deployed
+* MicroProfile Reactive Messaging - it will point out that only .war deployments are supported, and that although it might work in other deployment types, the behaviour is undefined.
+* MicroProfile Rest Client - it will point out that only .war deployments are supported, and that although it might work in other deployment types, the behaviour is undefined.
+* OpenTelemetry / MicroProfile Telemetry - the documentation will be updated to detail that the deployment scenario is supported and what to expect (especially with regard to duplicate names and their tags) ()
+* Micrometer - the documentation will be updated to detail that the multi-deployment scenario is supported and what to expect when war applications are deployed in parallel
+* MicroProfile JWT - no updates to the documentation as this behaviour matches the initial integration.
+* MicroProfile LRA - the documentation will be updated to point out that only one coordinator can be deployed.
+
+
+== Release Note Content
+
+There are improvements to the integration of the MicroProfile specifications to ensure that multiple side-by-side .war deployments work as expected.
