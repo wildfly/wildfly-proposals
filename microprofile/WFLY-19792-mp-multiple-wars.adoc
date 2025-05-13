@@ -61,6 +61,7 @@ MicroProfile Specification issues:
 * https://issues.redhat.com/browse/WFLY-19759[WFLY-19759 - Add a test testing more than one reactive messaging deployment in parallel] - this was done a while ago
 ** https://issues.redhat.com/browse/WFLY-20605[WFLY-20605 - Update MicroProfile Reactive Messaging documentation to clarify only .war deployments supported]
 * https://issues.redhat.com/browse/WFLY-20567[WFLY-20567 - MicroProfile OpenAPI subsystem does not allow multiple deployments to use the same endpoint]
+* https://issues.redhat.com/browse/WFLY-20625[WFLY-20625 - Test MicroProfile Rest Client in multiple deployments]
 
 === Affected Projects or Components
 
@@ -98,6 +99,11 @@ Component notes:
 *** mp.openapi.extensions._server-name_._host-name_.externalDocs.**
 *** mp.openapi.extensions._server-name_._host-name_.info.**
 ** All existing extensions will continue to be supported (as verified by existing integration tests)
+* MicroProfile Rest Client
+** The MicroProfile Rest Client is a client side only API which creates proxy clients for interacting with REST end points.
+Given the underlying required API's are Jakarta EE API's, Jakarta Context and Dependency Inject and Jakarta REST, there
+is not much that needs to be done to ensure this works.
+** This also requires MicroProfile Config. No changes in the implementation are needed to have this work with multiple deployments.
 
 === Non-Requirements
 
@@ -160,6 +166,8 @@ Tests will be added to the `testsuite/integration/expansion` testsuite in WildFl
 *** 2 applications, deployed to the same virtual host, can both contribute to the OpenAPI document.
 *** Host-specific MP config properties appear in the OpenAPI document as expected
 *** Global OpenAPI model properties specified by both applications appear in the OpenAPI document if they match.
+* MicroProfile Rest Client
+** A test will be created which deploys two WAR's. The test will ensure the clients see their own configuration and work.
 
 == Community Documentation
 
@@ -170,6 +178,7 @@ The community documentation will be updated as follows:
 * MicroProfile Config - it will point out that only .war deployments are supported, and that although it might work in other deployment types, the behaviour is undefined.
 * MicroProfile OpenAPI - update documentation to describe how to specify global OpenAPI model properties when multiple applications are deployed
 * MicroProfile Reactive Messaging - it will point out that only .war deployments are supported, and that although it might work in other deployment types, the behaviour is undefined.
+* MicroProfile Rest Client - it will point out that only .war deployments are supported, and that although it might work in other deployment types, the behaviour is undefined.
 
 
 == Release Note Content
