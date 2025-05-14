@@ -130,6 +130,8 @@ __<Identify the level of compatibility this feature will have with the existing 
 
 __<What impact on security does this feature have?>__
 
+__<For features introducing new management API resources, attributes or operations, if anything other than 'typical' RBAC behavior is required, the Requirements section should include detailed requirements. For example, 'For management RBAC purposes, the foo resource will be marked as security sensitve for access, reads and writes'. The typical RBAC behavior is any authenticated management user can access and read, while writes are limited to Maintainer or higher and runtime operation execution is limited to Operator and higher.>__
+
 [[test_plan]]
 == Test Plan
 
