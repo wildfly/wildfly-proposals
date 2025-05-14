@@ -5,8 +5,7 @@ categories:
  - elytron
 # Specify the stability level of the feature.
 # Values can be one of: experimental preview community default
-stability-level:
- - Community
+stability-level: community
 issue:
  - https://github.com/wildfly/wildfly-proposals/issues/685
 feature-team:
@@ -55,7 +54,6 @@ Long runing server, with periodic information on certificates will allow admins 
 
 === Related Issues
 
-* https://issues.redhat.com/browse/EAP7-1863[EAP7-1863]
 * https://issues.redhat.com/browse/WFCORE-5744[WFCORE-5744]
 
 === Affected Projects or Components
@@ -78,13 +76,18 @@ Long runing server, with periodic information on certificates will allow admins 
  ** Validity semantics:
  *** not yet - ceritifacete is still too young
  *** EXPIRED - current date is after expiration
- *** about to expire - certificate is still valid. If certificate lifespan is week or smaller, this rougly corresponds to day to EOL, otherwise 7 days to EOL
- *** valid - more than above boundries
+ *** about to expire - certificate is still valid. currentData+expiration-watermark.after(cert.getNotAfter))
+ *** valid - anything else not covered above
  * add config options to handle:
- ** frequency of warning
+ ** frequency of warning(expiration-check-delay)
  *** 0 - turn off - one time check on startup as in previous version
- *** n+ - millisecconds between periodic checks
-
+ *** n+ - minutes between periodic checks
+ *** Default value: 12h
+ *** Unit: minutes
+ ** expiration threshold(expiration-watermark)
+ *** attribute (expressed in minutes) which will mark control how much time till expiration is considered degradation of health(warning)
+ *** Default value: 7 days
+ *** Unit: minutes
 
 === Changed requirements
 
@@ -171,6 +174,7 @@ cp server.keystore ${SRV_HOME}/standalone/configuration/
 [quote, JBoss CLI]
 ----
 /subsystem=elytron/key-store=demoKeyManager:write-attribute(name=expiration-check-delay, value=1000)
+/subsystem=elytron/key-store=demoKeyManager:write-attribute(name=expiration-watermark, value=60)
 :reload
 ----
 
@@ -210,6 +214,7 @@ cp server.keystore ${SRV_HOME}/standalone/configuration/
 == Community Documentation
 
 Model/XSD description should be enough as change is not deep and only introudce simple config parameter and additional output KVP in existing command.
+However, it might be good to have dedicated paragraph explaining change, since in current proposal periodic check is active.
 
 == Release Note Content
 
