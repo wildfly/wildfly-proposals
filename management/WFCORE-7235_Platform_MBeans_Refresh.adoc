@@ -1,0 +1,197 @@
+---
+categories:
+- management
+stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/728
+feature-team:
+ developer: jfdenise
+ sme:
+  - bstansberry
+ outside-perspective:
+  - ehugonne
+---
+= Platform MBean evolution
+:author:            Jean-Francois Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-7235[WFCORE-7235]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFCORE-7145[WFCORE-7145]
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [ ] Preview
+
+* [x] Community
+
+* [ ] default
+
+=== Affected Projects or Components
+
+https://github.com/wildfly/wildfly-core[WildFly Core] project.
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+This feature brings a "bug fix" and a new feature at the `community` level. 
+
+* Bug fix: Evolve the existing `/core-service=platform-mbean/type=*` WildFly resources with new standard attributes and operations defined in JDK11
+* New feature: Expose through the same WildFly management resources the attributes and operations defined in the `com.sun.management` MXBeans + introduce the
+`type=platform-logging` resource.
+
+=== Hard Requirements
+
+* The kernel management API version needs to be bumped to 30.0.0 (The previous released version is 29.0.0). This bump has already been done in https://issues.redhat.com/browse/WFCORE-7145[WFCORE-7145].
+* Expose attributes and operations that are defined in JDK11 API.
+* Expose the attributes and operations defined in MXBean in the `com.sun.management` package statically in the management model. 
+If the running JVM does not support them it means that attributes will be undefined and invoking operations will lead to an error.
+
+=== Implementation notes
+
+* The access to the `com.sun.management` MXBeans is reflective, WildFly can run on a JVM not defining them.
+* When reading a WildFly model attribute that does exist but is not supported by the JVM, the attribute value is set to "undefined".
+* When writing a WildFly model attribute that does exist but is not supported by the JVM, an OperationFailed exception is thrown.
+* When invoking a WildFly model operation that does exist but is not supported by the JVM, an OperationFailed exception is thrown.
+
+==== Add support for the PlatformLoggingMXBean
+
+* Exposed as `/core-service=platform-mbean/type=platform-logging`
+
+===== New standard attributes
+
+  * `logger-names`: The list of the currently registered logger names.
+
+==== Evolutions of the GarbageCollectorMXBean
+
+===== New attributes from the `com.sun.management` MXBeans
+
+  * `last-gc-info`: The GC information about the most recent GC.
+
+===== GC information fields
+
+  * `duration`: The elapsed time of this GC in milliseconds.
+  * `end-time`: The end time of this GC in milliseconds since the Java virtual machine was started.
+  * `id`: The identifier of this garbage collection which is the number of collections that this collector has done.
+  * `memory-usage-after-gc`: The memory usage of all memory pools at the end of this GC.
+  * `memory-usage-before-gc`: The memory usage of all memory pools at the beginning of this GC.
+  * `start-time`: The start time of this GC in milliseconds since the Java virtual machine was started.
+
+==== Evolutions of the OperatingSystemMXBean
+
+===== New attributes from the `com.sun.management` package
+
+  * `committed-virtual-memory-size`: The amount of virtual memory that is guaranteed to be available to the running process in bytes, or -1 if this operation is not supported.
+  * `cpu-load`: Returns the "recent cpu usage" for the operating environment. This attribute is actually defined in JDK14, to replace an attribute introduced in JDK11 that has been deprecated.
+  * `free-memory-size`: The amount of free memory in bytes. This attribute is actually defined in JDK14, to replace an attribute introduced in JDK11 that has been deprecated.
+  * `free-swap-space-size`: The amount of free swap space in bytes.
+  * `max-file-descriptor-count`: The maximum number of file descriptors. Unix specific.
+  * `open-file-descriptor-count`: The number of open file descriptors. Unix specific.
+  * `process-cpu-load`: The "recent cpu usage" for the Java Virtual Machine process.
+  * `process-cpu-time`: The CPU time used by the process on which the Java virtual machine is running in nanoseconds.
+  * `total-memory-size`: The total amount of memory in bytes. This attribute is actually defined in JDK14, to replace an attribute introduced in JDK11 that has been deprecated.
+  * `total-swap-space-size`: The total amount of swap space in bytes.
+
+==== Evolutions of the RuntimeMXBean
+
+===== New standard attributes
+
+  * `pid`: The process ID representing the running Java virtual machine.
+
+==== Evolutions of the ThreadMXBean
+
+===== New standard fields in `ThreadInfo`
+
+  * `daemon`: Whether the thread is a daemon thread.
+  * `priority`: The thread priority of the thread.
+
+===== New standard fields in `StackTraceElement`
+
+  * `class-loader-name`: The name of the class loader of the class containing the execution point represented by this stack trace element.
+  * `module-name`: The module name of the module containing the execution point represented by this stack trace element.
+  * `module-version`: The module version of the module containing the execution point represented by this stack trace element.
+
+===== New attributes from the `com.sun.management` package
+
+  * `current-thread-allocated-bytes`: An approximation of the total amount of memory, in bytes, allocated in heap memory for the current thread.
+  * `thread-allocated-memory-enabled`: Tests if thread memory allocation measurement is enabled.
+  * `thread-allocated-memory-supported`: Tests if the Java virtual machine implementation supports thread memory allocation measurement.
+
+===== New operations from the `com.sun.management` package
+
+  * `get-thread-allocated-bytes`: An approximation of the total amount of memory, in bytes, allocated in heap memory for the thread with the specified ID.
+  * `get-threads-allocated-bytes`: An approximation of the total amount of memory, in bytes, allocated in heap memory for each thread whose ID is in the input array ids.
+  * `get-thread-cpu-times`: The total CPU time for each thread whose ID is in the input array ids in nanoseconds.
+  * `get-thread-user-times`: The CPU time that each thread whose ID is in the input array ids has executed in user mode in nanoseconds.
+
+=== Non-Requirements
+
+None
+
+=== Future Work
+
+* Keep up to date with platform MXBean evolutions when wildfly-core version is bumped.
+
+== Backwards Compatibility
+
+This evolution is backward compatible.
+
+=== Default Configuration
+
+No impact.
+
+=== Importing Existing Configuration
+
+No impact.
+
+=== Deployments
+
+No impact.
+
+=== Interoperability
+
+No impact.
+
+== Admin Clients
+
+No impact.
+
+== Security Considerations
+
+* 'typical' RBAC behavior.
+
+== Test Plan
+
+* Some tests are added to the WildFly Core platform-mbean module.
+
+== Community Documentation
+
+This is auto documented by the WildFly Management model read-resource-description
+
+== Release Note Content
+
+The `/core-service=platform-mbean` resources have been evolved to expose new platform MXBeans, attributes and operations.
