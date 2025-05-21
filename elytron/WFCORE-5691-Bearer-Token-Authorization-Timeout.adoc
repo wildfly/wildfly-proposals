@@ -12,10 +12,19 @@ categories:
 
 == Overview
 
-Bearer Token Authorization is the process of authorizing HTTP requests based on
-the existence and validity of a bearer token.  The token carries within it
-an expiration timestamp.  The two parameters being added, connection-timeout
-and read-timeout are placed on the URL when obtaining the public key from the OAuth2 provider.
+Two configurable timeout properties are being added to Elytron's Oauth 2 validator,
+the class that reads and processes a Bearer token. 
+The connection timeout, `connection-timeout`, designates the time in millisecond
+the validator will wait when establishing a connection to the URL resource.  If 
+time expires before the connection is completed, the request is abandoned. 
+The read timeout, `read-timeout`, designates the time in milliseconds the
+validator waits when reading the Bearer token data from the URL resource.
+If time expires before all data is transmitted, the request is abandoned.
+
+These two properties allow the user to limit or extend wait times on a fast or slow 
+URL resource respectively.  The properties can be useful in debugging a URL resource,
+by forcing a connect to fail early with a short wait time.  They can reduce the number
+processing failures by giving a slow resource  extra time to respond by extending the wait time.
 
 
 == Issue Metadata
