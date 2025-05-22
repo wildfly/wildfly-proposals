@@ -1,6 +1,8 @@
 ---
 categories:
   - elytron
+stability-level: preview
+issue: https://issues.redhat.com/browse/WFCORE-5691[WFCORE-5691]
 ---
 = [Preview] Bearer token timeout configurability will be added to WildFly's Elytron subsystem.
 :author:            Rebecca Searls
@@ -12,19 +14,19 @@ categories:
 
 == Overview
 
-Two configurable timeout properties are being added to Elytron's Oauth 2 validator,
+Two configurable timeouts are being added to Elytron's Oauth 2 validator,
 the class that reads and processes a Bearer token. 
-The connection timeout, `connection-timeout`, designates the time in millisecond
+The connection timeout, "connection-time", designates the time in millisecond 
 the validator will wait when establishing a connection to the URL resource.  If 
 time expires before the connection is completed, the request is abandoned. 
-The read timeout, `read-timeout`, designates the time in milliseconds the
+The read timeout, "read-timeout", designates the time in milliseconds the
 validator waits when reading the Bearer token data from the URL resource.
 If time expires before all data is transmitted, the request is abandoned.
 
 These two properties allow the user to limit or extend wait times on a fast or slow 
 URL resource respectively.  The properties can be useful in debugging a URL resource,
-by forcing a connect to fail early with a short wait time.  They can reduce the number
-processing failures by giving a slow resource  extra time to respond by extending the wait time.
+by forcing a connect to fail early with a short wait time or by giving a slow resource
+extra time by extending the wait time.
 
 
 == Issue Metadata
