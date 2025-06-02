@@ -28,6 +28,8 @@ feature-team:
 
 === Related Issues
 
+* https://issues.redhat.com/browse/WFCORE-7145[WFCORE-7145]
+
 === Stability Level
 // Choose the planned stability level for the proposed functionality
 * [ ] Experimental
@@ -64,6 +66,7 @@ This feature brings a "bug fix" and a new feature at the `community` level.
 
 === Hard Requirements
 
+* The kernel management API version needs to be bumped to 30.0.0 (The previous released version is 29.0.0). This bump has already been done in https://issues.redhat.com/browse/WFCORE-7145[WFCORE-7145].
 * Expose attributes and operations that are defined in JDK11 API.
 * Expose the attributes and operations defined in MXBean in the `com.sun.management` package statically in the management model. 
 If the running JVM does not support them it means that attributes will be undefined and invoking operations will lead to an error.
