@@ -179,9 +179,9 @@ It should expose a simple `weaviate-embedding-store` resource with the following
 /subsystem=ai/weaviate-embedding-store=mystore:add(socket-binding=weaviate, ssl-enabled=false, object-class=Simple, metadata=[url,language,parent_url,file_name,file_path,title,subtitle])
 ----
 
-=== Chat language models
+=== Chat models
 
-The extension should provide resources to define `dev.langchain4j.model.chat.ChatLanguageModel` to chat with a llm.
+The extension should provide resources to define `dev.langchain4j.model.chat.ChatModel` to chat with a llm.
 
 It should expose a simple `openai-chat-model` resource with the following attributes:
 
@@ -200,6 +200,8 @@ It should expose a simple `openai-chat-model` resource with the following attrib
 * top-p: the top P of the OpenAI chat model.
 
 ----
+/subsystem=ai/openai-chat-model=mychat:add(base-url="https://api.openai.com/v1", api-key="${env.OPENAI_API_KEY}",model-name="o4-mini")
+
 /subsystem=ai/openai-chat-model=mychat:add(base-url="https://api.groq.com/openai/v1", api-key="${env.GROQ_API_KEY}",model-name="llama3-8b-8192")
 ----
 
@@ -229,6 +231,56 @@ It should expose a simple `ollama-chat-model` resource with the following attrib
 
 ----
 /subsystem=ai/ollama-chat-model=mychat:add(model-name="llama3:8b", base-url="http://192.168.1.11:11434")
+----
+
+It should also support Gemini.
+It should expose a simple `gemini-chat-model` resource with the following attributes:
+
+* allowed-code-execution: allows code execution.
+* api-key: the API key to authenticate to a Gemini chat model.
+* civic-integrity: civic integrity threshold. Allowed values: HARM_BLOCK_THRESHOLD_UNSPECIFIED, BLOCK_LOW_AND_ABOVE, BLOCK_MEDIUM_AND_ABOVE, BLOCK_ONLY_HIGH, BLOCK_NONE.
+* connect-timeout: the timeout for the Gemini chat model.
+* dangerous-content: dangerous content threshold. Allowed values: HARM_BLOCK_THRESHOLD_UNSPECIFIED, BLOCK_LOW_AND_ABOVE, BLOCK_MEDIUM_AND_ABOVE, BLOCK_ONLY_HIGH, BLOCK_NONE.
+* harassment: harassment threshold. Allowed values: HARM_BLOCK_THRESHOLD_UNSPECIFIED, BLOCK_LOW_AND_ABOVE, BLOCK_MEDIUM_AND_ABOVE, BLOCK_ONLY_HIGH, BLOCK_NONE.
+* hate-speech: hate speech threshold. Allowed values: HARM_BLOCK_THRESHOLD_UNSPECIFIED, BLOCK_LOW_AND_ABOVE, BLOCK_MEDIUM_AND_ABOVE, BLOCK_ONLY_HIGH, BLOCK_NONE.
+* include-code-execution-output: includes code execution output.
+* log-requests-responses: enabling the tracing of requests and responses going to Gemini.
+* max-output-token: the number of token returned by the Gemini chat model.
+* model-name: the name of the model served by Gemini.
+* response-format: the response format.
+* sexually-explicit: sexually explicit threshold. Allowed values: HARM_BLOCK_THRESHOLD_UNSPECIFIED, BLOCK_LOW_AND_ABOVE, BLOCK_MEDIUM_AND_ABOVE, BLOCK_ONLY_HIGH, BLOCK_NONE.
+* streaming: enables streaming.
+* temperature: the temperature of the Gemini chat model.
+* top-k: the top K of the Gemini chat model.
+* top-p: the top P of the Gemini chat model.
+
+----
+/subsystem=ai/gemini-chat-model=mychat:add(api-key="${env.GEMINI_API_KEY}", model-name="gemini-1.5-flash-latest")
+----
+
+It should also support Github.
+It should expose a simple `github-chat-model` resource with the following attributes:
+
+* api-key: the API key to authenticate to a Github chat model.
+* connect-timeout: the timeout for the Github chat model.
+* custom-headers: custom headers.
+* endpoint: the endpoint to connect to a Github chat model.
+* frequency-penalty: the frequency penalty of the Github chat model.
+* log-requests-responses: enabling the tracing of requests and responses going to Github.
+* max-retries: the maximum number of retries.
+* max-token: the number of token returned by the Github chat model.
+* model-name: the name of the model served by Github.
+* presence-penalty: the presence penalty of the Github chat model.
+* response-format: the response format.
+* seed: the seed of the Github chat model.
+* service-version: the service version. Allowed values: 2024-05-01-preview.
+* streaming: enables streaming.
+* temperature: the temperature of the Github chat model.
+* top-p: the top P of the Github chat model.
+* user-agent-suffix: the user agent suffix.
+
+----
+/subsystem=ai/github-chat-model=mychat:add(api-key="${env.GITHUB_API_KEY}", endpoint="https://api.github.com/copilot_internal/v2/token", model-name="copilot-chat")
 ----
 
 It should alos expose a simple way to test the connection to the LLM with a *chat* operation with the followoing parameter:
@@ -285,10 +337,10 @@ Generally a feature should have documentation as part of the PR to wildfly maste
 == Release Note Content
 ////
 Draft verbiage for up to a few sentences on the feature for inclusion in the
-Release Note blog article for the release that first includes this feature. 
+Release Note blog article for the release that first includes this feature.
 Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
 This content will be edited, so there is no need to make it perfect or discuss
 what release it appears in.  "See Overview" is acceptable if the overview is
-suitable. For simple features best covered as an item in a bullet-point list 
-of features containing a few words on each, use "Bullet point: <The few words>" 
+suitable. For simple features best covered as an item in a bullet-point list
+of features containing a few words on each, use "Bullet point: <The few words>"
 ////
