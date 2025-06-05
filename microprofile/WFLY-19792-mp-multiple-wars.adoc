@@ -61,7 +61,7 @@ MicroProfile Specification issues:
 ** https://issues.redhat.com/browse/WFLY-20605[WFLY-20605 - Update MicroProfile Reactive Messaging documentation to clarify only .war deployments supported]
 * https://issues.redhat.com/browse/WFLY-20567[WFLY-20567 - MicroProfile OpenAPI subsystem does not allow multiple deployments to use the same endpoint]
 * https://issues.redhat.com/browse/WFLY-20625[WFLY-20625 - Test MicroProfile Rest Client in multiple deployments]
-* https://issues.redhat.com/browse/WFLY-20626[WFLY-20626 - Add explicit tests for multiple war support]
+* https://issues.redhat.com/browse/WFLY-20626[WFLY-20626 - Add explicit tests for multiple war support for MP Telemetry]
 
 === Affected Projects or Components
 
