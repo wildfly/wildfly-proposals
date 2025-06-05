@@ -1,0 +1,252 @@
+---
+# Add any category for this proposal as a YAML list, e.g.
+# - core
+# - management
+# If missing, add it to _data/wildfly-categories and use its id
+categories:
+- undertow
+- ejb
+# Specify the stability level of the feature.
+# Values can be one of: experimental, preview, community, or default
+stability-level: default
+# Specify the Feature Development tracker issue for the feature.
+# This must be an issue tracked in https://github.com/orgs/wildfly/projects/7/views/1.
+# To create a Feature Development tracker issue, go to https://github.com/wildfly/wildfly-proposals/issues/new/choose
+# and select 'Feature Development'
+issue: https://github.com/wildfly/wildfly-proposals/issues/732
+# Provide the GitHub ids of the feature team members, organized by role.
+# Provide a single id for the 'assignee' role. Use a YAML list for the 'sme' and
+# 'outside-perspective' roles, even if there is only one person in a role.
+feature-team:
+ developer: jasondlee
+ sme:
+  -
+ outside-perspective:
+  -
+# If this issue tracks the promotion of a previously completed feature to a higher stability level, provide the URL of
+# the original https://github.com/wildfly/wildfly-proposals/issues issue that was used to track the implementation of
+# that feature.
+promotes:
+# During initial development of a feature, this field should be left blank. If after the feature is completed and its
+# stability level is promoted via a later issue, the developer promoting the issue should return to this document ("this"
+# being the original analysis document for the feature). The field should be updated to point to the
+# https://github.com/wildfly/wildfly-proposals/issues issue that promotes it.
+# For example,
+#              | Implementation Issue (A) | Promotion Issue (B)
+# promotes:    |                          | https://github.com/.../A
+# promoted-by: | https://github.com/.../B |
+promoted-by:
+---
+
+= Support TCP_NODELAY in wildfly-config.xml
+:author:            Jason Lee
+:email:             jasondlee@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+
+////
+The entire document should be one to two pages long. We will write each analysis document as if it is a conversation
+with a future developer. This requires a good writing style, with full sentences organized into paragraphs. Bullets are
+acceptable only for visual style, not as an excuse for writing sentence fragments.
+////
+
+== Overview
+
+The socket option `TCP_NODELAY` is not configurable, either programmatically or via XML. This leads, in some cases, to unacceptable performance
+characteristics. To remedy this, `WildFlyHttpContext` and its related XML schema need to be updated to allow this option to be configured by the
+developer.
+
+=== User Stories
+
+////
+Provide one or more brief user stories that illustrate the intended users of the feature and the goal they will seek
+to achieve by using the feature.
+////
+
+As an application developer, I would like greater flexibilty in configuring the socket used by the HTTP EJB client.
+
+== Issue Metadata
+
+* https://issues.redhat.com/browse/WEJBHTTP-154
+
+=== Related Issues
+
+////
+List the issues related to this feature
+////
+
+=== Affected Projects or Components
+
+////
+List the projects or components that are affected by the feature. List them using their Git repositories.
+////
+
+=== Other Interested Projects
+
+* Undertow
+* EJB
+
+=== Relevant Installation Types
+
+////
+List the installation types that are relevant for the features and remove any that are not relevant.
+////
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+////
+Describe the requirements that must be fulfilled by this feature.
+
+For analyses of a promotion of an existing feature to 'preview' or 'community' stability, only list new requirements;
+existing requirements from the feature being promoted are assumed to continue unless otherwise noted in the 'Changed
+requirements' section. Other analyses, including those for promotion to the 'default' stability level, must list all
+requirements.
+////
+
+* The `wildfly-http-client` schema version should be modified to add support for `TCP_NODELAY`
+* `WildFlyHttpContext` should be modified to add support for `tcpNoDelay`.
+
+=== Changed requirements
+////
+Only relevant for analyses of a promotion of an existing feature to 'preview' or 'community stability. Other analyses
+should remove this section.
+
+For any existing requirements from the feature being promoted that are being changed or removed, describe the change.
+////
+N/A
+
+=== Non-Requirements
+////
+Use this section to explicitly discuss things that readers might think are required but which are not required.
+////
+N/A
+
+=== Future Work
+////
+Use this section to discuss requirements that are not addressed by this proposal but which may be addressed in later proposals.
+////
+
+N/A
+
+== Backwards Compatibility
+////
+Does this enhancement affect backwards compatibility with previously released versions of WildFly? Can the identified
+incompatibility be avoided?
+////
+
+This change will include a new version of the XML schema, but the old version will still be fully supported. There should
+not, then, be any bacwards compatibility issues.
+
+=== Default Configuration
+////
+Does the proposed work change the default value of any current configuration attributes? Does it change the
+configuration generated by any current Galleon layers?
+////
+
+There will be no default configuration changes. Any added elements/properties will default to their current, unconfigured values.
+
+=== Importing Existing Configuration
+////
+Does the proposed work affect the ability to run WildFly running an existing configuration? Is there anything else
+about the proposed work that may require changes to the WildFly server migration tool?
+////
+
+Existing configurations will continue to work unchanged.
+
+=== Deployments
+////
+Does this feature change the behavior of deployments in incompatible ways? If yes, please detail what is the deployment
+issue observed when no change is done, and what is the change needed to solve the deployment issue.
+////
+
+Unless deployments opt in to use the new schema version, they will be unaffected by this change.
+
+=== Interoperability
+////
+Is this feature impacting interoperability?
+////
+
+There are no interop issues foreseen.
+
+== Implementation Plan
+////
+This section is optional. If you have a complex feature which cannot be delivered all in one go, suggest the strategy.
+////
+
+N/A
+
+== Admin Clients
+////
+Identify the level of compatibility this feature will have with the existing admin clients (JBoss CLI and the Admin
+Console / HAL). Identify any follow-up work that will be required in the clients and link issues created to track this work.
+////
+
+N/A
+
+== Security Considerations
+////
+What impact on security does this feature have?
+////
+
+There no security considerations foreseen.
+
+[[test_plan]]
+== Test Plan
+
+////
+Depending on the selected stability level, the appropriate section below should be completed, including a brief
+description of how testing is to be performed in accordance with the selected stability level. The non-relevant sections
+may be removed as needed.
+
+Depending on the stability level, the test plan required may vary. See below.
+////
+
+** Experimental - No test plan is required. Basic unit / integration tests should be added during development.
+
+** Preview - a brief high-level description of the testing approach should be added here, including types of tests added
+(unit, integration, smoke, component, subsystem, etc.) Note that not all test types are required for a particular feature,
+so include a description of what is being tested and the approach chosen to perform the testing.
+
+** Community - this level should include everything in the 'Preview' stability level, plus the following additional testing as relevant:
+*** Manual tests: briefly describe checks to be performed during one-time exploratory testing. The purpose of this testing
+is to check corner cases and other cases that are not worth implementing as automated tests. Typical checks are: bad
+configurations are easy to reveal, attribute descriptions and error messages are clear, names are descriptive and consistent
+with similar resources, default values are reasonable. If there is an existing quickstart affected by the feature, manual
+checks include following the quickstart's guide and verifying functionality.
+*** Miscellaneous checks: Manual checks for significant changes in server performance, memory and disk footprint should
+be described here. These checks are not always relevant, but consideration of these impacts, and others, are strongly
+encouraged and should be described here. Fully qualified test case names should be provided along with a brief description
+of what the test is doing.
+*** Integration tests - At the 'Community' stability level, complete integration tests should be provided.
+*** Compatibility tests - If backwards compatibility is relevant to the feature, then describe how the testing is performed.
+** Default - This stability level is reserved and requires approval by a professional Quality Engineer with subject matter expertise.
+
+== Community Documentation
+////
+Describe how this feature will be documented or illustrated. Generally a feature should have documentation as part of
+the PR to wildfly main, or as a follow-up PR if the feature is in wildfly-core. In some cases, though, the feature will
+bring additional content (such as quickstarts, guides, etc.) Indicate which of these will happen.
+////
+...
+
+== Release Note Content
+
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the Release Note blog article for the release
+that first includes this feature.
+
+Example article: https://www.wildfly.org/news/2024/01/25/WildFly31-Released/
+
+This content will be edited, so there is no need to make it perfect or discuss what release it appears in.
+////
+
+Updates have been made to the `wildfly-http-client` schema and `WWildFlyHttpContext` to allow for greater flexibilty in configuring
+the socket used by the EJB client.
