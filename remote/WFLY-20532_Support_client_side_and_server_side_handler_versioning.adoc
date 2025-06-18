@@ -25,14 +25,14 @@ feature-team:
 
 == Overview
 
-This purpose of this Request For Enhancement (RFE) is to provide a versioning mechanism for client-side and server-side handlers
-for the Wilfly client libraries when using HTTP as a transport protocol. In this context, a client-side handler has responsabilities
-for creating the HTTP request message snt to the server, as well as propcessing the HTTP response message received from the server.
+The purpose of this Request For Enhancement (RFE) is to provide a versioning mechanism for client-side and server-side handlers
+for the Wilfly client libraries when using HTTP as a transport protocol. In this context, a client-side handler has responsibilities
+for creating the HTTP request message sent to the server, as well as processing the HTTP response message received back from the server.
 Similarly, a server-side handler is responsible for receiving the HTTP request message from the client and sending the HTTP response
-message to the client.
+message back to the client.
 
-Handler versioning is required in order to add changes to the HTTP request and response messages, was well as adding functionality
-related to the processing of those messages. For example, in order to support affinity manement of EJB/HTTP requests, requst routing
+Handler versioning is required in order to add changes to the HTTP request and response messages, as well as adding functionality
+related to the processing of those messages. For example, in order to support affinity management of EJB/HTTP requests, request routing
 data (cookies) need to me added to requests, and those cookies need to be processed on the client side as well as the server side.
 
 Handler versioning is also required to maintain backward compatability: newer versions of handlers may involve functionality not
@@ -71,7 +71,7 @@ __<List the installation types that are relevant for the features and remove any
 
 == Requirements
 
-In order to describe a context for the requirements, we assume thaat the request response processing can be viewed asbtracty
+In order to describe a context for the requirements, we assume that the request response processing can be viewed abstractly
 as consisting of four parts:
 
 * request preparation (client-side)
@@ -83,7 +83,7 @@ The requirements for this feature are as follows:
 
 * allow a numeric handler version to be associated with the 4-tuple (request preparation, request processing, response preparation, response processing)
 * provide a handshake protocol between client and server to negotiate the handler version based on min(client handler version, server handler version)
-* provide an efficient and maintainable way to incoporate handlr changes from one ersion to another
+* provide an efficient and maintainable way to incoporate handler changes from one version to another
 ** e.g. maintain completely separate 4-tuples for each handler version
 ** e.g. maintain one 4-tuple of handlers, each parameterized by handler version
 
