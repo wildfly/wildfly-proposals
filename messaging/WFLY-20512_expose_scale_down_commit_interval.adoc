@@ -1,0 +1,128 @@
+---
+categories:
+  - messaging
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/709
+
+feature-team:
+ developer: ehsavoie
+ sme:
+  -
+ outside-perspective:
+  -
+---
+
+= Expose Artemis commit-interval attribute for scaledown
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+When moving messages from the server scaling down, all the operation is done in a single transaction which means that all the messages need to be in memory and can lead to a OOME. The purpose of this feature is to enable the size of the transaction (aka the number of messages) to be defined so that messages are moved by blocks instead of a single block.
+
+=== User Stories
+
+As an administrator I want to be able to scale down a node in my cluster when the load is decreasing and configuring the number of messages to be moved  in a batch.
+
+== Issue Metadata
+
+=== Related Issues
+ * https://issues.redhat.com/browse/EAP7-2296[EAP7-2296]
+ * https://issues.redhat.com/browse/JBEAP-28739[JBEAP-28739]
+ * https://issues.redhat.com/browse/WFLY-19752[WFLY-19752]
+ * https://issues.apache.org/jira/browse/ARTEMIS-5053[ARTEMIS-5053]
+ 
+
+=== Affected Projects or Components
+
+* https://github.com/apache/activemq-artemis/[Apache Artemis]
+* WildFly
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+* Add an optional `scale-down-commit-interval` integer to the  https://docs.wildfly.org/35/wildscribe/subsystem/messaging-activemq/server/ha-policy=replication-colocated/configuration=secondary/index.html[/subsystem=messaging-activemq/server/ha-policy=replication-colocated/configuration=secondary] to control the size of the messages transaction block.
+* Add an optional `scale-down-commit-interval` integer to the  https://docs.wildfly.org/35/wildscribe/subsystem/messaging-activemq/server/ha-policy=shared-store-colocated/configuration=secondary/index.html[/subsystem=messaging-activemq/server/ha-policy=shared-store-colocated/configuration=secondary] to control the size of the messages transaction block.
+* Add an optional `scale-down-commit-interval` integer to the  https://docs.wildfly.org/35/wildscribe/subsystem/messaging-activemq/server/ha-policy=shared-store-secondary/index.html[/subsystem=messaging-activemq/server/ha-policy=shared-store-secondary] to control the size of the messages transaction block.
+* Add an optional `scale-down-commit-interval` integer to the  https://docs.wildfly.org/35/wildscribe/subsystem/messaging-activemq/server/ha-policy/live-only/index.html[/subsystem=messaging-activemq/server/ha-policy=shared-store-secondary] to control the size of the messages transaction block.
+
+Those attributes should have a default value of "-1" and any negative value should be converted to that.
+
+=== Changed requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+=== Future Work
+
+N/A
+
+== Backwards Compatibility
+
+N/A
+
+=== Default Configuration
+
+N/A
+
+=== Importing Existing Configuration
+
+N/A
+
+=== Deployments
+
+N/A
+
+=== Interoperability
+
+N/A
+
+== Implementation Plan
+
+Add a new integer attribute `scale-down-commit-interval` with no default value to the ScaleDown attributes, then update the schema accordingly and register a model transformer.
+
+== Admin Clients
+
+N/A
+
+== Security Considerations
+
+N/A
+
+[[test_plan]]
+== Test Plan
+
+* Verify changes in Wildfly management model:
+** verify that `scale-down-commit-interval` value is read from XML configuration file,
+** verify that the attribute is rejected when transforming to older schema version.
+* Manual tests: use the reproducer described in https://issues.redhat.com/browse/WFLY-19752
+* Integration tests:
+In the Messaging QE test suite adding a test to simulate the reproducer:  org.jboss.qa.artemis.test.cluster.LiveOnlyScaleDownTestCase.
+
+
+== Community Documentation
+
+* Attribute description in the Wildfly management model:
+"The batch size for committing the messages being moved on scale down."
+
+Otherwise no community documentation is needed.
+
+
+== Release Note Content
+
+Added the `scale-down-commit-interval` attribute on the ha-policy to be able to define the number of messages in a transaction batch when transferring them to another node during a scale down .
