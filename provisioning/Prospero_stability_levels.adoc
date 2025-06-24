@@ -1,0 +1,133 @@
+---
+categories:
+ - provisioning
+stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/740
+feature-team:
+developer: spyrkob
+sme:
+-
+outside-perspective:
+-
+promoted-by:
+---
+
+= Support stability levels in Prospero
+:author:            Bartosz Spyrko-Śmietanko
+:email:             bspyrkos@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The WildFly defined a concept of stability levels used to allow delivery of experimental or preview features. Currently, our provisioning tools are not able to use this sort of concept meaning that any new feature has to always be treated as a `default` stability level making it harder to develop new capabilities of provisioning system.
+
+The goal of this RFE is to implement a stability levels equivalent in Prospero making it possible to expose new commands or command options at different stability levels.
+
+=== User Stories
+
+ * As a developer I want to be able to add a new feature to Prospero that would be only usable with community WildFly server.
+ * As a user I want to only be presented with subset of provisioning functionality that is appropriate for the distribution that I am using.
+
+== Issue Metadata
+
+=== Related Issues
+
+__<List the issues related to this feature>__
+
+=== Affected Projects or Components
+
+ * https://github.com/wildfly-extras/prospero
+ * https://github.com/wildfly-extras/wildfly-installation-manager-api
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+
+== Requirements
+
+ * A CLI command marked with certain stability level can only be used if the prospero distribution supports that stability level (e.g. community-level command in experimental distribution).
+  ** If the distribution level does not support this command, the user must not be able to execute it.
+ * A CLI command option with certain stability level can only be used if the prospero distribution supports that stability level.
+  ** If the distribution level does not support this command option, the user must not be able to use it.
+ * An API method can be annotated with a stability level. If the prospero distribution does not support that level, an exception should be thrown when trying to use that API.
+ * A prospero distribution can be switched to a different stability level using a `--stability-level` command argument.
+  ** The prospero distribution should define a minimum allowed stability level.
+  ** This argument should only be available on `community` or below stability levels.
+
+=== Changed requirements
+
+
+=== Non-Requirements
+
+ * Ability to use different channel and manifest definitions in different stability-levels
+
+=== Future Work
+
+We might want to add ability to the channels library to have multiple channel/manifest schemas. This way we could add experimental/preview features at the channels level.
+
+== Backwards Compatibility
+
+All currently available commands and features will be considered to be at a `default` stability level.
+
+=== Default Configuration
+
+By default, the prospero distribution would be published with `community` stability level and a minimum level of `experimental`.
+
+=== Importing Existing Configuration
+
+Prospero integrating with WildFly would override use the server's stability level. There is no need to change the WildFly configuration.
+
+=== Deployments
+
+n/a
+
+=== Interoperability
+
+n/a
+
+== Implementation Plan
+
+=== Stability levels
+Prospero will support four stability levels similar to WildFly - experimental, preview, community and default.
+
+* experimental: This level is for bleeding-edge functionality that may never advance to a higher stability level.
+* preview: Features of higher stability then experimental, but not tested and vetted enought to be considered community level. The expectation is that these features will eventually move to the community level in a substantially similar form (although not guaranteed).
+* community: This level is for features of sufficient stability to be available by default in standard Prospero distribution. Features at this level are not expected to change incompatibly over time.
+* default: Features at this level have undergone additional vetting to ensure they are suitable for the long-term compatibility expectations.
+
+=== Stability level of Prospero definition
+The stability level of Prospero distribution will be dictated by two properties added to the `MANIFEST.MF` or `prospero-common.jar` - `JBoss-Product-Stability` and `JBoss-Product-Minimal-Stability`.
+
+`JBoss-Product-Stability` defines the default stability that the distribution is running at when used without `--stability-level` flag
+
+`JBoss-Product-Minimal-Stability` defines the lowest stability level that the distribution is allowed to be switched to using `--stability-level` flag.
+
+=== Stability levels and APIs
+Prospero can be used as an embedded library (e.g. with WildFly). Since the APIs cannot be adjusted for stability levels, if an operation that is not available at a given stability level is executed, it will result in an exception being thrown. It's up to the caller to ensure that they are only using APIs available at a given stability level.
+
+== Admin Clients
+
+The JBoss CLI installer handlers will have to pass the required stability level to the prospero API.
+
+== Security Considerations
+
+n/a
+
+[[test_plan]]
+== Test Plan
+
+Unit tests to verify exposing different stability level commands.
+
+== Community Documentation
+
+A new section in the Prospero development documentation explaining how the stability levels should be used.
+
+== Release Note Content
+
+Added support for different stability levels to the Prospero provisioning tool.
