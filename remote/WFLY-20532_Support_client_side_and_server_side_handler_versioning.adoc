@@ -33,12 +33,12 @@ message back to the client.
 
 Handler versioning is required in order to add changes to the HTTP request and response messages, as well as adding functionality
 related to the processing of those messages. For example, in order to support affinity management of EJB/HTTP requests, request routing
-data (cookies) need to me added to requests, and those cookies need to be processed on the client side as well as the server side.
+data (cookies) need to be added to requests, and those cookies need to be processed on the client side as well as the server side.
 
-Handler versioning is also required to maintain backward compatability: newer versions of handlers may involve functionality not
+Handler versioning is also required to maintain backward compatibility: newer versions of handlers may involve functionality not
 available to handlers in earlier versions.
 
-To get agreement on which handlers shoudl be used, a handshake protocol between client and server will need to negotiate which handler
+To get agreement on which handlers should be used, a handshake protocol between client and server will need to negotiate which handler
 version to use, generally the maximum version common to both client and server.
 
 === User Stories
@@ -50,9 +50,10 @@ no required input from the user.
 
 === Related Issues
 
-EAP7-2298: the EAP7 RFE to which this analysis document belongs
-WFLY-20532: integration of the featrure into Wildfly
-WEJBHTTP-153: principal coding changes of the feature in the client libraries
+* EAP7-2298: the EAP7 RFE to which this analysis document belongs
+* WFLY-20532: integration of the featrure into Wildfly
+* WEJBHTTP-153: principal coding changes of the feature in the client libraries
+* Feature Planning Project Issue #56: for feature planning in Wildfly (see https://github.com/orgs/wildfly/projects/7/views/1)
 
 === Affected Projects or Components
 
@@ -62,8 +63,6 @@ Use of the Wildfly client libraries is affected by this feature change.
 
 === Relevant Installation Types
 
-__<List the installation types that are relevant for the features and remove any that are not relevant>__.
-
 * Traditional standalone server (unzipped or provisioned by Galleon)
 * Managed domain
 * OpenShift Source-to-Image (S2I)
@@ -71,98 +70,204 @@ __<List the installation types that are relevant for the features and remove any
 
 == Requirements
 
-In order to describe a context for the requirements, we assume that the request response processing can be viewed abstractly
-as consisting of four parts:
+This change impacts several aspects of the Wildfly HTTP client.
+
+=== 1. Handler versioning
+
+In order to describe a context for this versioning requirement, we assume that the request response processing that takes
+place between a Wildfly HTTP client application and a Wildfly server can be viewed abstractly as consisting of four parts:
 
 * request preparation (client-side)
 * request handling (server-side)
 * reponse preparation (server-side)
 * response handling (client-side)
 
-The requirements for this feature are as follows:
+These are the client-side and server-side handlers which need to be versioned. In this context, the requirements for this
+aspect are as follows:
 
 * allow a numeric handler version to be associated with the 4-tuple (request preparation, request processing, response preparation, response processing)
-* provide a handshake protocol between client and server to negotiate the handler version based on min(client handler version, server handler version)
-* provide an efficient and maintainable way to incoporate handler changes from one version to another
+* provide an efficient and maintainable way to incorporate handler changes from one version to another
 ** e.g. maintain completely separate 4-tuples for each handler version
 ** e.g. maintain one 4-tuple of handlers, each parameterized by handler version
 
-=== Changed requirements
+Such handler versioning permits the addition of new features to request/response processing for the Wildfly HTTP client.
 
-__<Only relevant for analyses of a promotion of an existing feature to
- 'preview' or 'community stability. Other analyses should remove this section.>__
+=== 2. Handshaking and Backward compatibility
 
-__<For any existing requirements from the feature being promoted that are
- being changed or removed, describe the change.>__
+Once we have versioned handlers, it will happen that clients and servers from different Wildfly versions will have different
+handler versions available. In order to preserve compatibility between clients and servers from different Wildfly versions,
+we require a handshake protocol between client and server to get agreement on which handler version to use.
 
+Therefore, requirements for this aspect are:
 
-=== Non-Requirements
+* provide a handshake protocol between client and server to negotiate the handler version to be used, based on the formula
+min(client handler version, server handler version)
 
-__<Use this section to explicitly discuss things that readers might think are required but which are not required.>__ 
+=== 3. Additional handshake parameters
+
+In addition to getting agreement on the handler version to use, there are other aspects of the Wildfly HTTP client which
+may differ between client and server and which are required for backward compatibility:
+
+* Java EE vs Jakarta EE platform - to deal with any package renaming required by the version of the EE platform in use
+* marshalling regimen - to support different marshalling regimens
+* Jakarta EE version - to deal with any potential differences in Jakarta specs
+
+Each of these aspects will have their own numerical version and the handshake protocol will get agreement for these values
+to enhance interoperability and backward compatibility.
+
+NOTE: it would be useful for informational and debuging purooses to provide the handshake values in the logs:
+
+* INFO level: announce the agreed values when there is a client-server version mismatch
+* DEBUG level: provide the "before" and "after" values for both the client and server before the handshake starts and after
+the handshake completes
 
 === Future Work
 
-__<Use this section to discuss requirements that are not addressed by this proposal but which may be addressed in later proposals.>__
+This work is motivated by the need to introduce _affinity management_ into the EJB client library. Affinity management, in
+this context, concerns the ability of the client to ensure that requests for stateful EJBs will be directed to the node on
+which that stateful bean was created. In other words, the client maintains an association or affinity between the specific
+stateful EJB the request targets and the target node which receives the invocation. This is requied for purposes of performance
+when stateful EJBs are deployed in a cluster.
+
+In order to introduce such a feature, significant changes to the client-side and server-side handlers is required, thus the
+need for client-side and server-side version handling to introduce the feature.
 
 == Backwards Compatibility
 
-__<Does this enhancement affect backwards compatibility with previously released versions of WildFly? Can the identified incompatibility be avoided?>__
+NOTE: Backward compatibility is taken to mean new versions of software (and data) being able to work with old versions of
+the same software software (and data). Forward comatibility similarly is taken to mean old software (and data) being able
+to work with new software (and data).
+
+This enhancement does relate directly to the issue of backward compatability. The incompatibilities which may arise span
+various aspects:
+
+* Java EE vs Jakarta EE differences, due to package changes
+* client-side and server-side handler differences, due to functional changes
+* HTTP request message and response message differences, with respect to headers and body
+* marshalling choices (future)
+
+Both backward and forward compatibility is guaranteed by the client and server carrying out a handshake on connection establishment
+which determines agreed versions of each of these aspects to be used when processing invocations.
 
 === Default Configuration
 
-__<Does the proposed work change the default value of any current configuration attributes? Does it change the configuration generated by any current Galleon layers?>__
+Configuration of the HTTP client is setup by the wildfly-config.xml file. There may be some small changes to the schema.
 
 === Importing Existing Configuration
 
-__<Does the proposed work affect the ability to run WildFly running an existing configuration? Is there anything else about the proposed work that may require changes to the WildFly server migration tool?>__
+THis work does not affect existing server configurations, as the feature does not depend on the way in which the server is
+configured.
 
 === Deployments
 
-__<Does this feature change the behavior of deployments in incompatible ways? If yes please detail what is the deployment issue observed when no change is done, and what is the change needed to solve the deployment issue>__
+This feature should not affect deployments in incompatible ways. Deployments may contain embedded Wildfly HTTP client
+applications (e.g. the server-client to server architecture). However, the interaction between server-client and server,
+even if using different versions, will be negotiated in the same was as a standalone client with a server.
 
 === Interoperability
 
-__<Is this feature impacting interoperability?>__
+NOTE: Interoperability: the ability of software from different vendors or with different architecrures to exchange information and operate semlessly.
 
-== Implementation Plan
+The Wildfly client applications generally (irrespective of the particular transport used - Remoting or HTTP) are affected
+by the shift from Java EE to Jakarta EE, as these use different package naming conventions. The common solution to this
+problem was to introduce the EE Interoperability Protocol which is a handshake between client and server on conection establishment
+which sets an EE Interoperability version:
 
-__<This section is optional. If you have a complex feature which can not be delivered all in one go, suggest the strategy.>__
+* version 1: use a special interoperability marshaller which converts package names in the appropriate way
+* version 2: use the default marshallers
+
+Version 1 is used when the client and server require package transformation during marshalling. Version 2 is used when they
+do not.
+
+The EE version is one of the aspects varying between client and server and is handled by the handshake protocol mentioned
+earlier.
 
 == Admin Clients
 
-__<Identify the level of compatibility this feature will have with the existing admin clients (JBoss CLI and the Admin Console / HAL). Identify any follow up work that will be required in the clients and link issues created to track this work.>__
+These changes do not affect compatibility with Wildfly CLI or HAL/Admin Colsole.
 
 == Security Considerations
 
-__<What impact on security does this feature have?>__
+These changes do not impact the security configuration of the Wildfly HTTP client.
 
 [[test_plan]]
 == Test Plan
 
-__<Depending on the selected stability level, the appropriate section below should be completed, including a brief description of how testing is to be performed in accordance with the selected stability level. The non-relevant sections may be removed as needed.>__
-////
-Depending on the stability level, the test plan required may vary. see below:
-////
+This issue is at stability level "community" and the following required sections apply:
 
-** Experimental - No test plan is required. Basic unit / integration tests should be added during development.
+=== Test Plan Overview
 
-** Preview - a brief high-level description of the testing approach should be added here, including types of tests added (unit, integration, smoke, component, subsystem, etc.) Note that not all test types are required for a particular feature, so include a description of what is being tested and the approach chosen to perform the testing.
+The requirements of this issue which require one or more forms of validation through testing are as follows:
 
-** Community - this level should include everything in the 'Preview' stability level, plus the following additional testing as relevant:
-*** Manual tests: briefly describe checks to be performed during one-time exploratory testing. The purpose of this testing is to check corner cases and other cases that are not worth implementing as automated tests. Typical checks are: bad configurations are easy to reveal, attribute descriptions and error messages are clear, names are descriptive and consistent with similar resources, default values are reasonable.
-    If there is an existing quickstart affected by the feature, manual checks include following the quickstart's guide and verifying functionality.
-*** Miscellaneous checks: Manual checks for significant changes in server performance, memory and disk footprint should be described here. These checks are not always relevant, but consideration of these impacts, and others, are strongly encouraged and should be described here. Fully qualified test case names should be provided along with a brief description of what the test is doing.
-*** Integration tests - at the 'Community' stability level, complete integration tests should be provided.
-*** Compatibility tests - if backwards compatibility is relevant to the feature, then describe how the testing is performed.
+* the handshake between client and server produce the expected agreed values, conditional on the client version
+and the server varsion(interoperability, compatability)
+* for each agreed handshake variable:
+** the EE interoperability aspect functions as expected (i.e. the interopeablity mode is determined)
+** the client-server tuple assignment functions as expected (i.e. the functional requirements of the EJB client, Naming
+client and Transaction client for that client-server handler version function as expected
+** the marshalling regimen functions as expected (i.e. the correct marshalling regimen is used for marshalling)
+* at onnection establishment time, there is no interference between the handshake protocol and the establishment of secure
+connections
 
-** Default - This stability level is reserved and requires approval by a professional Quality Engineer with subject matter expertise.
+=== Manual Tests
+
+Manual tests do not seem to be required in this case, as there are no relevant tests which cannot be automated.
+
+=== Miscellaneous Checks
+
+Check that any options configred by the wildfly-config.xml and relevant to this RFE are validated.
+
+=== Integration Tests
+
+Project-level integration tests will target components of the Wildfly HTTP client at the project component level - effectively
+testing fine-grained requirements for integration of components within the Wildfly HTTP client project itself.
+
+Server-level integration tests will target integration between the Wildfly HTTP client library and the server environment
+it interacts with - testing coarse-grained requirements for integration between the Wildfly HTTP client library and the various
+subsystems of the server it interacts with, as well as overall combined client-server hahaviour.
+
+==== Project-level integration tests
+
+handshakeProtocolTest: validate the behaviour of the handshake protocol between a client and a mock server.
+
+cientHandlerServerhandlerSmokeTest: test that handlers work when using clients and servers of differing handler versions
+are combined (and that the handshake finds an agreed handler version))
+
+
+==== Server-level integration tests
+
+connectionEstablishmentInterferenceTest: Because the handshake protocol of the Wildfly HTTP client operates during connection
+establishment between client and server, there can be an interaction with the establishment of a secure connection, which
+is "happening at the same time". For example, HTTP authentication can send back a HTTP 401 message requesting additional security
+information via a www-authenticate header, and this should be followed by a new request for the resource with a www-authorization
+header. This test aims to validate that there is no interference between the HTTP client handshake protocol and the various
+supported security configurations for the client libraries.
+
+clientHandlerSeverHandlerSmokeTest: test that for a given client-handler, server-handler tuple, the functonal requirements
+of the EJB, Naming and Transaction client are met
+
+NOTE: because each release of the Wildfly HTTP client will have a default client-server handler version, and that client
+server interaction is comprehensively tested with that default version in each project release, we only require smoke testing
+of the client-server interactions when versions of client and server do not match and depend on the handshake protocol for
+agreement.
+
+
+=== Compatability Tests
+
+A compatibility testsuite exists for validating agreed handshake values between client and server which covers the possible
+version pairings between client and server (old client, new server; new client, old server; new server, new server). This
+testsuite can be found at: https://github.com/wildfly/wildfly-client-interoperability[Wildfly Client Interoperability]
+
+NOTE: this test is brittle as it depends on complex Byteman rules to extract the agreed handshake values which are senstive to
+refactorings; need to consider making the agreed handshake values accessible through a stable API to simplify testing
 
 == Community Documentation
 
-__<Describe how this feature will be documented or illustrated. Generally a feature should have documentation as part of the PR to wildfly main, or as a follow up PR if the feature is in wildfly-core. In some cases though the feature will bring additional content (such as quickstarts, guides, etc.). Indicate which of these will happen>__
+This feature is not something that the user would need to be aware of - for client and server versions which do not match,
+the handshake protocol should establish an agreed version. However, a documentation note on the existence of the handshake
+protocol, why it is necessary and what it does would be helpful.
 
 == Release Note Content
 
-__<Draft verbiage for up to a few sentences on the feature for inclusion in the Release Note blog article for the release that first includes this feature.__
-__Example article: https://www.wildfly.org/news/2024/01/25/WildFly31-Released/.__
-__This content will be edited, so there is no need to make it perfect or discuss what release it appears in.>__ 
+Such a release note blog item could describe this feature as enhancing compatibility / interoperability between Wildfly HTTP
+client versions and the servers they interact with. Both backward and forward compatibity are supported.
