@@ -56,7 +56,7 @@ __<List the issues related to this feature>__
  * A CLI command option with certain stability level can only be used if the prospero distribution supports that stability level.
   ** If the distribution level does not support this command option, the user must not be able to use it.
  * An API method can be annotated with a stability level. If the prospero distribution does not support that level, an exception should be thrown when trying to use that API.
- * A prospero distribution can be switched to a different stability level using a `--stability-level` command argument.
+ * A prospero distribution can be switched to a different stability level using a `--stability` command argument.
   ** The prospero distribution should define a minimum allowed stability level.
   ** This argument should only be available on `community` or below stability levels.
 
@@ -104,9 +104,9 @@ Prospero will support four stability levels similar to WildFly - experimental, p
 === Stability level of Prospero definition
 The stability level of Prospero distribution will be dictated by two properties added to the `MANIFEST.MF` or `prospero-common.jar` - `JBoss-Product-Stability` and `JBoss-Product-Minimal-Stability`.
 
-`JBoss-Product-Stability` defines the default stability that the distribution is running at when used without `--stability-level` flag
+`JBoss-Product-Stability` defines the default stability that the distribution is running at when used without `--stability` flag
 
-`JBoss-Product-Minimal-Stability` defines the lowest stability level that the distribution is allowed to be switched to using `--stability-level` flag.
+`JBoss-Product-Minimal-Stability` defines the lowest stability level that the distribution is allowed to be switched to using `--stability` flag.
 
 === Stability levels and APIs
 Prospero can be used as an embedded library (e.g. with WildFly). Since the APIs cannot be adjusted for stability levels, if an operation that is not available at a given stability level is executed, it will result in an exception being thrown. It's up to the caller to ensure that they are only using APIs available at a given stability level.
