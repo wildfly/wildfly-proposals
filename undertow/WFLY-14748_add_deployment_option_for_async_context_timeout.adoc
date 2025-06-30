@@ -1,0 +1,177 @@
+---
+# Add any category for this proposal as a YAML list, e.g.
+# - core
+# - undertow
+# If missing, add it to _data/wildfly-categories and use its id
+categories:
+ - core
+ - undertow
+# Specify the stability level of the feature.
+# Values can be one of: experimental, preview, community, or default
+stability-level: community
+# Specify the Feature Development tracker issue for the feature.
+# This must be an issue tracked in https://github.com/orgs/wildfly/projects/7/views/1.
+# To create a Feature Development tracker issue, go to https://github.com/wildfly/wildfly-proposals/issues/new/choose
+# and select 'Feature Development'
+issue: https://issues.redhat.com/browse/WFLY-14748
+# Provide the GitHub ids of the feature team members, organized by role.
+# Provide a single id for the 'assignee' role. Use a YAML list for the 'sme' and
+# 'outside-perspective' roles, even if there is only one person in a role.
+feature-team:
+ developer: Bartosz Baranowski
+ sme:
+  - Flavia Rainone
+ outside-perspective:
+  - Tomas Hofman
+# If this issue tracks the promotion of a previously completed feature to a higher stability level, provide the URL of
+# the original https://github.com/wildfly/wildfly-proposals/issues issue that was used to track the implementation of
+# that feature.
+promotes:
+# During initial development of a feature, this field should be left blank. If after the feature is completed and its
+# stability level is promoted via a later issue, the developer promoting the issue should return to this document ("this"
+# being the original analysis document for the feature). The field should be updated to point to the
+# https://github.com/wildfly/wildfly-proposals/issues issue that promotes it.
+# For example,
+#              | Implementation Issue (A) | Promotion Issue (B)
+# promotes:    |                          | https://github.com/.../A
+# promoted-by: | https://github.com/.../B |
+promoted-by:
+---
+
+= Introduce deployment option to control async context timeout
+:author:            Your Name
+:email:             bbaranow@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+__<The entire document should be one to two pages long. We will write each analysis document as if it is a conversation
+with a future developer. This requires a good writing style, with full sentences organized into paragraphs. Bullets are
+acceptable only for visual style, not as an excuse for writing sentence fragments.>__
+
+== Overview
+
+Undertow allow to set async context timeout as part of deployment. This should also be possible in WFLY. For WFLY undertow will require backport with property instead of API call.
+
+=== User Stories
+
+__<Provide one or more brief user stories that illustrate the intended users of the feature and the goal they will seek
+to achieve by using the feature.>__
+
+== Issue Metadata
+
+=== Related Issues
+
+https://issues.redhat.com/browse/UNDERTOW-1870
+
+=== Affected Projects or Components
+
+Undertow integration in WFLY.
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+__<List the installation types that are relevant for the features and remove any that are not relevant>__.
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+Add ability to configure default per deployment async context timeout. Most likely best place for this is: /subsystem=undertow/servlet-container=default
+/subsystem=undertow/servlet-container=default:write-attribute(name="async-context-timeout", value="30000")
+
+=== Changed requirements
+
+__<Only relevant for analyses of a promotion of an existing feature to 'preview' or 'community stability. Other analyses
+should remove this section.>__
+
+__<For any existing requirements from the feature being promoted that are being changed or removed, describe the change.>__
+
+
+=== Non-Requirements
+
+__<Use this section to explicitly discuss things that readers might think are required but which are not required.>__
+
+=== Future Work
+
+__<Use this section to discuss requirements that are not addressed by this proposal but which may be addressed in later proposals.>__
+
+== Backwards Compatibility
+
+Not a problem. Default value will be the same as previously defined(30000ms), just as in previous versions of WFLY.
+
+=== Default Configuration
+
+Yes, this should work.
+
+=== Importing Existing Configuration
+
+Not affected.
+
+=== Deployments
+
+Not affected, defualt value will remain consistent with old versions.
+
+=== Interoperability
+
+Not affected.
+
+== Implementation Plan
+
+__<This section is optional. If you have a complex feature which cannot be delivered all in one go, suggest the strategy.>__
+
+== Admin Clients
+
+Unless HAL generate certain config screens from model definition it will require adjustment in HAL.
+
+== Security Considerations
+
+NA.
+
+[[test_plan]]
+== Test Plan
+
+Unit tests included in PR should be enough.
+
+__<Depending on the selected stability level, the appropriate section below should be completed, including a brief
+description of how testing is to be performed in accordance with the selected stability level. The non-relevant sections
+may be removed as needed.>__
+////
+Depending on the stability level, the test plan required may vary. See below.
+////
+
+** Experimental - No test plan is required. Basic unit / integration tests should be added during development.
+
+** Preview - a brief high-level description of the testing approach should be added here, including types of tests added
+(unit, integration, smoke, component, subsystem, etc.) Note that not all test types are required for a particular feature,
+so include a description of what is being tested and the approach chosen to perform the testing.
+
+** Community - this level should include everything in the 'Preview' stability level, plus the following additional testing as relevant:
+*** Manual tests: briefly describe checks to be performed during one-time exploratory testing. The purpose of this testing
+is to check corner cases and other cases that are not worth implementing as automated tests. Typical checks are: bad
+configurations are easy to reveal, attribute descriptions and error messages are clear, names are descriptive and consistent
+with similar resources, default values are reasonable. If there is an existing quickstart affected by the feature, manual
+checks include following the quickstart's guide and verifying functionality.
+*** Miscellaneous checks: Manual checks for significant changes in server performance, memory and disk footprint should
+be described here. These checks are not always relevant, but consideration of these impacts, and others, are strongly
+encouraged and should be described here. Fully qualified test case names should be provided along with a brief description
+of what the test is doing.
+*** Integration tests - At the 'Community' stability level, complete integration tests should be provided.
+*** Compatibility tests - If backwards compatibility is relevant to the feature, then describe how the testing is performed.
+** Default - This stability level is reserved and requires approval by a professional Quality Engineer with subject matter expertise.
+
+== Community Documentation
+
+XSD/Model description should be enough. This is simple timeout value so it does not need much explanation.
+
+== Release Note Content
+
+__<Draft verbiage for up to a few sentences on the feature for inclusion in the Release Note blog article for the release
+that first includes this feature.__
+__Example article: https://www.wildfly.org/news/2024/01/25/WildFly31-Released/.__
+__This content will be edited, so there is no need to make it perfect or discuss what release it appears in.>__
