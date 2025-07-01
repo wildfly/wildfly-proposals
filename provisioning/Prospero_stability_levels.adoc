@@ -35,7 +35,8 @@ The goal of this RFE is to implement a stability levels equivalent in Prospero m
 
 === Related Issues
 
-__<List the issues related to this feature>__
+* https://github.com/wildfly-extras/wildfly-installation-manager-api/pull/33
+* https://github.com/wildfly-extras/prospero/pull/900
 
 === Affected Projects or Components
 
