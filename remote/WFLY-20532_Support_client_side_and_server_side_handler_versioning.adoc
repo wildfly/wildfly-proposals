@@ -5,7 +5,7 @@ categories:
 - jndi
 - transactions
 stability-level: community
-issue: 737
+issue: #737
 feature-team:
  developer: ropalka
  sme:
