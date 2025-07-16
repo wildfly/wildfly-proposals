@@ -1,0 +1,190 @@
+---
+# Add any category for this proposal as a YAML list, e.g.
+# - core
+# - management
+# If missing, add it to _data/wildfly-categories and use its id
+categories:
+- security
+- elytron
+# Specify the stability level of the feature.
+# Values can be one of: experimental, preview, community, or default
+stability-level: default
+
+# Specify the Feature Development tracker issue for the feature.
+# This must be an issue tracked in https://github.com/orgs/wildfly/projects/7/views/1.
+# To create a Feature Development tracker issue, go to https://github.com/wildfly/wildfly-proposals/issues/new/choose
+# and select 'Feature Development'
+issue: https://github.com/wildfly/wildfly-proposals/issues/745
+# Provide the GitHub ids of the feature team members, organized by role.
+# Provide a single id for the 'assignee' role. Use a YAML list for the 'sme' and
+# 'outside-perspective' roles, even if there is only one person in a role.
+feature-team:
+ developer:
+ - Skyllarr
+ sme:
+  - kstekovi
+ outside-perspective:
+  - kstekovi
+# If this issue tracks the promotion of a previously completed feature to a higher stability level, provide the URL of
+# the original https://github.com/wildfly/wildfly-proposals/issues issue that was used to track the implementation of
+# that feature.
+promotes: https://github.com/wildfly/wildfly-proposals/pull/328
+# During initial development of a feature, this field should be left blank. If after the feature is completed and its
+# stability level is promoted via a later issue, the developer promoting the issue should return to this document ("this"
+# being the original analysis document for the feature). The field should be updated to point to the
+# https://github.com/wildfly/wildfly-proposals/issues issue that promotes it.
+# For example,
+#              | Implementation Issue (A) | Promotion Issue (B)
+# promotes:    |                          | https://github.com/.../A
+# promoted-by: | https://github.com/.../B |
+promoted-by:
+---
+
+= Promote dynamic-client-ssl-context resource and functionality to the default stability
+:author:            Diana Krepinska
+:email:             dvilkola@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+
+== Overview
+
+SSLContext that supports delegation to alternate instances based on peer information was added to WildFly in 32.0.0.Final. This issue seeks to promote this feature to the default stability level.
+
+=== User Stories
+
+User wants to configure a single SSLContext that acts as a wrapper for different SSLContexts that are chosen for different host and port destinations. The specific SSLContext will be chosen during an execution of request.
+
+== Issue Metadata
+
+- https://issues.redhat.com/browse/WFLY-20788[WFLY-20788]
+
+=== Related Issues
+
+- https://issues.redhat.com/browse/WFLY-20788[WFLY-20788]
+- https://issues.redhat.com/browse/WFCORE-7304[WFCORE-7304]
+
+Original issues that added this feature to the community stability:
+
+- https://issues.redhat.com/browse/WFCORE-5101[WFCORE-5101]
+- https://issues.redhat.com/browse/WFLY-13762[WFLY-13762]
+- https://issues.redhat.com/browse/ELY-1996[ELY-1996]
+
+=== Affected Projects or Components
+
+- https://github.com/wildfly/wildfly-core
+- https://github.com/wildfly/wildfly
+
+=== Other Interested Projects
+
+- https://github.com/wildfly-security/wildfly-elytron
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+The below section is copied from analysis for community stability, the requirements did not change only the resource will be in the default stability instead of the community stability:
+
+New SSL context will be added that will function as a wrapper and will dynamically delegate to different SSL contexts chosen based on destination's host and port. It will be possible to use it for outbound requests on the server side as well as on the client side.
+
+On the server side the rules that define which ssl context to use will be obtained from configured `authentication-context` resource, whereas on the client side the configuration will be dynamically loaded from the classpath.
+
+==== Server side
+
+Child resource called `dynamic-client-ssl-context` will be added to the elytron subsystem. This will be a reference to resources providing the `org.wildfly.security.ssl-context` capability and it will have a required `authentication-context` attribute. Rules for choosing SSL contexts will be obtained from this `authentication-context`.
+
+When a `dynamic-client-ssl-context` is used as SSL context for the outbound requests it will dynamically switch between different configurations based on destination's host and port.
+
+Example of configuration:
+
+```
+/subsystem=elytron/authentication-context=ac:add(match-rules=[{match-port=9443,ssl-context=client-ssl-context1},{match-host="localhost",ssl-context=client-ssl-context2},{ssl-context=ssl-context-to-use-if-no-previous-rule-matches}])
+
+/subsystem=elytron/dynamic-client-ssl-context=dynamicClientSSLContext:add(authentication-context=ac)
+```
+*Note*: The first matching rule from given `authentication-context` will be used.
+
+It will also be possible to set this dynamic ssl context to be a default ssl context on the server:
+
+```
+/subsystem=elytron:write-attribute(name=default-ssl-context,value=dynamicClientSSLContext)
+reload
+```
+
+If this is the case, clients in deployed applications that use `SSLContext.getDefault()` will use it successfully.
+
+==== Client side
+
+DynamicSSLContext class will be using an SPI implementation loaded from classpath. Elytron client will implement this SPI. It will provide methods for obtaining of SSLContext (based on URI), obtaining of all configured SSLContexts and also of configured default SSLContext.
+
+The configured default SSLContext will be used if destination does not match any of the rules. If it is not configured then `SSLContext.getDefault()` will be used. If it is configured to be the same DynamicSSLContext instance then an exception will be thrown.
+
+If a standalone client is using DynamicSSLContext and has Elytron client on classpath, then it will use its configuration.
+
+The SPI will be public to allow external clients to implement it and provide their own configuration.
+
+Functionality will be placed in new module.
+
+=== Changed requirement
+
+No changed requirements other than availability in the default stability.
+
+=== Non-Requirements
+
+N/A
+
+=== Future Work
+
+No future work identified at this time
+
+== Backwards Compatibility
+
+This is a new resource in the default stability, no backwards compaibility issues identified.
+
+=== Default Configuration
+
+None
+
+=== Importing Existing Configuration
+
+No
+
+=== Deployments
+
+If this resource is configured as default-ssl-context in the elytron subsystem, then deployments that use `SSLContext.getDefault()` will obtain it and can use it. This is intended behaviour of default-ssl-context resourcea if configured by the admin. This is not an incompatible behaviour change.
+
+=== Interoperability
+
+Makes it easier to configure outbound connections to other services.
+
+== Implementation Plan
+
+Update elytron's schema and model, and change the stability to be default. Otherwise no changes.
+
+== Admin Clients
+
+Admins can configure and use this resource in the elytron subsystem.
+
+== Security Considerations
+
+Introduces new configuration of SSLContext to elytron subsystem that can be used for outbound connections.
+
+[[test_plan]]
+== Test Plan
+
+* Default - This stability level is reserved and requires approval by a professional Quality Engineer with subject matter expertise.
+
+== Community Documentation
+
+Documentation update to remove the mention of the COMMUNITY stability (PR to wildfly main) is sufficient.
+
+== Release Note Content
+
+Elytron subsystem now allows configuring dynamic outbound SSL Connections. These will delegate to different SSL contexts based on host and port of the request.
