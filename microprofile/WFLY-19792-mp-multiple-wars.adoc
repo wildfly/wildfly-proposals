@@ -100,8 +100,8 @@ Component notes:
 * MicroProfile OpenAPI
 ** MP OpenAPI subsystem must install an OpenAPI endpoint and model per host (rather than per deployment) and allow applications to contribute components/paths/etc. during deployment.
 ** "Global" properties of the OpenAPI model that are not concordant between applications will be provided by the following host-specific MP Config properties:
-*** mp.openapi.extensions._server-name_._host-name_.externalDocs.**
-*** mp.openapi.extensions._server-name_._host-name_.info.**
+*** mp.openapi.extensions.server._server-name_.host._host-name_.externalDocs.**
+*** mp.openapi.extensions.server._server-name_.host._host-name_.info.**
 ** All existing extensions will continue to be supported (as verified by existing integration tests)
 * MicroProfile Rest Client
 ** The MicroProfile Rest Client is a client side only API which creates proxy clients for interacting with REST end points.
@@ -177,6 +177,7 @@ Tests will be added to the `testsuite/integration/expansion` testsuite in WildFl
 * MicroProfile OpenAPI
 ** Add new test that verifies:
 *** 2 applications, deployed to the same virtual host, can both contribute to the OpenAPI document.
+**** Verify that deploy/undeploy of an individual application results in addition/removal of application-specific document contributions.
 *** Host-specific MP config properties appear in the OpenAPI document as expected
 *** Global OpenAPI model properties specified by both applications appear in the OpenAPI document if they match.
 * MicroProfile Rest Client
