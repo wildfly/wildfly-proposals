@@ -1,0 +1,192 @@
+---
+categories:
+  - maven
+  - bootable-jar
+  - cloud
+  - wf-galleon
+stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/747
+feature-team:
+ developer: jfdenise
+ sme:
+  - TBD
+ outside-perspective:
+  - TBD
+---
+= WildFly Maven Plugin, bootable JAR packaging on the cloud
+:author:            Jean-Francois Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+We have introduced a support for Bootable JAR in the WildFly Maven Plugin to address the bare-metal use case. 
+Considering that for the cloud, an image containing the server installation built with 
+the wildfly-cloud-galleon-pack + the wildfly-s2i + wildfly-runtime image is the way to go.
+
+That seems a very strong limitation. Users want to deploy WildFly Bootable JAR on all platforms 
+(as they are doing with the WildFly JAR Maven plugin). 
+Running on OpenJDK container image (something that we can do with the WildFly JAR Maven Plugin and WildFly Helm Charts) 
+is a very common use-case for executable fat jars.
+
+So we should allow users to use the WildFly Maven Plugin to build Bootable JAR to be run on top of the OpenJDK container images. 
+That is also required for the future deprecation of the WildFly JAR Maven Plugin.
+
+=== WildFly and the cloud galleon feature-pack
+
+The `org.wildfly.cloud:wildfly-cloud-galleon-pack` feature-pack introduced for the cloud, 
+in addition to adapting the server configuration to the cloud, has a boot sequence (and env variable handling) 
+that allows for execution of bash scripts at server boot.
+
+The usage of the WildFly cloud feature-pack is clearly identified as a feature-pack to be used in a context where 
+the wildfly s2i and/or wildfly-runtime images are used. Not to be used in any other context.
+
+This feature-pack shouldn’t be used in a context where the server will be run as a bootable JAR inside of OpenJDK image.
+
+== Bootable JAR specifics for the cloud
+
+The following are what is expected to provision and run a bootable JAR for the cloud:
+
+* Galleon layers adjustment (identical to what is done for the cloud feature-pack) to take into account cloud execution context.
+* Custom logic run at bootable jar boot time to handle:
+** `jboss.node.name` and `jboss.tx.node.id` correct value handling.
+** HA, clustering password handling (env var: JGROUPS_CLUSTER_PASSWORD). Set the auth in the correct subsystem configuration.
+
+== New WildFly Bootable JAR Cloud Feature Pack
+
+* This new feature-pack is provisioned along other WildFly feature-packs.
+* Is to be used when bootable JAR packaging is enabled. 
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-20810[WFLY-20810]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFCORE-7311[WFCORE-7311]
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [ ] Preview
+
+* [x] Community
+
+* [ ] default
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly-core[WildFly Core] project.
+* https://github.com/wildfly/wildfly-maven-plugin[WildFly Maven Plugin] project.
+* https://github.com/wildfly/wildfly-galleon-feature-packs[WildFly Galleon feature packs] project.
+* Introduce a new `wildfly/wildfly-bootable-cloud-feature-pack` project on `github.com`
+
+
+=== Other Interested Projects
+
+* https://github.com/wildfly/wildfly-jar-maven-plugin[WildFly Bootable JAR Maven Plugin] project.
+
+=== Relevant Installation Types
+
+* [ ] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [ ] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+* Define a new feature-pack that targets Bootable JAR packaging deployed on the cloud.
+* WildFly Glow must know about this feature-pack. The Feature-packs metadata must be adjusted to handle the cloud vs bootable-cloud case 
+during the discovery of feature-packs. This should be transparent for WildFly Glow users.
+
+=== Hard Requirements
+
+* The feature-pack maven coordinates are `org.wildfly.cloud:wildfly-bootable-cloud-feature-pack:<version>`
+* First version will be `1.0.0.Final`.
+
+Example of WildFly Maven plugin configuration:
+
+```
+<plugin>
+  <groupId>org.wildfly.plugins</groupId>
+  <artifactId>wildfly-maven-plugin</artifactId>
+  <version>${version.wildfly.plugin}</version>
+  <configuration>
+    <feature-packs>
+     <feature-pack>
+       <location>org.wildfly:wildfly-galleon-pack:${version.wildfly}</location>
+     </feature-pack>
+     <feature-pack>
+       <location>org.wildfly.cloud:wildfly-bootable-cloud-feature-pack:${version.wildfly.bootable.cloud.feature.pack}</location>
+     </feature-pack>
+    </feature-packs>
+    <bootable-jar>true</bootable-jar>
+  </configuration>
+<plugin>
+```
+
+=== Implementation notes
+
+* The feature-pack depends on `org.wildfly:wildfly-galleon-pack`
+* The feature-pack would share a large part of the server configuration adjustment that the WildFly cloud feature-pack is doing. 
+That will reduce duplication we have today in the WildFly JAR Maven Plugin.
+* The feature-pack contains a JBoss Modules module that implements the dynamic service loaded at startup time.
+* It is expected that the `<bootable-jar>true</bootable-jar>` option is set to package a bootable JAR. That will be covered by documentation,
+the plugin doesn't enforce it.
+
+=== Non-Requirements
+
+None
+
+=== Future Work
+
+None
+
+== Backwards Compatibility
+
+This feature offers identical support to what the WildFly JAR Maven plugin is offering.
+
+=== Default Configuration
+
+No impact.
+
+=== Importing Existing Configuration
+
+No impact.
+
+=== Deployments
+
+No impact.
+
+=== Interoperability
+
+No impact.
+
+== Admin Clients
+
+No impact.
+
+== Security Considerations
+
+No impact.
+
+== Test Plan
+
+* Some tests are added to the new project that defines the feature-pack.
+
+== Community Documentation
+
+New community documentation added to the new project
+
+== Release Note Content
+
+TBD
