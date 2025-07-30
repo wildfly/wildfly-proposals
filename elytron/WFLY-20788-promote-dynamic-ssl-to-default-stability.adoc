@@ -1,0 +1,139 @@
+---
+# Add any category for this proposal as a YAML list, e.g.
+# - core
+# - management
+# If missing, add it to _data/wildfly-categories and use its id
+categories:
+- security
+- elytron
+# Specify the stability level of the feature.
+# Values can be one of: experimental, preview, community, or default
+stability-level: default
+
+# Specify the Feature Development tracker issue for the feature.
+# This must be an issue tracked in https://github.com/orgs/wildfly/projects/7/views/1.
+# To create a Feature Development tracker issue, go to https://github.com/wildfly/wildfly-proposals/issues/new/choose
+# and select 'Feature Development'
+issue: https://github.com/wildfly/wildfly-proposals/issues/745
+# Provide the GitHub ids of the feature team members, organized by role.
+# Provide a single id for the 'assignee' role. Use a YAML list for the 'sme' and
+# 'outside-perspective' roles, even if there is only one person in a role.
+feature-team:
+ developer:
+ - Skyllarr
+ sme:
+  -
+ outside-perspective:
+  -
+# If this issue tracks the promotion of a previously completed feature to a higher stability level, provide the URL of
+# the original https://github.com/wildfly/wildfly-proposals/issues issue that was used to track the implementation of
+# that feature.
+promotes: https://github.com/wildfly/wildfly-proposals/pull/328
+# During initial development of a feature, this field should be left blank. If after the feature is completed and its
+# stability level is promoted via a later issue, the developer promoting the issue should return to this document ("this"
+# being the original analysis document for the feature). The field should be updated to point to the
+# https://github.com/wildfly/wildfly-proposals/issues issue that promotes it.
+# For example,
+#              | Implementation Issue (A) | Promotion Issue (B)
+# promotes:    |                          | https://github.com/.../A
+# promoted-by: | https://github.com/.../B |
+promoted-by:
+---
+
+= <INSERT TITLE HERE>
+:author:            Diana Krepinska
+:email:             dvilkola@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+__<The entire document should be one to two pages long. We will write each analysis document as if it is a conversation
+with a future developer. This requires a good writing style, with full sentences organized into paragraphs. Bullets are
+acceptable only for visual style, not as an excuse for writing sentence fragments.>__
+
+== Overview
+
+SSLContext that supports delegation to alternate instances based on peer information was added to WildFly in 32.0.0.Final. This issue seeks to promote this feature to the default stability level.
+
+=== User Stories
+
+User wants to configure a single SSLContext that acts as a wrapper for different SSLContexts that are chosen for different host and port destinations. The specific SSLContext will be chosen during an execution of request.
+
+== Issue Metadata
+
+=== Related Issues
+
+https://issues.redhat.com/browse/WFCORE-7304[WFCORE-7304]
+https://issues.redhat.com/browse/WFLY-20788[WFLY-20788]
+
+=== Affected Projects or Components
+
+https://github.com/wildfly/wildfly-core
+https://github.com/wildfly/wildfly
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+=== Changed requirement
+
+=== Non-Requirements
+
+N/A
+
+=== Future Work
+
+N/A
+
+== Backwards Compatibility
+
+N/A
+
+=== Default Configuration
+
+No
+
+=== Importing Existing Configuration
+
+No
+
+=== Deployments
+
+No
+
+=== Interoperability
+
+Makes it easier to configure connections to other services.
+
+== Implementation Plan
+
+N/A
+
+== Admin Clients
+
+Compatible
+
+== Security Considerations
+
+Introduces new configuration of SSLContext to elytron subsystem that can be used in different subsystems.
+
+[[test_plan]]
+== Test Plan
+
+* Default - This stability level is reserved and requires approval by a professional Quality Engineer with subject matter expertise.
+
+== Community Documentation
+
+Documentation update to mention the DEFAULT stability instead of the COMMUNITY stability (PR to wildfly main) and released blog post
+
+== Release Note Content
+
+Elytron subsystem now allows configuring dynamic outbound SSL Connections. These will delegate to different SSL contexts based on host and port of the request.
