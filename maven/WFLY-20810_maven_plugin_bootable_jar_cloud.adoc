@@ -1,0 +1,269 @@
+---
+categories:
+  - maven
+  - bootable-jar
+  - cloud
+  - wf-galleon
+stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/747
+feature-team:
+ developer: jfdenise
+ sme:
+  - jmesnil
+ outside-perspective:
+  - ehsavoie
+---
+= WildFly Maven Plugin, bootable JAR packaging on the cloud
+:author:            Jean-Francois Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This proposal defines the changes on the https://github.com/wildfly/wildfly-cloud-galleon-pack[WildFly cloud feature pack] and the 
+https://github.com/wildfly/wildfly-maven-plugin[WildFly Maven Plugin] in order to package and run a WildFly Bootable JAR for the cloud.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-20810[WFLY-20810]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFCORE-7311[WFCORE-7311]
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly-cloud-galleon-pack[WildFly cloud feature pack] project.
+* https://github.com/wildfly/wildfly-core[WildFly Core] project.
+* https://github.com/wildfly/wildfly-maven-plugin[WildFly Maven Plugin] project.
+* https://github.com/wildfly/wildfly-galleon-feature-packs[WildFly Galleon feature packs] project.
+* https://github.com/wildfly/wildfly-glow[WildFly Glow] project.
+* https://github.com/wildfly/wildfly-operator[WildFly Operator] project.
+
+=== Other Interested Projects
+
+* https://github.com/wildfly/wildfly-jar-maven-plugin[WildFly Bootable JAR Maven Plugin] project.
+
+=== Relevant Installation Types
+
+* [ ] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [ ] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+* Evolve the WildFly cloud feature-pack to be usable to produce a bootable JAR for WildFly and WildFly Preview using the WildFly Maven Plugin.
+* Update the `wildfly:image` plugin goal to produce a Bootable JAR container image.
+* Remove the restriction when using WildFly Glow to produce a bootable JAR for the cloud.
+
+=== Hard Requirements
+
+This feature offers identical support to what the https://github.com/wildfly/wildfly-jar-maven-plugin[WildFly Bootable JAR Maven Plugin] is offering.
+
+==== Current Bootable JAR support when using the WildFly Maven Plugin
+
+We have introduced a support for Bootable JAR in the WildFly Maven Plugin to address the bare-metal use case. 
+Considering that for the cloud, an image containing the server installation built with 
+the wildfly-cloud-galleon-pack + the wildfly-s2i + wildfly-runtime image is the way to go.
+
+That seems a very strong limitation. Users want to deploy WildFly Bootable JAR on all platforms 
+(as they are doing with the WildFly JAR Maven plugin). 
+Running on OpenJDK container image (something that we can do with the WildFly JAR Maven Plugin and WildFly Helm Charts) 
+is a very common use-case for executable fat jars.
+
+So we should allow users to use the WildFly Maven Plugin to build Bootable JAR to be run on top of the OpenJDK container images. 
+That is also required for the future deprecation of the WildFly JAR Maven Plugin.
+
+==== WildFly and the cloud galleon feature-pack
+
+The `org.wildfly.cloud:wildfly-cloud-galleon-pack` feature-pack introduced for the cloud, 
+in addition to adapting the server configuration to the cloud, has a boot sequence  
+that allows for execution of bash scripts at server boot to configure the server thanks to env variables. 
+Those scripts are run when launching the server in the WildFly S2I builder or runtime images.
+
+This proposal is an evolution of the wildfly-cloud-galleon-pack to also handle the bootable JAR case. In such case, the layer adaption is 
+fully relevant, the launch scripts are being ignored.
+
+==== WildFly Preview and the cloud galleon feature-pack
+
+The feature-pack `org.wildfly.cloud:wildfly-preview-cloud-galleon-pack` that is to be used with WildFly Preview benefits from this evolution.
+A WildFly Preview Bootable JAR can be provisioned for the cloud.
+
+==== Bootable JAR specifics for the cloud
+
+The following are what is expected to provision and run a bootable JAR for the cloud:
+
+* Galleon layers adjustment to take into account cloud execution context. No changes, existing adaptation is re-used.
+* Custom logic run at bootable jar boot time to handle:
+** `jboss.node.name` and `jboss.tx.node.id` correct value handling.
+** HA, clustering password handling using the env var `JGROUPS_CLUSTER_PASSWORD`. Set the auth password in the correct subsystem configuration.
+* Advertise in the well known file `/tmp/wildfly-bootable-jar/install-dir` where the server is installed (required by the WildFly Operator). This implies a change in the 
+WildFly Operator to change the well known directory to be `/tmp/wildfly-bootable-jar/install-dir`.
+
+==== Excluding logic executed at boot time
+
+* When provisioning a server installation, the package `org.wildfly.cloud.bootable.runtime` can be excluded.
+* When provisioning a bootable JAR, the package `org.wildfly.cloud.launch.scripts` can be excluded.
+
+==== WildFly Maven Plugin configuration
+
+* No changes are expected in the Maven Plugin at provisioning time. The `<bootable-jar>true</bootable-jar>` must be set.
+* Glow discovery limitation to only support bare-metal for bootable-jar packaging is removed.
+* The `image` goal is evolved to produce an image from the OpenJDK runtime image when packaging a bootable JAR.
+
+Examples of WildFly Maven plugin configuration:
+
+```
+<plugin>
+  <groupId>org.wildfly.plugins</groupId>
+  <artifactId>wildfly-maven-plugin</artifactId>
+  <version>${version.wildfly.plugin}</version>
+  <configuration>
+    <feature-packs>
+     <feature-pack>
+       <location>org.wildfly:wildfly-galleon-pack:${version.wildfly}</location>
+     </feature-pack>
+     <feature-pack>
+       <location>org.wildfly.cloud:wildfly-cloud-galleon-pack:${version.wildfly.cloud.galleon.pack}</location>
+     </feature-pack>
+    </feature-packs>
+    <bootable-jar>true</bootable-jar>
+  </configuration>
+<plugin>
+```
+
+Exclusion of the launch scripts:
+```
+<plugin>
+  <groupId>org.wildfly.plugins</groupId>
+  <artifactId>wildfly-maven-plugin</artifactId>
+  <version>${version.wildfly.plugin}</version>
+  <configuration>
+    <feature-packs>
+     <feature-pack>
+       <location>org.wildfly:wildfly-galleon-pack:${version.wildfly}</location>
+     </feature-pack>
+     <feature-pack>
+       <location>org.wildfly.cloud:wildfly-cloud-galleon-pack:${version.wildfly.cloud.galleon.pack}</location>
+        <excludedPackages>
+          <package>org.wildfly.cloud.launch.scripts</package>
+        </excludedPackages>
+     </feature-pack>
+    </feature-packs>
+    <bootable-jar>true</bootable-jar>
+  </configuration>
+<plugin>
+```
+
+Exclusion of the bootable JAR cloud runtime:
+```
+<plugin>
+  <groupId>org.wildfly.plugins</groupId>
+  <artifactId>wildfly-maven-plugin</artifactId>
+  <version>${version.wildfly.plugin}</version>
+  <configuration>
+    <feature-packs>
+     <feature-pack>
+       <location>org.wildfly:wildfly-galleon-pack:${version.wildfly}</location>
+     </feature-pack>
+     <feature-pack>
+       <location>org.wildfly.cloud:wildfly-cloud-galleon-pack:${version.wildfly.cloud.galleon.pack}</location>
+        <excludedPackages>
+          <package>org.wildfly.cloud.bootable.runtime</package>
+        </excludedPackages>
+     </feature-pack>
+    </feature-packs>
+  </configuration>
+<plugin>
+```
+
+=== Implementation notes
+
+==== Boot logic
+
+* The custom logic is defined as a new JBoss Modules module defined the wildfly-cloud-galleon-pack project. 
+This module is loaded and its entry-point (ServiceLoader) is executed at server startup. This require an evolution in the WildFly core project.
+The new service interface `org.wildfly.core.jar.runtime.BootableServerConfigurator` is discovered and executed at Bootable JAR startup.
+The service interface can compute a list of WildFly CLI operations and arguments 
+* Installation of the cloud runtime logic at provisioning time.
+At provisioning time, a Galleon package appends to the properties file 
+`<JBOSS_HOME>/modules/system/layers/base/org/wildfly/bootable-jar/main/bootable-configurators/bootable-configurators.properties` an entry of the form:
+`cloud-module=org.wildfly.cloud.bootable.runtime`
+At server boot time, the entries in the properties file are read, each module is loaded and the service interface is called.
+* The boot logic produces optional WildFLy CLI operations and server arguments to fine tune the server according to its execution context.
+
+==== Container image
+
+That is the image generated from the `image` plugin goal.
+
+* The produced image is by default FROM `registry.access.redhat.com/ubi9/openjdk-21-runtime`. One can set the existing plugin option `jdkVersion` to `17`.
+* The produced image allows user to specify bootable jar arguments (e.g.: `--stability-preview=preview`) using the env variable `JAVA_ARGS`
+* The information of where the WildFly server has been unzipped (needed by the WildFly Operator) is stored int the file `/tmp/wildfly-bootable-jar/install-dir` file.
+
+
+=== Non-Requirements
+
+None
+
+=== Future Work
+
+None
+
+== Backwards Compatibility
+
+This feature offers identical support to what the WildFly JAR Maven plugin is offering.
+
+=== Default Configuration
+
+No impact.
+
+=== Importing Existing Configuration
+
+No impact.
+
+=== Deployments
+
+No impact.
+
+=== Interoperability
+
+No impact.
+
+== Admin Clients
+
+No impact.
+
+== Security Considerations
+
+No impact.
+
+== Test Plan
+
+New tests are added to the `wildfly-cloud-galleon-pack` project:
+
+* Provision and check a WildFly Bootable JAR for cloud
+* Provision and check a WildFly Preview Bootable JAR for cloud
+* Provision with exclusions and check that WildFly installation and WildFly Bootable JAR don't contain the excluded content.
+* Provision with exclusions and check that WildFly Preview installation and WildFly Bootable JAR don't contain the excluded content.
+* Generation of a container image using the `image` goal.
+
+== Community Documentation
+
+The existing community documentation must be evolved to cover the bootable JAR case.
+
+* Introduce a clear separation in the documentation between the wildfly-s2i case and the bootable JAR case.
+* Document the bootable JAR case in details: Make it clear that bash scripts are ignored, 
+document the usage of the OpenJDK S2I workflow, document the clustering use case.
+
+== Release Note Content
+
+TBD
