@@ -1,0 +1,250 @@
+---
+categories:
+- microprofile
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/735
+feature-team:
+ developer: jasondlee
+ sme:
+  - kabir
+  - pferraro
+ outside-perspective:
+  -
+promotes:
+promoted-by:
+---
+= MicroProfile Platform 7.1
+:author:            Jason Lee
+:email:             jasondlee@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+////
+The entire document should be one to two pages long. We will write each analysis document as if it is a conversation
+with a future developer. This requires a good writing style, with full sentences organized into paragraphs. Bullets are
+acceptable only for visual style, not as an excuse for writing sentence fragments.
+////
+[[overview]]
+== Overview
+////
+Define the requirement here. Be clear and succinct. You should be able to clearly define the context or problem in two
+or three paragraphs (if not sentences). Try to define the problem in the overall context and not to get into too much
+technical detail at this point.
+////
+
+This RFE is about updating WildFly to support MicroProfile Platform 7.1. We currently support MicroProfile Platform 7.0.
+
+The major.minor versions of the individual specs are shown below. Micro updates are strictly for TCK fixes, and we should use the latest for the TCKs as these versions become available.
+
+[cols="1,1,1,1,1"]
+|===
+|Spec | MP 7.0 Spec Version | Current Spec WildFly Version | MP 7.1 Spec Version | Updated Functionality (y/n)
+|Config|3.1|3.1|3.1|n
+|Fault Tolerance|4.1|4.1|4.1|n
+|Health|4.0|4.0|4.0|n
+|JWT|2.1|2.1|2.1|n
+|OpenAPI|4.0|4.0|4.1|y - https://issues.redhat.com/browse/WFLY-20686[WFLY-20686]
+|Rest Client|4.0|4.0|4.0|n
+|Telemetry|2.0|2.0|2.1|y - https://issues.redhat.com/browse/WFLY-20685[WFLY-20685]
+|===
+
+There are only two trivial spec updates for this platform upgrade, so the analysis for both updates will be handled in this document.
+
+=== User Stories
+////
+Provide one or more brief user stories that illustrate the intended users of the feature and the goal they will seek
+to achieve by using the feature.
+////
+
+A user can use WildFly knowing that the specs making up the MicroProfile Platform have the versions in MicroProfile Platform 7.1.
+
+== Issue Metadata
+
+* https://issues.redhat.com/browse/WFLY-20684[WFLY-20684 - Implement MicroProfile Platform 7.1]
+
+=== Related Issues
+
+The main work is in these individual spec updates:
+
+* https://issues.redhat.com/browse/WFLY-20686[WFLY-20686 - Upgrade to MP OpenAPI 4.1]
+* https://issues.redhat.com/browse/WFLY-20685[WFLY-20685 - Upgrade to MP Telemetry 2.1]
+
+=== Affected Projects or Components
+
+WildFly will be updated to pull in the corresponding versions of the Eclipse Microprofile specification jars, as well as the SmallRye jars and dependencies needed to implement each version.
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+* [ ] Managed domain
+* [x] OpenShift Source-to-Image (S2I)
+* [x] Bootable jar
+
+== Requirements
+////
+Describe the requirements that must be fulfilled by this feature.
+
+For analyses of a promotion of an existing feature to 'preview' or 'community' stability, only list new requirements;
+existing requirements from the feature being promoted are assumed to continue unless otherwise noted in the 'Changed
+requirements' section. Other analyses, including those for promotion to the 'default' stability level, must list all
+requirements.
+////
+
+=== Hard Requirements
+
+* All components will be upgraded to the version streams of the Eclipse Microprofile specification jars and TCK, as well as the SmallRye jars and dependencies needed to implement each version, as indicated in the table in the link:#overview[Overview]. Note that although we've just given the minor versions of the specification jars, there may be some micro upgrades. Those are generally just TCK fixes.
+** Upgrading the components will provide the latest TCKs
+
+=== Changed requirements
+////
+Only relevant for analyses of a promotion of an existing feature to 'preview' or 'community stability. Other analyses
+should remove this section.
+
+For any existing requirements from the feature being promoted that are being changed or removed, describe the change.
+////
+
+N/A
+
+=== Non-Requirements
+////
+Use this section to explicitly discuss things that readers might think are required but which are not required.
+////
+
+N/A
+
+=== Future Work
+////
+Use this section to discuss requirements that are not addressed by this proposal but which may be addressed in later proposals.
+////
+
+When the next MicroProfile Platform version comes along, we are likely to support that (depending on how this lines up with WildFly releases).
+
+== Backwards Compatibility
+////
+Does this enhancement affect backwards compatibility with previously released versions of WildFly? Can the identified
+incompatibility be avoided?
+////
+
+* MicroProfile Telemetry 2.1
+** There are no backwards compatibility issues for this component
+* MicroProfile OpenAPI 4.1
+** There are no backwards compatibility issues for this component
+
+=== Default Configuration
+////
+Does the proposed work change the default value of any current configuration attributes? Does it change the
+configuration generated by any current Galleon layers?
+////
+
+* MicroProfile Telemetry 2.1
+** There will be no changes to the default configuration.
+* MicroProfile OpenAPI 4.1
+** There will be no changes to the default configuration.
+
+=== Importing Existing Configuration
+////
+Does the proposed work affect the ability to run WildFly running an existing configuration? Is there anything else
+about the proposed work that may require changes to the WildFly server migration tool?
+////
+
+* MicroProfile Telemetry 2.1
+** There will be no impact to the existing configurations.
+* MicroProfile OpenAPI 4.1
+** There will be no impact to the existing configurations.
+
+=== Deployments
+////
+Does this feature change the behavior of deployments in incompatible ways? If yes, please detail what is the deployment
+issue observed when no change is done, and what is the change needed to solve the deployment issue.
+////
+
+* MicroProfile Telemetry 2.1
+** There will be no change in behavior for deployments
+* MicroProfile OpenAPI 4.1
+** There will be no change in behavior for deployments
+
+=== Interoperability
+////
+Is this feature impacting interoperability?
+////
+
+* MicroProfile Telemetry 2.1
+** There are no interop issues with this update
+* MicroProfile OpenAPI 4.1
+** There are no interop issues with this update
+
+== Implementation Plan
+////
+This section is optional. If you have a complex feature which cannot be delivered all in one go, suggest the strategy.
+////
+
+We will merge the individual spec upgrades to this https://github.com/kabir/wildfly/tree/microprofile-7.1[feature branch] as they become available and have undergone peer review.
+
+Once we have all the spec upgrades in this branch, and each individual RFE has satisfied all the requirements, we will merge this branch into the main WildFly branch.
+
+== Admin Clients
+////
+Identify the level of compatibility this feature will have with the existing admin clients (JBoss CLI and the Admin
+Console / HAL). Identify any follow-up work that will be required in the clients and link issues created to track this work.
+////
+
+* MicroProfile Telemetry 2.1
+** N/A
+* MicroProfile OpenAPI 4.1
+** N/A
+
+== Security Considerations
+////
+What impact on security does this feature have?
+////
+
+* MicroProfile Telemetry 2.1
+** Nothing to consider
+* MicroProfile OpenAPI 4.1
+** Nothing to consider
+
+[[test_plan]]
+== Test Plan
+////
+Depending on the selected stability level, the appropriate section below should be completed, including a brief
+description of how testing is to be performed in accordance with the selected stability level. The non-relevant sections
+may be removed as needed.
+
+Depending on the stability level, the test plan required may vary. See below.
+////
+
+* TCKs will be updated to the latest corresponding version.
+** MP Telemetry 2.1
+*** There is no new functionality, and the existing tests in WildFly's testsuite/integration/expansion tests will ensure that the functionality works as before.
+*** No new tests are needed.
+** MP OpenAPI 4.1
+*** There is no new functionality, and the existing tests in WildFly's testsuite/integration/expansion tests will ensure that the functionality works as before.
+*** No new tests are needed.
+* The TCKs will run at default stability level
+
+== Community Documentation
+////
+Describe how this feature will be documented or illustrated. Generally a feature should have documentation as part of
+the PR to wildfly main, or as a follow-up PR if the feature is in wildfly-core. In some cases, though, the feature will
+bring additional content (such as quickstarts, guides, etc.) Indicate which of these will happen.
+////
+
+* There is a list of version of the individual specifications here https://github.com/wildfly/wildfly/blob/main/docs/src/main/asciidoc/Getting_Started_Guide.adoc?plain=1#L119-L129 This table will be updated to list the new versions
+
+
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the Release Note blog article for the release
+that first includes this feature.
+
+Example article: https://www.wildfly.org/news/2024/01/25/WildFly31-Released/
+
+This content will be edited, so there is no need to make it perfect or discuss what release it appears in.
+////
+
+MicroProfile specifications have been updated to the versions that are part of MicroProfile Platform 7.1. (See the table in the link:#overview[Overview] if exact versions are needed)
