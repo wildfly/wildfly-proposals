@@ -95,6 +95,7 @@ Component notes:
 ** Already tested with multiple .war deployment with metrics providers; expanding of the test case can be considered.
 ** Each deployment behaves as if it were deployed on its own, however, metrics contribute to the same metric collector.
 * MicroProfile Reactive Messaging - This already has tests for multiple .war deployment, done as part of https://issues.redhat.com/browse/WFLY-19759[WFLY-19759] a while ago.
+* Microprofile Reactive Streams Operators - The integration is mainly about making some classes and a `ReactiveStreamsEngine` CDI bean provided by the `io.smallrye.reactive:mutiny-reactive-streams-operators` from the integration available for injection. `ReactiveStreamsEngine` has no state, and thus no risk of cross-deployment 'leakage'.
 * MicroProfile Health - This already has tests for multiple .war deployment.
 ** Each .war contributes its healthiness checks to the global server healthiness.
 ** When multiple .war archives are deployed, if at least *one* defines the `mp.health.disable-default-procedures` config to `true`, it affects the whole server configuration (as described in https://docs.wildfly.org/36/Admin_Guide.html#disabling-default-server-procedure[("Disabling Default Server Procedures" documentation)]). This multi-deployment behaviour is not specified in the MicroProfile Health specification.
@@ -179,6 +180,9 @@ Tests will be added to the `testsuite/integration/expansion` testsuite in WildFl
 ** A test exists with two .war deployments with different metrics providers, verifying that the basic MP functionality and the corresponding metrics collection works as expected.
 * MicroProfile Reactive Messaging
 ** The existing test deploys two similar applications. In one of them MicroProfile Config properties are used to map the Reactive Messaging channels to AMQP, and in the other the MicroProfile Config properties are used to map the channels to Kafka. A lot of the properties share their names, and the test checks that deployment A sends and receives data to/from AMQP, and that deployment B does the same with Kafka.
+* MicroProfile Reactive Streams Operators
+** No tests are required.
+** A possible test could be to expand the existing WildFly `ReactiveStreamsOperatorsInjectedReactiveEngineProviderSanityTestCase` and `ReactiveStreamsOperatorsNoReactiveEngineProviderSanityTestCase` tests so they deploy two copies of the application, however I don't think that is necessary.
 * MicroProfile OpenAPI
 ** Add new test that verifies:
 *** 2 applications, deployed to the same virtual host, can both contribute to the OpenAPI document.
