@@ -17,9 +17,9 @@ As an user, I can download WildFly from a zip archive and be able to update it t
 
 == Overview
 
-WildFly now publishes https://repo1.maven.org/maven2/org/wildfly/channels/[channels] that is a mechanism to keep a WildFly installation up to date with the latest releases.
+WildFly now publishes https://repo1.maven.org/maven2/org/wildfly/channels/[channels] that are a mechanism to keep a WildFly installation up to date with the latest releases.
 
-This works out of the box if users is provisioning WildFly (using the https://github.com/wildfly/wildfly-maven-plugin[wildfly-maven-plugin] or https://github.com/wildfly-extras/prospero[Prospero]).
+This works out of the box if users are provisioning WildFly (using the https://github.com/wildfly/wildfly-maven-plugin[wildfly-maven-plugin] or https://github.com/wildfly-extras/prospero[Prospero]).
 However for users that are downloading WildFly from our traditional distributions (zip & tgz archives) they can not take advantage of this mechanism.
 
 If WildFly archives would work out of the box with channels, it would significantely simplify updating an installation.
@@ -45,7 +45,7 @@ WildFly channels are published for each of its distributions since 32.0.0.Beta1:
 
 These channels are versioned based on the WildFly versions (e.g. `org.wildfly.channels:wildfly:32.0.1.Final` contains all the dependencies to provision WildFly 32.0.1.Final's full installation)
 
-The http://docs.wildfly.org/wildfly-proposals/build/WFLY-19130_publish_Wildfly_channel_manifest.html[Analysis Document for WFLY-19130] states that the channels publish the latest manifest with no backwards compatibility guarantee, meaning each channel will always contain components of the latest released version of WildFly.
+The http://docs.wildfly.org/wildfly-proposals/build/WFLY-19130_publish_Wildfly_channel_manifest.html[Analysis Document for WFLY-19130] states that the channels publish the latest manifest with no backwards compatibility guarantees, meaning each channel will always contain components of the latest released version of WildFly.
 
 There are no guarantee that the channel will not break between major releases of WildFly.
 We guarantee that minor and micro releases of WildFly do not contain breaking changes and this extends to their channels.
@@ -58,7 +58,7 @@ In practice, that means that the installation would be "bound" to a versioned ch
 Updating to a more recent version is a user decision and would require the user to give as input the version of the WildFly they want to _update to_ (e.g. `33.0.1.Final` or `34.0.0.Final`).
 After the update is successful, the channel metadata would be updated to point to the current version of the installation.
 
-WildFly must contain the tooling to let user update installations without having to download another piece of software.
+WildFly must contain the tooling to let users update installations without having to download another piece of software.
 
 The tooling should be made available in the `bin` directory of this installation and affects only the parent directory (`JBOSS_HOME` would have no bearing for update).
 
@@ -74,7 +74,7 @@ The tooling would need to provide the following operations:
 ** After their confirmation, the update is applied and the installation state changes
 ** After the update, the provisioned version of the installation is the more recent version that was applied
 
-Since https://issues.redhat.com/browse/WFCORE-6206[WFCORE-6206], there is `installation-manager` script that is meant for internal usage. This script could be repurposed to provide these operations to the user.
+Since https://issues.redhat.com/browse/WFCORE-6206[WFCORE-6206], there is an `installation-manager` script that is meant for internal usage. This script could be repurposed to provide these operations to the user.
 
 == Issue Metadata
 
@@ -97,7 +97,6 @@ Since https://issues.redhat.com/browse/WFCORE-6206[WFCORE-6206], there is `insta
 
 * mailto:{email}[{author}]
 * mailto:bstansbe@redhat.com[Brian Stansberry]
-* mailto:bspyrkos@redhat.com[Bartosz Spyrko-Smietanko]
 
 === Testing By
 
@@ -117,6 +116,7 @@ Since https://issues.redhat.com/browse/WFCORE-6206[WFCORE-6206], there is `insta
 === Relevant Installation Types
 
 * [x] Traditional standalone server (unzipped)
+* [x] Domain mode
 
 == Requirements
 
@@ -137,13 +137,13 @@ Since https://issues.redhat.com/browse/WFCORE-6206[WFCORE-6206], there is `insta
 
 * Changing the type of distributions during an update is not supported (in other words, it is not possible to download the zip for WildFly 33.0.0.Final and update the installation to WildFly Preview)
 * Trimming an existing installation coming from WildFly distributions with Galleon layers is not supported.
+* Support of this feature in the WildFly web console (HAL) or JBoss CLI is not planned on its experimental stage.
 
 === Future Work
 
 This feature is `experimental`.
 
-To make it a `preview` or `community` feature, we will pay attention to the user experience. In particular, the distributions should be "self-updatable" and should not need
-to rely on the external download of Prospero to be updated. Promotion to `preview` or `community` would involve the integration of Prospero library into WildFly (as a JBoss module or a separate feature pack). The user interface could also be directly the `prospero` cli tool, a streamlined CLI focused on updates, or additional commands provided within `jboss-cli` tool.
+To make it a `preview` or `community` feature, we will pay attention to the user experience. In particular, this feature would have to be exposed to the HAL console and JBoss CLI.
 
 === Implementation Plan
 
@@ -171,7 +171,7 @@ This enhancement does not affect previous versions of WildFly.
 
 === Default Configuration
 
-Updating an installation could update its default configuration (e.g. if the update is to a major version).
+Updating an installation could update its default configuration (e.g. if the update is to a major or minor version).
 
 WildFly does not make guarantee that its default configuration will be compatible from one major version to another (even though in practice, that's often the case).
 
@@ -192,9 +192,9 @@ This section is not relevant in the context of this enhancement.
 
 == Test Plan
 
-=== Test Plan for WFLY-19221 - [Preview] Incorporate channel metadata in the download zips
+=== Test Plan for WFLY-19221 - [Experimental] Incorporate channel metadata in the download zips
 
-* Verify that WildFly generated distributions (from the `dist`, `ee-dist`, and `preview-dist` Maven Modules) contain the channel metadata files corresponding to their provisioning states.
+* Verify that WildFly generated distributions (from the `dist`, `ee-dist`, and `preview/dist` Maven Modules) and builds (from the 'build', 'ee-build', and 'preview/build' Maven modules) contain the channel metadata files corresponding to their provisioning states.
 
 == Community Documentation
 
@@ -209,4 +209,4 @@ The guide would let the users download WildFly (eg 33.0.0.Final) and update thei
 
 == Release Note Content
 
-* [Preview] WildFly archives (zip & tgz distributions) contain channel metadata required for future updates
+* [Experimental] WildFly archives (zip & tgz distributions) contain channel metadata required for future updates
