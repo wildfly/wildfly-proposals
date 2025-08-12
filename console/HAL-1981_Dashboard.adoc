@@ -1,0 +1,172 @@
+---
+categories:
+- console
+---
+= [Experimental] Console Dashboard
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+A dashboard will replace the homepage of the current console. The dashboard should visualize WildFly's most essential data and follow the guidelines from the PatternFly website: https://www.patternfly.org/patterns/dashboard/design-guidelines.
+
+.Dashboard sample
+image::https://www.patternfly.org/images/dashboard-view-desktop.d9b02461450d9a4e.png[Dashboard sample]
+
+Different cards visualize the data on the dashboard. These cards include data like:
+
+* Name, version, build, and operation mode of WildFly.
+* Runtime information about memory, threads, and other essential resources.
+* MicroProfile health status
+* Information about deployments
+* The last <n> log statements (with errors and warnings highlighted)
+* Links to documentation, help, forums, and information on how to get involved with WildFly.
+
+== Issue Metadata
+
+The feature will be part of the next-gen console (https://github.com/hal/foundation/). It won't be available in the current (3.x) codebase.
+
+=== Issue
+
+* https://issues.redhat.com/browse/HAL-1981[HAL-1981]
+
+=== Stability Level
+
+* [x] Experimental
+
+* [ ] Preview
+
+* [ ] Community
+
+* [ ] default
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== Testing By
+
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* Web Console
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [ ] OpenShift s2i
+
+* [ ] Bootable jar
+
+== Requirements
+
+The dashboard visualizes WildFly's most essential data, including configuration and runtime data and links to valuable resources. Different cards visualize the data on the dashboard. If a card shows dynamic data, it includes a refresh button. In addition, all cards are refreshed automatically (for static cards this is a noop).
+
+=== Cards
+
+==== Product info
+
+This card shows WildFly's static and configuration data. This includes name, version, operation mode, stability level, OS/CPU, and JVM information.
+
+*Sources*
+
+* `:read-resource(attributes-only,include-runtime)`
+* `:product-info()`
+* `/core-service=server-environment:read-resource(include-runtime)`
+* `/host=<domain-controller>/core-service=host-environment:read-resource(include-runtime)`
+
+==== Domain
+
+This card is only visible in domain mode and shows the number and status of domain-related resources like profiles, hosts, server groups, and servers. It shows only the number and status of the resources. All other information is available in the topology view.
+
+*Sources*
+
+* `:read-children-names(child-type=profile)`
+* `:read-children-names(child-type=server-group)`
+* `/host=<host>:read-children-names(child-type=server-config)`
+* `:product-info()`
+
+==== Deployments
+
+This card shows the number and status of the deployments. In domain mode this card shows the deployments per server group.
+
+*Sources*
+
+* `:read-children-resources(child-type=deployment,include-runtime,recursive-depth=2)`
+* `/server-group=*:read-children-resources(child-type=deployment,include-runtime,recursive-depth=2)`
+
+==== Runtime
+
+This card is only available in standalone mode. It shows memory and thread consumption. Therefore, the https://www.patternfly.org/charts/donut-utilization-chart[utilization] chart is used.
+
+*Sources*
+
+* `/core-service=platform-mbean/type=operating-system:read-resource(attributes-only,include-runtime)`
+* `/core-service=platform-mbean/type=runtime:read-resource(attributes-only,include-runtime)`
+* `/core-service=platform-mbean/type=memory:read-resource(attributes-only,include-runtime)`
+* `/core-service=platform-mbean/type=threading:read-resource(attributes-only,include-runtime)`
+
+==== Log
+
+This card shows the last 50 lines from the `server.log` resp. `host-controller.log` file. If the logging subsystem has been configured to use a different name for the log file, the user can specify another name.
+
+*Sources*
+
+* `/subsystem=logging/log-file=server.log:read-log-file(lines=50,tail)`
+
+==== Health
+
+This card is only available in standalone mode. It uses the MicroProfile Health subsystem to show WildFly's healthiness.
+
+* `/subsystem=microprofile-health-smallrye:check-started`
+* `/subsystem=microprofile-health-smallrye:check-ready`
+* `/subsystem=microprofile-health-smallrye:check-live`
+
+If the MicroProfile Health subsystem is not available, this card contains information on how to enable it and a link to https://docs.wildfly.org/32/Admin_Guide.html#MicroProfile_Health_SmallRye.
+
+==== Documentation
+
+This card shows links to documentation and other resources. It has two sections:
+
+* General resources
+** https://www.wildfly.org[WildFly homepage]
+** https://docs.wildfly.org/32/[WildFly documentation] (the link is adjusted to point to the managed WildFly instance)
+** https://docs.wildfly.org/32/wildscribe[Model reference] (the link is adjusted to point to the managed WildFly instance)
+** https://www.wildfly.org/news/[Latest news]
+** https://issues.jboss.org/browse/WFLY[Browse issues]
+* Get Help
+** https://www.wildfly.org/get-started/[Getting started]
+** https://www.wildfly.org/guides/[WildFly Guides]
+** https://groups.google.com/forum/#!forum/wildfly[Join the forum]
+** https://wildfly.zulipchat.com/[Join Zulip chat]
+** https://lists.jboss.org/archives/list/wildfly-dev@lists.jboss.org/[Developer mailing list]
+
+=== Hard Requirements
+
+Implement the dashboard and the cards for standalone mode.
+
+=== Nice-to-Have Requirements
+
+Implement domain mode.
+
+=== Future Work
+
+A user might choose from a list of available cards and configure the dashboard according to his needs. However, this might lead to bad UX. The dashboard uses a multi-column layout, and the position and col-span of cards should be chosen wisely.
+
+== Community Documentation
+
+I plan to advertise the feature using various social media channels once the feature has been implemented.
+
+== Release Note Content
+
+I plan to advertise the feature using various social media channels once the feature has been implemented.
