@@ -1,0 +1,120 @@
+---
+categories:
+  - clustering
+  - cloud
+  - openshift
+---
+= WFLY-15836 Add TLS support to JGroups TCP-based transports
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The JGroups project has added support for TLS at the transport level.
+This was implemented as part of https://issues.redhat.com/browse/JGRP-2487[JGRP-2487] and subsequent changes.
+Supporting this configuration in WildFly would effectively replace using `ASYM_ENCRYPT` with `AUTH`,
+and thus simplify the process of securing a JGroups channel.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-15836[WFLY-15836 Add TLS support to JGroups TCP-based transports]
+* https://issues.redhat.com/browse/EAP7-1865[EAP7-1865 Add TLS support to JGroups TCP-based transports]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/JGRP-2487[JGRP-2487 Support TLS in TCP] (JGroups)
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TBA
+
+=== Testing By
+
+* [ ] Engineering
+
+* [x] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* The TCP-based transport defined in the JGroups subsystem can be configured with reference to the Elytron SSL context.
+
+=== Nice-to-Have Requirements
+
+* N/A
+
+=== Non-Requirements
+
+* N/A
+
+== Backwards Compatibility
+
+This is a new feature and does not affect backwards compatibility since we don't support heterogeneous clusters.
+Configuring this in e.g. mixed domain support will reject the attribute/resource.
+
+=== Default Configuration
+
+The default configuration will not be changed.
+Users will have to configure this explicitly.
+
+=== Importing Existing Configuration
+
+* None / no effect on existing configurations.
+
+=== Deployments
+
+* None / does not interact with deployments in any way.
+
+=== Interoperability
+
+* N/A
+
+== Implementation Plan
+
+This feature will be delivered in a single PR to WildFly upstream repository.
+
+== Security Considerations
+
+This feature builds on verified security concepts,
+so all we need to verify is that the configuration is properly picked up, i.e. using the testsuite.
+
+== Test Plan
+
+Management model unit tests will be added as standard.
+Integration test will be added to test this feature.
+Test QE plan should ideally include performance comparison with `ASYM_ENCRYPT` with `AUTH` vs TLS.
+
+== Community Documentation
+
+Documentation will be included along the implementation's pull request and will reside in the High Availability Guide.
+
+== Release Note Content
+
+WildFly now supports TLS configuration for TCP-based transport protocols.
+This can be used to effectively replace `ASYM_ENCRYPT` with `AUTH` in the existing JGroups stack.
+Please refer to our 'High Availability Guide' in the user documentation for more information.
