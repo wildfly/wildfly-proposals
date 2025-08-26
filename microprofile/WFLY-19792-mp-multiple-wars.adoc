@@ -12,7 +12,7 @@ feature-team:
  sme:
   - jmesnil
  outside-perspective:
-  -
+  - fabiobrz
 promotes:
 promoted-by:
 ---
@@ -32,10 +32,9 @@ In most cases this should be relatively straight-forward, with just some tests n
 
 For these straight-forward cases, we will populate the following sections:
 
-* link:#affected-projects-or-components[Affected Components] - if changes are needed to the code of one of the components, that component will be mentioned here.
-* link:#requirements[Requirements] - components listed here are covered by this RFE, along with a brief description of the expected behavious. if there are some corner cases, or something working  differently from how this would be naively interpreted, these will be mentioned here for the affected components. This may also include the link:#non-requirements[Non-Requirements] sub-section.
+* link:#affected-projects-or-components[Affected Projects or Components] - if changes are needed to the code of one of the components, that component will be mentioned here.
+* link:#requirements[Requirements] - components listed here are covered by this RFE, along with a brief description of the expected behaviours. if there are some corner cases, or something working  differently from how this would be naively interpreted, these will be mentioned here for the affected components. This may also include the link:#non-requirements[Non-Requirements] sub-section.
 * link:#related-issues[Related Issues] - for each MicroProfile specification included in *this* umbrella RFE, the issue tracking the work is listed here. Typically, these are issues with an 'incorporates' link from https://issues.redhat.com/browse/WFLY-19792. If any separate RFEs are needed those will be listed here.
-* link:#affected-projects-or-components[Affected Components] - if changes are needed in other components, the changes are summarised here.
 * link:#implementation-plan[Implementation Plan] - if changes are needed in other components, and they are non-trivial, the changes are summarised here.
 * link:#test_plan[Test Plan] - outlines the tests to be added to the WildFly testsuite to ensure that side-by-side deployment is tested for each component
 
@@ -67,13 +66,10 @@ MicroProfile Specification issues:
 
 === Affected Projects or Components
 
-//__<List the projects or components that are affected by the feature. List them using their Git repositories.>__
 
 === Other Interested Projects
 
 === Relevant Installation Types
-
-__<List the installation types that are relevant for the features and remove any that are not relevant>__.
 
 * Traditional standalone server (unzipped or provisioned by Galleon)
 * Managed domain
@@ -95,10 +91,10 @@ Component notes:
 ** Already tested with multiple .war deployment with metrics providers; expanding of the test case can be considered.
 ** Each deployment behaves as if it were deployed on its own, however, metrics contribute to the same metric collector.
 * MicroProfile Reactive Messaging - This already has tests for multiple .war deployment, done as part of https://issues.redhat.com/browse/WFLY-19759[WFLY-19759] a while ago.
-* Microprofile Reactive Streams Operators - The integration is mainly about making some classes and a `ReactiveStreamsEngine` CDI bean provided by the `io.smallrye.reactive:mutiny-reactive-streams-operators` from the integration available for injection. `ReactiveStreamsEngine` has no state, and thus no risk of cross-deployment 'leakage'.
+* Microprofile Reactive Streams Operators - The integration is mainly about making some classes and a `ReactiveStreamsEngine` CDI bean provided by the `io.smallrye.reactive:mutiny-reactive-streams-operators` from the integration available for injection. `ReactiveStreamsEngine` has no state. Similarly, the exposed `ReactiveStreams` utility class, and the various `Builder`s and other classes do not have any state either. Thus, there is no risk of cross-deployment 'leakage'.
 * MicroProfile Health - This already has tests for multiple .war deployment.
 ** Each .war contributes its healthiness checks to the global server healthiness.
-** When multiple .war archives are deployed, if at least *one* defines the `mp.health.disable-default-procedures` config to `true`, it affects the whole server configuration (as described in https://docs.wildfly.org/36/Admin_Guide.html#disabling-default-server-procedure[("Disabling Default Server Procedures" documentation)]). This multi-deployment behaviour is not specified in the MicroProfile Health specification.
+** When multiple .war archives are deployed, if at least *one* defines the `mp.health.disable-default-procedures` config to `true`, it affects the whole server configuration (as described in https://docs.wildfly.org/36/Admin_Guide.html#disabling-default-server-procedure["Disabling Default Server Procedures" documentation]). This multi-deployment behaviour is not specified in the MicroProfile Health specification.
 * MicroProfile OpenAPI
 ** MP OpenAPI subsystem must install an OpenAPI endpoint and model per host (rather than per deployment) and allow applications to contribute components/paths/etc. during deployment.
 ** "Global" properties of the OpenAPI model that are not concordant between applications will be provided by the following host-specific MP Config properties:
@@ -150,24 +146,18 @@ There are no changes to the server configuration.
 
 === Deployments
 
-There are no incompatible changes to the behaviour deployments.
+There are no incompatible changes to the behaviour of deployments.
 
 === Interoperability
 
 This does not affect interoperability.
 
-== Implementation Plan
-
-// __<This section is optional. If you have a complex feature which can not be delivered all in one go, suggest the strategy.>__
 
 == Admin Clients
 
 No admin client issues.
-// __<Identify the level of compatibility this feature will have with the existing admin clients (JBoss CLI and the Admin Console / HAL). Identify any follow up work that will be required in the clients and link issues created to track this work.>__
-
 == Security Considerations
 
-// __<What impact on security does this feature have?>__
 There is no impact on security.
 
 [[test_plan]]
@@ -212,7 +202,7 @@ The community documentation will be updated as follows:
 * MicroProfile Reactive Messaging - it will point out that only .war deployments are supported, and that although it might work in other deployment types, the behaviour is undefined.
 * MicroProfile Rest Client - it will point out that only .war deployments are supported, and that although it might work in other deployment types, the behaviour is undefined.
 * OpenTelemetry / MicroProfile Telemetry - the documentation will be updated to detail that the deployment scenario is supported and what to expect (especially with regard to duplicate names and their tags)
-* Micrometer - the documentation will be updated to detail that the deployment scenario is supported and what to expect
+* Micrometer - the documentation will be updated to detail that the multi-deployment scenario is supported and what to expect when war applications are deployed in parallel
 * MicroProfile JWT - no updates to the documentation as this behaviour matches the initial integration.
 
 
