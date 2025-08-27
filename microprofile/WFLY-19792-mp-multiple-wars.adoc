@@ -63,6 +63,8 @@ MicroProfile Specification issues:
 * https://issues.redhat.com/browse/WFLY-20625[WFLY-20625 - Test MicroProfile Rest Client in multiple deployments]
 * https://issues.redhat.com/browse/WFLY-20626[WFLY-20626 - Add explicit tests for multiple war support for MP Telemetry]
 * https://issues.redhat.com/browse/WFLY-20804[WFLY-20804 - Test MicroProfile JWT in multiple deployments]
+* https://issues.redhat.com/browse/WFLY-20868[WFLY-20868 - Test MicroProfile LRA with multiple deployments]
+* https://issues.redhat.com/browse/WFLY-20869[WFLY-20869 - Document that there can only be one coordinator in an LRA setup]
 
 === Affected Projects or Components
 There are no changes needed in SmallRye, OpenTelemetry or Micrometer components for this effort.
@@ -167,7 +169,8 @@ Tests will be added to the `testsuite/integration/expansion` testsuite in WildFl
 * MicroProfile Config
 ** A test will be created with two .war deployments. It will demonstrate that properties coming from outside the deployment are usable by both deployments, and that properties defined within each deployment are local to that deployment.
 * MicroProfile Fault Tolerance
-** A test exists with two .war deployments with different metrics providers, verifying that the basic MP functionality and the corresponding metrics collection works as expected.
+** A test exists in the WildFly testsuite with two .war deployments with different metrics providers, verifying that the basic MP functionality and the corresponding metrics collection works as expected.
+** The test for MicroProfile FT in the https://github.com/jboss-eap-qe/eap-microprofile-test-suite/tree/master/microprofile-lra/src/test/java/org/jboss/eap/qe/microprofile/lra[MicroProfile test suite] will be enhanced to split the current tests, so that each participant is deployed in a separate war
 * MicroProfile Reactive Messaging
 ** The existing test deploys two similar applications. In one of them MicroProfile Config properties are used to map the Reactive Messaging channels to AMQP, and in the other the MicroProfile Config properties are used to map the channels to Kafka. A lot of the properties share their names, and the test checks that deployment A sends and receives data to/from AMQP, and that deployment B does the same with Kafka.
 * MicroProfile Reactive Streams Operators
@@ -189,6 +192,10 @@ Tests will be added to the `testsuite/integration/expansion` testsuite in WildFl
 ** This scenario is already covered and no additional testing needs have been identified at this time
 * MicroProfile JWT
 ** Existing test cases focus on cases where end users wish to bypass the per deployment isolation for JWT activation and configuration, a new test case `JWTParallelDeploymentTestCase` will be added which will deploy two applications, each application will use distinct keys and the test case will verify that the use of the keys can not cross over between the two applications.
+* MicroProfile LRA
+** By design LRA is intended to support multiple participants working against one coordinator. These may all be in different .war files. Only one coordinator can be deployed, while several participants can be deployed. The participants do not interfere with each other
+** The test for MicroProfile LRA in the https://github.com/jboss-eap-qe/eap-microprofile-test-suite/tree/master/microprofile-lra/src/test/java/org/jboss/eap/qe/microprofile/lra[MicroProfile test suite] will be enhanced to split the current tests, so that each participant is deployed in a separate war
+
 
 == Community Documentation
 
@@ -204,6 +211,7 @@ The community documentation will be updated as follows:
 * OpenTelemetry / MicroProfile Telemetry - the documentation will be updated to detail that the deployment scenario is supported and what to expect (especially with regard to duplicate names and their tags)
 * Micrometer - the documentation will be updated to detail that the multi-deployment scenario is supported and what to expect when war applications are deployed in parallel
 * MicroProfile JWT - no updates to the documentation as this behaviour matches the initial integration.
+* MicroProfile LRA - the documentation will be updated to point out that only one coordinator can be deployed.
 
 
 == Release Note Content
