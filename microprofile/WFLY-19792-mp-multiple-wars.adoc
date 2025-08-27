@@ -65,7 +65,7 @@ MicroProfile Specification issues:
 * https://issues.redhat.com/browse/WFLY-20804[WFLY-20804 - Test MicroProfile JWT in multiple deployments]
 
 === Affected Projects or Components
-
+There are no changes needed in SmallRye, OpenTelemetry or Micrometer components for this effort.
 
 === Other Interested Projects
 
