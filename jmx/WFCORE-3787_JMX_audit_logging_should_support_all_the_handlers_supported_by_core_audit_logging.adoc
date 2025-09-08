@@ -1,0 +1,71 @@
+= JMX Audit logging handlers support
+:author:            Yeray Borges
+:email:             yborgess@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+Users can enable audit logging for the management interfaces, which will log all operations performed using the management console, management CLI, or custom application that uses the Management API.
+
+For example, the following commands generate a file-handler log and add it to JMX subsystem:
+
+[source]
+--
+[standalone@localhost:9990 /] /core-service=management/access=audit/file-handler=file-audit-log:add(formatter=json-formatter, path=file-audit-log.log)
+{"outcome" => "success"}
+[standalone@localhost:9990 /] /subsystem=jmx/configuration=audit-log:add()
+{"outcome" => "success"}
+[standalone@localhost:9990 /] /subsystem=jmx/configuration=audit-log/handler=file-audit-log:add()
+{"outcome" => "success"}
+--
+
+The current issue is not all audit logging handlers can be added to JMX subsystem, at this moment, only file-handler and syslog-handler can be used.
+
+This issue will extend the list of supported handlers for JMX subsystem to all handlers supported by core audit logging.
+
+The handlers supported by core audit logging are:
+
+* file-handler
+* in-memory-handler
+* periodic-rotating-file-handler
+* size-rotating-file-handler
+* syslog-handler
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/EAP7-992[EAP7-992]
+* https://issues.jboss.org/browse/WFCORE-3787[WFCORE-3787]
+
+=== Related Issues
+
+=== Dev Contacts
+
+* mailto:yborgess@redhat.com[{author}]
+
+=== QE Contacts
+
+* mailto:{email}[{undefined}]
+
+=== Affected Projects or Components
+
+JMX component
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+ * All handlers defined for core audit logging have to be available for JMX subsystem
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+* Unit tests verifying that the handlers created for audit logging can be used by JMX subsystem auto logging configuration.
