@@ -1,0 +1,460 @@
+<!-----
+
+# [EAP7-2063] Support internal EJB client access to EAP deployments on OpenShift over HTTP
+
+
+## Introduction
+
+Remote EJB invocations is an important feature of EJB and Jakarta EE compatible servers in general. Moving forward, it is expected that customers will be migrating from bare metal to cloud and we have to make sure that this functionality is working in a robust way in this environment.
+
+EAP is supported on number of cloud providers but this analysis is related to OpenShift, which is being developed by RedHat. Nevertheless, if some design decision may impact integration with other cloud providers in the future they will be also taken into consideration in this document.
+
+wildfly-http-client is a library that implements EJB invocation using HTTP semantics. 
+
+The goal of this document is to analyze whether wildfly-http-client could become the protocol of choice for EJB invocation in OpenShift cloud enviroment.
+
+
+### Other invocation libraries
+
+Currently in JBoss EAP are two other implementations of remote EJB invocations: jboss-ejb-client which uses remoting protocol and IIOP client. 
+
+IIOP is a legacy protocol, which is not planned to be redesigned to work in the cloud and it’s usage is discouraged in such enviroment.
+
+jboss-ejb-client based on remoting protocol is a proprietary EAP solution designed specifically for EJB invocation. It is a full featured solution responsible for all aspects of the invocation. It is a protocol most commonly used in bare metal environments. Applications using remoting client are supposed to work correctly for internal OpenShift EJB invocations. Because of this it will server as a comparison point in this document.
+
+
+## Architecture
+
+
+### EJB requirements
+
+EJB client code has a number of responsibilities that it has to fullfill in order to make sure all the requirement that are mandated by EJB contract are being provided. The responsibilities relevant for the remote invocation on OpenShift are as follows:
+
+
+
+* Custom loadbalancing ensuring affinity to a given node - EJB invocation can be performed on any node that hosts the required bean but EJB specific load balancing is required because at various points of EJB invocation it may be required that the invocation is processed on a given node or group of nodes. This requirement may originate from various aspect of EJB configuration and processing (local invocation, stateful session creation, invocation on a given cluster etc.) and it is EJB code which is responsible of making sure that all those invocation are being processed on the node that matches the appropriate affinity.
+* Transaction processing and recovery - if the invocation is transactional, the server must be able to guarantee that either all or none parts of the transaction are being processed. During transaction commit and rollback transaction participants communicate in order to coordinate transaction finish process. Furthermore, in order to be able to guarantee transactional behavior even in the event of node failure, transaction managing code persist a log of operations that have to be performed to finish the transaction. This log is persisted on a given node, and its operations contain addresses of other nodes that have to be reached during transaction recovery.
+* Lookup and discovery of EJB beans - EJB beans can be reached by either specifying the server on which they are located directly or by specifying only the attributes of a bean that we want to connect to (f.e. Module-name and bean-name). In latter case it is  EJB client library which is responsible for obtaining the address of the host on which the bean is located.
+
+
+### General characteristics of wildfly-http-client
+
+
+
+* Supports EJB, transactions and JNDI via HTTP protocol
+* Designed to be compatible with load balancers
+* Is not responsible for affinity processing and load balancing - some other entity has to take care of those
+* Has a simple discovery algorithm (just finding EJBs by coordinates if host is not known)
+* Because of OpenShift architecture wildfly-http-client is the only option for invocation from outside the cloud (see that analysis of EAP7-2062)
+
+Project design goals are described in detail in [design analysis](https://github.com/wildfly/wildfly-http-client/blob/main/docs/src/main/asciidoc/analysis-doc.asciidoc).
+
+
+#### Implications
+
+* Uses HTTP - current cloud protocol of choice
+* Simpler library and easier maintanance
+* Because of load balancer being separate entity wildfly-http-client may be easier integrated with various cloud environments (load balancer can be a integrated with given cloud architecture)
+* Consistent configuration: the same protocol used for internal and external invocation scenarios
+
+
+### Comparision to jboss-ejb-client
+
+* Much more complex library
+* Fat client - responsible for discovery, load-balancing, affinity processing (including clustering)
+* Proprietary - no integration with cloud objects anticipated
+* Would have to run as independent software and bypass all cloud infrastructure
+* Robust - mature library tested on baremetal
+
+
+## OpenShift
+
+
+### Architecture recap
+
+Characteristics on OpenShift architecture important for this analysis.
+
+
+#### Pods
+
+Pods - pods are containers which run the applications. Pods are ephemeral, can be started and stopped by OpenShift eagerly.
+
+
+#### Deployments 
+
+Deployment is an object which describes the desired state of an application. A common deployment would say what kind of image is to be run and how many instances of it are supposed to be run. Deployment object is just a description given to OpenShift, and it is OpenShift’s responsibility to make sure that the state of the cluster matches a description. For example if one of the pods go down, OpenShift is responsible for noticing it and starting another pod with application specified in the Deployment object. Deployments don’t give any guarantees regarding pod’s network addresses nor persistent storage.
+
+
+#### Services
+
+Service is an object that groups together a set of pods with given characteristics and provides access to them using permanent virtual address. It is responsible for monitoring pods present in the cluster and updating the related set accordingly. Invocations performed against cluster virtual IP are loadbalanced to one of the underlying nodes.
+
+
+#### Common OpenShift config
+
+A deployment and a service is a method of choice when it comes to deploying applications to OpenShift. The deployment is responsible for making sure that an application runs in a given number of replicas and service act a loadbalancer which stable virtual network IP to which other applications can connect to.
+
+
+#### StatefulSet 
+
+Alternative to Deployment but with guarantees regarding:
+
+* Network IPs of nodes
+* Stable persistence storage
+* Ordered scaling
+* Ordere rolling updates
+
+For this analysis, the most important features are the first two. We have guarantees that if we use IP address provided by StatefulSet we will reach the same node each time ad even if the node goes down the new pod that is going to replace it will have access to the same persistent storage.
+
+### Load balancing
+
+wildfly-http-client library does not implement load balancing and we need an external solution that is going to be used as loadbalancer in OpenShift. 
+Requirements:
+
+* support for node affinity based on JSESSIONID
+* support for homogenous deployments with constant number of nodes 
+* easy integration and deployment in OpenShift
+
+Good to have:
+
+* load balance factor calculation
+
+Non-requirements:
+
+*  dynamic load balancer configuration
+
+In bare metal we use mod-cluster for that whereas in OpenShift the Service is a load balancer under the hood.
+
+## Modcluster
+
+Modcluster is a load-balancer of choice for bare metal environments. It was designed to be used with dynamic and heterogenous environments: it https://docs.modcluster.io/[implements] a bunch of advanced functionalities that enable it to be dynamically configured in runtime, provide graceful shutdown and load-balance based on statistics provided by the nodes. 
+
+In contrast, OpenShift deployments have different requirements. They are homogenous and stable in size (see above StatefulSet description) so they do not demand dynamic configuration capabilties. On the other hand, we have to make sure that the loadbalancer is to be well integrated with OpenShift.
+
+Because of the above, modcluster is not planned to be used with wildfly-http-client in cloud.
+
+## OpenShift services as load balancer
+
+Service is a native part of OpenShift. The implementation is based on IP tables: the implementation listens to OpenShift events (such as starting and stopping pods) and if those events have an effect on the application to which the service is related, it modifies the IP table rules accordingly.
+
+Although such implementation is very efficient, it is impractical to adapt it to meet EJB requirements, as implementing affinity support inside IP tables seems unfeasible, in not undoable. Furthermore, it would be a solution that could be used only in OpenShift and another additional solutions would have to be provided for other cloud providers. Maintaining load balancer for each cloud provider is also unfeasible.
+
+## Minimal cloud load balancer
+
+Because of the factors mentioned above, currently proposed solution would be to implement a minimal load balancer (or a plugin to the existing loadbalancer) that is going to implement just the requirements mentioned above.
+
+
+## Suggested configuration
+
+
+### The necessity of StatefulSet
+
+Because of the EJB requirements: transaction processing and recovery, session affinity, and custom load balancing it is necessary that EJB application are deployed using StatefulSet.
+
+Reasons:
+
+* If network IP of a pod in the Deployment is not stable keeping affinity to it makes no sense.
+* Keeping affinity to the Service makes no sense as well cause the calls are going to be further load balanced and will be invoked on different pods under the hood anyway.
+* Lack of persistent storage prevents transactions recovery from working correctly. During the crash we may need to rely on transaction recovery log which is stored in pods persistent storage nad is related to the node of given address.
+
+Because of the above, nodes with persistent addresses and storage are a requirement if we want to make sure that all EJB functionalities are working correctly in any circumstances.
+
+
+### WildFly operator
+
+Apart from the above we need to make sure that application pods are scaled down correctly in respect to transaction recovery - we cannot remove the pod if it still have transaction recovery log entries present.
+
+[WildFly operator](https://github.com/wildfly/wildfly-operator) is a tool that is responsible for deploying EJB application in the OpenShift so that this requirement is being met. WildFly operator relies on StatefulSet under the hood.
+
+It is required that the operator is used for EJB deployments.
+
+
+### Possible configuration
+
+The possible way of deploying EJB applications which are going to rely on wildfly-http-client as a invocation library in OpenShift may be as follows:
+
+
+
+* Applications are deployed via wildfly-operator as StatefulSets with load balancer in front of them. They are reached by the address of load balancer
+* All nodes in StatefulSet must have the same beans available in all of them.
+* Application may be clustered.
+* If application is supposed to be run on only one node it is possible to omit the load balancer and rely to its StatefulSet identity as an address.
+
+There are problems associated with this config though and they will be discussed in the scenarios section below.
+
+
+#### Alternative configurations
+
+Below configuration were mentioned as the possibility during EJB team discussions.
+
+
+##### Service extension
+
+We may implement our own extensions on top of OpenShift objects. We discussed possibility of extending Service on EJB but because Services are meant to work with Deployment we would have a problem of non stable nodes. Furthermore, even if we manage to establish a object that can be extended and make it work correctly, we would have to reply this effort for each cloud provider that we are going to work with in the future. Because of that, a solution which uses one loadbalancer that was chosen.
+
+
+##### Istio
+
+This requires further investigation. Current doubts:
+
+
+
+* Istio is C library - are we going to mix affinity processing between different languages?
+* Can Istio be integrated with all cloud providers?
+
+If we managed to make it work, Istio may be similar solution to modcluster: easy invocation library and other component integrated with helping with load balancing. The question is whether it has advantages justifying it’s  usage over modcluster.
+
+
+### Baremetal similarities
+
+Because of persistent IP addresses and storage of StatefulSet nodes running applications with the above configuration has similarities to running the same applications in bare metal. This is a good thing to us cause it gives us more confidence, that configurations that worked in baremetal environment are going to work propertly in the cloud as well.
+
+
+### Requirement for cloud providers
+
+Persistent IP addresses and storage are requirement for using EJB in the cloud and we have to be able to communicate it to cloud providers.
+
+
+### EJB applications with deployments and services
+
+Because of the requirements described above it is not possible to guarantee all EJB functionalities using Deployment with Service configuration. The only EJB configuration that is going to work with this config are non-transactional stateless beans. Nevertheless, it still need to be analyzed:
+
+
+
+* Some customers may be reluctant to used StatefulSets (it happens already as mentioned on EJB meetings).
+* Some other cloud providers may not implement the equivalent of StatefulSet.
+
+If this configuration is chosen for wherever reason for stateful or transactional beans we have to analyze it on a case basis on probably rely on heuristics or provider specific hacks to make invocation work or minimize the probability of failures.
+
+
+## Scenarios
+
+This section contains a number of scenarios of wildfly-http-client EJB invocations on OpenShift. Those scenarios are meant analyze common cases and given a more concrete understanding of current or desired invocation behavior and some of them anticipate problems that have to be fixed.
+
+In all of the scenarios, client and every other nodes or clusters run inside the same OpenShift cluster.
+
+The list is not meant to be exhaustive. Specifically, test cases related to this RFE would have to be much wider.
+
+
+### Stateless, nontransactional invocation with known server address
+
+Characteristics:
+
+
+
+* Simple stateless invocation of EJB bean when the address of the server is know
+* Server application is deployed non clustered StatefulSet with modcluster in front as described in the configuration
+* Client uses modcluster address as a URL of server application
+* The invocation is not transacted
+
+Important invocation details:
+
+Initial invocation
+
+
+
+* Client uses a InitialContext and sets the provider URL to servers modcluster address
+* EJB naming interceptor sets target location on the invocation context
+* Discovery interceptor is ignored as location is already set
+* Invocation is propagated to modcluster
+* Invocation is load balanced to one of the underlying nodes
+* No affinities are being set on the proxy
+
+Possible subsequent invocations are the same as the first one.
+
+Notes:
+
+
+
+* Everything OK
+* Simplest scenario
+* Will work the same with clustered application
+* Will work even with Service as described above
+
+
+### Stateful, nontransactional invocation with known server address
+
+Characteristics:
+
+
+
+* Simple statefull invocation of EJB bean when the address of the server is know
+* Server application is deployed non clustered StatefulSet with modcluster in front as described in the configuration
+* Client uses modcluster address as a URL of server application
+* The invocation is not transacted
+
+Important invocation details:
+
+Initial invocation
+
+
+
+* Client uses a InitialContext and sets the provider URL to server’s modcluster address
+* Discovery interceptor is ignored as location is already set
+* EJB client interceptor sets target location on the invocation context
+* Client uses a InitialContext and sets the provider URL to servers modcluster address
+* Invocation is propagated to modcluster
+* Invocation is load balanced to one of the underlying nodes
+* Affinity to the cluster node is returned and added to the proxy
+
+Possible subsequent invocations in the same session:
+
+
+
+* Proxy has both provider URL and node affinity
+* Discovery interceptor is ignored as location is already set
+* EJB client interceptor sets target location on the invocation context
+* Node affinity results in setting JSESSIONID cookie in HTTP invocation
+* Invocation is performed to modcluster and because of session cookie modcluster is able to propagate it to the correct node
+
+Notes:
+
+
+
+* Everything OK
+* Won’t work with Service - session affinity would be ignored
+
+
+### Stateful, nontransactional invocation without known server address 1
+
+Characteristics:
+
+
+
+* Simple stateless invocation of EJB bean when the address of the server is not know
+* There two server applications A and B deployed in the cluster. Both are deployed as non clustered StatefulSet with modcluster in front. Application A has bean A deployed on it and application B has bean B deployed on it
+* Server URL is not knows
+* Client has configured connections to servers A and B. Both those connections are configured using relevant modcluster address.
+* Client wants to invoke bean A
+* The invocation is not transacted
+
+Important invocation details:
+
+Initial invocation
+
+
+
+* Client uses bean coordinates to obtain proxy
+* EJB naming interceptor has nothing to do as no as providerURL is not set
+* Discovery interceptor perform discovery because location is not set
+    * relies on configured connections to obtain data about deployed beans
+    * Learns that bean A is located on server A
+* Invocation is propagated to modcluster A
+* Invocation is load balanced to one of the underlying nodes
+* Affinity is being returned and set on the proxy
+
+Possible subsequent invocations:
+
+
+
+* Proxy has week affinity but no location
+* EJB naming interceptor has nothing to do as no as providerURL is not set
+* Discovery interceptor perform discovery because location is not set
+    * Should have data in cache already
+    * check that bean A is located on server A
+* Because affinity is present SESSIONID cookie is added to the invocation
+* Invocation is propagated to modcluster A
+* Invocation is load balanced to the correct node based on SESSIONID
+
+Notes:
+
+
+
+* Everything OK
+
+
+### Stateful, nontransactional invocation without known server address 2
+
+Characteristics:
+
+
+
+* Simple stateless invocation of EJB bean when the address of the server is not know
+* There two server applications A and B deployed in the cluster. Both are deployed as non clustered StatefulSet with modcluster in front. Both applications A and B have Foo bean deployed on them
+* Server URL is not known
+* Client has configured connections to servers A and B. Both those connections are configured using relevant modcluster address.
+* Client wants to invoke bean Foo
+* The invocation is not transacted
+
+Important invocation details:
+
+Initial invocation
+
+
+
+* Client uses bean coordinates to obtain proxy
+* EJB naming interceptor has nothing to do as no as providerURL is not set
+* Discovery interceptor perform discovery because location is not set
+    * relies on configured connections to obtain data about deployed beans
+    * learns that bean Foo is located on both server A and B
+    * Choice is not deterministic - in this scenario let’s asume A is chosen
+* Invocation is propagated to modcluster A
+* Invocation is load balanced to one of the underlying nodes
+* Affinity is being returned and set on the proxy
+
+Possible subsequent invocations:
+
+
+
+* Proxy has week affinity but no location
+* EJB naming interceptor has nothing to do as no as providerURL is not set
+* Discovery interceptor perform discovery because location is not set
+    * Should have data in cache already
+    * But the choice is not deterministic - it is possible that B is chosen, let’s assume B
+* Because affinity is present SESSIONID cookie is added to the invocation
+* Invocation is propagated to modcluster B - this is an error already - scenario fails
+
+Notes:
+
+
+
+* Failure - the error is caused because current discovery doesn’t have built in affinity processing. It is required so that invocation could be loadbanced to the correct application.
+* Possible solution: implement two level affinity. Cloud level, integrated with discovery, would be responsible for choosing the correct application, application level would would be loadbalancing on modcluster level, which is already implemented.
+
+Remoting client comparison:
+
+
+
+* Remoting client gathers information about the all applications that it communicates with including clusters and underlying cluster nodes. It would be able to correctly process session affinity on discovery level.
+
+
+### Stateless, transactional invocation with known server address
+
+Characteristics:
+
+
+
+* Simple stateless invocation of EJB bean when the address of the server is known
+* Server application is deployed on non clustered StatefulSet with modcluster in front as described in the configuration
+* Server application writes data to database
+* Client uses modcluster address as a URL of server application
+* The invocation is a part of the transaction
+
+Important invocation details:
+
+Initial invocation
+
+
+
+* Client uses a InitialContext and sets the provider URL to servers modcluster address
+* EJB naming interceptor sets target location on the invocation context
+* Discovery interceptor is ignored as location is already set
+* Transaction id is propagated in the call
+* Invocation is propagated to modcluster
+* Invocation is load balanced to one of the underlying nodes
+* No affinities are being set on the proxy
+* A XID is returned so that client can enlist the server as underlying resource
+* CLUSTERING DOUBT are we going to enlist modcluster IP or node?
+
+Notes:
+
+
+
+* Possible failure scenario - clustering team feedback required
+* Transactional calls use remoting invocations under the hood anyway - should this be implemented using HTTP as well?
+
+Remoting client comparison:
+
+
+
+* Remoting client gathers information about the all applications that it communicates with including clusters and underlying cluster nodes. It would be able to correctly enlist the underlying cluster node.
