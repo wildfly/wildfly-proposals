@@ -1,0 +1,84 @@
+= Configuration for Namespace Interoperability>
+:author:            Flavia Rainone
+:email:             frainone@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-17676[WFLY-17676] Add a configuration for enabling EE namespace interoperability
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-16296[WFLY-16296] WildFly server based on Jakarta EE API should communicate successfully with previous versions of the server based on Java EE
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+* mailto:ropalka@redhat.com[Richard Opalka]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+This affects the same projects as EAP7-1795:
+
+* JBoss EJB Client
+* WildFly Naming Client
+* WildFly Http Client
+
+Currently those projects directly verify the value of the system property `org.wildfly.ee.namespace.interop` to determine if the
+interoperability mode is enabled or disabled. We need to have add boolean parameters to those projects APIs, so WildFly can pass
+the value of interoperability configuration.
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+=== Hard Requirements
+The EE namespace interoperability will be configured via model at the server.
+
+== Backwards Compatibility
+
+This feature is fully compatible with previous server versions.
+
+=== Default Configuration
+The EE namespace interoperability mode will continue to be disabled by default, as before.
+
+== Implementation Plan
+An new boolean element named `"ee-namespace-interoperable"` will be added to EE subsystem. The element is not mandatory
+and the default value is `false`. The server wil pass that configuration over to the JBoss EJB Client and
+WildFly Http Client APIs when setting up those client objects.
+
+== Test Plan
+
+== Community Documentation
+
+The community documentation will be updated to describe the new feature. The system property will be either removed or
+deprecated, something that we need to clarify.
+
+== Release Note Content
+Add `ee-namespace-interoperable` element to EE subsystem to configure EE namespace interoperability)
+////
+an article on this at www.wildfly.org is a good idea
+////
