@@ -7,7 +7,7 @@ issue: https://github.com/wildfly/wildfly-proposals/issues/690
 feature-team:
  developer: rhusar
  sme:
-  - rhusar
+  - pferraro
  outside-perspective:
   - istraka
 promotes:
