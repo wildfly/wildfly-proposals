@@ -1,0 +1,175 @@
+---
+categories:
+ - provisioning
+stability-level: default
+# Specify the Feature Development tracker issue for the feature.
+# This must be an issue tracked in https://github.com/orgs/wildfly/projects/7/views/1.
+# To create a Feature Development tracker issue, go to  https://github.com/wildfly/wildfly-proposals/issues/new/choose
+# and select 'Feature Development'
+issue: https://github.com/wildfly/wildfly-proposals/issues/705
+# Provide the github ids of the members of the feature team, organized by role.
+# Provide a single id for the 'assignee' role. Use a yaml list for the 'sme' and
+# 'outside-perspective' roles, even if there is only one person in a role.
+feature-team:
+ developer: Pedro Hos
+ sme: 
+  - Jeff Mesnil
+ outside-perspective:
+  - Vojtech Salbaba
+  - Symone Simpkins
+# This should be blank during initial development of a feature. It may be used
+# after the feature is completed if a subsequent issue is field to track promotion
+# of this feature to a higher stability level
+promoted-by:
+---
+= Add ability to update WildFly to a specific version of a manifest using wildfly-channels.
+:author:            Bartosz Spyrko-Smietanko
+:email:             bspyrkos@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently, Prospero update operation always picks the latest available manifest(s) version(s) to update to. Some users might prefer to perform an update to a concrete version that they can pre-test.
+
+This proposal adds a new parameter to the `update perform` and `update prepare` operations that will accept a version of a manifest version.
+
+=== User Stories
+
+ - As an admin I want to use a logical or physical manifest version to update the server to a specific version.
+ - As an admin I want to be able to perform a downgrade if a specified version is lower than a current version. Such operation should result in a warning that the user has to accept.
+ - As an admin I want to be able to perform a downgrade in a non-interactive way by specifying a command-line flag.
+ - As an admin I want to be prevented from downgrading a manifest version unless the new version is specified explicitly.
+
+
+==== Nice-to-have:
+ - As an admin customer I want to be able to see a list of potential manifest versions I can update (or downgrade to).
+
+== Issue Metadata
+
+=== Related Issues
+
+ - https://github.com/wildfly-extras/prospero/issues/754
+ - https://github.com/wildfly/wildfly-proposals/pull/577
+ - https://issues.redhat.com/browse/EAP7-2291
+
+=== Affected Projects or Components
+
+ - https://github.com/wildfly-extras/prospero[Prospero]
+ - https://github.com/wildfly-extras/wildfly-installation-manager-api[Installation Manager API]
+ - https://github.com/wildfly/wildfly-core[WildFly Core]
+ - https://github.com/hal/console[HAL Console]
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+
+== Requirements
+
+==== Hard requirements:
+- Add a `--version` parameter to the update operation with values in format `<CHANNEL_NAME>::<VERSION>`
+- If the `--version` parameter is present, the `update perform` and `update prepare` operations use a manifest with this version to provision the server.
+- If the `--version` provided is lower than the current version, the user should be warned and asked to confirm the operation.
+- If the `--version` is used in conjunction with `--yes` flag, the downgrade confirmation is skipped.
+- If a server is subscribed to multiple channels, the customer has to provide versions of all the involved manifests.
+- If the `--version` is not specified and the `update` operation would result in a manifest downgrade, the operation should fail as an error.
+- Above changes need to be available in JBoss CLI and HAL console.
+
+==== Nice-to-have requirements:
+- A new `update list-versions` operation should present a list of possible manifest updates and downgrades.
+- If the channel uses a URL manifest, the user should be able to provide the URL of the new manifest. Note, providing a version for a URL-based channel should be considered an error.
+
+==== Non-requirements:
+- When the server is subscribed to multiple channels, update operation does not verify the compatibility of selected versions.
+- "Fixing" a server to a manifest version - i.e. the update operation *does not* change the channel configuration. If before the update server was subscribed to a `org.wildfly.channels:wildfly`, the version will not be added after the update.
+
+=== Future Work
+
+- Supporting rollback to a logical/physical manifest.
+- __Possibly listing available versions in `update list` operation.__
+
+== Backwards Compatibility
+
+This change would prevent a downgrade without an explicit `--version` argument. Some users may have used this option, but this is not a recommended use case.
+
+=== Default Configuration
+
+n/a
+
+=== Importing Existing Configuration
+
+n/a
+
+=== Deployments
+
+n/a
+
+=== Interoperability
+
+n/a
+
+== Implementation Plan
+
+=== Logical version resolution
+__TBD__
+
+== Admin Clients
+
+=== JBoss CLI
+
+The `--version` attribute will have to be added to the installer `update` operation. The behaviour should be the same as described above for Prospero.
+
+If the `list-versions` operation is implemented in Prospero, analogous operation will have to be added to the CLI.
+
+=== Web console
+
+The "Online update" and "Offline using archives" operations will have to be extended by adding a selection box allowing users to choose an Update version. When selected, the updated component list should show components from this update.
+
+== Security Considerations
+
+n/a
+
+[[test_plan]]
+== Test Plan
+
+__Note: Prospero does not support stability levels, therefore this issue need to be considered for default stability level.__
+
+Unit and integration tests verifying the new functionality will be added in Prospero. Additional tests in WildFly Core will be added to verify command implementation but will not execute real update operations.
+
+The changes do not affect the performance of existing operations, however the mapping of Logical Version of a manifest to a physical one may take longer time.
+
+=== Manual tests:
+
+* Verify the help content for the new parameter is present.
+* Verify the scenarios in *Integration tests* using JBoss CLI and Web Console.
+
+=== Miscellaneous checks:
+n/a
+
+=== Integration tests:
+* Update a server to a certain version ignoring newer, available version
+* Downgrade a server to a specified version
+** verify the flag `--yes` skips the confirmation
+* Update a server subscribed to multiple channels
+** verify that the operation requires all the channel versions to be present.
+* Verify `--version` works both with logical and physical versions.
+
+=== Compatibility tests
+n/a
+
+== Community Documentation
+
+Prospero documentation will describe how to use the new functionality. The new parameter will also be described in the Prospero help page.
+
+The JBoss CLI help information will also be updated with the changes.
+
+Finally, an article on wildfly.org can be published showcasing the ability to update/downgrade a WildFly server.
+
+== Release Note Content
+
+Add an ability to perform an update/downgrade to an arbitrary version of a WildFly channel.
