@@ -81,7 +81,7 @@ WildFly will be updated to pull in the corresponding versions of the Eclipse Mic
 
 
 * [x] Traditional standalone server (unzipped or provisioned by Galleon)
-* [ ] Managed domain
+* [x] Managed domain
 * [x] OpenShift Source-to-Image (S2I)
 * [x] Bootable jar
 
