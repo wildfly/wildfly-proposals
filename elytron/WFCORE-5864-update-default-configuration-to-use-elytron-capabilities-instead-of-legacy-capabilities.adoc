@@ -1,0 +1,81 @@
+= WFCORE-5864 Update default configuration to use Elytron capabilities instead of legacy capabilities.
+:author:            Diana Krepinska
+:email:             dvilkola@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The default configuration was already updated to use the Elytron capabilities instead of the legacy security capabilities in WildFly 25.
+
+This RFE seeks to define which Elytron's default security configuration to harden and update default configuration accordingly.
+
+Some of the examples that can be updated include:
+    * usage of the encrypted filesystem realm instead of the legacy properties realm
+    * usage of SCRAM SASL by default instead of DIGEST MD5
+    * enable TLSv1.3 by default
+
+This RFE can consider creating a parallel configuration file with Galleon that has the more secure Elytron configuration. That way, users could make use of that configuration without needing to update the default config right away.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-5864[WFCORE-5864]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-908[EAP7-908] - EAP issue tracker
+
+=== Dev Contacts
+
+* TODO
+
+=== QE Contacts
+
+* TODO
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly-core[WildFly Core project]
+
+== Requirements
+
+=== Hard Requirements
+
+* Hardened default security configuration, either configured as default or as an additional configuration file that can be provided to galleon during startup.
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+== Implementation Plan
+
+Updating of default resources and configurations.
+
+
+== Test Plan
+
+* WildFly Core test suite: Functional tests
+
+== Community Documentation
+
+WildFly - community documentation will be updated
+
+== Release Note Content
+
+TODO
+
