@@ -3,6 +3,16 @@ categories:
   - clustering
   - cloud
   - openshift
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/759
+feature-team:
+ developer: rhusar
+ sme:
+  - pferraro
+ outside-perspective:
+  - TBD
+promotes:
+promoted-by:
 ---
 = WFLY-15836 Add TLS support to JGroups TCP-based transports
 :author:            Radoslav Husar
@@ -15,13 +25,15 @@ categories:
 == Overview
 
 The JGroups project has added support for TLS at the transport level.
-This was implemented as part of https://issues.redhat.com/browse/JGRP-2487[JGRP-2487] and subsequent changes.
-Supporting this configuration in WildFly would effectively replace using `ASYM_ENCRYPT` with `AUTH`,
-and thus simplify the process of securing a JGroups channel.
+This was implemented as part of https://issues.redhat.com/browse/JGRP-2487[JGRP-2487] and subsequent enhancements.
+Supporting this configuration in WildFly would effectively replace usage of `ASYM_ENCRYPT` in conjunction with `AUTH` protocol.
+This would simplify the process of securing a JGroups channel using standard TLS mechanisms.
+
+=== User Stories
+
+User is wanting to secure internal cluster TCP communication using TLS leveraging Elytron subsystem capabilities.
 
 == Issue Metadata
-
-=== Issue
 
 * https://issues.redhat.com/browse/WFLY-15836[WFLY-15836 Add TLS support to JGroups TCP-based transports]
 * https://issues.redhat.com/browse/EAP7-1865[EAP7-1865 Add TLS support to JGroups TCP-based transports]
@@ -30,45 +42,35 @@ and thus simplify the process of securing a JGroups channel.
 
 * https://issues.redhat.com/browse/JGRP-2487[JGRP-2487 Support TLS in TCP] (JGroups)
 
-=== Dev Contacts
-
-* mailto:{email}[{author}]
-
-=== QE Contacts
-
-* TBA
-
-=== Testing By
-
-* [ ] Engineering
-
-* [x] QE
-
 === Affected Projects or Components
+
+* N/A
 
 === Other Interested Projects
 
+* N/A
+
 === Relevant Installation Types
 
-* [x] Traditional standalone server (unzipped or provisioned by Galleon)
-
-* [x] Managed domain
-
-* [x] OpenShift s2i
-
-* [x] Bootable jar
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
 
 == Requirements
 
-=== Hard Requirements
+The TCP-based transports defined in the JGroups subsystem can be configured with reference to the Elytron SSL context.
+A client and server SSLContexts are referenced.
 
-* The TCP-based transport defined in the JGroups subsystem can be configured with reference to the Elytron SSL context.
-
-=== Nice-to-Have Requirements
+=== Changed requirements
 
 * N/A
 
 === Non-Requirements
+
+* N/A
+
+=== Future Work
 
 * N/A
 
@@ -84,11 +86,12 @@ Users will have to configure this explicitly.
 
 === Importing Existing Configuration
 
-* None / no effect on existing configurations.
+* None; no effect on existing configurations.
+The configuration is opt-in.
 
 === Deployments
 
-* None / does not interact with deployments in any way.
+* None; does not interact with deployments in any way.
 
 === Interoperability
 
@@ -98,11 +101,16 @@ Users will have to configure this explicitly.
 
 This feature will be delivered in a single PR to WildFly upstream repository.
 
+== Admin Clients
+
+* Management clients need to take into account the two additional management model attributes with SSLContext references.
+
 == Security Considerations
 
 This feature builds on verified security concepts,
-so all we need to verify is that the configuration is properly picked up, i.e. using the testsuite.
+so we need to verify is that the configuration is properly picked up, i.e. using the testsuite with a positive and a negative test.
 
+[[test_plan]]
 == Test Plan
 
 Management model unit tests will be added as standard.
@@ -116,5 +124,5 @@ Documentation will be included along the implementation's pull request and will 
 == Release Note Content
 
 WildFly now supports TLS configuration for TCP-based transport protocols.
-This can be used to effectively replace `ASYM_ENCRYPT` with `AUTH` in the existing JGroups stack.
+This can be used to effectively replace `ASYM_ENCRYPT` with `AUTH` protocols in the existing JGroups stack.
 Please refer to our 'High Availability Guide' in the user documentation for more information.
