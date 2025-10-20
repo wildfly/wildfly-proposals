@@ -235,6 +235,7 @@ bring additional content (such as quickstarts, guides, etc.) Indicate which of t
 ////
 
 Tracked in https://issues.redhat.com/browse/WFLY-20956[WFLY-20956]:
+
 * There is a list of version of the individual specifications here https://github.com/wildfly/wildfly/blob/main/docs/src/main/asciidoc/Getting_Started_Guide.adoc?plain=1#L119-L129 This table will be updated to list the new versions
 * The subsystem configuration documentation for https://github.com/wildfly/wildfly/blob/main/docs/src/main/asciidoc/_admin-guide/subsystem-configuration/MicroProfile_OpenAPI.adoc[MicroProfile OpenAPI] has some links which include the current version of the specification. These will be updated.
 
