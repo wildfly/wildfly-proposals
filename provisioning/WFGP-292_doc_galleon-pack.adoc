@@ -1,0 +1,181 @@
+---
+categories:
+- wf-galleon
+- maven
+- user-experience
+stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/738
+feature-team:
+ developer: jmesnil
+ sme:
+  - jfdenise
+  - ehsavoie
+ outside-perspective:
+  - yersan
+---
+= Generate documentation for Galleon feature packs
+:author:            Jeff Mesnil
+:email:             jmesnil@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+*_"Javadoc" for feature packs_*
+
+The goal of that proposal is to provide documentation of the capabilities and resources that are provided by WildFly and its ecosystem of Galleon feature packs.
+This documentation is self-contained and automatically generated when the feature packs are built.
+
+== Overview
+
+At its core, WildFly is composed of extensions that provide server kernel resources (the most important one being the subsystems resources).
+
+To clarify the concepts mentioned in this RFE, I'm using different terms:
+
+* _Management API_ - The API of the resources that composes WildFly (such as `extensions`, `subsystems`, `deployments`, etc.). The Management API can be interacted with using the `jboss-cli` tool or by modifying its XML represenations (`standalone` & `domain` XML files)
+** _Management API Reference_ - The human-readable documentation of the Management API. Historically, this was call "Model Reference" (as seen in https://docs.wildfly.org/36/wildscribe/)
+* _Management Model_ - The actual resources that are used by WildFly.
+** When a layer is provisioned, it brings its set of resources that will be provided by WildFly. This set of resources defines the layer's management model.
+
+WildFly is providing a Management API reference for its resources at https://docs.wildfly.org/36/wildscribe/.
+
+Traditionally, this Management API reference was exhaustive and described the full management capabilities of WildFly.
+It relied on its standalone-full-ha.xml configuration to provide it.
+
+However, over time, this approach has shown some cracks:
+
+* Some new subsystems are provided by other configurations (e.g. standalone-microprofile.xml). This was worked around by adding additional extensions when the Management API reference is generated (in WildFly's `docs` module) but is out of sync.
+* WildFly is now composed of 2 Galleon packs (wildfly-ee-galleon-pack & wildfly-galleon-pack). Each Galleon pack provides different extensions and resources but this is not clear from the management model (e.g. which Galleon pack provides the `microprofile-config-smallrye` subsystem?)
+* Additional capabilities for WildFly are provided by other feature packs (grpc, datasources, wildfly-preview, etc.) that do not provide their Management API reference and makes it more difficult for the users to understand which resources, attributes and operations are available to configure their installations. They have to rely on jboss-cli to get the information and while it is available, it does not make it very user-friendly.
+* More generally, the tool that is used to generate this Management API reference (wildscribe) is lagging behind new WildFly management features (stability level was added recently while it's been in WildFly for some time)
+
+We can improve the user experience for WildFly users by consolidating our tooling and providing consistent documentation for the WildFly ecosystem.
+
+Each feature pack should generate user documentation that describes the management capabilities offered by the feature pack in a user-friendly readable output.
+This user documentation should be made available in https://docs.wildfly.org/ or the web site that documents other feature packs.
+
+This documentation should be generated when the feature pack is built and made available as a companion to the feature pack. This should not required additional work from the feature pack developer other than providing correct information about their feature packs.
+
+=== User Stories
+
+* As a WildFly user, I want to have documentation of the capabilities and resources that are provided by any feature packs from WildFly community.
+* As a feature pack developer, I want to provide documentation for my feature pack that is automatically generated whenever I build my feature pack.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFGP-292[WFGP-292 - Generate documentation for Feature Pack]
+
+=== Affected Projects or Components
+
+* WildFly Galleon Plugins - https://github.com/wildfly/galleon-plugins
+** Generate documentation when the `build-feature-pack` goal is invoked. It generates a companion doc archive next to the feature pack itself
+* Galleon - https://github.com/wildfly/galleon
+** Will be impacted if we are missing any metadata from the feature pack to generate its documentation
+* Wildscribe - https://github.com/wildfly/wildscribe
+** This RFE would be a full replacement of Wildscribe that would not longer be used in WildFly code base.
+* Any project publishing feature packs (wildfly, grpc-feature-pack, ai-feature-pack, etc.)
+** They will be updated to bump the version of the Galleon maven plugin
+** They might have to update their layers specs to provide new required metadata and double check their pom.xml information to make sure they are correct as they will surface in their documentation (licenses, scm, project url,...)
+* WildFly - https://github.com/wildfly/
+** Its Management API reference will be generated when its feature packs are built.
+*** For WildFly, we could generate a single documentation entry points that would document the wildfly-galleon-pack and also the capabilites coming from the wildfly-ee-galleon-pack.
+** The dependency to wildscribe from its docs module will be removed and replaced by unarchiving the documentation when the  wildfly-galleon-pack feature pack is built.
+** There would be no changes to the WildFly release process.
+
+=== Relevant Installation Types
+
+This requirement does not impact installation types.
+
+== Requirements
+
+* When the `build-feature-pack` goal of the `org.wildfly.galleon-plugins:wildfly-galleon-maven-plugin` is invoked (i.e. when the feature pack is built), generate a `-doc.zip` archive that contains:
+** human-readable HTML documention of the feature pack stored in a `doc` directory. This documentation includes:
+*** the _optional_ Management API reference of the resources provided by the feature pack (in a format similar to the existing https://docs.wildfly.org/36/wildscribe/[WildFly Management API reference])
+*** the _optional_ log messages and error codes that can be displayed by the feature pack (in a format similar to the existing https://docs.wildfly.org/36/wildscribe/log-message-reference.html[WildFly log messages])
+** the _optional_ Management API reference of the resources provided by the feature pack (stored in a JSON file containing the DMR representation) - generated during the `build-feature-pack` goal and stored in a `META-INF/management-api.json` file
+** the _always present_ metadata of the feature pack (stored in a JSON file) - generated during the `build-feature-pack` goal and stored in a `META-INF/metadata.json` file. Information provided by these metada includes:
+*** General information on the feature pack (name, description, scm, licenses)
+*** Informatio about layers. These would include
+**** An optional description of the layer (missing from the metatadata at the moment)
+**** Their layer dependencies (and whether they are required or optional)
+**** Their properties (including the rules to discover the layers used by WildFly Glow)
+**** Their packages
+**** Their configurations (the System properties and environments variables that can modify their use)
+**** Their management model (the resources that are actually installed when the layer is provisioned)
+* Documentation for feature packs that don't provide layers or don't provide their own management resources will be appropriately formatted.
+* This companion doc.zip is attached to the feature pack's Maven module (`<project>`) with the coordinates:
+** `groupId` - same as the feature pack
+** `artifactId` - same as the feature pack
+** `version` - same as the feature pack
+** `classifier` - `doc`
+** `extension` - `zip`
+* When the feature pack is installed or published, this companion doc.zip is also installed and published
+** This new artifact would be signed during publication (as is the feature pack itself)
+* Other tools that wants to leverage this documentation artifacts must not expect they are always availavle alongside the feature pack. It will only exist when feature packs project are upgraded to the Galleon Maven plugin that provides this feature. 
+* The generated documentation will uses information from the feature pack's pom.xml (description, scm, licenses, etc.)
+
+=== Non-Requirements
+
+* the Look and Feel of the generated documenation is not configurable.
+
+=== Future Work
+
+* This documentation archive can be leveraged by other tools to provide an extensive and exhaustive documentation for all feature packs provided by the WildFly community
+* We might consider adding the documentation of the feature packs that are used to provision a WildFly installation *inside* the installation itself.
+* We could build a searchable index of the documentation (to improve its accessibility).
+ There is also work on a https://github.com/model-graph-tools[Graph representation of the WildFly management model] that could enhance the documentation experience
+
+== Implementation Plan
+
+=== Galleon
+
+We might need to expose additional metadata for feature pack through the Galleon API (to be investigated). 
+In particular, we might want to expand the information provided for the layers (eg having an human-readable description of the layes) so that the content such as https://docs.wildfly.org/37/Galleon_Guide.html#wildfly_foundational_galleon_layers[WildFly's Foundational Galleon layers] could be generated directly from the feature pack instead of a separate document.
+This changes to Galleon metadata would be tracked by a https://issues.redhat.com/projects/GAL[GAL issue] and would be surfaced in the generated documentation with this RFE.
+
+=== Wildscribe
+
+Its https://github.com/wildfly/wildscribe/blob/main/README.md[README] will be updated to state that the project is in maintenance mode and is no longer used by the WildFly application server itself.
+
+=== Galleon Maven Plug-in
+
+When the `build-feature-pack` goal of the `org.wildfly.galleon-plugins:wildfly-galleon-maven-plugin` is invoked (ie when the feature pack is built):
+
+. Generate the Management API of the feature pack by executing `:read-resource-description` operation on the server provisioned by the plugin (that only contains the resources provided by the feature pack)
+. _If_ the feature pack provides a Management API, store that information in a JSON file, `management-api.json`
+. Generate and store feature pack metadata in a `metadata.json`
+. Generate human-readable documentation based on the feature pack management-api.json and metadata.json files
+* Management API reference is generated by delegating it to a dedicated `doc-gen` Maven project (that does not depend on Maven plugin API)
+* Log messages are extracted from the `artifact-list.txt` that contains all Jar files that can be installed server's JBoss modules
+. Create a `-doc.zip` archive that contains:
+* `META-INF/management-api.json` - the Management API reference (stored in a DMR format in a JSON file)
+* `META-INF/metadata.json` - the feature pack metadata
+* `doc/` - Generated HTML documentation about the feature pack. In particular:
+** `doc/index.html` - Home page of the feature pack documentation
+** `doc/reference/index.html` - Home page of the Management API reference of the feature pack
+. Attach this `-doc.zip` archive to the Maven project.
+
+== Security Considerations
+
+This requirement provides documentation only.
+
+[[test_plan]]
+== Test Plan
+
+Tests will be added to the Galleon Maven plugin to verify that they are able to
+properly generate this documentation archive when the feature pack is built.
+
+== Community Documentation
+
+This feature will be documented in the Galleon Maven Plugin project and is meant to be read by feature pack developers.
+
+However once, this feature is delivered, it will have a high impact on community documentation as any of the feature pack provided by the WildFly community will be able to display this documentation (either in a standalone website, ususally on github.io, or aggregated in docs.wildfly.org).
+
+In particular, once this feature is delivered, it is recommended that feature pack developers review and check their documentation (Management API reference, metadata, etc.) to ensure that the information are correct, accurate and helpful.
+
+== Release Note Content
+
+Feature packs that are used to provision WildFly now provide generated documentation that
+describes the feature pack and its layers, along with the management API reference & model for the management resources provided by the feature pack.
