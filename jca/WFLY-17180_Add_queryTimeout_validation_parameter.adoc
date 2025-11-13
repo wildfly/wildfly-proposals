@@ -1,0 +1,72 @@
+= WFLY-17180 Add query-timeout validation parameter
+:author:            Tomasz Adamski
+:email:             tadamski@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          connector, validation
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse/
+
+== Overview
+
+Validation queries run without any explicit query timeout. If the validation query blocks (as it will with most drivers when a connection is invalid/stale), this can block the entire pool in certain cases (e.g. background-validation locks the pool during validation). Even with validate-on-match, the failure to enforce a short timeout can significantly impact time to get a connection if one or more failed connections are found in the pool.
+
+Setting a driver level query timeout is not a suitable workaround because this impacts normal queries that may be expected to run for significant periods. The timeout for normal queries needs to be different from what is tolerated for validation queries (which should respond nearly instantaneously or else the connection is likely broken).
+
+Minimally, an explicit query timeout should be supplied.
+
+It might also be useful if a pool property or perhaps a system property could support a configurable timeout period (e.g. to account for potential latency in some systems). The Apache Tomcat pool supports something of this nature with the validationQueryTimeout property.
+
+== Configuration
+
+'query-timeout' attribute would be added to validation tag of datasources subsystem:
+
+{code}
+   <datasource (...)>
+      (...)
+      <validation query-timeout='...'>
+          (...)
+      </validation>
+      (...)
+  </datasource>
+{code}
+
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/WFLY-17180[WFLY-17180]
+
+=== Related Issues:
+
+* {issue-base-url}/EAP7-2166[EAP7-2166]
+
+=== Dev Contacts:
+
+* mailto:{email}[{author}]
+
+=== Testing by:
+
+* Engineering
+
+=== Affected Projects or Components:
+
+* IronJacamar, WildFly Connector
+
+== Requirements
+
+* customers should be able to configure validation-timeout parameter
+
+== Proposed solution
+* modify WildFly Connector subystem datasource configuration to include 'query-timeout' attribute in 'validation' tag
+
+=== Test Plan
+
+* Connector subsystem unit tests will be extended to WildFly integration testsuite. The goal of the test would be to verify that this attribute is parsed and applied correctly.
+
+=== Community docs
+
+* None
+
