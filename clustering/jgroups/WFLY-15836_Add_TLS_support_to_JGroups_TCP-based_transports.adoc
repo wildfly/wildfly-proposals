@@ -10,7 +10,7 @@ feature-team:
  sme:
   - pferraro
  outside-perspective:
-  - TBD
+  - darranl
 promotes:
 promoted-by:
 ---
@@ -59,8 +59,8 @@ User is wanting to secure internal cluster TCP communication using TLS leveragin
 
 == Requirements
 
-The TCP-based transports defined in the JGroups subsystem can be configured with reference to the Elytron SSL context.
-A client and server SSLContexts are referenced.
+The TCP-based transports (namely `TCP` and `TCP_NIO2`) defined in the JGroups subsystem can be configured with references to the Elytron SSL contexts.
+A client and server SSLContexts are referenced (both are required if defined)
 
 === Changed requirements
 
@@ -72,12 +72,12 @@ A client and server SSLContexts are referenced.
 
 === Future Work
 
-* N/A
+* https://issues.redhat.com/browse/WFLY-19459[WFLY-19459 Add DTLS support to JGroups UDP-based transports w/multicast disabled]
 
 == Backwards Compatibility
 
-This is a new feature and does not affect backwards compatibility since we don't support heterogeneous clusters.
-Configuring this in e.g. mixed domain support will reject the attribute/resource.
+This is a new opt-in feature and does not affect backwards compatibility since we don't support heterogeneous clusters.
+Configuring this in e.g. mixed domain support will reject the new attributes.
 
 === Default Configuration
 
@@ -92,6 +92,7 @@ The configuration is opt-in.
 === Deployments
 
 * None; does not interact with deployments in any way.
+It is transparent to deployments.
 
 === Interoperability
 
@@ -100,6 +101,7 @@ The configuration is opt-in.
 == Implementation Plan
 
 This feature will be delivered in a single PR to WildFly upstream repository.
+No further coordination is necessary.
 
 == Admin Clients
 
@@ -108,18 +110,20 @@ This feature will be delivered in a single PR to WildFly upstream repository.
 == Security Considerations
 
 This feature builds on verified security concepts,
-so we need to verify is that the configuration is properly picked up, i.e. using the testsuite with a positive and a negative test.
+so we need to verify is that the configuration is properly picked up,
+i.e. using the testsuite with both positive and negative integration tests.
 
 [[test_plan]]
 == Test Plan
 
 Management model unit tests will be added as standard.
-Integration test will be added to test this feature.
-Test QE plan should ideally include performance comparison with `ASYM_ENCRYPT` with `AUTH` vs TLS.
+Integration tests will be added to test this feature.
+Test QE plan should ideally include performance comparison with `ASYM_ENCRYPT` with `AUTH` vs native TLS.
 
 == Community Documentation
 
 Documentation will be included along the implementation's pull request and will reside in the High Availability Guide.
+It will also include motivation for securing intra-cluster communication.
 
 == Release Note Content
 
