@@ -3,7 +3,7 @@ categories:
   - clustering
   - ejb
 stability-level: default
-issue: TODO
+issue: https://github.com/wildfly/wildfly-proposals/issues/767
 feature-team:
  developer: rhusar
  sme:
