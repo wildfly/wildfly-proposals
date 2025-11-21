@@ -3,7 +3,7 @@ categories:
   - clustering
   - cloud
   - openshift
-stability-level: default
+stability-level: community
 issue: https://github.com/wildfly/wildfly-proposals/issues/759
 feature-team:
  developer: rhusar
