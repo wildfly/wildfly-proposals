@@ -1,0 +1,152 @@
+---
+categories:
+- management
+- security
+stability-level: community
+# Specify the Feature Development tracker issue for the feature.
+# This must be an issue tracked in https://github.com/orgs/wildfly/projects/7/views/1.
+# To create a Feature Development tracker issue, go to https://github.com/wildfly/wildfly-proposals/issues/new/choose
+# and select 'Feature Development'
+issue: https://github.com/wildfly/wildfly-proposals/issues/768
+# Provide the GitHub ids of the feature team members, organized by role.
+# Provide a single id for the 'assignee' role. Use a YAML list for the 'sme' and
+# 'outside-perspective' roles, even if there is only one person in a role.
+feature-team:
+ developer:
+  - yersan
+ sme:
+  -
+ outside-perspective:
+  -
+# If this issue tracks the promotion of a previously completed feature to a higher stability level, provide the URL of
+# the original https://github.com/wildfly/wildfly-proposals/issues issue that was used to track the implementation of
+# that feature.
+promotes:
+# During initial development of a feature, this field should be left blank. If after the feature is completed and its
+# stability level is promoted via a later issue, the developer promoting the issue should return to this document ("this"
+# being the original analysis document for the feature). The field should be updated to point to the
+# https://github.com/wildfly/wildfly-proposals/issues issue that promotes it.
+# For example,
+#              | Implementation Issue (A) | Promotion Issue (B)
+# promotes:    |                          | https://github.com/.../A
+# promoted-by: | https://github.com/.../B |
+promoted-by:
+---
+
+= Filtering mechanism for management audit logging and configuration change history
+:author:            Yeray Borges
+:email:             yborgess@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Management operations often involve sensitive data, such as clear-text passwords. If management audit logging is enabled, this data is written to the audit log. Additionally, if the configuration change history limit is greater than zero, these operations are stored in memory by the server and can be listed later by an authenticated user.
+
+The goal of this feature is to allow users to configure whether sensitive management data is redacted when stored in the configuration change history or recorded in the management audit log. Attributes containing sensitive data will be now redacted by default.
+
+The determination of which data requires redaction is made by the WildFly authors. Existing management attributes that may contain sensitive data will be reviewed and marked with a new flag. This flag indicates whether the attribute should be redacted when it appears in the configuration change history or the management audit log if the server is configured to enable the redaction of these attributes.
+
+
+=== User Stories
+
+As a WildFly administrator, I do not want to allow other roles, for example the auditors, to read management operation sensitive data from the management audit log or from the management operation configuration changes history.
+
+As a WildFly administrator, I want to prevent that management operation sensitive data be leaked into management audit logs or server configuration changes history.
+
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFCORE-7247
+* https://issues.redhat.com/browse/WFLY-21238
+
+=== Affected Projects or Components
+
+* Wildfly
+* WildFly Core
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+* Provide a new Attribute Flag named `redactable` to allow WildFly authors to classify an attribute as **sensitive** data that is eligible for redaction when included as a parameter in a management operation.
+* Provide a new attribute named `enable-redaction` at `/core-service=management/access=audit` so users can enable or disable the redaction of sensitive data in the management audit log.
+** It defaults to `true`.
+** When enabled, any attribute flagged as `redactable` will be redacted when the management operation that includes the attribute is logged in the management audit log.
+* Provide a new attribute named `enable-redaction` at `/subsystem=core-management/service=configuration-changes` so users can enable or disable the redaction of sensitive data in the configuration change history.
+** It defaults to `true`.
+** When enabled, any attribute flagged as `redactable` will be redacted when the management operation that includes the attribute is recorded in the configuration change history.
+* WildFly and WildFly Core subsystem attributes will be reviewed to find the existent attributes that will be flagged as `redactable`, for example, any attribute that contains a password or clear-text.
+* The method for the redaction would be a hash function using SHA-256 cryptography algorithm.
+
+=== Non-Requirements
+
+The management operation configuration changes history keeps the X number of latest operations executed by the server in memory. Although possible, at first glance it is not planned to redact / unredact the attributes of the operations already in the history memory on the fly, but it is something that can be considered during the development.
+
+=== Future Work
+
+* N/A
+
+== Backwards Compatibility
+
+* By default, the management operation sensitive data will be now redacted by default on the management audit logs and configuration change history.
+
+=== Default Configuration
+
+* N/A
+
+=== Importing Existing Configuration
+
+* N/A
+
+=== Deployments
+
+* N/A
+
+=== Interoperability
+
+* N/A
+
+== Implementation Plan
+
+AbstractOperationContext contains a list of the management operations executed by the controller. These operations are the operations that are later either published in the management audit log, or added into the Deque structure that contains the history of the changes applied to the server.
+
+Before adding any operation in that list, we will use a reference to the root resource registration, that will be inspected to check if any of the operation parameters are flagged as `redactable`. In such a case, we will clone the operation, and we will redact the parameters. This pair of operations will be passed to both the audit log and the configuration change history. Each of these functionalities will decide which operation will be logged or stored in the history based on their respective configurations.
+
+The process of discovering and redacting any operation will be only done if the server is running in the Community or lower stability levels.
+
+== Admin Clients
+
+* This feature is compatible with any existing clients.
+
+== Security Considerations
+
+* This feature hardens server security by reducing the cases where sensitive information can leak into unwanted places such as management audit logs or configuration change history.
+
+[[test_plan]]
+== Test Plan
+
+////
+Depending on the stability level, the test plan required may vary. See below.
+////
+
+TBD
+
+== Community Documentation
+
+WildFly documentation at https://docs.wildfly.org/38/Admin_Guide.html#configuration-changes and https://docs.wildfly.org/38/Admin_Guide.html#Audit_logging will be updated to reflect the usage of the new attribute that enables/disables the redaction of sensitive data.
+
+== Release Note Content
+
+Added the ability to redact management operations sensitive data into the management audit log and configuration change history.
