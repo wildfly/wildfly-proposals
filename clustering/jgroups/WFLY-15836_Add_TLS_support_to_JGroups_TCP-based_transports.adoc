@@ -118,7 +118,7 @@ i.e. using the testsuite with both positive and negative integration tests.
 
 Management model unit tests will be added as standard.
 Integration tests will be added to test this feature.
-Test QE plan should ideally include performance comparison with `ASYM_ENCRYPT` with `AUTH` vs native TLS.
+Any test QE plan should ideally include performance comparison with `ASYM_ENCRYPT` with `AUTH` vs native TLS.
 
 == Community Documentation
 
