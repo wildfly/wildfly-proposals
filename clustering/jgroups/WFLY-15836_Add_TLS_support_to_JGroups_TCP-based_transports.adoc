@@ -113,6 +113,8 @@ This feature builds on verified security concepts,
 so we need to verify is that the configuration is properly picked up,
 i.e. using the testsuite with both positive and negative integration tests.
 
+For management RBAC purposes, the attributes referencing the Elytron SSL contexts will be marked as security sensitive for reads and writes, using the standard SensitiveTargetAccessConstraintDefinition.SSL_REF.
+
 [[test_plan]]
 == Test Plan
 
