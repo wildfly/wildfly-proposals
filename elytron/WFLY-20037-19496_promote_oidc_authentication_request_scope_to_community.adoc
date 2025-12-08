@@ -1,0 +1,152 @@
+---
+categories:
+ - elytron
+ - security
+stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/720
+feature-team:
+ developer: pedro-hos
+ sme:
+  - darranl
+ outside-perspective:
+  - jmesnil
+promotes:
+ - https://issues.redhat.com/browse/WFLY-20037
+ - https://issues.redhat.com/browse/WFLY-19496
+promoted-by:
+---
+
+= Promote OIDC Authentication with Request and Scope parameters to community stability
+:author:            Pedro Silva
+:email:             pesilva@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+OpenID Connect is an authentication mechanism that builds on OAuth 2.0 and allows a user to login to a web application using credentials established by an OpenID provider.
+
+**OIDC whith Additional Scope Values**
+
+WildFly 32 includes the https://docs.wildfly.org/wildfly-proposals/elytron/WFLY-16532-additional-scope-for-auth-request.html[ability to add additional scope values when securing applications using OpenID Connect (OIDC)]. It has now had four releases of bake at preview level and should be promoted to community.
+
+**OIDC whith Request Parameters**
+
+WildFly 33 https://docs.wildfly.org/wildfly-proposals/elytron/WFLY-17143-request-uri-parameters.html[includes the ability to send the request object as a Json Web Token (JWT) when securing an application using OIDC]. The feature also includes the ability to sign and/or encrypt the JWT for added security. It has now had three releases of bake at preview level and should be promoted to community.
+
+=== User Stories
+
+* I'm a developer who wants to use the OpenID Connect to login to my web application using credentials established by an OpenID provider, and I need to use aditional scope values and request parameters on my application. This is possible using WildFly with `preview` stability, but I need it at `community` stability.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-20037
+* https://issues.redhat.com/browse/WFLY-19496
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly[WildFly]
+* https://github.com/wildfly-security/wildfly-elytron[WildFly Elytron]
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+**OIDC whith Additional Scope Values**
+
+* A new attribute named `scope` will be added to the `secure-deployment` and the `secure-server` resources under the `elytron-oidc-client` subsystem. It will be available when the server is running at `community` stability.
+
+**OIDC whith Request Parameters**
+
+* Some new attributes named `authentication-request-format`, `request-object-signing-algorithm`, `request-object-encryption-alg-value` and `request-object-encryption-enc-value` will be added to the `secure-deployment`, `secure-server`, `realm` and `provider` resources under the elytron-oidc-client subsystem. 
+* It is possible to specify the algorithm used to sign the JWT request using the `request-object-signing-algorithm` attribute which will also be added to the resources specified above. This algorithm must be one of the Request Object signature algorithms supported by the OpenID provider.
+** The values for `request-object-signing-algorithm` attribute are of type String. Default value for this attribute would be none, specifying that the request would be sent as a plaintext. In order to sign the jwt using an algorithm other than none, the user must specify the KeyPair used. This can be done using the `request-object-signing-keystore-file`, `request-object-signing-keystore-password`, `request-object-signing-key-password`, `request-object-signing-key-alias` and `request-object-signing-keystore-type` attributes.
+
+It will be available when the server is running at `community` stability.
+
+=== Non-Requirements
+
+== Future Work
+
+== Backwards Compatibility
+
+=== Default Configuration
+
+No incompatibility.
+
+=== Importing Existing Configuration
+
+No incompatibility.
+
+=== Deployments
+
+For standard WildFly, no change in deployment behavior as the basic implementation is unchanged.
+
+=== Interoperability
+
+No incompatibility.
+
+== Implementation Plan
+
+Move
+
+== Admin Clients
+
+**OIDC whith Additional Scope Values**
+
+* A new attribute named `scope` will be added under the `elytron-oidc-client` subsystem.
+
+**OIDC whith Request Parameters**
+
+* The following paramenters will be added under the `elytron-oidc-client` subsystem:
+** `authentication-request-format`;
+** `request-object-encryption-alg-value`;
+** `request-object-encryption-enc-value`;
+** `request-object-signing-algorithm`;
+** `request-object-signing-key-alias`;
+** `request-object-signing-key-password`;
+** `request-object-signing-keystore-file`;
+** `request-object-signing-keystore-password`;
+** `request-object-signing-keystore-type`.
+
+== Security Considerations
+
+None
+
+== Implementation Plan
+
+* Update Elytron OIDC Client documentation to `community` instead of `preview`;
+* Update Elytron OIDC Subsystem Schema to `community` instead of `preview`;
+* Update all OIDC client source code to `community`instead of `preview`;
+* Update all tests required to OIDC client to `community` instead of `preview`;
+
+[[test_plan]]
+== Test Plan
+
+* WildFly Elytron test suite: Integration test cases implemented to test for functionality.
+* WildFly test suite: Ensuring the correct scope is specified in the authentication request and used when the `scope` attribute is changed. The token will be checked for the correct claims obtained using the scope values configured.
+* WildFly Testsuite: Test cases will be added to check for subsystem parsing.
+** Additional integration tests will be added to test the full functionality of the `elytron-oidc-subsystem` when `request` or `request_uri` are configured.
+** Tests will be performed using signed (using symmetric and asymmetric keys), unsigned, encrypted and plaintext JWT requests, with the request specified both by value and by reference.
+* Tests will be added for both subsystem and deployment configuration.
+* Tests may be added to ensure that the subsystem configuration would fail if the stability level is not defined appropriately.
+
+== Community Documentation
+
+* https://docs.wildfly.org/36/Admin_Guide.html#scope-configuration[Scope Configuration Information] will be updated to note the subsystem is at `community` stability.
+* https://docs.wildfly.org/36/Admin_Guide.html#sending-a-request-object-as-a-jwt[Sending a Request Object as a JWT Information] will be updated to note the subsystem is at `community` stability.
+
+== Release Note Content
+
+This feature allows authentication requests to be sent as a signed and encrypted request object using request and request_uris, also scope parameters.
