@@ -10,7 +10,7 @@ feature-team:
    - https://github.com/starksm64
    - https://github.com/gavinking
   outside-perspective:
-   - James Perkins
+   - https://github.com/jamezp/
 promotes:
 promoted-by:
 ---
