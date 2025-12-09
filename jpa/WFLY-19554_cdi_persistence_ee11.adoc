@@ -3,7 +3,7 @@ categories:
   - jpa
   - weld
 stability-level: community
-issue: https://issues.redhat.com/browse/WFLY-19554
+issue: https://github.com/wildfly/wildfly-proposals/issues/772
 feature-team:
   developer: Scott Marlow
   sme:
