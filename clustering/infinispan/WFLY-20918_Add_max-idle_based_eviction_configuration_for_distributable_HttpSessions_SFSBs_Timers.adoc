@@ -9,7 +9,7 @@ feature-team:
  sme:
   - pferraro
  outside-perspective:
-  -
+  - jasondlee
 promotes:
 promoted-by:
 ---
