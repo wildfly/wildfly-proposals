@@ -106,6 +106,8 @@ No further coordination is necessary.
 == Admin Clients
 
 * Management clients need to take into account the two additional management model attributes with SSLContext references.
+** JBoss CLI doesn't require changes as it supports everything natively.
+** HAL will require subsequent changes tracked as https://issues.redhat.com/browse/HAL-2043
 
 == Security Considerations
 
