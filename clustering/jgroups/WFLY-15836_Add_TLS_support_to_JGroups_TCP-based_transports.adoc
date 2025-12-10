@@ -36,7 +36,7 @@ User is wanting to secure internal cluster TCP communication using TLS leveragin
 == Issue Metadata
 
 * https://issues.redhat.com/browse/WFLY-15836[WFLY-15836 Add TLS support to JGroups TCP-based transports]
-* https://issues.redhat.com/browse/EAP7-1865[EAP7-1865 Add TLS support to JGroups TCP-based transports]
+// * https://issues.redhat.com/browse/EAP7-1865[EAP7-1865 Add TLS support to JGroups TCP-based transports]
 
 === Related Issues
 
