@@ -147,9 +147,7 @@ Nevertheless, the current plan is to deliver all of these withing a single chang
 This feature will be fully compatible with existing admin clients:
 
 * CLI will be able to read and write the new 'idle-threshold' configuration attributes
-* HAL (Admin Console) will require updates to expose the new configuration options in the UI
-
-Follow-up issues will be created to track HAL enhancements once the core management model changes are defined.
+* HAL (Admin Console) does not require updates to expose the new configuration options in the UI as this is done automatically (this will be verified in a manual test, and follow-up issues will be created to track HAL enhancements if required)
 
 == Security Considerations
 
