@@ -30,7 +30,7 @@ While this approach works in many scenarios, it presents challenges when server-
 Different session objects, stateful session beans, or timer instances can have vastly different memory footprints,
 making it difficult to predict and manage resource usage effectively with count-based limits alone.
 
-This proposal introduces max-idle based eviction configuration for distributable HttpSessions, Stateful Session Beans (SFSBs), and EJB Timers.
+This proposal introduces idle time-based eviction configuration for distributable HttpSessions, Stateful Session Beans (SFSBs), and EJB Timers.
 This enhancement will provide administrators with more flexible and predictable eviction strategies,
 particularly beneficial in distributed computing environments where managing memory and resource utilization is critical.
 
@@ -50,8 +50,8 @@ so that I can better manage memory usage when my sessions and beans have highly 
 === Related Issues
 
 * https://issues.redhat.com/browse/WFLY-20918[WFLY-20918] Add idle time-based eviction configuration for distributable HttpSessions, SFSBs, Timers
+* https://issues.redhat.com/browse/WFLY-20839[WFLY-20839] Remove max-active-timers from default configuration
 
-* https://issues.redhat.com/browse/WFLY-20839[WFLY-20839] Remove max-active-timers from default configuration (not in the scope of the RFE)
 * https://issues.redhat.com/browse/WFLY-20842[WFLY-20842] TinyLFU is not appropriate for EJB timer use case (not in the scope of the RFE)
 
 === Affected Projects or Components
@@ -72,11 +72,11 @@ so that I can better manage memory usage when my sessions and beans have highly 
 
 === Hard Requirements
 
-* Provide configuration options for max-idle based eviction for distributable HttpSessions
-* Provide configuration options for max-idle based eviction for Stateful Session Beans (SFSBs)
-* Provide configuration options for max-idle based eviction for EJB Timers
+* Provide configuration options for `idle-threshold` based eviction for distributable HttpSessions
+* Provide configuration options for `idle-threshold` based eviction for Stateful Session Beans (SFSBs)
+* Provide configuration options for `idle-threshold` based eviction for EJB Timers
 * Configuration must be available through management model
-* The max-idle eviction mechanism must work alongside existing count-based eviction mechanisms
+* The `idle-threshold` eviction mechanism must work alongside existing count-based eviction mechanisms
 ** Documentation must clearly explain the interaction between count-based and idle-time-based eviction when both are configured
 * The eviction behavior must be consistent across all three types of distributed state (sessions, SFSBs, timers)
 
@@ -87,7 +87,7 @@ N/A
 === Non-Requirements
 
 * This proposal does not change the underlying clustering or replication mechanisms
-* This proposal does not introduce new eviction algorithms beyond max-idle time-based eviction
+* This proposal does not introduce new eviction algorithms beyond `idle-threshold` time-based eviction
 * Migration of existing count-based configurations to idle-based configurations or combination of such.
 
 === Future Work
@@ -105,13 +105,13 @@ N/A
 
 This enhancement maintains full backwards compatibility.
 Existing count-based eviction configurations will continue to function as before.
-The new max-idle configuration options are additive and optional.
+The new `idle-threshold` configuration options are additive and optional.
 
 === Default Configuration
 
 The default configuration will not change.
 Count-based eviction limits will remain as the default mechanism.
-Administrators must explicitly configure max-idle based eviction if they wish to use it.
+Administrators must explicitly configure `idle-threshold` based eviction if they wish to use it.
 
 === Importing Existing Configuration
 
@@ -163,19 +163,19 @@ Data is written to the disk same way as the existing passivation mechanism.
 
 This feature targets the default stability level and requires comprehensive testing:
 
-* Unit tests for eviction logic verifying that objects are evicted after the configured idle time
-* Integration tests verifying correct behavior when both count-based and idle-based eviction are configured
+* Unit tests for eviction logic verifying that objects are evicted after the configured idle time (tested upstream)
+* Integration tests verifying correct behavior when count-based and idle-based eviction are configured
 * Integration tests for each distributed state type (HttpSessions, SFSBs, Timers)
-* Performance tests to ensure eviction processing does not introduce significant overhead
+* Performance tests to ensure eviction processing does not introduce significant overhead (downstream)
 * Manual testing of edge cases: rapid access patterns preventing eviction, configuration changes at runtime, eviction under load
 * Compatibility testing with existing configurations to ensure backwards compatibility
 * Management model tests verifying the new attributes are properly exposed via CLI and management API
 
 Testing will verify:
 
-* Objects idle longer than the configured max-idle time are evicted
-* Recently accessed objects are not evicted regardless of overall cache size
-* Eviction statistics are accurately reported
+* Objects idle longer than the configured idle-threshold time are evicted
+* Recently accessed objects are not evicted based on idle-threshold
+* Eviction statistics are accurately reported (future work)
 * Configuration changes take effect without requiring server restart
 * Behavior under high concurrency and load conditions
 
@@ -184,13 +184,13 @@ Testing will verify:
 Documentation will be added to the WildFly documentation as part of the implementation PR.
 Specific sections will cover:
 
-* Configuration of max-idle based eviction for each distributed state type
+* Configuration of idle-threshold based eviction for each distributed state type
 * Interaction between count-based and idle-based eviction
 * Best practices for choosing between eviction strategies
 * Monitoring and troubleshooting eviction behavior
 
 == Release Note Content
 
-WildFly now supports idle time-based eviction (using the `idle-thresold` attributes) for distributable HttpSessions, Stateful JEB Beans, and JEB Timers.
+WildFly now supports idle time-based eviction (using the `idle-threshold` attributes) for distributable HttpSessions, Stateful EJBs, and EJB Timers.
 This provides administrators with more flexible resource management options, particularly useful when distributed state objects have highly variable sizes.
 The new configuration allows eviction based on how long a state object has been idle, complementing the existing count-based eviction mechanism.
