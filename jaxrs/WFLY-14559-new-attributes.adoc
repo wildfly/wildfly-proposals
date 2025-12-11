@@ -1,0 +1,130 @@
+---
+categories:
+ - jaxrs
+ - management
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/760
+feature-team:
+ developer: jamezp
+ sme:
+  - tommaso-borgato
+ outside-perspective:
+  - Raul Chettri
+---
+
+= Add RESTEasy Configuration Attribute to `jaxrs` Subsystem
+:author:            James R. Perkins
+:email:             jperkins@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+RESTEasy provides configuration parameters referred to as "context parameters". The context parameters can be set in
+various ways from system properties to Jakarta Servlet context parameters. Another way of setting these context parameters,
+is via the `jaxrs` subsystem.
+
+The advantage of setting these in the `jaxrs` subsystem is the settings apply to all deployments unless explicitly
+overridden in the deployment. It also offers better validation of the values.
+
+=== User Stories
+
+As an administrator I want to globally change one of the mentioned context parameters without having to update
+every deployment.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-14559[WFLY-14559]
+* https://issues.redhat.com/browse/RESTEASY-2782[RESTEASY-2782]
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+The following attribute should be added to the `jaxrs` subsystem:
+
+* https://issues.redhat.com/browse/RESTEASY-2782[RESTEASY-2782] `resteasy-original-webapplicationexception-behavior` : Defaults to `false`. Set to `true`, this parameter will restore the original behavior in which a Client running in a resource method will throw a Jakarta RESTful Web Services `WebApplicationException` instead of a RESTEasy version with a sanitized Response.
+
+This attribute will be added with its respective default. The value of the attribute will be used to set implicit
+servlet context parameters on each deployment. This will only be set if the context parameter was not already set as
+a servlet context parameter by the application being deployed.
+
+=== Non-Requirements
+
+N/A
+
+=== Future Work
+
+N/A
+
+== Backwards Compatibility
+
+There should be no backwards compatibility issues. This option is already available to be set via other means.
+
+=== Default Configuration
+
+This is a new attribute, but given it has a default it should not change the current configuration.
+
+=== Importing Existing Configuration
+
+This will have no effect on existing configurations given this is a new attribute with a default value.
+
+=== Deployments
+
+Deployments should not be affected by this change.
+
+=== Interoperability
+
+N/A
+
+== Implementation Plan
+
+The implementation will be to simply add the new attribute to the subsystem. In a `DeploymentUnitProcessor`, which
+already exists, the attribute will be converted into a context property set in the servlet context parameters. The
+value from the subsystem will not overwrite values defined in the `web.xml` of the deployment being processed.
+
+== Admin Clients
+
+This will be a simple attribute that should not require any additional work for the admin clients.
+
+== Security Considerations
+
+There should be no impact on the security considerations here.
+
+[[test_plan]]
+== Test Plan
+
+The attribute will have an integration test added as well as subsystem model tests. The testing framework to test
+the attribute already exists.
+
+== Community Documentation
+
+There is already documentation for the configuration option in the https://docs.resteasy.dev[RESTEasy documentation].
+The attribute will have documentation in the management model and therefore in the model description available with the
+WildFly documentation. There will be no further documentation requirements needed.
+
+== Release Note Content
+
+A new attribute has been added to the `jaxrs` subsystem which was previously only available by configuring the
+context parameter at a deployment level. Configuring this at the subsystem level will apply it to all deployments,
+unless the deployment itself explicitly sets the parameter.
+
+* `resteasy-original-webapplicationexception-behavior` : Defaults to `false`. Set to `true`, this parameter will restore
+the original behavior in which a Client running in a resource method will throw a Jakarta RESTful Web Services
+`WebApplicationException` instead of a RESTEasy version with a sanitized Response. Further documentation can be
+found in the https://docs.resteasy.dev/6.2/userguide/#_resteasywebapplicationexception[RESTEasy documentation].
