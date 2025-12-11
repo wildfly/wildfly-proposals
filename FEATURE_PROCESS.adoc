@@ -224,8 +224,9 @@ addition.  Higher level client integration is not required.
 Existing higher level views and commands in the admin clients must be
 compatible with the new functionality.
 
-New higher level views and command in the admin clients are not mandatory
-unless required for the feature to be considered "complete".
+The new functionality is not required to be configurable using the admin
+clients but issue trackers must be raised if appropriate in the relevent
+projects to add support in a future release.
 
 | Same as Community
 
