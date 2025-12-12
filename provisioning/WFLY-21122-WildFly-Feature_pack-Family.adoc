@@ -1,0 +1,239 @@
+---
+categories:
+  - wf-galleon
+stability-level: preview
+issue: https://github.com/wildfly/wildfly-proposals/issues/764
+feature-team:
+ developer: jfdenise
+ sme:
+  - jmesnil
+  - bstansberry
+ outside-perspective:
+  - ehsavoie
+---
+= WildFly Feature Packs, family and criteria
+:author:            Jean-Francois Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This proposal defines the impact on the WildFly feature-packs in order to benefit from the 
+Galleon feature-pack family and criteria feature. This feature offers flexibility at provisioning time 
+as well as a stricter contract at the feature-pack dependency level.
+
+Possible application
+
+* Provision the extra WildFly feature-packs (datasources, cloud, grpc, ...) with WildFly or WildFly Preview feature-packs.
+* Provision the WildFly deployment transformer feature-pack with any of WildFly, WildFly EE, or WildFly Preview feature-packs.
+* Abort provisioning of incompatible feature-packs.
+
+Future possible application:
+
+* Provision WildFly feature-packs (WildFly and extra feature-packs) with a different WildFly EE feature-pack that would implement 
+a different Jakarta EE version.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-21122[WFLY-21122]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/GAL-376[GAL-376]
+* https://issues.redhat.com/browse/WFGP-300[WFGP-300]
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly[WildFly] project.
+
+=== Other Interested Projects
+
+* https://github.com/wildfly/wildfly-cloud-galleon-pack[WildFly cloud feature pack] project.
+* https://github.com/wildfly/wildfly-datasources-galleon-pack[WildFly datasources feature pack] project.
+* https://github.com/wildfly-extras/wildfly-grpc-feature-pack[WildFly GRPC feature-pack] project.
+* https://github.com/wildfly/wildfly-myfaces-feature-pack[WildFly MyFaces feature-pack] project.
+* https://github.com/keycloak/keycloak[WildFly Keycloak feature-pack] project.
+* https://github.com/wildfly-extras/wildfly-graphql-feature-pack[WildFly GraphQL feature-pack] project.
+* https://github.com/wildfly-extras/wildfly-ai-feature-pack[WildFly Generative AI feature-pack] project.
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+The following feature-packs are part of the `wildfly` family:
+
+* WildFly EE feature-pack
+* WildFly feature-pack
+* WildFly Preview feature-pack
+
+A family groups feature-packs inside a namespace in which the following criteria are to be interpreted. 
+
+A set of criteria to bootstrap the approach (using current WildFly 38 status):
+
+* `jakarta-ee-deployment`: ability to deploy applications "a la" Jakarta EE. The feature-packs that are expected to depend on the criteria:
+** The deployment transformer feature-pack.
+* `jakarta-ee-10+`: An implementation of the Jakarta EE spec with min version being EE 10. 
+A feature-pack implementing this criterion provides the APIs, spec impls and Galleon resources 
+that are compatible between EE 10 and a later EE versions that are supported by the WildFly project. 
+The feature-packs that are expected to depend on the criteria:
+** datasources and keycloak feature-packs.
+** WildFly feature-pack until some day when it requires something > 10.
+** Any other feature-pack similar to WildFly feature-pack.
+* `jakarta-ee-10`: An implementation of the Jakarta EE spec version 10. The feature-packs that are expected to depend on the criteria:
+** Any feature-pack that would require EE 10.
+* `jakarta-ee-11`: An implementation of the Jakarta EE spec version 11. The feature-packs that are expected to depend on the criteria:
+** Any feature-pack that would require EE 11.
+* `microprofile-7.1+`: An implementation of the MicroProfile platform spec with min version being 7.1. 
+A feature-pack implementing this criterion provides the APIs, spec impls and Galleon resources 
+that are compatible between MicroProfile Platform 7 and a later MicroProfile Platform versions that are supported by the WildFly project. The feature-packs that are expected to depend on the criteria:
+** Cloud feature-pack that has a dependency on `microprofile-config`. 
+** Other feature-packs that depend on MicroProfile platform API.
+* `microprofile-7.1`: An implementation of the MicroProfile platform spec version 7.1.
+** Any feature-pack that would require MicroProfile platform spec version 7.1.
+
+The set of criteria can evolve (new ones added, some removed) during the life time of the WildFly project.
+
+Some criteria could have a longer life (e.g: `jakarta-ee-10+`) than some others (e.g.: `microprofile-7.1` that is bound to a specific version).
+
+The benefit of criteria is that feature-packs that depend on WildFly feature-packs criteria will have a clearer contract 
+than the today feature-pack producer name (that doesn't capture the criteria information).
+For example, a feature-pack expecting `jakarta-ee-10` and not compatible with `jakarta-ee-12` 
+would be expected to fail when provisioned with a future WildFly release.
+
+The criteria of a feature-pack can be inherited by the feature-packs that depend on it. Not all criteria are automatically inherited; a selection of 
+criteria to inherit can be configured (see `Implementation notes` for details).
+
+Each feature-pack would expose the following set of criteria:
+
+* WildFly EE feature-pack: `jakarta-ee-deployment`, `jakarta-ee-10+`, `jakarta-ee-10`
+* WildFly feature-pack: `microprofile-7.1+`, `microprofile-7.1` + the following ones inherited from WildFly EE : `jakarta-ee-deployment`, `jakarta-ee-10+`
+* WildFly Preview feature-pack: `jakarta-ee-deployment`, `jakarta-ee-10+`, `jakarta-ee-11`, `microprofile-7.1+`, `microprofile-7.1`
+
+=== Hard Requirements
+
+* Allow to provision WildFly or WildFly Preview with other feature-packs compatible with the defined criteria.
+* Suppress (or at least deprecate and remove in a next version) the extra Preview feature-packs that have been defined to work with WildFly Preview: 
+cloud Preview, datasources Preview and GRPC Preview.
+* No enforcement for extra feature-packs to benefit from this feature. Already released feature-pack could be provisioned with new WildFly feature-packs
+
+NOTE: The precise details of what a feature pack meeting a particular criteria must provide will often not be precisely defined. 
+Feature pack authors who want to allow selection of a dependency FP via a criteria must discuss with 
+the maintainers of the feature packs that advertise that criteria whether their feature packs are suitable for use as a dependency.
+
+=== Implementation notes
+
+The changes in the WildFly project are:
+
+* Bump to Galleon 7.x and WildFly Galleon Plugins 8.1.x
+* Update the three `wildfly-feature-pack-build.xml` files to define their family and criteria.
+* Update the WildFly full `wildfly-feature-pack-build.xml` file to inherit criteria from its WildFly EE dependency.
+
+`wildfly-feature-pack-build.xml` extract:
+
+```
+<build xmlns="urn:wildfly:feature-pack-build:3.5" producer="wildfly@maven(org.jboss.universe:community-universe):current">
+    <family name="wildfly">
+      <criteria name="microprofile-7.1+"/>
+      <criteria name="microprofile-7.1"/>
+    </family>
+    <dependencies>
+        <dependency group-id="org.wildfly" artifact-id="wildfly-ee-galleon-pack" allowedFamily="wildfly:jakarta-ee-deployment,jakarta-ee-10+">
+    ...
+</build>
+```
+
+The `allowedFamily` attribute defines the criteria that are inherited from `wildfly-ee-galleon-pack`. We can see that `jakarta-ee-11` is not inherited.
+This is a choice to not bound WildFly feature-pack to a specific version of Jakarta EE. This choice could be revisited.
+
+An example of a feature-pack that depends on WildFly EE 10:
+
+```
+<build xmlns="urn:wildfly:feature-pack-build:3.5" producer="org.example:myfeaturepack">
+    <dependencies>
+        <dependency group-id="org.wildfly" artifact-id="wildfly-ee-galleon-pack" allowedFamily="wildfly:jakarta-ee-10">
+    <dependencies>
+    ...
+</build>
+```
+
+The `allowedFamily` attribute contains the `<family>:[comma separated list of criterion]`. It is expected that the dependency be part of the 
+mentioned family and implements the listed criteria. Any error must be reported at feature-pack build time.
+
+=== Non-Requirements
+
+* It is not a requirement that the same set of exposed criteria is present for each new WildFly Major releases.
+* It is not a requirement that WildFly not introduce incompatible changes in its contracts in a new Major release. 
+This feature does not introduce new compatibility guarantees across releases beyond what WildFly already provides.
+
+=== Future Work
+
+* Introduce an 'or' operator for criteria that you are expecting from a dependency. Something like: `wildfly:jakarta-ee10|jakarta-ee11,...`. 
+Feature packs will rely on dependents using that instead of providing criteria like `jakarta-ee10+`.
+
+* Potential impact for WildFly Glow. Today WildFly Glow CLI and its integration in the WildFly Maven Plugin offer the `wildfly-preview` option to contextualize the feature-packs discovery to use WildFly Preview feature-packs. This option should be deprecated
+and a new option `wildfly-variant=<variant name>` should be introduced. An immediate variant is `preview`, but new ones could be introduced in the future.
+
+
+== Backwards Compatibility
+
+* This evolution is transparent and doesn't require an evolution of the provisioning tooling (WildFly Maven Plugin, WildFly Glow, ...).
+* New extra feature-packs (that make the choice to benefit from this feature) will still be compatible with 
+older WildFly releases (unless they choose to become incompatible for other reasons.). Although it is advised to use the latest WildFly release.
+* Older extra feature-packs will be compatible with new WildFly releases that contains this evolution (unless WildFly has changed incompatibly for some other reason.).
+
+=== Default Configuration
+
+No impact.
+
+=== Importing Existing Configuration
+
+No impact.
+
+=== Deployments
+
+No impact.
+
+=== Interoperability
+
+No impact.
+
+== Admin Clients
+
+No impact.
+
+== Security Considerations
+
+No impact.
+
+== Test Plan
+
+* The WildFly non regression testing.
+* Extra feature-packs testing.
+* New tests developed for extra feature-packs that want to support WildFly Preview.
+** Validate that the extra feature-pack can be provisioned and run with WildFly Preview. 
+
+== Community Documentation
+
+* Galleon doc must be updated to expose the concepts. XSD must be updated.
+* WildFly Galleon Plugins doc for `wildfly-feature-pack-build.xml` file must be updated to expose the new XML content. XSD must be updated.
+* WildFly extra feature-packs should document with which WildFly feature-packs they can be provisioned with.
+* Document family and criteria in the WildFly documentation. The WildFly Catalog should reflect this information.
+
+== Release Note Content
+
+* WildFly feature-packs now support Galleon families and criteria, 
+enabling flexible provisioning of extra feature-packs (datasources, cloud, gRPC, etc.) 
+with either WildFly or WildFly Preview while enforcing compatibility contracts at build time.
