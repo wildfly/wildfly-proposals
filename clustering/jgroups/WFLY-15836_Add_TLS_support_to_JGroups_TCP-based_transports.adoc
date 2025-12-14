@@ -1,0 +1,136 @@
+---
+categories:
+  - clustering
+  - cloud
+  - openshift
+stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/759
+feature-team:
+ developer: rhusar
+ sme:
+  - pferraro
+ outside-perspective:
+  - darranl
+promotes:
+promoted-by:
+---
+= WFLY-15836 Add TLS support to JGroups TCP-based transports
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The JGroups project has added support for TLS at the transport level.
+This was implemented as part of https://issues.redhat.com/browse/JGRP-2487[JGRP-2487] and subsequent enhancements.
+Supporting this configuration in WildFly would effectively replace usage of `ASYM_ENCRYPT` in conjunction with `AUTH` protocol.
+This would simplify the process of securing a JGroups channel using standard TLS mechanisms.
+
+=== User Stories
+
+User is wanting to secure internal cluster TCP communication using TLS leveraging Elytron subsystem capabilities.
+
+== Issue Metadata
+
+* https://issues.redhat.com/browse/WFLY-15836[WFLY-15836 Add TLS support to JGroups TCP-based transports]
+// * https://issues.redhat.com/browse/EAP7-1865[EAP7-1865 Add TLS support to JGroups TCP-based transports]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/JGRP-2487[JGRP-2487 Support TLS in TCP] (JGroups)
+
+=== Affected Projects or Components
+
+* N/A
+
+=== Other Interested Projects
+
+* N/A
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+The TCP-based transports (namely `TCP` and `TCP_NIO2`) defined in the JGroups subsystem can be configured with references to the Elytron SSL contexts.
+A client and server SSLContexts are referenced (both are required if defined)
+
+=== Changed requirements
+
+* N/A
+
+=== Non-Requirements
+
+* N/A
+
+=== Future Work
+
+* https://issues.redhat.com/browse/WFLY-19459[WFLY-19459 Add DTLS support to JGroups UDP-based transports w/multicast disabled]
+
+== Backwards Compatibility
+
+This is a new opt-in feature and does not affect backwards compatibility since we don't support heterogeneous clusters.
+Configuring this in e.g. mixed domain support will reject the new attributes.
+
+=== Default Configuration
+
+The default configuration will not be changed.
+Users will have to configure this explicitly.
+
+=== Importing Existing Configuration
+
+* None; no effect on existing configurations.
+The configuration is opt-in.
+
+=== Deployments
+
+* None; does not interact with deployments in any way.
+It is transparent to deployments.
+
+=== Interoperability
+
+* N/A
+
+== Implementation Plan
+
+This feature will be delivered in a single PR to WildFly upstream repository.
+No further coordination is necessary.
+
+== Admin Clients
+
+* Management clients need to take into account the two additional management model attributes with SSLContext references.
+** JBoss CLI doesn't require changes as it supports everything natively.
+** HAL will require subsequent changes tracked as https://issues.redhat.com/browse/HAL-2043
+
+== Security Considerations
+
+This feature builds on verified security concepts,
+so we need to verify is that the configuration is properly picked up,
+i.e. using the testsuite with both positive and negative integration tests.
+
+For management RBAC purposes, the attributes referencing the Elytron SSL contexts will be marked as security sensitive for reads and writes, using the standard SensitiveTargetAccessConstraintDefinition.SSL_REF.
+
+[[test_plan]]
+== Test Plan
+
+Management model unit tests will be added as standard.
+Integration tests will be added to test this feature.
+Any test QE plan should ideally include performance comparison with `ASYM_ENCRYPT` with `AUTH` vs native TLS.
+
+== Community Documentation
+
+Documentation will be included along the implementation's pull request and will reside in the High Availability Guide.
+It will also include motivation for securing intra-cluster communication.
+
+== Release Note Content
+
+WildFly now supports TLS configuration for TCP-based transport protocols.
+This can be used to effectively replace `ASYM_ENCRYPT` with `AUTH` protocols in the existing JGroups stack.
+Please refer to our 'High Availability Guide' in the user documentation for more information.
