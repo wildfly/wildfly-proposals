@@ -139,7 +139,7 @@ Example
        - This is an optional parameter.  If defined, it can not be the empty string or null.
        - Elytron checks for Keycloak's "typ", "Logout" and "logout+jwt" by default.
 
-Note Keycloak does not support configuring both back-channel and front-channel logout for the same application.
+Note An application can not be configured for both back-channel and front-channel logout.
 
 === Testing Configuration option values.
 Tests will be created to check the restrictions to the configuration option values.  An exception will be thrown when the value is invalid.
@@ -161,9 +161,10 @@ Tests will be created to check the restrictions to the configuration option valu
 // Use this section to explicitly discuss things that readers might think are required
 // but which are not required.
 The ability to specify the `logout_hint` and `client_id` for RP-Initiated Logout is a
-non-requirement. Neither or these are required since we'll be passing the `id_token_hint`
+non-requirement. Neither of these are required since we'll be passing the `id_token_hint`
 in the logout request. The `logout_hint` isn't supported by all OpenID providers.
 
+Logout of all end-user sessions at once is not currently supported. Logout per end-user session id is implemented.
 
 === Future Work
 // Use this section to discuss requirements that are not addressed by this proposal
