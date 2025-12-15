@@ -1,0 +1,194 @@
+---
+categories:
+  - elytron
+  - security
+stability-level: preview
+issue: https://github.com/wildfly/wildfly-proposals/issues/676
+feature-team:
+ developer: rsearls
+ sme:
+  - darren.lofthouse
+  - psilva
+outside-perspective:
+---
+= [Preview] WFLY-19314 Logout Support for OIDC
+:author:            Rebecca Searls
+:email:             rsearls@redhat.com  rsearls@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+It is currently possible to secure applications deployed to WildFly using OpenID Connect (OIDC),
+as specified in the https://openid.net/specs/openid-connect-core-1_0.html[OpenID Connect Core 1.0 spec].
+
+There are additional optional OIDC specifications that may be used in addition to the Core spec to
+provide support for logging out:
+
+* https://openid.net/specs/openid-connect-rpinitiated-1_0.html[RP-Initiated Logout] is an optional
+OIDC specification that defines how a relying party (RP) can request that an OpenID provider logs
+out the end-user.
+* https://openid.net/specs/openid-connect-frontchannel-1_0.html[Front-Channel Logout] is an optional
+OIDC specification that defines a front-channel logout mechanism that does not use an OP iframe on RP
+pages.
+* https://openid.net/specs/openid-connect-backchannel-1_0.html[Back-channel Logout] is an
+optional OIDC specification that defines a logout mechanism that uses direct back-channel communication
+between the OP and RPs being logged out.
+
+This RFE is to add support for these three types of logout mechanisms when securing apps deployed to
+WildFly with OIDC.
+
+=== User Stories
+* A gaming portal uses wildfly to provide customers access to select games, a gaming email
+    and chat app.  When the portal detects a user's session has expired for non-activity
+    the user is logged out of all applications opened during the session,
+    (OIDC backchannel-logout).
+
+* A gaming portal uses wildfly to provide customers access to select games, email,
+    and chat.  When the user logs out of the portal all currently open applications
+    are also logged out, (OIDC frontchannel-logout).
+
+== Issue Metadata
+
+=== Related Issues
+* https://issues.redhat.com/browse/ELY-2534[OIDC logout code implementation in wildfly-elytron]
+* https://issues.redhat.com/browse/WFLY-19959[Increment (preview) version of wildfly-elytron-oidc-client.xsd]
+* https://issues.redhat.com/browse/WFLY-19960[Add OIDC logout configuration elements]
+* https://issues.redhat.com/browse/WFLY-19314[testsuite tests for logout and documentation in docs/src/main/asciidoc/_admin-guide/subsystem-configuration/Elytron_OIDC_Client.adoc]
+*TODO wildfly-core jira for wildfly-elytron version update
+
+=== Affected Projects or Components
+
+* WildFly Elytron
+* WildFly Core
+* WildFly
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+* It will be possible to log out of an application secured with OIDC using RP-Initiated Logout, Front-Channel Logout,
+and Back-Channel Logout.
+* The new configuration options described below will be added for both the `elytron-oidc-client` subsystem configuration
+and the deployment configuration.  To enable this feature via the `elytron-oidc-client` subsystem edit wildfly's
+standalone*.xml file or to enable the feature via the web application provide an oidc.json file with the needed
+options in the applications META-INF directory.  Configuration is needed in only one of these locations.
+* This feature will be available when starting WildFly with the Preview Stability Level.
+
+==== RP-Initiated Logout
+
+For RP-Initiated Logout, we'll make use of the `id_token_hint` in the logout request to the logout endpoint.
+The use of `id_token_hint` is recommended by the spec.
+
+We'll introduce the following new configuration options:
+
+* `logout-path`: This option designates the path component of a URL.  It is the path component to trigger a logout
+of the user.  Elytron uses it to identify a logout request and take the appropriate action internally.  The default
+values is `/logout`.
+- The option can not be declared as an empty string or "/" only
+- It is expected that the text start with a forward slash (e.g. "/").
+- It can be a sequence of path segments (e.g. "/call/back/home")
+* `post-logout-redirect-uri`: This attribute must be an absolute URI.  It must be registered with the OpenId Provider.
+This URI will be called after logout is executed.
+
+
+==== Front-Channel Logout and Back-Channel Logout
+
+For Front-Channel and Back-Channel Logout, we'll introduce the following new configuration options:
+
+* `logout-callback-path`: This is an optional property. It designates the path component of a URL
+which is called after logout has completed.  The declared URL path is appended to the client's application
+context URL.  The default path is `/logout/callback`.
+- The option can not be declared as an empty string or "/" only
+- It is expected that the text start with a forward slash (e.g. "/").
+- It can be a sequence of path segments (e.g. "/call/back/home")
+
+The value of this property can also be an absolute URL.  When the callback URL is outside the client
+application's context an absolute URL is required.
+
+For both scenarios the absolute URL must be registerd with the OpenId Provider.
+
+```
+Example
+	The applications URL is https://localhost:8080/mySecureApp.  Using the default `logout-callback-path` value after logout the user would be sent to address of https://localhost:8080/mySecureApp/logout/callback .
+
+	The applications URL is https://localhost:8080/mySecureApp. If the callback address is to be https://www.wildfly.org/, the user would need to declare `logout-callback-path` to be `https://www.wildfly.org/`
+```
+
+
+* `logout-session-required`: A boolean value. The default value is true
+   - For Front-Channel Logout the boolean value specifies whether the request requires the iss (issuer) and sid (session ID) query parameters be included to identify the session with the OpenId Provider.
+   - For Back-Channel Logout the boolean value specifies whether the request requires the sid (session ID) Claim be included in the Logout Token to identify the session with the OpenId Provider.  This value must be `true` for back-channel logout to be executed.  If the value is `false` the `sid` will be marked for invalidation using a bounded map so that subsequent requests from the user will force the session to be invalidated.
+
+* `back-channel-logout-session-invalidation-limit`: The maximum size for a bounded map when marking sessions for invalidation during back-channel logout. Once this maximum size has been reached, the eldest entry will be removed.  The default size is 16.
+
+* `provider-jwt-claims-typ`: The logout specification defines the default (JWT) Logout Token "typ"
+       string to be "logout+jwt".  If the OpenID Provider uses a different
+       string, it can be specified with this element.
+       - This is an optional parameter.  If defined, it can not be the empty string or null.
+       - Elytron checks for Keycloak's "typ", "Logout" and "logout+jwt" by default.
+
+Note An application can not be configured for both back-channel and front-channel logout.
+
+=== Testing Configuration option values.
+Tests will be created to check the restrictions to the configuration option values.  An exception will be thrown when the value is invalid.
+
+* `logout-path`
+- The value can not be the empty string
+- The value can not be "/" only
+- It must start with the "/" character
+* `post-logout-redirect-uri`
+- an valid absolute URI will be called
+* `logout-callback-path`
+- an valid absolute URI will be called
+* back-channel-logout-session-invalidation-limit
+- The value must be a value greater than 0.
+* Manually test in wildfly to verify that logout can be used with an OpenID provider other than Keycloak, such as Okta or Auth0.
+
+
+=== Non-Requirements
+// Use this section to explicitly discuss things that readers might think are required
+// but which are not required.
+The ability to specify the `logout_hint` and `client_id` for RP-Initiated Logout is a
+non-requirement. Neither or these are required since we'll be passing the `id_token_hint`
+in the logout request. The `logout_hint` isn't supported by all OpenID providers.
+
+
+=== Future Work
+// Use this section to discuss requirements that are not addressed by this proposal
+// but which may be addressed in later proposals.
+
+== Implementation Plan
+
+== Security Considerations
+
+== Test Plan
+
+* Unit tests will be added to wildfly-elytron
+* Integration tests will be added to wildfly testsuite/integration/elytron-oidc-client
+
+== Community Documentation
+
+* Documentation will be added to wildfly, docs/src/main/asciidoc/_admin-guide/subsystem-configuration/Elytron_OIDC_Client.adoc
+
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
