@@ -139,7 +139,7 @@ Example
        - This is an optional parameter.  If defined, it can not be the empty string or null.
        - Elytron checks for Keycloak's "typ", "Logout" and "logout+jwt" by default.
 
-Note Keycloak does not support configuring both back-channel and front-channel logout for the same application.
+Note An application can not be configured for both back-channel and front-channel logout.
 
 === Testing Configuration option values.
 Tests will be created to check the restrictions to the configuration option values.  An exception will be thrown when the value is invalid.
