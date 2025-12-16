@@ -1,0 +1,249 @@
+= WildFly New Thread Pool Implementation
+:author: David Lloyd
+:email: david.lloyd@redhat.com
+:toc: left
+:icons: font
+:keywords: core,threads
+:idprefix:
+:idseparator: -
+
+== Overview
+
+Users have requested that the thread pool exhibit certain behaviors, like reuse of recently-idle
+threads and better scaling behavior, which are not always possible using the
+current `ThreadPoolExecutor`-based pools or the JBoss Threads alternative special-purpose
+pools.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-10056[WFLY-10056]
+* https://issues.jboss.org/browse/WFCORE-3397[WFCORE-3397]
+* https://issues.jboss.org/browse/JBTHR-38[JBTHR-38]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-5332[WFLY-5332]
+* https://issues.jboss.org/browse/WFCORE-1446[WFCORE-1446]
+* https://issues.jboss.org/browse/WFCORE-3608[WFCORE-3608]
+* https://issues.jboss.org/browse/JBTHR-34[JBTHR-34]
+* https://issues.jboss.org/browse/XNIO-312[XNIO-312]
+* https://issues.jboss.org/browse/XNIO-285[XNIO-285]
+
+=== Dev Contacts
+
+* mailto:david.lloyd@redhat.com[David Lloyd]
+
+=== QE Contacts
+
+* mailto:rjanik@redhat.com[Richard Janík]
+
+=== Affected Projects or Components
+
+* JBoss Threads
+* XNIO
+* JBoss MSC
+* WildFly Core
+** IO subsystem
+** Subsystem test framework (``subsystem-test/framework``)
+** Server
+** Host controller
+** Core model test framework (``core-model-test/framework``)
+** Controller
+** Controller Client
+** JConsole CLI plugin
+* WildFly
+** EE Concurrency
+** EJB
+
+=== Other Interested Projects
+
+* Undertow
+* JBoss Remoting
+* Dependents of any of the above
+
+=== Previous solutions
+
+The original threads subsystem suffered from the complication that it supported
+multiple types of thread pools, each with different but non-overlapping
+characteristics.  This created the potential for users to create configurations
+which would suffer from various problems, due to mismatching the thread pool
+type with its target application.
+
+This was a source of motivation for moving the thread pools into subsystem
+configurations: the subsystem would only support the type of thread pool that
+was most correct for that subsystem (which turned out to be, in most or all
+cases, the standard ThreadPoolExecutor, despite its weaknesses).
+
+However, it is still possible to misconfigure a thread pool in a subsystem thereby
+making the system unusable, by making a pool too small or too large for example; solving this is not a goal of this change proposal.
+
+The thread pool sharing portion of change proposal should not introduce any ways to
+misconfigure a subsystem's use of a thread pool which do not already exist today.
+The new behaviors of the thread pool configuration may introduce behavior changes
+but it is not expected that these changes as proposed could introduce new
+potential misconfigurations.  In particular, some of the extra parameters and features
+present in the thread pool are integration aids or for special cases, and will
+not be reflected in the management model, in order to fulfil this requirement.
+
+== Goals & Requirements
+
+=== Goals
+
+* Be able to implement missing requirements from JIRA issues
+* Introduce the ability to share thread pools throughout the application server
+
+=== Requirements
+
+* The thread pool implementation must support the following features of `ThreadPoolExecutor`:
+** Configurable core size
+** Configurable maximum size
+** A configurable fallback (handoff) rejection behavior
+** Core thread prestart (API only)
+** Keep alive time
+** Toggle to allow core threads to time out
+** Configurable thread factory (at startup only)
+* The following metrics should be supported (some may be switchable in the event
+of a performance cost):
+** Current queue size
+** Largest pool size
+** Active thread count
+** Current pool size
+** Submitted task count
+** Rejected task count
+** Completed task count
+* The following additional tunable parameters may be supported:
+** Configurable maximum queue length
+** Configurable execution exception handler
+* The thread pool core and maximum sizes must be tunable consistently
+independently of a configured queue limit (or lack of one)
+* The thread pool must support a configurable queue limit, or no queue limit
+* The thread pool must support a mutable termination task
+* A system property must be provided as a "parachute" to restore old TPE behavior in
+case of an unexpected problem
+
+== Non-Goals & Non-Requirements
+
+=== Non-Goals
+
+* It is not a goal to try to change the overall performance profile of the application server: for now,
+we only want to enhance the features of the thread pool without performance impact.
+* It is not a goal to replace `ScheduledThreadPoolExecutor`, which works just fine as-is.
+* It is not a goal to solve any configuration or validation problems that already exist
+with the current solution of subsystem-hosted thread pools.
+
+=== Non-Requirements
+
+* It is not a requirement to introduce new configuration parameters into the management
+model beyond the existing standard `ThreadPoolExecutor` style parameters at this time.
+
+== Design
+
+The thread pool itself involves a special FIFO/LIFO hybrid queue.  Details of the
+implementation can be found in the source repository https://github.com/jbossas/jboss-threads/blob/master/src/main/java/org/jboss/threads/EnhancedQueueExecutor.java#L77[on GitHub].
+
+== Execution
+
+The change can be performed in multiple phases.  The phases are generally independent,
+and their constituent tasks are generally independent, and can in turn be broken into
+independent pull requests and commits, allowing the changes to be
+performed incrementally without affecting the time-boxed release process of WildFly.
+
+=== Phase 1: Implementation
+
+The thread pool has been implemented and is present in JBoss Threads since
+version 2.3.0.Beta1.
+
+=== Phase 2: Initial integration
+
+JBoss Threads 2.3.0.Final will be released, followed by a pull request into
+WildFly Core which will upgrade the component, as well as switching (at minimum) the following
+subsystems and submodules from `ThreadPoolExecutor` to `EnhancedQueueExecutor`:
+
+* cli
+* controller-client
+* controller
+* host-controller
+* server
+* io, including an XNIO upgrade to 3.6.0.Final
+* MSC, including an MSC upgrade to 1.3.0.Final
+
+==== Phase 2½: WildFly Integration
+
+Other subsystems in WildFly may be updated to the new pool, once the WildFly Core
+changes are integrated:
+
+* Batch
+* Connector
+* Clustering
+
+=== Phase 3: Subsystem
+
+One of two possible approaches may be followed.
+
+==== Approach 1: Revive existing threads subsystem
+
+Bring back the original threads subsystem.  All the thread pool "types" will be
+mapped to different configurations of `EnhancedQueueExecutor`.  Optionally, the
+best-fitting configuration will be retained and possibly expanded, while deprecating
+all the other resource types.
+
+==== Approach 2: A new subsystem
+
+A new thread pool subsystem is introduced with `thread-factory`, `thread-pool`,
+and `scheduled-thread-pool` elements.
+
+==== Common aspects to both approaches
+
+The following capabilities will be reused or introduced:
+
+[cols="m,m,2m,^1",options="header"]
+|===
+|Name
+|Type
+|Provided by
+|Existing
+
+|jboss.executor
+|ExecutorService
+|thread-pool +
+scheduled-thread-pool
+|no
+
+|jboss.executor.scheduled
+|ScheduledExecutorService
+|scheduled-thread-pool
+|no
+
+|jboss.thread.factory
+|ThreadFactory
+|thread-factory
+|no
+|===
+
+=== Phase 4: Final integration
+
+Existing subsystems which use thread pools will be updated to accept an injected executor.
+The updated subsystems may include, but are not limited to:
+
+* Artemis
+* EJB
+* IO
+* Undertow
+* Batch
+* JCA/Connector
+* Clustering
+
+The configuration elements for integrated thread pools included by these subsystems should be
+deprecated and eventually removed per the normal model deprecation process.
+
+== Test Plan
+
+* Ensure that all present tests continue to function under the new pool
+
+* Establish the lack of any significant performance regression between the new pool and the old pool implementations
+
+* UI/UX testing on any new configuration elements
+
+* Tests of existing subsystems updated to inject pools instead of, or in addition to, using integrated configurations
