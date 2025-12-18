@@ -99,6 +99,9 @@ categories:
   - name: POJO
     id: pojo
     description: Legacy JBoss Microcontainer support
+  - name: Provisioning
+    id: provisioning
+    description: WildFly Provisioning
   - name: Quickstarts
     id: quickstarts
     description: Quickstart examples for WildFly
