@@ -6,6 +6,9 @@ categories:
   - name: Bootable Jar
     id: bootable-jar
     description: WildFly and an application packaged as an executable jar
+  - name: Wildfly Client
+    id: client
+    description: Wildfly client libraries
   - name: Command Line Interface (CLI)
     id: cli
     description: Command Line Interface tool
