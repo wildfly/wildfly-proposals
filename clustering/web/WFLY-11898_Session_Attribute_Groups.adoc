@@ -1,0 +1,75 @@
+= Distributed session attribute groups
+:author:            Paul Ferraro
+:email:             paul.ferraro@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Distributed web sessions support 2 levels of granularity, by which session attributes are mapped to a distributed/remote cache: SESSION and ATTRIBUTE.
+SESSION granularity maps all attributes to a single cache entry, whereas ATTRIBUTE granularity maps each session attribute to a separate cache entry.
+For most applications, ATTRIBUTE granularity is far more efficient than SESSION granularity, since the former only requires the persistence/replication of those attributes that were added/modified/removed within a given request.
+However, if any attributes share object references (e.g. parent/child relationships, foreign keys, etc.) they must use SESSION granularity to ensure that these shared object references are preserved following serialization/deserialization.
+
+This feature request adds a mechanism for users to annotate session attributes into groups, such that users can leverage the efficiency for ATTRIBUTE granularity, while allowing specific attributes to be grouped together into a single cache entry.
+
+e.g.
+
+[source,java]
+----
+Parent parent = session.getAttribute("parent");
+Child child = session.getAttribute("child");
+
+assert parent.getChild() == child;
+----
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-11898
+
+=== Related Issues
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:tborgato@redhat.com[Tommaso Borgato]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+[X] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+Clustering
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* Add @Group(name="...") annotation to public org.wildfly.clustering.web.api module that to be used by users to annotate session attribute classes.
+* Enhance logic within FineSessionAttributes (for both hotrod and infinispan session manager implementations) to transparently group attributes sharing the same group name.
+** The @Group annotation is effectively ignored when the configured granularity is SESSION - or if the session manager is not distributable.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+* Add new failover test that validates that 2 session attributes sharing the same @Group name retain referential integrity following failover
+
+== Community Documentation
+
+Enhance distributed session manager documentation to describe how to group session attributes when using ATTRIBUTE granularity.
