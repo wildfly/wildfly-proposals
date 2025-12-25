@@ -1,0 +1,154 @@
+---
+categories:
+- observability
+stability-level: community
+# Specify the Feature Development tracker issue for the feature.
+# This must be an issue tracked in https://github.com/orgs/wildfly/projects/7/views/1.
+# To create a Feature Development tracker issue, go to  https://github.com/wildfly/wildfly-proposals/issues/new/choose
+# and select 'Feature Development'
+issue: https://github.com/wildfly/wildfly-proposals/issues/683
+feature-team:
+ developer: jasondlee
+ sme:
+  -
+ outside-perspective:
+  - TomasHofman
+promotes:
+promoted-by:
+---
+= WFLY-20296 - Add support for more OpenTelemetry configuration options
+:author:            Jason Lee
+:email:             jasondlee@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+While every aspect of OpenTelemetry is technically configurable via MP Telemetry and MP Config, there have been several requests for more direct support for the various options in the management model. The RFE will identify and implement the options most likely to be of general interest to WildFly users.
+
+=== User Stories
+
+- As an application developer, I would like greater control in how OpenTelemetry is configured in the server without having to depend on an external library (e.g., MicroProfile Config).
+
+== Issue Metadata
+
+- https://issues.redhat.com/browse/WFLY-20296[]
+
+=== Related Issues
+
+- https://issues.redhat.com/browse/WFLY-18290[]
+- https://issues.redhat.com/browse/WFLY-19919[]
+- https://issues.redhat.com/browse/JBEAP-27199[]
+
+=== Affected Projects or Components
+
+This change will affect only the OpenTelemetry subsystem
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+* Additional configuration options should include:
+|===
+|Signal type|Name|OpenTelemetry Property|Description|Attribute Name|Default|Notes
+|General|TLS server certificate|`otel.exporter.otlp. certificate`|The path to the server certificate on disk|TBD||_TLS props are pending a discussion with Elytron_
+||TLS client certificate|`otel.exporter.otlp.client. certificate`|The path to the client certificate on disk|TBD||
+||Client key|`otel.exporter.otlp.client. key`|The path to the key on disk|TBD||
+||Compression|`otel.exporter.otlp. compression`|The compression type to use on OTLP trace, metric, and log requests.|`compression`|null|Only `gzip` supported
+|Traces|Enabled|`otel.traces.exporter`|Are traces enabled?|`traces-enabled`|true|If true, the value is set to `otlp`. If not, the value is set to `none`.
+|Metrics|Enabled|`otel.metrics.exporter`|Are metrics enabled?|`metrics-enabled`|true|If true, the value is set to `otlp`. If not, the value is set to `none`.
+||Export interval|`otel.metrics.export.interval`|The interval, in milliseconds, between the start of two export attempts.|`metrics-export-interval`|60000|
+||Exemplar filter|`otel.metrics.exemplar.filter`|The filter for exemplar sampling.|`exemplar-filter`|`trace_based`|Options are `always_off`, `always_on` or `trace_based`.
+||Metrics cardinality limit|`otel.experimental.metrics. cardinality.limit`|If set, configure cardinality limit; the maximum number of distinct points per metric.|cardinality-limit|2000|
+||Temporality preference|`otel.exporter.otlp.metrics. temporality.preference`|The preferred output aggregation temporality.|`temporality`|`cumulative`|Options include `delta`, `lowmemory`, and `cumulative`.
+||Histogram aggregation|`otel.exporter.otlp. metrics.default. histogram.aggregation`|The preferred default histogram aggregation.|`histogram-aggregation`|`explicit_bucket_histogram`|Options include `base2_exponential_bucket_histogram` and `explicit_bucket_histogram`
+|Logs|Enabled|`otel.logs.exporter`|Are logs enabled?|`logs-enabled`|true|If true, the value is set to `otlp`. If not, the value is set to `none`.
+||Schedule delay|`otel.blrp.schedule.delay`|The interval, in milliseconds, between two consecutive exports.|`logs-export-interval`|1000|
+|===
+* Changes to the management model should be split out based on signal types
+** For ease of use by users, the structure of the updated XML should reflect this grouping of signal-specific attributes via `setAttributeGroup(String)`
+** The shape of the management model should be flat, using a list of attributes, rather than nested resources
+*** Each attribute will be declared on the existing `OpenTelemetrySubsystemRegistrar`. No new child resources should be created.
+*** Attribute groups will be used to group properties by signal type to make the XML file and admin console more user-friendly
+** Shared properties (e.g., the OpenTelemetry Collector endpoint) should be exposed on the root element.
+*** Signal-specific overrides need not be supported
+* All new properties added will have, as defaults, values described in the relevant OpenTelemetry documentation (see the official docs https://opentelemetry.io/docs/languages/java/configuration/[here])
+* Support should not depend on, e.g., MicroProfile Telemetry or MicroProfile Config
+* Any configured properties should still be able to be overridden via the existing MicroProfile support (this is the current default behavior)
+
+[IMPORTANT]
+=====
+Open question: Some of the values specified by OpenTelemetry are rather large and unwieldy (e.g., `base2_exponential_bucket_histogram`). Should we provide shorthand mappings, use the exact strings from otel docs, or both?
+=====
+
+=== Changed requirements
+
+N/A
+
+=== Non-Requirements
+
+* The OpenTelemetry documentation lists several signal-specific parameters to configure each signal explicitly. The following parameters have the same defaults as those already supported (i.e., for traces), so, in the name of simplicity, these will be configured implicitly by the system using a single configuration attribute:
+** `otel.blrp.max.queue.size` via `max-queue-size`
+** `otel.blrp.max.export.batch.size` via `max-export-batch-size`
+** `otel.blrp.export.timeout` via `export-timeout`
+* The SmallRye OpenTelemetry OTLP exporters do not support `otel.java.exporter.memory_mode`, so it will not be exposed.
+* While unifying observability configuration (i.e., that of the OpenTelemetry and Micrometer subsystems) has been requested and might be of interest to users and administrators, that is a non-goal for this RFE.
+
+=== Future Work
+
+* Should users request fine-grained, per-signal configuration, we can revisit the shared attributes mentioned above.
+
+== Backwards Compatibility
+
+This change will, of necessity, change the management model of the subsystem. Despite this change, existing configurations should continue to work unchanged. Furthermore, existing configurations should be automatically migrated to the new model/schema once a relevant change has made to the configuration.
+
+=== Default Configuration
+
+No default values will be changed.
+
+=== Importing Existing Configuration
+
+Existing configurations should be supported unchanged.
+
+=== Deployments
+
+Deployments should see no change in behavior.
+
+=== Interoperability
+
+No interoperability concerns are foreseen.
+
+== Implementation Plan
+
+N/A
+
+== Admin Clients
+
+N/A
+
+== Security Considerations
+
+In general, this should have no impact on security. However, one of the proposed changes includes adding support for configuring TLS certificates for communicating with the OpenTelemetry Collector. The use of these TLS certificates will allow the server to both secure communications with the Collector, and verify that the collector is, indeed, the correct receiver for the signals. This will have a positive impact on the data security for the subsystem and user applications.
+
+[[test_plan]]
+== Test Plan
+
+The existing tests under `testsuite/integration/microprofile` will be extended to cover the relevant newly added properties. Not all properties (such as those affecting publish rates or batch sizes) need extensive integration testing. Others, though, such as the TLS properties, will need thorough testing, both positive and negative.
+
+== Community Documentation
+
+The existing documentation in the Administration Guide will be augmented to cover the new options. The documentation should explain how each attribute maps to the relevant OpenTelemetry configuration property/properties, making note of their configurability via MicroProfile Config.
+
+== Release Note Content
+
+"The management model for the OpenTelemetry subsystem has been updated and expanded to expose more direct control over the
+behavior of the subsystem."
