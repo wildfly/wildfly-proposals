@@ -76,6 +76,10 @@ The utility will be enabled by default for the following security realms:
  * ldap-realm
  * properties-realm
 
+ The brute force protection will not be applied directly to utility realms such as the `aggregate-realm`,
+ `distributed-realm`, or `failover-realm` as it will have already been applied to the actual realm these
+ delegate to.
+
  By wrapping the security realms this utility will automatically be applied to the following
  authentication mechanisms:
 
@@ -95,7 +99,7 @@ default behaviour by setting the following realm specific system properties:
  * wildfly.elytron.realm.[REALM NAME].brute-force.lockout-interval
  * wildfly.elytron.realm.[REALM NAME].brute-force.session-timeout
 
-The `BruteForceWrapperRealm` will operate by consuming two events that are emitted from the authentication
+The `BruteForceRealmWrapper` will operate by consuming two events that are emitted from the authentication
 mechanisms:
 
  * `RealmFailedAuthenticationEvent` - this event will be emitted when an authentication attempt fails.
@@ -106,7 +110,7 @@ mechanisms:
 ==== Authentication Process
 
 During an authentication the `getRealmIdentity` methods of a `SecurityRealm` are used either to obtain
-or validate credentials depending on the authentication mechanism being used. The `BruteForceWrapperRealm`
+or validate credentials depending on the authentication mechanism being used. The `BruteForceRealmWrapper`
 will intercept these calls.
 
 On intercepting a call to `getRealmIdentity` the wrapper will check if the identity is present in the cache
@@ -116,8 +120,15 @@ then the wrapped realm will be called and the realm `RealmIdentity` will be retu
 
 ==== Event Handling
 
+As the final decision regarding the success or failure of an authentication is made within the authentication
+mechansisms the results are communicated back to the realm via events.
 
+Where a `RealmSuccessfulAuthenticationEvent` is received the brute force utility check if any tracking session
+has been created for the identity and if so removes it from the cache.
 
+Where a `RealmFailedAuthenticationEvent` is received the brute force utility will ensure a session exists to
+tracked the number of consecutive failed attempts for the identity. If the number of failed attempts exceeds
+the configured maximum the identity will be marked as disabled for the configured lockout interval.
 
 === Non-Requirements
 
@@ -160,7 +171,7 @@ By default the default behaviour for the following security realms will be chang
  * ldap-realm
  * properties-realm
 
-Each of these will now be wrapped with a new `BruteForceMitigation` utility with the following settings:
+Each of these will now be wrapped with a new `BruteForceRealmWrapper` utility with the following settings:
 
  * max-failed-attempts = 25
  * lockout-interval = 15 minutes
@@ -181,7 +192,7 @@ N/A
 
 == Implementation Plan
 
-A new `BruteForceWrapperRealm` will be added to the WildFly Elytron project to add capabilities for brute
+A new `BruteForceRealmWrapper` will be added to the WildFly Elytron project to add capabilities for brute
 force mitigation, this utility can then be used by projects with integrate WildFly Elytron and integrated
 into their authentication process.
 
@@ -190,7 +201,8 @@ this utility within the `elytron` subsystem and apply it to the set of supported
 
 == Admin Clients
 
-__<Identify the level of compatibility this feature will have with the existing admin clients (JBoss CLI and the Admin Console / HAL). Identify any follow up work that will be required in the clients and link issues created to track this work.>__
+This feature does not directly impact the admin clients other than the fact that authentication to the management
+interfaces may now be subject to brute force mitigation if using one of the supported security realms.
 
 == Security Considerations
 
@@ -200,23 +212,20 @@ attacks.
 [[test_plan]]
 == Test Plan
 
-__<Depending on the selected stability level, the appropriate section below should be completed, including a brief description of how testing is to be performed in accordance with the selected stability level. The non-relevant sections may be removed as needed.>__
-////
-Depending on the stability level, the test plan required may vary. see below:
-////
+Within the WildFly Elytron project along side the implementation of the `BruteForceRealmWrapper` will be a unit test
+case to verify the core functionality of the utility.
 
-** Experimental - No test plan is required. Basic unit / integration tests should be added during development.
+Beyond this a new testsuite `wildfly-security-testsuite` that will contain the main integration tests for the feature.
 
-** Preview - a brief high-level description of the testing approach should be added here, including types of tests added (unit, integration, smoke, component, subsystem, etc.) Note that not all test types are required for a particular feature, so include a description of what is being tested and the approach chosen to perform the testing.
+This feature is being enabled by default and potentially affects every authentication mechanism / security realm permutation
+that is based on username / password authentication. The new testsuite is being split into two `unit`, and `integration`
+modules. The `unit` module will manually assemble components together to verify the behaviour and the `integration` module
+will be based on testing against a running WildFly server. In both cases the testsuite will be engineered to run a set of
+tests against all supported permutations of security realms and authentication mechanisms including HTTP and SASL.
 
-** Community - this level should include everything in the 'Preview' stability level, plus the following additional testing as relevant:
-*** Manual tests: briefly describe checks to be performed during one-time exploratory testing. The purpose of this testing is to check corner cases and other cases that are not worth implementing as automated tests. Typical checks are: bad configurations are easy to reveal, attribute descriptions and error messages are clear, names are descriptive and consistent with similar resources, default values are reasonable.
-    If there is an existing quickstart affected by the feature, manual checks include following the quickstart's guide and verifying functionality.
-*** Miscellaneous checks: Manual checks for significant changes in server performance, memory and disk footprint should be described here. These checks are not always relevant, but consideration of these impacts, and others, are strongly encouraged and should be described here. Fully qualified test case names should be provided along with a brief description of what the test is doing.
-*** Integration tests - at the 'Community' stability level, complete integration tests should be provided.
-*** Compatibility tests - if backwards compatibility is relevant to the feature, then describe how the testing is performed.
-
-** Default - This stability level is reserved and requires approval by a professional Quality Engineer with subject matter expertise.
+Within the testsuite tests will be added for standard authentication scenarios, the purpose of these being to check for
+regressions once the new brute force mitigation is in place. Additional tests will then be added to specifically verify
+the brute force mitigation functionality.
 
 == Community Documentation
 
@@ -226,9 +235,14 @@ properties.
 
 == Release Note Content
 
-TODO - Will revisit this section once we have confirmed the strategy.  We will need to advise of the
-existence of the feature as well as how to tune or disable it.
+Starting from WildFly X by default all security realms will be wrapped by a new utility to add brute force protection to
+help mitigate against brute force attacks. After 25 consecutive failed authentication attempts an identity will be disabled for
+15 minutes. Successful authentication attempts will reset the failed attempt counter. The failed attempt tracking sessions
+will time out after 1 hour of inactivity.
 
-__<Draft verbiage for up to a few sentences on the feature for inclusion in the Release Note blog article for the release that first includes this feature.__
-__Example article: https://www.wildfly.org/news/2024/01/25/WildFly31-Released/.__
-__This content will be edited, so there is no need to make it perfect or discuss what release it appears in.>__
+It is possible to override the default behaviour for a specific realm by setting the following system properties:
+
+ * wildfly.elytron.realm.[REALM NAME].brute-force.enabled
+ * wildfly.elytron.realm.[REALM NAME].brute-force.max-failed-attempts
+ * wildfly.elytron.realm.[REALM NAME].brute-force.lockout-interval
+ * wildfly.elytron.realm.[REALM NAME].brute-force.session-timeout
