@@ -1,0 +1,154 @@
+---
+# Add any category for this proposal as a YAML list, e.g.
+# - core
+# - management
+# If missing, add it to _data/wildfly-categories and use its id
+categories:
+  - undertow
+# Specify the stability level of the feature.
+# Values can be one of: experimental, preview, community, or default
+stability-level: default
+
+issue: https://issues.redhat.com/browse/WFLY-21525[WFLY-21525]
+
+feature-team:
+ developer: baranowb
+ sme:
+  - frainone
+ outside-perspective:
+  - thofman
+
+promotes: https://github.com/wildfly/wildfly-proposals/pull/444
+promoted-by: https://github.com/wildfly/wildfly-proposals/pull/780
+---
+
+= Promote reuse-x-forwarded-header and rewrite-host header to DEFAULT stability
+:author:            Bartosz Baranowski
+:email:             bbaranow@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+
+== Overview
+
+In some scenarios it is a requirement to reuse x forwarded or rewrite host header. Currently ProxyHandler flags controlling both are hardcoded to 'false', meaning mentioned functionality is not accessible.
+This RFE address this by introductin model values that control mentioned flags.
+
+=== User Stories
+
+Stability promotion from https://github.com/wildfly/wildfly-proposals/pull/444[Proposals PR 444]
+
+== Issue Metadata
+
+* https://issues.redhat.com/browse/WFLY-21525[WFLY-21525]
+* https://github.com/wildfly/wildfly-proposals/issues/793[proposals-793]
+
+=== Related Issues
+
+ * https://issues.redhat.com/browse/EAP7-1837[EAP7-1837]
+ * https://issues.redhat.com/browse/CIPOE-1793[CIPOE-1793]
+ * https://issues.redhat.com/browse/EAPDOC-1273[EAPDOC-1273]
+ * https://issues.redhat.com/browse/HAL-2050[HAL-2050]
+ * https://github.com/wildfly/wildfly/pull/19547[WFLY PULL-19547]
+
+=== Affected Projects or Components
+
+ Undertow integration. HAL has integration covered via linked ticket.
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+* Being able to configure both flags via model:
+   - reuse-x-forwarded-header
+   - rewrite-host-header
+
+[literal]
+<subsystem xmlns="urn:jboss:domain:undertow:14.0" default-server="some-server" default-servlet-container="myContainer" default-virtual-host="default-virtual-host" instance-id="some-id" statistics-enabled="true">
+    ....
+        <handlers>
+            <file case-sensitive="false" directory-listing="true" follow-symlink="true" name="welcome-content" path="${jboss.home.dir}" safe-symlink-paths="/path/to/folder /second/path"/>
+            <reverse-proxy ... reuse-x-forwarded-header="true" rewrite-host-header="false">
+            </reverse-proxy>
+        </handlers>
+    ....
+</subsystem>
+Parameters will be present in reverse-proxy element(for standalone: /subsystem=undertow/configuration=handler/reverse-proxy=my-handler):
+* reuse-x-forwarded-header
+** Default: false
+** Type: boolean
+** Description: if true append(reuse existing) remote hop to x-forwarded-* headers, if not, previous value is discarded and remote hop becomes the value, otherwise set it to remote host.
+* rewrite-host-header
+** Default: false
+** Type: boolean
+** Description: if true set host header to connection remote end and create x-forwarded-host header.
+
+=== Changed requirements
+
+Bump stability.
+
+=== Non-Requirements
+
+
+=== Future Work
+
+
+== Backwards Compatibility
+
+N/A
+
+=== Default Configuration
+
+N/A
+
+=== Importing Existing Configuration
+
+N/A
+
+=== Deployments
+
+N/A
+
+=== Interoperability
+
+N/A
+
+== Implementation Plan
+
+Already done. Feature is implemented along with tests. HAL-2050 has been resolved and update is present since 3.7.18+, which is current version of HAL.
+
+== Admin Clients
+
+CLI should not have problems. HAL requires update(HAL-2050).
+
+== Security Considerations
+
+
+
+[[test_plan]]
+== Test Plan
+
+Simple unit tests to check header manipulation are now part of regular WFLY TS.
+
+== Community Documentation
+
+Reverse proxy support two new configuration options:
+  * reuseXForwarded - force proxy to include previously present X-Forwarded-For headers, rather than(false) using most recent hop as single value for that header.
+  * rewriteHost - force proxy to put target server as content of Host header(to adhere to HTTP protocol), instead of exposed proxy.
+
+== Release Note Content
+
+Reverse proxy configuration options now support:
+* reuseXForwarded - allow to mark downstream proxies( incoming traffic ) as 'trusted', hence content of X-Forwarded-For header is not dropped, but used as seed.
+* rewriteHost - enable reverse proxy to alter Host header
+
+Check test plan Security section for references on what does attributes do.
