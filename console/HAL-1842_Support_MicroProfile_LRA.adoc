@@ -1,8 +1,8 @@
 ---
 categories:
-  - console
-  - microprofile
-  - transactions
+- console
+- microprofile
+- transactions
 issue: https://github.com/wildfly/wildfly-proposals/issues/784
 ---
 
