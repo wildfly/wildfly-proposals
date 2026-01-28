@@ -1,0 +1,87 @@
+---
+categories:
+- console
+- microprofile
+- observability
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/786
+feature-team:
+ developer: hpehl
+ sme:
+  - jasondlee
+---
+= Support OpenTelemetry in the console
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+The goal of this RFE is to support the configuration of the OpenTelemetry subsystem in the management console.
+
+== Issue Metadata
+
+=== Issue
+
+* {issue-base-url}/HAL-1844
+
+=== Related Issues
+
+* {issue-base-url}/EAP7-1804
+* {issue-base-url}/WFLY-17156
+* {issue-base-url}/WFLY-14854
+* {issue-base-url}/EAP7-2055
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:kstekovi@redhat.com[Krystof Stekovic]
+
+=== Testing By
+
+* [ ] Engineering
+* [x] QE
+
+=== Affected Projects or Components
+
+This RFE affects the management console.
+
+== Requirements
+
+Affected UI::
+* Configuration / Subsystems / OpenTelemetry
+Affected Resources::
+* `/subsystem=opentelemetry`
+
+=== Hard Requirements
+
+The console shows the new subsystem `opentelemetry` in the configuration section.
+The UI for these subsystems is backed by the https://hal.github.io/documentation/concepts/#applications[model browser]
+which generates the UI based on the resource descriptions.
+
+=== Non-Requirements
+
+The console does not offer a dedicated UI to configure the `opentelemetry` subsystem.
+
+=== Future Work
+
+A dedicated UI to configure the `opentelemetry`  subsystem might be added in a future RFE.
+
+== Open Questions
+
+* None
+
+== Test Plan
+
+Additional tests are added to the test suite that verifies that the relevant resources can be configured.
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
