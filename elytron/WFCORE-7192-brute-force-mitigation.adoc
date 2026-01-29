@@ -185,9 +185,15 @@ By default the default behaviour for the following security realms will be chang
 
 Each of these will now be wrapped with a new `BruteForceRealmWrapper` utility with the following settings:
 
- * max-failed-attempts = 25
+ * max-failed-attempts = 10
  * lockout-interval = 15 minutes
- * session-timeout = 1 hour
+ * session-timeout = 30 minutes
+
+The values should always be configured to meet the operational requirements of
+the installation, these defaults were selected to provide a reasonable / default
+level of protection without being too restrictive.  In a higher security
+environment it may be appropriate to reduce the number of allowed failed attempts
+or increase the lockout interval.
 
 === Importing Existing Configuration
 
@@ -247,10 +253,10 @@ properties.
 
 == Release Note Content
 
-Starting from WildFly X by default all security realms will be wrapped by a new utility to add brute force protection to
-help mitigate against brute force attacks. After 25 consecutive failed authentication attempts an identity will be disabled for
+Starting from WildFly 39.0.1 by default all security realms will be wrapped by a new utility to add brute force protection to
+help mitigate against brute force attacks. After 10 consecutive failed authentication attempts an identity will be disabled for
 15 minutes. Successful authentication attempts will reset the failed attempt counter. The failed attempt tracking sessions
-will time out after 1 hour of inactivity.
+will time out after 30 minutes of inactivity.
 
 It is possible to override the default behaviour for a specific realm by setting the following system properties:
 
@@ -258,3 +264,6 @@ It is possible to override the default behaviour for a specific realm by setting
  * wildfly.elytron.realm.[REALM NAME].brute-force.max-failed-attempts
  * wildfly.elytron.realm.[REALM NAME].brute-force.lockout-interval
  * wildfly.elytron.realm.[REALM NAME].brute-force.session-timeout
+
+Note: The brute force protection is based on an in-memory cache and does not persist state across server restarts or share
+state between cluster nodes.
