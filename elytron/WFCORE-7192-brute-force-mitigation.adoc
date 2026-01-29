@@ -29,7 +29,7 @@ mitigation.
 
 This proposal is to add a new utility to the WildFly Elytron project that can be used
 to mitigate against brute force attacks and also to enable it by default for
-security realms defined in the `elytron` subsystem.
+security realms defined in the `elytron` subsystem of WildFly.
 
 === User Stories
 
@@ -78,9 +78,19 @@ The utility will be enabled by default for the following security realms:
  * ldap-realm
  * properties-realm
 
- The brute force protection will not be applied directly to utility realms such as the `aggregate-realm`,
- `distributed-realm`, or `failover-realm` as it will have already been applied to the actual realm these
- delegate to.
+The utility will also be applied to the following realms with some additional considerations:
+
+* caching-realm
+* distributed-realm
+* failover-realm
+
+As these three realms wrap others realms which may in turn have brute force protection applied, event handling
+for brute force protection will only occur at the first realm in the chain. Events will still be passed through
+the chain to enable the wrapped realms to perform their own necessary processing but brute force handling will
+have already occurred.
+
+ The brute force protection will not be applied directly to the `aggregate-realm` as this maintains a 1:1
+ mapping to an `authentication-realm` which will have it's own brute force protection applied.
 
  By wrapping the security realms this utility will automatically be applied to the following
  authentication mechanisms:
