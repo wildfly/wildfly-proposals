@@ -22,7 +22,7 @@ feature-team:
 
 == Overview
 
-The CVE https://nvd.nist.gov/vuln/detail/CVE-2025-2901[CVE-2025-2901] has been raised
+The CVE https://nvd.nist.gov/vuln/detail/CVE-2025-23368[CVE-2025-23368] has been raised
 against WildFly as presently the default configuration does not provide any form of
 brute force mitigation, additionally we do not provide any options to enable such a
 mitigation.
