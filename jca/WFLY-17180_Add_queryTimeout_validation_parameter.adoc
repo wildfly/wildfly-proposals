@@ -1,0 +1,103 @@
+---
+categories:
+ - jca
+stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/669
+feature-team:
+ developer: Tomasz Adamski
+ sme:
+  -
+ outside-perspective:
+  -
+---
+= [Community] WFLY-17180 Add datasource validation timeout parameter
+:author:            Tomasz Adamski
+:email:             tadamski@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          connector, validation
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse/
+
+== Overview
+
+Validation queries run without any explicit timeout. If the validation query blocks (as it will with most drivers when a connection is invalid/stale), this can block the entire pool in certain cases (e.g. background-validation locks the pool during validation). Even with validate-on-match, the failure to enforce a short timeout can significantly impact time to get a connection if one or more failed connections are found in the pool.
+
+Setting a driver level query timeout is not a suitable workaround because this impacts normal queries that may be expected to run for significant periods. The timeout for normal queries needs to be different from what is tolerated for validation queries (which should respond nearly instantaneously or else the connection is likely broken).
+
+
+== Implementation Plan
+
+=== Proposed solution
+
+'validation-timeout-seconds' tag would be added to timeout tag of datasources subsystem:
+
+XML:
+
+{code}
+   <datasource (...)>
+      (...)
+      <timeout>
+          (...)
+          <validation-timeout-seconds>2</validation-timeout-seconds>
+          (...)
+      </timeout>
+      (...)
+  </datasource>
+{code}
+
+CLI:
+'validation-timeout-seconds' would be an attribute of a datasource in which it was configured f.e.
+
+{code}
+ls /subsystem=datasources/data-source=ExampleDS
+
+(...)
+validation-timeout-seconds=2000
+(...)
+{code}
+
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/WFLY-17180[WFLY-17180]
+
+=== Related Issues:
+
+* {issue-base-url}/EAP7-2166[EAP7-2166]
+
+=== Dev Contacts:
+
+* mailto:{email}[{author}]
+
+=== Testing by:
+
+* Engineering
+
+=== Affected Projects or Components:
+
+* IronJacamar, WildFly Connector
+
+== Hard Requirements
+
+* customers should be able to configure timeout specific to validation queries
+* validation timeout should be independent of query timeout
+* validation timeout should be configured in subsystem XML and CLI
+
+== Nice-To-Have Requirements
+* None
+
+== Non-Requirements
+* None
+
+=== Test Plan
+
+* There is already a test in WildFly integration testsuite that verifies behavior of custom modules, which, among others, thest custom ValidConnectionChecker. This test can be extended to verify that the configured timeout has been provided to the test ValidConnectionChecker implementation.
+
+=== Community docs
+
+* The new attribute will be documented in wildscribe.
+
