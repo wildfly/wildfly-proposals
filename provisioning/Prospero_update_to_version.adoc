@@ -11,11 +11,11 @@ issue: https://github.com/wildfly/wildfly-proposals/issues/705
 # Provide a single id for the 'assignee' role. Use a yaml list for the 'sme' and
 # 'outside-perspective' roles, even if there is only one person in a role.
 feature-team:
- developer: Pedro Henrique de Oliveira Silva
+ developer: pedro-hos
  sme:
-  - Jeff Mesnil
+  - jmesnil
  outside-perspective:
-  - Tomas Hofman
+  - TomasHofman
 # This should be blank during initial development of a feature. It may be used
 # after the feature is completed if a subsequent issue is field to track promotion
 # of this feature to a higher stability level
@@ -37,9 +37,9 @@ This proposal adds a new parameter to the `update perform` and `update prepare` 
 
 === User Stories
 
- - As an admin, I want to use a physical manifest version to update the server to a specific version. For example, use `--version=36.0.0.Beta1` to move to this specific version.
+ - As an admin, I want to use a physical manifest version to update the server to a specific version. For example, use `--manifest-versions=36.0.0.Beta1` to move to this specific version.
  - As an admin, I want to be able to perform a downgrade if a specified version is lower than a current version. Such operation should result in a warning that the user has to accept.
- - As an admin, I want to be able to perform a downgrade in a non-interactive way by specifying a command-line flag. For example, use `--version=...` on the `update perform` and `update prepare` in order to downgrade.
+ - As an admin, I want to be able to perform a downgrade in a non-interactive way by specifying a command-line flag. For example, use `--manifest-versions=...` on the `update perform` and `update prepare` in order to downgrade.
  - As an admin, I want to be prevented from downgrading a manifest version unless the new version is specified explicitly.
 
 
@@ -71,12 +71,12 @@ This proposal adds a new parameter to the `update perform` and `update prepare` 
 == Requirements
 
 ==== Hard requirements:
-- Add a `--version` parameter to the update operation with values in format `<CHANNEL_NAME>::<VERSION>`
-- If the `--version` parameter is present, the `update perform` and `update prepare` operations use a manifest with this version to provision the server.
-- If the `--version` provided is lower than the current version, the user should be **warned** and asked to confirm the operation.
-- If the `--version` is used in conjunction with `--yes` flag, the downgrade confirmation is skipped.
+- Add a `--manifest-versions` parameter to the update operation with values in format `<CHANNEL_NAME>::<VERSION>`
+- If the `--manifest-versions` parameter is present, the `update perform` and `update prepare` operations use a manifest with this version to provision the server.
+- If the `--manifest-versions` provided is lower than the current version, the user should be **warned** and asked to confirm the operation.
+- If the `--manifest-versions` is used in conjunction with `--yes` flag, the downgrade confirmation is skipped.
 - If a server is subscribed to multiple channels, the customer has to provide versions of all the involved manifests.
-- If the `--version` is not specified and the `update` operation would result in a manifest downgrade, the operation should fail as an error.
+- If the `--manifest-versions` is not specified and the `update` operation would result in a manifest downgrade, the operation should fail as an error.
 - Above changes need to be available in JBoss CLI and HAL console.
 
 ==== Nice-to-have requirements:
@@ -102,7 +102,7 @@ $ ./prospero history --dir wildfly-ee/
 
 == Backwards Compatibility
 
-This change would prevent a downgrade without an explicit `--version` argument. Some users may have used this option, but this is not a recommended use case.
+This change would prevent a downgrade without an explicit `--manifest-versions` argument. Some users may have used this option, but this is not a recommended use case.
 
 === Default Configuration
 
@@ -129,7 +129,7 @@ __TBD__
 
 === JBoss CLI
 
-The `--version` attribute will have to be added to the installer `update` operation. The behaviour should be the same as described above for Prospero.
+The `--manifest-versions` attribute will have to be added to the installer `update` operation. The behaviour should be the same as described above for Prospero.
 
 If the `list-versions` operation is implemented in Prospero, analogous operation will have to be added to the CLI.
 
@@ -164,7 +164,7 @@ n/a
 ** verify the flag `--yes` skips the confirmation
 * Update a server subscribed to multiple channels
 ** verify that the operation requires all the channel versions to be present.
-* Verify `--version` works with physical versions. Eg. `38.0.0.Final`
+* Verify `--manifest-versions` works with physical versions. Eg. `38.0.0.Final`
 
 === Compatibility tests
 n/a
