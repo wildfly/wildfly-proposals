@@ -1,3 +1,7 @@
+---
+categories:
+ - undertow
+---
 = [Default]modify ajp-listener to allow specifying pattern for ajp request attributes
 :author:            Bartosz Baranowski
 :email:             bbaranow@redhat.com
