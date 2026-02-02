@@ -1,6 +1,8 @@
 ---
 categories:
  - undertow
+stability-level: default
+issue: https://issues.redhat.com/browse/WFLY-19808
 ---
 = [Default]modify ajp-listener to allow specifying pattern for ajp request attributes
 :author:            Bartosz Baranowski
