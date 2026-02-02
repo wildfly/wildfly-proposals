@@ -3,7 +3,7 @@ categories:
  - elytron
  - security
 stability-level: default
-issue: https://github.com/wildfly/wildfly-proposals/issues/???  //rls PR for this doc
+issue: https://github.com/wildfly/wildfly-proposals/pull/792
 feature-team:
  developer: 
   - Farah Juma
@@ -13,7 +13,7 @@ feature-team:
   - Diana Krepinska
  outside-perspective:
 promotes: https://issues.redhat.com/browse/WFLY-21413
-promoted-by: https://github.com/wildfly/wildfly-proposals/issues/???  //rls PR for this doc
+promoted-by: https://github.com/wildfly/wildfly-proposals/pull/792
 ---
 = Promote ability to configure additional scope value for an authentication request from Preview to Default Stability Level
 :author:            R Searls
