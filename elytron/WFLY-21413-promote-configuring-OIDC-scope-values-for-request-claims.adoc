@@ -6,16 +6,20 @@ stability-level: default
 issue: https://github.com/wildfly/wildfly-proposals/pull/792
 feature-team:
  developer: 
-  - Farah Juma
-  - Prarthona Paul
+  - Rebecca Searls 
+  - Farah Juma implemented Wildfly enhancements
+  - Prarthona Paul implemented Elytron enhancements
  sme:
   - Darran Lofthouse
   - Diana Krepinska
+ tester
+  - SME 
  outside-perspective:
-promotes: https://issues.redhat.com/browse/WFLY-21413
-promoted-by: https://github.com/wildfly/wildfly-proposals/pull/792
+  - writer
+promotes: https://github.com/wildfly/wildfly-proposals/blob/main/elytron/WFLY-16532-additional-scope-for-auth-request.adoc
+	
 ---
-= Promote ability to configure additional scope value for an authentication request from Preview to Default Stability Level
+= Promote ability to configure additional OIDC `scope` values for request claims in the `elytron-oidc-client` subsystem from Preview to Default Stability Level.
 :author:            R Searls
 :email:             rsearls@redhat.com, rsearls@ibm.com
 :toc:               left
@@ -30,7 +34,8 @@ projects https://issues.redhat.com/browse/WFLY-16532 [WFLY-16532] and https://is
 
 === User Stories
 
-The user can specify a custom scope value.  The user can do this via two options, one
+The user can specify custom OIDC scope values used in request claims to specify access privileges being requested for Access Tokens from the Authorization Server. 
+The user can do this via two options, one
 in the `oidc.json` configuration file in the `WEB-INF` directory of the application and
 two via the `elytron-oidc-client` subsystem under the `secure-deployment` and the 'secure-server' resource.
 
