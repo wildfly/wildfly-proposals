@@ -21,6 +21,9 @@ categories:
   - name: Embedded
     id: embedded
     description: Embedding WildFly in another process
+  - name: gRPC
+    id: grpc
+    description: gRPC support in WildFly
   - name: IIOP
     id: iiop
     description: Internet InterORB Protocol and CORBA
