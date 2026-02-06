@@ -121,6 +121,7 @@ Elytron contains unit tests for this feature.
 == Community Documentation
 
 Feature documentation has been added to the Wildfly Elytron OIDC Client doc set.
+The `preview` mention in it has been removed.
 
 == Release Note Content
 
