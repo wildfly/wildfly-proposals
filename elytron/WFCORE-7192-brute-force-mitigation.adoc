@@ -110,6 +110,7 @@ default behaviour by setting the following realm specific system properties:
  * wildfly.elytron.realm.[REALM NAME].brute-force.max-failed-attempts
  * wildfly.elytron.realm.[REALM NAME].brute-force.lockout-interval
  * wildfly.elytron.realm.[REALM NAME].brute-force.session-timeout
+ * wildfly.elytron.realm.[REALM NAME].brute-force.max-cached-sessions
 
 The `BruteForceRealmWrapper` will operate by consuming two events that are emitted from the authentication
 mechanisms:
@@ -133,7 +134,7 @@ then the wrapped realm will be called and the realm `RealmIdentity` will be retu
 ==== Event Handling
 
 As the final decision regarding the success or failure of an authentication is made within the authentication
-mechansisms the results are communicated back to the realm via events.
+mechanisms the results are communicated back to the realm via events.
 
 Where a `RealmSuccessfulAuthenticationEvent` is received the brute force utility check if any tracking session
 has been created for the identity and if so removes it from the cache.
@@ -141,6 +142,17 @@ has been created for the identity and if so removes it from the cache.
 Where a `RealmFailedAuthenticationEvent` is received the brute force utility will ensure a session exists to
 tracked the number of consecutive failed attempts for the identity. If the number of failed attempts exceeds
 the configured maximum the identity will be marked as disabled for the configured lockout interval.
+
+Many security realms are able to indicate if the underlying identity does exist, in the case of an
+authentication attempt for an identity that does not exist we can skip caching for that identity as it is
+guaranteed to never succeed.  Some realms however such as the JAAS or custom realms are not always able
+to indicate if the identity does exist, this risks the brute force protection from being exploited to
+exhaust the heap.  For this reason the number of sessions cached is capped at a `max-cached-sessions`
+threshold backed by a LRU cache.
+
+As it is important for an administrator to understand if entries are being evicted from the cache a WARN
+message will be logged if this occurs, to prevent spamming the logs this will only be logged if at least
+15 minutes have elapsed since the last time it was logged for the specific realm.
 
 === Non-Requirements
 
@@ -188,6 +200,7 @@ Each of these will now be wrapped with a new `BruteForceRealmWrapper` utility wi
  * max-failed-attempts = 10
  * lockout-interval = 15 minutes
  * session-timeout = 30 minutes
+ * max-cached-sessions = 25,000
 
 The values should always be configured to meet the operational requirements of
 the installation, these defaults were selected to provide a reasonable / default
@@ -253,17 +266,22 @@ properties.
 
 == Release Note Content
 
-Starting from WildFly 39.0.1 by default all security realms will be wrapped by a new utility to add brute force protection to
-help mitigate against brute force attacks. After 10 consecutive failed authentication attempts an identity will be disabled for
-15 minutes. Successful authentication attempts will reset the failed attempt counter. The failed attempt tracking sessions
-will time out after 30 minutes of inactivity.
+Starting from WildFly 39.0.1 by default all security realms will be wrapped by a new utility to add brute
+force protection to help mitigate against brute force attacks. After 10 consecutive failed authentication
+attempts an identity will be disabled for 15 minutes. Successful authentication attempts will reset the
+failed attempt counter. The failed attempt tracking sessions will time out after 30 minutes of inactivity.
 
-It is possible to override the default behaviour for a specific realm by setting the following system properties:
+By default a maximum of 25,000 failed authentication sessions will be tracked keyed on the username and
+backed by a LRU cache.
+
+It is possible to override the default behaviour for a specific realm by setting the following system
+properties:
 
  * wildfly.elytron.realm.[REALM NAME].brute-force.enabled
  * wildfly.elytron.realm.[REALM NAME].brute-force.max-failed-attempts
  * wildfly.elytron.realm.[REALM NAME].brute-force.lockout-interval
  * wildfly.elytron.realm.[REALM NAME].brute-force.session-timeout
+ * wildfly.elytron.realm.[REALM NAME].brute-force.max-cached-sessions
 
-Note: The brute force protection is based on an in-memory cache and does not persist state across server restarts or share
-state between cluster nodes.
+Note: The brute force protection is based on an in-memory cache and does not persist state across server
+restarts or share state between cluster nodes.
