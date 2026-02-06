@@ -130,7 +130,13 @@ __<Identify the level of compatibility this feature will have with the existing 
 
 __<What impact on security does this feature have?>__
 
-__<For features introducing new management API resources, attributes, or operations, if anything other than 'typical' RBAC behavior is required, the Requirements section should include detailed requirements. For example, 'For management RBAC purposes, the foo resource will be marked as security-sensitive for access, reads, and writes.' The typical RBAC behavior is: any authenticated management user can access and read, while writes are limited to Maintainer or higher and runtime operation execution is limited to Operator and higher.>__
+__<For features introducing new management API resources, attributes, or operations, if anything other than 'typical' RBAC behavior is required, the Requirements section should include detailed requirements. For example, 'For management RBAC purposes, the foo resource will be marked as security-sensitive for access, reads, and writes.' The typical RBAC behavior is: any authenticated management user can access and read, while writes are limited to Maintainer or higher and runtime operation execution is limited to Operator and higher. Anything involving the security configuration of the server should be marked as security-sensitive. The https://github.com/wildfly/wildfly-core/blob/main/controller/src/main/java/org/jboss/as/controller/access/constraint/SensitivityClassification.java file lists the reasons something may be security sensitive. Most are specific to specific things, but ones that may be relevant to new things include: 
+
+1) 'CREDENTIAL', which must be used for any attribute that holds any kind of authentication credential (not just a password) 
+2) The various 'XXXX_REF' classifications, which must be used for configuration attributes that hold model references to security-relevant capabilities. This include SOCKET_BINDING_REF for any socket-binding attribute.
+3) 'SOCKET_CONFIG' for things that configure in-bound or out-bound sockets.
+
+See also https://docs.wildfly.org/39/Admin_Guide.html#configuring-constraints and https://docs.wildfly.org/39/Admin_Guide.html#classifications-with-broad-use.>__
 
 [[test_plan]]
 == Test Plan
