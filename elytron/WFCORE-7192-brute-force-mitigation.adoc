@@ -1,0 +1,287 @@
+---
+categories:
+- elytron
+- security
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/719
+feature-team:
+ developer:
+  - darranl
+ sme:
+  - OndrejKotek
+ outside-perspective:
+  - dfennessy
+---
+= [WFCORE-7192] Brute Force Mitigation
+:author:            Darran Lofthouse
+:email:             darran.lofthouse@jboss.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The CVE https://nvd.nist.gov/vuln/detail/CVE-2025-23368[CVE-2025-23368] has been raised
+against WildFly as presently the default configuration does not provide any form of
+brute force mitigation, additionally we do not provide any options to enable such a
+mitigation.
+
+This proposal is to add a new utility to the WildFly Elytron project that can be used
+to mitigate against brute force attacks and also to enable it by default for
+security realms defined in the `elytron` subsystem of WildFly.
+
+=== User Stories
+
+This proposal is describing a feature that will be enabled by default in future
+WildFly releases, there are no user stories to be defined.
+
+== Issue Metadata
+
+ * https://issues.redhat.com/browse/WFCORE-7192[WFCORE-7192]
+ * https://issues.redhat.com/browse/ELY-2891[ELY-2891]
+
+=== Related Issues
+
+ * https://issues.redhat.com/browse/WFCORE-7193[WFCORE-7193]
+
+=== Affected Projects or Components
+
+ * WildFly Elytron
+ * WildFly Core
+
+=== Other Interested Projects
+
+Other projects that use WildFly Elytron for authentication may be interested in
+applying this utility to their own authentication setup.
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+This proposal will be adding a utility to wrap security realms to temporarily disable an identity for
+a defined period of time after a defined number of failed authentication attempts. The failed authentication
+attempts will be tracked in an in-memory cache.
+
+The utility will be enabled by default for the following security realms:
+
+ * custom-realm
+ * custom-modifiable-realm
+ * filesystem-realm
+ * jaas-realm
+ * jdbc-realm
+ * ldap-realm
+ * properties-realm
+
+The utility will also be applied to the following realms with some additional considerations:
+
+* caching-realm
+* distributed-realm
+* failover-realm
+
+As these three realms wrap others realms which may in turn have brute force protection applied, event handling
+for brute force protection will only occur at the first realm in the chain. Events will still be passed through
+the chain to enable the wrapped realms to perform their own necessary processing but brute force handling will
+have already occurred.
+
+ The brute force protection will not be applied directly to the `aggregate-realm` as this maintains a 1:1
+ mapping to an `authentication-realm` which will have it's own brute force protection applied.
+
+ By wrapping the security realms this utility will automatically be applied to the following
+ authentication mechanisms:
+
+  * SASL Digest
+  * SASL Scram
+  * SASL Plain
+  * HTTP Basic
+  * HTTP Digest
+  * HTTP Form
+  * HTTP Programmatic
+
+The wrapper will be applied automatically by the `elytron` subsystem, it will be possible to override the
+default behaviour by setting the following realm specific system properties:
+
+ * wildfly.elytron.realm.[REALM NAME].brute-force.enabled
+ * wildfly.elytron.realm.[REALM NAME].brute-force.max-failed-attempts
+ * wildfly.elytron.realm.[REALM NAME].brute-force.lockout-interval
+ * wildfly.elytron.realm.[REALM NAME].brute-force.session-timeout
+ * wildfly.elytron.realm.[REALM NAME].brute-force.max-cached-sessions
+
+The `BruteForceRealmWrapper` will operate by consuming two events that are emitted from the authentication
+mechanisms:
+
+ * `RealmFailedAuthenticationEvent` - this event will be emitted when an authentication attempt fails.
+ * `RealmSuccessfulAuthenticationEvent` - this event will be emitted when an authentication attempt succeeds.
+
+=== General Operation
+
+==== Authentication Process
+
+During an authentication the `getRealmIdentity` methods of a `SecurityRealm` are used either to obtain
+or validate credentials depending on the authentication mechanism being used. The `BruteForceRealmWrapper`
+will intercept these calls.
+
+On intercepting a call to `getRealmIdentity` the wrapper will check if the identity is present in the cache
+of failed authentications and will check if the identity has been disabled. If the identity is disabled a
+dummy `RealmIdentity` will be returned that will always fail authentication. If the identity is not disabled
+then the wrapped realm will be called and the realm `RealmIdentity` will be returned.
+
+==== Event Handling
+
+As the final decision regarding the success or failure of an authentication is made within the authentication
+mechanisms the results are communicated back to the realm via events.
+
+Where a `RealmSuccessfulAuthenticationEvent` is received the brute force utility check if any tracking session
+has been created for the identity and if so removes it from the cache.
+
+Where a `RealmFailedAuthenticationEvent` is received the brute force utility will ensure a session exists to
+tracked the number of consecutive failed attempts for the identity. If the number of failed attempts exceeds
+the configured maximum the identity will be marked as disabled for the configured lockout interval.
+
+Many security realms are able to indicate if the underlying identity does exist, in the case of an
+authentication attempt for an identity that does not exist we can skip caching for that identity as it is
+guaranteed to never succeed.  Some realms however such as the JAAS or custom realms are not always able
+to indicate if the identity does exist, this risks the brute force protection from being exploited to
+exhaust the heap.  For this reason the number of sessions cached is capped at a `max-cached-sessions`
+threshold backed by a LRU cache.
+
+As it is important for an administrator to understand if entries are being evicted from the cache a WARN
+message will be logged if this occurs, to prevent spamming the logs this will only be logged if at least
+15 minutes have elapsed since the last time it was logged for the specific realm.
+
+=== Non-Requirements
+
+This proposal focusses on security realms used for username / password based authentication, other
+realm types are excluded.
+
+This proposal will not be adding functionality to persist state that can survive
+server restarts or replication of state to other nodes in a cluster. The utility will be managing state
+for the realm it has wrapped and this will not shared for other realms even if they contain the same
+identities.
+
+This proposal will also not be updating the management model to provide model based configuration of the
+utility.
+
+=== Future Work
+
+We will come back and add configuration to the management model in a future release
+https://issues.redhat.com/browse/WFCORE-7193[WFCORE-7193]. We may also look at information we can share
+at runtime using the management model and possibly even add management operations to remove disabled
+users from the cache or to clear the cache entirely.
+
+Another option to consider for later maybe the ability to emit notifications either in the case of audit
+events or some other mechanism that external tools can use to monitor.
+
+== Backwards Compatibility
+
+As this feature does not add any new configuration in principal there are no backwards compatibility
+issued, however if installations already receive many failed authentication attempts it may lead to those
+accounts being temporarily disabled.
+
+=== Default Configuration
+
+By default the default behaviour for the following security realms will be changed:
+
+ * custom-realm
+ * custom-modifiable-realm
+ * filesystem-realm
+ * jaas-realm
+ * jdbc-realm
+ * ldap-realm
+ * properties-realm
+
+Each of these will now be wrapped with a new `BruteForceRealmWrapper` utility with the following settings:
+
+ * max-failed-attempts = 10
+ * lockout-interval = 15 minutes
+ * session-timeout = 30 minutes
+ * max-cached-sessions = 25,000
+
+The values should always be configured to meet the operational requirements of
+the installation, these defaults were selected to provide a reasonable / default
+level of protection without being too restrictive.  In a higher security
+environment it may be appropriate to reduce the number of allowed failed attempts
+or increase the lockout interval.
+
+=== Importing Existing Configuration
+
+N/A
+
+=== Deployments
+
+This proposal changes the default behaviour of the security realms listed above for both management and
+application authentication.
+
+=== Interoperability
+
+N/A
+
+== Implementation Plan
+
+A new `BruteForceRealmWrapper` will be added to the WildFly Elytron project to add capabilities for brute
+force mitigation, this utility can then be used by projects with integrate WildFly Elytron and integrated
+into their authentication process.
+
+WildFly Core being the project that integrated WildFly Elytron for WildFly as a whole will then utilise
+this utility within the `elytron` subsystem and apply it to the set of supported security realms.
+
+== Admin Clients
+
+This feature does not directly impact the admin clients other than the fact that authentication to the management
+interfaces may now be subject to brute force mitigation if using one of the supported security realms.
+
+== Security Considerations
+
+This feature is specifically targeting a security use case of providing a mitigation for brute force
+attacks.
+
+[[test_plan]]
+== Test Plan
+
+Within the WildFly Elytron project along side the implementation of the `BruteForceRealmWrapper` will be a unit test
+case to verify the core functionality of the utility.
+
+Beyond this a new testsuite `wildfly-security-testsuite` that will contain the main integration tests for the feature.
+
+This feature is being enabled by default and potentially affects every authentication mechanism / security realm permutation
+that is based on username / password authentication. The new testsuite is being split into two `unit`, and `integration`
+modules. The `unit` module will manually assemble components together to verify the behaviour and the `integration` module
+will be based on testing against a running WildFly server. In both cases the testsuite will be engineered to run a set of
+tests against all supported permutations of security realms and authentication mechanisms including HTTP and SASL.
+
+Within the testsuite tests will be added for standard authentication scenarios, the purpose of these being to check for
+regressions once the new brute force mitigation is in place. Additional tests will then be added to specifically verify
+the brute force mitigation functionality.
+
+== Community Documentation
+
+Content will be added to the "WildFly Elytron Security" guide describing how the new utility works, it's
+default out of the box behaviour and how it can be configured on a realm by realm basis using system
+properties.
+
+== Release Note Content
+
+Starting from WildFly 39.0.1 by default all security realms will be wrapped by a new utility to add brute
+force protection to help mitigate against brute force attacks. After 10 consecutive failed authentication
+attempts an identity will be disabled for 15 minutes. Successful authentication attempts will reset the
+failed attempt counter. The failed attempt tracking sessions will time out after 30 minutes of inactivity.
+
+By default a maximum of 25,000 failed authentication sessions will be tracked keyed on the username and
+backed by a LRU cache.
+
+It is possible to override the default behaviour for a specific realm by setting the following system
+properties:
+
+ * wildfly.elytron.realm.[REALM NAME].brute-force.enabled
+ * wildfly.elytron.realm.[REALM NAME].brute-force.max-failed-attempts
+ * wildfly.elytron.realm.[REALM NAME].brute-force.lockout-interval
+ * wildfly.elytron.realm.[REALM NAME].brute-force.session-timeout
+ * wildfly.elytron.realm.[REALM NAME].brute-force.max-cached-sessions
+
+Note: The brute force protection is based on an in-memory cache and does not persist state across server
+restarts or share state between cluster nodes.
