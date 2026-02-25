@@ -3,7 +3,31 @@ categories:
  - undertow
 stability-level: default
 issue: https://github.com/wildfly/wildfly-proposals/issues/791
+# Provide the GitHub ids of the feature team members, organized by role.
+# Provide a single id for the 'assignee' role. Use a YAML list for the 'sme' and
+# 'outside-perspective' roles, even if there is only one person in a role.
+feature-team:
+ developer: bbaranow
+ sme:
+  - frainone
+  - ropalka
+ outside-perspective:
+  - cderetzi
+# If this issue tracks the promotion of a previously completed feature to a higher stability level, provide the URL of
+# the original https://github.com/wildfly/wildfly-proposals/issues issue that was used to track the implementation of
+# that feature.
+promotes: https://github.com/wildfly/wildfly-proposals/pull/435
+# During initial development of a feature, this field should be left blank. If after the feature is completed and its
+# stability level is promoted via a later issue, the developer promoting the issue should return to this document ("this"
+# being the original analysis document for the feature). The field should be updated to point to the
+# https://github.com/wildfly/wildfly-proposals/issues issue that promotes it.
+# For example,
+#              | Implementation Issue (A) | Promotion Issue (B)
+# promotes:    |                          | https://github.com/.../A
+# promoted-by: | https://github.com/.../B |
+promoted-by: https://github.com/wildfly/wildfly-proposals/issues/791
 ---
+
 = [Default]modify ajp-listener to allow specifying pattern for ajp request attributes
 :author:            Bartosz Baranowski
 :email:             bbaranow@redhat.com
@@ -17,9 +41,11 @@ issue: https://github.com/wildfly/wildfly-proposals/issues/791
 Since UNDERTOW-1667 one can set additional AJP request attribute parsing permission via env variable. However there is no way to set it in WFLY config/model. This RFE's goal is to make it possible.
 NOTE: this is promotion from Community to Default level.
 
-== Issue Metadata
+=== User Stories
 
-=== Issue
+N/A
+
+== Issue Metadata
 
 * https://issues.redhat.com/browse/WFLY-19808[WFLY-19808]
 
@@ -30,51 +56,20 @@ NOTE: this is promotion from Community to Default level.
 * https://issues.redhat.com/browse/WFLY-15453[WFLY-15453]
 * https://github.com/wildfly/wildfly-proposals/blob/main/undertow/WFLY-15452_ajp-listener_allowed_attr_pattern.adoc[WFLY_PROPOSAL_15453]
 
-=== Stability Level
-// Choose the planned stability level for the proposed functionality
-* [ ] Experimental
-
-* [ ] Preview
-
-* [ ] Community
-
-* [X] default
-
-=== Dev Contacts
-
-* mailto:{email}[{author}]
-
-=== QE Contacts
-
-* mailto:istraka@redhat.com[Ivan Straka]
-
-=== Testing By
-// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
-// Discuss with QE during the Kickoff state to decide this
-* [ ] Engineering
-
-* [X] QE
-
 === Affected Projects or Components
 
-* undertow
+__<List the projects or components that are affected by the feature. List them using their Git repositories.>__
 
 === Other Interested Projects
 
 === Relevant Installation Types
-// Remove the x next to the relevant field if the feature in question is not relevant
-// to that kind of WildFly installation
-* [x] Traditional standalone server (unzipped or provisioned by Galleon)
 
-* [x] Managed domain
-
-* [x] OpenShift s2i
-
-* [x] Bootable jar
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
 
 == Requirements
-
-=== Hard Requirements
 
 * Being able to configure pattern via model/xml.
 [literal]
@@ -93,9 +88,17 @@ Parameters will be present in undertow server element(for standalone: /subsystem
 ** Default: null
 ** Type: String(regex - java.util.regex.Pattern)
 
-=== Nice-to-Have Requirements
+=== Changed requirements
+
+N/A
 
 === Non-Requirements
+
+N/A
+
+=== Future Work
+
+None
 
 == Backwards Compatibility
 
@@ -103,7 +106,7 @@ Possibly. Subsystem transformers should be able to handle it.
 
 === Default Configuration
 
-No change.
+No change
 
 === Importing Existing Configuration
 
@@ -115,19 +118,25 @@ Not affected.
 
 === Interoperability
 
-Not affected.
+N/A
 
 == Implementation Plan
 
-Done.
+N/A
+
+== Admin Clients
+
+HAL pick up those values and mark as stability dependent. CLI use model.
 
 == Security Considerations
 
 Possibly. UNDERTOW-1667 is a CVE, so this RFE should be documented well, in order to warn users of potential exposure.
 However, by defualt undertow will ignore non-standard and not matching attributes, hence user is failure point.
 
+[[test_plan]]
 == Test Plan
 
+https://gitlab.cee.redhat.com/jbossqe-eap/test-plans/-/merge_requests/752[Test Plan 752]
 Unit tests should cover new functionality(there is already test case covering AjpListener).
 
 == Community Documentation
@@ -136,4 +145,4 @@ Task for WFLY documentation already exist - WFLY-15453. HOwever, this is model c
 
 == Release Note Content
 
-Allow configuration of AJP request attribute pattern with model entry, rather than only via system property.
+Allow configuration of AJP request attribute pattern with model entry, rather than only via system property.(promotion to default stability)
