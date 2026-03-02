@@ -1,0 +1,141 @@
+---
+# Add any category for this proposal as a YAML list, e.g.
+# - core
+# - management
+# If missing, add it to _data/wildfly-categories and use its id
+categories:
+ - undertow
+# Specify the stability level of the feature.
+# Values can be one of: experimental, preview, community, or default
+stability-level: default
+# Specify the Feature Development tracker issue for the feature.
+# This must be an issue tracked in https://github.com/orgs/wildfly/projects/7/views/1.
+# To create a Feature Development tracker issue, go to https://github.com/wildfly/wildfly-proposals/issues/new/choose
+# and select 'Feature Development'
+issue: https://github.com/wildfly/wildfly-proposals/issues/633[ISSUE-633]
+# Provide the GitHub ids of the feature team members, organized by role.
+# Provide a single id for the 'assignee' role. Use a YAML list for the 'sme' and
+# 'outside-perspective' roles, even if there is only one person in a role.
+feature-team:
+ developer: baranowb
+ sme:
+  - frainone
+  - ropaplka
+ outside-perspective:
+  - mnovak
+# If this issue tracks the promotion of a previously completed feature to a higher stability level, provide the URL of
+# the original https://github.com/wildfly/wildfly-proposals/issues issue that was used to track the implementation of
+# that feature.
+promotes:
+# During initial development of a feature, this field should be left blank. If after the feature is completed and its
+# stability level is promoted via a later issue, the developer promoting the issue should return to this document ("this"
+# being the original analysis document for the feature). The field should be updated to point to the
+# https://github.com/wildfly/wildfly-proposals/issues issue that promotes it.
+# For example,
+#              | Implementation Issue (A) | Promotion Issue (B)
+# promotes:    |                          | https://github.com/.../A
+# promoted-by: | https://github.com/.../B |
+promoted-by:
+---
+
+= Add default 90s R/W timeout to listeners
+:author:            Bartosz Baranowski
+:email:             bbaranow@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+
+
+== Overview
+
+Add default(90s) read/write timeout to undertow socket listeners.
+
+=== User Stories
+
+No timeout can lead to DOS vulnerability.
+
+== Issue Metadata
+
+* https://issues.redhat.com/browse/WFLY-14980[WFLY-14980]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-15454[WFLY-15454]
+
+
+=== Affected Projects or Components
+
+undertow ingegration.
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+All projects will have to adjust, as new 90s delay might cause test regression.
+
+== Requirements
+
+Set default timeout value for R/W on listener types.
+
+=== Changed requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+=== Future Work
+
+N/A
+
+== Backwards Compatibility
+
+Halfway. Default WILL affect applications and web socket deployments( for which there is another RFE to allow distinct R/W timeouts on those elements ). However config compat should not be affected.
+
+=== Default Configuration
+
+N/A
+
+=== Importing Existing Configuration
+
+Not a problem.
+
+=== Deployments
+
+N/A
+
+=== Interoperability
+
+N/A
+
+== Implementation Plan
+
+N/A
+
+== Admin Clients
+
+Not affected as its only default value.
+
+== Security Considerations
+
+Improved.
+
+[[test_plan]]
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+As of WFLY X listners( and by extension webscokets) have  now default 90s R/W timeout, as to previously no having any( idenfinite)
+
+== Release Note Content
