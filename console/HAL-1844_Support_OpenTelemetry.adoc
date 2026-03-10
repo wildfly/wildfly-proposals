@@ -53,8 +53,6 @@ N/A
 
 * Traditional standalone server (unzipped or provisioned by Galleon)
 * Managed domain
-* OpenShift Source-to-Image (S2I)
-* Bootable jar
 
 == Requirements
 
