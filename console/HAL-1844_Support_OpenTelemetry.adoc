@@ -1,0 +1,110 @@
+---
+categories:
+- console
+- microprofile
+- observability
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/786
+feature-team:
+ developer: hpehl
+ sme:
+  - jasondlee
+ outside-perspective:
+  - rhusar
+promotes:
+promoted-by:
+---
+= Support OpenTelemetry in the console
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+The goal of this RFE is to support the configuration of the OpenTelemetry subsystem in the management console. Currently, the console does not provide any UI for the `opentelemetry` subsystem, and users must rely on the CLI or other tools to configure it. This proposal adds support for configuring the subsystem through the console's configuration section.
+
+=== User Stories
+
+As a WildFly administrator, I want to configure the OpenTelemetry subsystem through the management console so that I can manage observability settings without using the CLI.
+
+== Issue Metadata
+
+=== Related Issues
+
+* {issue-base-url}/HAL-1844
+* {issue-base-url}/EAP7-1804
+* {issue-base-url}/WFLY-17156
+* {issue-base-url}/WFLY-14854
+* {issue-base-url}/EAP7-2055
+
+=== Affected Projects or Components
+
+* https://github.com/hal/console[HAL Management Console]
+
+=== Other Interested Projects
+
+N/A
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+
+== Requirements
+
+The console shows the new subsystem `opentelemetry` in the configuration section under Configuration / Subsystems / OpenTelemetry.
+
+The UI for the subsystem is backed by the https://hal.github.io/documentation/concepts/#applications[model browser] which generates the UI based on the resource descriptions of `/subsystem=opentelemetry`.
+
+=== Non-Requirements
+
+The console does not offer a dedicated, hand-crafted UI to configure the `opentelemetry` subsystem. The model browser based UI is sufficient for the initial implementation.
+
+=== Future Work
+
+A dedicated UI to configure the `opentelemetry` subsystem might be added in a future RFE.
+
+== Backwards Compatibility
+
+This feature adds new UI functionality and does not affect backwards compatibility.
+
+=== Default Configuration
+
+No changes to default configuration values or Galleon layers.
+
+=== Importing Existing Configuration
+
+No impact on existing configurations or the WildFly server migration tool.
+
+=== Deployments
+
+No impact on deployments.
+
+=== Interoperability
+
+No impact on interoperability.
+
+== Admin Clients
+
+This feature is itself a change to the admin console (HAL). No changes are required in the JBoss CLI.
+
+== Security Considerations
+
+No security impact. The console uses the existing management API to configure the subsystem and relies on the existing role-based access control.
+
+[[test_plan]]
+== Test Plan
+
+Additional tests are added to the HAL test suite that verifies that the `opentelemetry` subsystem resources can be configured through the console. This includes integration tests that validate the model browser-based UI correctly reads and writes the subsystem attributes.
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
+
+== Release Note Content
+
+The WildFly management console now supports configuring the OpenTelemetry subsystem. Users can view and modify the OpenTelemetry configuration through the console's Configuration / Subsystems section.
