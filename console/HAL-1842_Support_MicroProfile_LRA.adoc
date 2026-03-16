@@ -30,6 +30,28 @@ The goal of this RFE is to support the configuration and runtime aspects of the 
 `microprofile-lra-participant`.
 This RFE adds support for these two subsystems in the console.
 
+The new subsystems must be added to WildFly to test this RFE.
+Follow the steps in the [MicroProfile LRA quickstart](https://github.com/wildfly/quickstart/tree/main/microprofile-lra)
+to add the new subsystems to WildFly:
+
+* Start the WildFly server with the MicroProfile profile by typing the following command.
++
+----
+WILDFLY_HOME/bin/standalone.sh -c standalone-microprofile.xml
+----
+* Add the subsystems in the CLI
++
+----
+batch
+
+/extension=org.wildfly.extension.microprofile.lra-coordinator:add
+/extension=org.wildfly.extension.microprofile.lra-participant:add
+/subsystem=microprofile-lra-coordinator:add
+/subsystem=microprofile-lra-participant:add
+
+run-batch
+----
+
 === User Stories
 
 As a WildFly administrator, I want to configure the MicroProfile LRA coordinator and participant subsystems through the management console so that I can manage LRA settings.
