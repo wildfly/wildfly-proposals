@@ -1,0 +1,136 @@
+---
+categories:
+- console
+- microprofile
+- transactions
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/784
+feature-team:
+ developer: hpehl
+ sme:
+  - xstefank
+ outside-perspective:
+  - rhusar
+promotes:
+promoted-by:
+---
+= Support MicroProfile LRA in the console
+:author:            Harald Pehl
+:email:             hpehl@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse
+
+== Overview
+
+The goal of this RFE is to support the configuration and runtime aspects of the MicroProfile LRA spec in the management console.
+{issue-base-url}/WFLY-14869[WFLY-14869] introduces two new subsystems: `microprofile-lra-coordinator` and
+`microprofile-lra-participant`.
+This RFE adds support for these two subsystems in the console.
+
+The new subsystems must be added to WildFly to test this RFE.
+Follow the steps in the https://github.com/wildfly/quickstart/tree/main/microprofile-lra[MicroProfile LRA quickstart] 
+to add the new subsystems to WildFly:
+
+* Start the WildFly server with the MicroProfile profile by typing the following command.
++
+----
+WILDFLY_HOME/bin/standalone.sh -c standalone-microprofile.xml
+----
+* Add the subsystems in the CLI
++
+----
+batch
+
+/extension=org.wildfly.extension.microprofile.lra-coordinator:add
+/extension=org.wildfly.extension.microprofile.lra-participant:add
+/subsystem=microprofile-lra-coordinator:add
+/subsystem=microprofile-lra-participant:add
+
+run-batch
+----
+
+=== User Stories
+
+As a WildFly administrator, I want to configure the MicroProfile LRA coordinator and participant subsystems through the management console so that I can manage LRA settings.
+
+== Issue Metadata
+
+=== Related Issues
+
+* {issue-base-url}/HAL-1842
+* {issue-base-url}/EAP7-1496
+* {issue-base-url}/WFLY-14869
+* {issue-base-url}/WFLY-19872
+* {issue-base-url}/EAP7-2051
+
+=== Affected Projects or Components
+
+This RFE affects the management console (https://github.com/hal/console[HAL]).
+It depends on the management resources defined by {issue-base-url}/WFLY-14869[WFLY-14869].
+
+=== Other Interested Projects
+
+None.
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+
+== Requirements
+
+The console shows the new subsystems `microprofile-lra-coordinator` and `microprofile-lra-participant` in the configuration section under Configuration / Subsystems. The affected resources are `/subsystem=microprofile-lra-coordinator` and `/subsystem=microprofile-lra-participant`.
+
+The UI for these subsystems is backed by the https://hal.github.io/documentation/concepts/#applications[model browser] which generates the UI based on the resource descriptions.
+
+=== Non-Requirements
+
+The console does not offer a dedicated UI to configure the `microprofile-lra-coordinator` and `microprofile-lra-participant` subsystems.
+
+=== Future Work
+
+A dedicated UI to configure the `microprofile-lra-coordinator` and `microprofile-lra-participant` subsystems might be added in a future RFE.
+
+== Backwards Compatibility
+
+This feature adds new UI for subsystems. There are no backwards compatibility concerns.
+
+=== Default Configuration
+
+No changes to the default configuration.
+
+=== Importing Existing Configuration
+
+No impact on importing existing configuration.
+
+=== Deployments
+
+No impact on deployments.
+
+=== Interoperability
+
+No impact on interoperability.
+
+== Admin Clients
+
+This feature is the admin console (HAL) implementation itself. No additional follow-up work is required in admin clients.
+
+== Security Considerations
+
+There are no security implications. The console relies on the existing management security infrastructure.
+
+[[test_plan]]
+== Test Plan
+
+Additional tests are added to the test suite that verifies that the relevant resources can be configured. This includes automated integration tests that verify the MicroProfile LRA subsystem configurations are accessible and modifiable through the console.
+
+== Community Documentation
+
+See the official HAL website at https://hal.github.io
+
+== Release Note Content
+
+The WildFly management console (HAL) now supports configuring the MicroProfile LRA coordinator and participant subsystems. The configuration is available under Configuration / Subsystems.
