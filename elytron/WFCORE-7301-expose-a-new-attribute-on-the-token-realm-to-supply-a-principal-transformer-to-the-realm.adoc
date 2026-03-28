@@ -1,0 +1,123 @@
+---
+categories:
+ - elytron
+stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/752
+feature-team:
+ developer: theashiot
+ sme:
+  - TBD
+ outside-perspective:
+  - TBD
+---
+
+= Expose a new attribute on the token-realm to supply a principal-transformer to the realm
+
+:author:            Ashwin Mehendale
+:email:             amehenda@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently, principal transformers cannot be applied to principals obtained from JSON Web Tokens (JWT) when using the `token-realm` security realm. This prevents users from transforming the principal an application receives from the JWT. This issue proposes a configuration option to apply a principal transformer to the principal obtained from JWT in the `token-realm` security realm.
+
+=== User Stories
+
+As a user, when creating a `token-realm` security realm, I want to optionally provide it with a principal transformer, so that I can transform the Principal that the application being secured receives from a JWT.
+
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/ELY-2921[ELY-2921]
+* https://issues.redhat.com/browse/WFCORE-7301[WFCORE-7301]
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly-security/wildfly-elytron[wildfly-elytron]
+* https://github.com/theashiot/wildfly-core[wildfly-core]
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+// List the installation types that are relevant for the features and remove any that are not relevant.
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+* [x] Managed domain
+* [x] OpenShift Source-to-Image (S2I)
+* [x] Bootable jar
+
+== Requirements
+
+Provide an optional attribute `principal-transformer` in the token-realm subsystem configuration. The principal transformer will be applied after the claimToPrincipal method so that users can transform the Principal obtained from the required claim in JWTs. This principal transformer will be a reference to a principal-transformer that has been defined in the mappers configuration in the Elytron subsystem.
+
+For example:
+
+[source]
+----
+/subsystem=elytron/token-realm=<realm_name>:add(principal-claim=<principal_claim>, oauth2-introspection={client-id=<client_id>, client-secret=<client_secret>, client-ssl-context=<client_ssl_context>, introspection-url=<URL>},principal-transformer=<principal_transformer>)
+----
+
+=== Non-Requirements
+
+N/A
+
+=== Future Work
+
+N/A
+
+== Backwards Compatibility
+
+N/A
+
+=== Default Configuration
+
+The new attribute will not be present in the default configuration.
+
+=== Importing Existing Configuration
+
+The attributes is optional, thererofore the changes here will not impact the ability to import an existing configuration.
+
+=== Deployments
+
+N/A
+
+=== Interoperability
+
+N/A
+
+== Admin Clients
+
+N/A
+
+== Security Considerations
+
+The new attribute does not require additional security considerations.
+
+[[test_plan]]
+== Test Plan
+
+The following tests are planned:
+
+.Unit tests in Elytron:
+* Verify that the Principal gets trasnformed to the expected value based on the supplied principal transformer.
+* Verify that the original Principal is used if principal transformer returns null.
+
+.Tests in WFCore
+* Subsystem parsing test
+* Transformer test
+
+
+== Community Documentation
+
+Add a statement about the optional `principal-transformer` attribute at https://docs.wildfly.org/37/WildFly_Elytron_Security.html#CLI-examples-on-how-to-create-a-token-realm[CLI Examples on How to Create a Token Realm] with a link to https://docs.wildfly.org/37/WildFly_Elytron_Security.html#principal-transformers[Principal Transformers] for information about principal transformers.
+
+
+== Release Note Content
+
+You can now optionally transform the Principal obtained from a JWT when using `token-realm` by passing a principal transformer, such as a `case-principal-transformer`, before the Principal is passed to the application being secured.
