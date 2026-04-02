@@ -130,8 +130,7 @@ __<This section is optional. I've left it blank for now as I don't know
 
 == Admin Clients
 
-__<Identify the level of compatibility this feature will have with the existing admin clients (JBoss CLI and the Admin
-Console / HAL). Identify any follow-up work that will be required in the clients and link issues created to track this work.>__
+Admins clients will just work. A client connecting to a server or Host Controller provisioned using this feature will be manageable in the same way the EE 11 variant of the same release is. There may be differences in particular items in the server configuration, but every WildFly installation is expected to have differences versus what's in our OOTB configs.
 
 == Security Considerations
 
