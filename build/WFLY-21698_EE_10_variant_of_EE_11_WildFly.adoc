@@ -117,7 +117,7 @@ No incompatibility.
 
 === Interoperability
 
-__<Is this feature impacting interoperability?>__
+No incompatibility.
 
 === Provisioning
 
@@ -125,7 +125,8 @@ Users wishing to use this variant will need to update their provisioning configu
 
 == Implementation Plan
 
-__<This section is optional. If you have a complex feature which cannot be delivered all in one go, suggest the strategy.>__
+__<This section is optional. I've left it blank for now as I don't know
+   if using this analysis to describe this will be productive.>__
 
 == Admin Clients
 
