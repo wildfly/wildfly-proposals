@@ -1,0 +1,156 @@
+---
+categories:
+- security
+- elytron
+# Specify the stability level of the feature.
+# Values can be one of: experimental, preview, community, or default
+stability-level: community
+# Specify the Feature Development tracker issue for the feature.
+# This must be an issue tracked in https://github.com/orgs/wildfly/projects/7/views/1.
+issue: https://github.com/wildfly/wildfly-proposals/issues/809
+# Provide the GitHub ids of the feature team members, organized by role.
+feature-team:
+ developer:
+  - luck3y
+  - skyllarr
+ sme:
+  - darranl
+  - honza-kasik
+ outside-perspective:
+  - jasondlee
+promotes:
+promoted-by:
+---
+
+= HashiCorp Vault Integration — Credential Store and Expression Resolver
+:author:            skyllarr
+:email:             diavilko@gmail.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+__This proposal describes the integration of HashiCorp Vault with WildFly via a feature pack, providing a credential store backed by Vault and an expression resolver so that server configuration can reference secrets stored in Vault.__
+
+== Overview
+
+This feature allows HashiCorp Vault to be used as a credential store within WildFly and allows expressions in the management model to resolve to secrets stored in Vault.
+
+The integration is delivered as a Galleon feature pack (wildfly-vault-feature-pack) that adds a `hashicorp-vault` layer with the `hashicorp-vault` subsystem. This subsystem defines `credential-store` resources that connect to a Vault server and work just like the Elytron's credential store resources.
+
+A hashicorp expression resolver will also be added to support expressions such as `${HC_VAULT::store-name:alias}` so that attributes across the server can reference Vault secrets without embedding them in configuration.
+
+=== User Stories
+
+* As an admin, I want to configure a credential store that reads and writes secrets to HashiCorp Vault so that I can have centralized secrets in Vault and reference them from WildFly.
+* As an admin, I want to use expressions like `${HC_VAULT::my-vault:secret/myapp.password}` which will be resolved at runtime from Vault.
+* As an admin, I want to add, remove, and list aliases (secrets) in a Vault-backed credential store via the management API so that I can manage secrets through WildFly.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/ELY-1897
+* https://issues.redhat.com/browse/WFLY-21572 - documentation issue
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly-security/wildfly-vault-feature-pack[wildfly-vault-feature-pack] — Galleon feature pack and hashicorp-vault subsystem
+* https://github.com/wildfly-security/wildfly-elytron-hashicorp-vault[wildfly-elytron-hashicorp-vault] — core elytron library communicating with HashiCorp vault instances
+
+=== Other Interested Projects
+
+* https://github.com/wildfly/wildfly-core[WildFly Core]
+* https://github.com/wildfly-security/wildfly-elytron[WildFly Elytron]
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+=== Credential store
+
+* The feature pack must provide a new subsystem (eg. `hashicorp-vault` subsystem) with a `credential-store` resource type.
+* Credential store will be able to connect to a HashiCorp Vault server and authenticate with one of the following methods:
+
+    ** token via credential-reference
+    ** certificate authentication thanks to the ssl-context configured in the authentication-context attribute
+* TLS for the connection to Vault must be configurable (e.g. via authentication-context) so that server and client certificates can be used.
+* The credential store must implement the Elytron credential store SPI so that it is usable everywhere where elytron credential store resources are usable.
+* Credential store management operations must be supported as usual: add credential store, remove credential store, add-alias, remove-alias, read-aliases
+* The feature pack must be integrated with GLOW and be discoverable.
+
+=== Expression resolver
+
+* An expression resolver must support expressions that resolve to secrets stored in a configured Vault credential store.
+* Expression format can for example be `${HC_VAULT::store-name:alias}`. Resolution occurs at RUNTIME.
+* All attributes in management model that support expression resolution can use these Vault expressions.
+* Failed resolution (e.g. store not found, alias not found) must result in a clear error
+
+=== Non-Requirements
+
+* Support for every Vault auth method is not required; token-based and TLS is in scope.
+* No Vault management is supported through this proposal, only credential manipulation is supported
+
+=== Future Work
+
+* Promotion to default stability.
+* Additional credential types that HC Vault supports.
+* Credential rotation
+* Consuming update notifications from Vault
+
+== Backwards Compatibility
+
+* No existing configurations or default configurations are changed by this feature, no existing feature packs are changed.
+
+=== Default Configuration
+
+No default configuration is changed. The hashicorp-vault subsystem is only present when the feature pack is installed and server is run in the agreed stability level.
+
+=== Importing Existing Configuration
+
+Not applicable; no migration of existing configuration is required.
+
+=== Deployments
+
+No change to existing deployments.
+
+=== Interoperability
+
+Interoperates with existing Elytron credential stores and expression resolvers. Vault-backed stores appear as credential stores to the Elytron subsystem.
+
+== Implementation Plan
+
+* New feature pack will be delivered that provides both the subsystem containing credential store resource and expression resolver functionality.
+
+== Admin Clients
+
+* JBoss CLI and HAL can be used to configure and modify credential-store resources. No client changes are required beyond documenting the new subsystem and expression syntax.
+* Expression resolution behavior (e.g. resolve-expression not resolving Vault expressions) should be documented for admin clients.
+
+== Security Considerations
+
+* Credential store attributes that hold credentials or references to credentials (e.g. credential-reference) must be classified as security-sensitive (e.g. CREDENTIAL).
+* Expression resolution of Vault expressions exposes secret values at runtime.
+* The global resolve-expression operation should not resolve Vault expressions to avoid exposing sensitive data.
+
+[[test_plan]]
+== Test Plan
+
+** COMMUNITY —
+* Complete unit and integration tests added to the feature pack: parsing tests for the subsystem, credential store add/remove/alias operations, and expression resolver unit and integration tests (with Testcontainers for Vault).
+* Arquillian-based integration tests cover HTTPS and mutual TLS to Vault using Elytron `authentication-context` and `ssl-context` match-rules.
+* Manual tests with feature pack usage
+
+== Community Documentation
+
+* Documentation for the feature pack installation, subsystem configuration (credential-store attributes and operations), and expression syntax should be provided.
+* Quickstart and wildfly.org guide showing a Vault credential store and use of expressions.
+
+== Release Note Content
+
+WildFly can be extended with the HashiCorp Vault feature pack to use HashiCorp Vault as a credential store and to resolve expressions.
