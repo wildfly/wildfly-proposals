@@ -65,6 +65,9 @@ WildFly container images
 == Requirements
 
 * A new `wildfly-ee-10` feature pack will be created.
+** It will have a Galleon Feature Pack Locator of `wildfly-ee-10@maven(org.jboss.universe:community-universe)`
+** It will have a Maven coordinate GA of `org.wildfly:wildfly-ee-10-feature-pack`
+*** Note the use of `feature-pack`, not the `galleon-pack` that unfortunately is used for historical reasons by the `wildfly-ee` feature pack. The expectation is most users are not directly dealing with the artifactId of `wildfly-ee`, so there is not much to gain in terms of migration by adding another use of `galleon-pack`.
 ** It will provide EE 10 APIs and implementations.
 ** It will provide other functionality equivalent to the `wildfly-ee` feature pack.
 ** It will provide OOTB configurations equivalent to the `wildfly-ee` feature pack, except:
