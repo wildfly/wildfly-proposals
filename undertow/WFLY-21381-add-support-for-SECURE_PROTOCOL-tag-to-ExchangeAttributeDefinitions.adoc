@@ -1,0 +1,131 @@
+---
+categories:
+  - undertow
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/783
+feature-team:
+  developer: jasondlee
+  sme:
+    - ropalka
+  outside-perspective:
+    - jamezp
+promotes:
+promoted-by:
+---
+
+= Add support for SECURE_PROTOCOL tag to ExchangeAttributeDefinitions
+:author:            Jason Lee
+:email:             jasondlee@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+
+== Overview
+
+Undertow provides a number of tags with which users can configure access logging to capture specific details about an
+incoming request. Among those are date/time, host port, remote IP, etc. Customers have requested the ability to log the
+specific TLS version used in the request. This RFE will add support for the new tag.
+
+=== User Stories
+
+* As a WildFly user, I would like to be able to log the TLS version used in an incoming request.
+
+== Issue Metadata
+
+* https://issues.redhat.com/browse/WFLY-21381
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/UNDERTOW-1881
+* https://issues.redhat.com/browse/EAP7-1693
+
+=== Affected Projects or Components
+
+* Undertow
+* WildFly Core
+* WildFly
+
+=== Other Interested Projects
+
+N/A
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Host controllers
+* OpenShift Source-to-Image (S2I)
+* Bootable JAR (Dependent on EAP7-1727)
+
+== Requirements
+
+* A new attribute, `secure-protocol`, will be added to `console-access-log`
+** The new attribute will expose Undertow's `SecureProtocolAttribute` to the WildFly management model
+** The subsystem schema must be updated to add the new tag to the XML schema
+* The tag will be available for use with `access-log` via the `pattern` attribute in the same manner that other
+`console-access-log` tags/attributes are (e.g., `<access-log pattern="... %{SECURE_PROTOCOL}..."`)
+* The new attribute/tag will be opt-in, so no logging changes will take effect unless the administrator updates the server configuration
+
+
+=== Changed requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+=== Future Work
+
+N/A
+
+== Backwards Compatibility
+
+This is a new tag and will therefore have no impact on existing installations/configurations. For any changes to occur, the WildFly
+configuration will need to be updated to include the new tag. This will, of course, change the output in the logging, so any process
+that is monitoring and parsing output logs will need to be updated to account for the new information.
+
+=== Default Configuration
+
+There are no default configuration changes.
+
+=== Importing Existing Configuration
+
+Existing configurations should run unchanged and should need no migration efforts.
+
+=== Deployments
+
+Deployments will remain unchanged. There will be no behavioral changes visible to existing deployments without an explicit opt-in
+via a configuration change on the server or in Undertow-based code. However, as stated above, any deployment that is monitoring and
+parsing output logs will need to be updated to account for the new information.
+
+=== Interoperability
+
+There are no known interoperability issues.
+
+== Implementation Plan
+
+While this is a simple change, its ultimate integration into the server involves a few moving pieces, which are probably worth calling out here:
+
+. The change is made in the Undertow project
+. Once a release of Undertow is made that contains this change, it can then be integrated into WildFly Core
+. Once WildFly Core has been updated, a release will need to be made so it can be integrated into WildFly.
+. Once that WildFly Core release has been made, the change can be made in the WildFly sources to make this new tag available.
+
+== Admin Clients
+
+N/A
+
+== Security Considerations
+
+N/A
+
+[[test_plan]]
+== Test Plan
+
+Tests will be added to the Undertow codebase to verify that the tag is accepted and processed correctly.
+
+== Release Note Content
+
+A new `ExchangeAttribute`, `SECURE_PROTOCOL`, has been added to WildFly to allow developers and system administrators to log the TLS version used in a request.
