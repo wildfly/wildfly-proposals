@@ -101,6 +101,9 @@ https://redhat.atlassian.net/browse/WFLY-21698
 
 * Quickstarts using the EE 10 variant. The purpose of the variant is to support existing applications.
 * Maven archetypes using the EE 10 variant. The purpose of the variant is to support existing applications.
+* Any long term commitment to continuing to provide the `wildfly-ee-10` feature pack in later WildFly versions.
+** The purpose of the feature pack is to ease a bit the transition to EE 11, not to remove the need to make that transition.
+** The hope is to provide it for two WildFly releases, but if something prevents us providing it in the second release (e.g. critical CVEs in EE 10 components with no fixes available), we will not.
 * Support for running deployments compiled against EE 11 APIs on a server provisioned using the `wildfly-ee-10` feature pack.
 * An alternative `wildfly-core` feature pack variant that provides alternative EE API dependencies. The `wildfly-core` feature pack is a piece of test infrastructure used to drive the WildFly Core testsuite. The WildFly Core testsuite does not exercise any EE functionality that differs between EE 10 and EE 11.
 * Using a Domain Controller provisioned using the `wildfly-ee-10` feature pack to manage a secondary Host Controller provisioned using the `wildfly-ee` feature pack is not supported.
@@ -175,6 +178,8 @@ The https://docs.wildfly.org/39/WildFly_Maven_Plugin_Guide.html[WildFly Maven Pl
 A new guide will be created illustrating the use of the `wildfly-ee-10` feature pack.
 
 Use of the feature pack will be a significant section of the release announcement for the first WildFly release where it appears.
+
+All of the above will note the limited number of expected new versions of the new feature pack, i.e. that it will not be produced for WildFly 42 and later.
 
 == Release Note Content
 
