@@ -88,7 +88,9 @@ WildFly container images
 * User BOMs specifying EE 10 dependencies will be provided that are equivalent to the usual boms (that will now provide EE 11 dependencies).
 * A WildFly Channels channel and manifest will be provided for the `wildfly-ee-10` feature pack with the Maven GA `org.wildfly.channels:wildfly-ee-10`.
 * A Galleon channel will be provided for the `wildfly-ee-10` feature pack.
-* The WildFly Container project will produce images based on a server provisioned using the `wildfly` feature pack in combination with the `wildfly-ee-10` feature pack.
+* The WildFly Container project will produce images based on the tgz archive of the WildFly fat build from the wildfly-ee-10 feature pack. These images will be:
+** `quay.io/wildfly/wildfly:${wildfly-version}-ee-10-jdk{java-version}` (with `java-version` being 17 and 21)
+** `quay.io/wildfly/wildfly:${wildfly-version}-ee-10-latest` (pointing to the jdk21 tag)
 
 
 
