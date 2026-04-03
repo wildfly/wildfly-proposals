@@ -102,7 +102,7 @@ WildFly container images
 === Future Work
 
 * Impact on WildFly Glow and WildFly catalog that can be done once the new `wildfly-ee-10` feature-pack has been released:
-** WildFly Glow. We need to evolve tooling: WildFly Maven Plugin, WildFly Glow CLI, and possibly jbang's integration with the notion of a 'variant'. A new option to convey this information will be added.
+** WildFly Glow. We need to evolve tooling -- WildFly Maven Plugin and WildFly Glow CLI -- with the notion of a 'variant'. A new option to convey this information will be added.
 ** WildFly Catalog. We today have a catalog per WildFly version for the 2 existing variants: WildFly and WildFly Preview. We will add a catalog for the new "EE-10" variant.
 ** Some of this _might_ be done after the feature pack is release in WildFly beta but before the Final release; otherwise it will be done later.
 
