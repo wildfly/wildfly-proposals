@@ -86,7 +86,7 @@ WildFly container images
 * The MyFaces feature pack 2.x series will support the `jakarta-ee-10+` family, thus allowing `wildfly-ee-10` to be used as the base feature pack, instead of the default `wildfly-ee` provided by early WildFly releases the provided EE 10.
 ** The expectation is a new 3.x series of this feature pack will provide EE 11. Unlike the other feature packs discussed in this analysis, the same release of this feature pack cannot be used with both an EE 10 and and EE 11 base WildFly, because the feature pack depends on EE APIs that differ between EE 10 and 11.
 * User BOMs specifying EE 10 dependencies will be provided that are equivalent to the usual boms (that will now provide EE 11 dependencies).
-* A WildFly Channels channel and manifest will be provided for the `wildfly-ee-10` feature pack.
+* A WildFly Channels channel and manifest will be provided for the `wildfly-ee-10` feature pack with the Maven GA `org.wildfly.channels:wildfly-ee-10`.
 * A Galleon channel will be provided for the `wildfly-ee-10` feature pack.
 * The WildFly Container project will produce images based on a server provisioned using the `wildfly` feature pack in combination with the `wildfly-ee-10` feature pack.
 
