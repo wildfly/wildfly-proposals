@@ -1,0 +1,472 @@
+---
+categories:
+  - ai
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/659
+feature-team: 
+ developer: ehsavoie
+ sme:
+  - 
+ outside-perspective:
+  - 
+---
+= [Experimental] Provide a Galleon feature pack to facilitate Generative AI application development
+
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The goal of this feature is to provide a simple way to develop Generative AI applications.
+This could be done by allowing those resources to be configured in WildFly and then injected into the application via CDI to be used there.
+Given that currently one of the main use-case of Generative AI is to provide Retrieval-Augmented Generation application, all the elements required for such an application should be accessible.
+The feature should take inspiration using LangChain4J which provides an API over several LLM inferers to build such applications.
+As an experimental feature, we will provide `LangChain4J` integration via `smallrye-llm` instead of providing our own API, defining resources to be injected into applications in an *ai* subsystem.
+
+In addition to RAG capabilities, the feature also provides integration with the Model Context Protocol (MCP), which allows AI models to interact with external tools and services.
+MCP clients can be configured to connect to MCP servers via Standard I/O (stdio), or Streamable HTTP transport.
+This enables AI applications to extend LLM capabilities with function calling and tool use, allowing models to perform actions like querying databases, calling APIs, or interacting with external systems.
+
+=== User Stories
+
+* As a Java developer, I want to build a Retrieval-Augmented Generation (RAG) application in WildFly so that I can provide users with AI-powered answers based on my organization's documents and data, without having to manually integrate multiple LLM libraries and vector databases.
+
+* As an enterprise application developer, I want to configure different LLM providers (OpenAI, Ollama, Gemini, etc.) through WildFly's management interface so that I can switch between providers or use different models for different purposes without changing my application code.
+
+* As a data scientist, I want to inject embedding models and vector stores via CDI into my Jakarta EE application so that I can leverage my existing Java EE knowledge to build semantic search capabilities without learning entirely new frameworks.
+
+* As an AI application developer, I want to integrate external tools and APIs with my LLM using the Model Context Protocol so that my AI assistant can perform actions like querying databases, calling REST APIs, or executing custom business logic in response to user requests.
+
+* As a solutions architect, I want to use multiple vector databases (Weaviate, Chroma, Neo4j) interchangeably through a consistent configuration interface so that I can choose the best database for each use case without vendor lock-in.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-19381[WFLY-19381]
+* https://issues.redhat.com/browse/EAP7-2208[EAP7-2208]
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+
+== Requirements
+
+This feature should be available as an external galleon feature pack thus not being bound to a specific WildFly version or to the WildFly release cycle.
+The feature pack should enable a way to configure and provide resources to build RAG applications.
+
+The feature provides the following resources for building AI applications:
+
+**Embedding Models** (`dev.langchain4j.model.embedding.EmbeddingModel`):
+ * In-memory embedding models (loaded from JBoss modules)
+ * Ollama embedding models (remote API-based)
+
+**Embedding Stores** (`dev.langchain4j.store.embedding.EmbeddingStore`):
+ * In-memory embedding stores (with optional file persistence)
+ * Weaviate vector database integration
+ * Chroma vector database integration
+ * Neo4j graph database integration
+
+**Chat Language Models** (`dev.langchain4j.model.chat.ChatLanguageModel`):
+ * OpenAI and OpenAI-compatible models (including Groq)
+ * Ollama models (self-hosted)
+ * Google Gemini models
+ * Mistral AI models
+
+**Content Retrievers** (`dev.langchain4j.rag.content.retriever.ContentRetriever`):
+ * Embedding store content retrievers (semantic search over embeddings)
+ * Web search content retrievers (Google Custom Search and Tavily)
+ * Neo4j content retrievers (natural language to Cypher query conversion)
+
+**Additional Components**:
+ * Chat memory providers for conversation history management
+ * Model Context Protocol (MCP) client support for tool use and function calling
+ * MCP tool providers to expose tools from MCP servers to AI models
+
+All resources are exposed via CDI (and thus Weld) to the application using qualifier and type.
+The feature uses annotations from LangChain4J nad LangChain4J-CDI:
+  * @RegisterAIService  to enable the creation of langChain4J AIService.
+  * @Tool: to enable the creation of local tools.
+  * @SystemMessage: for system prompts.
+  * @UserMessage: for the user prompts.
+  
+Galleon layers are provided to provision the server according to the needs.
+
+=== Non-Requirements
+ 
+ * Exposing WildFly application code as MCP tools
+ * A2A Integration 
+
+=== Future Work
+
+
+== Backwards Compatibility
+
+N/A
+
+=== Default Configuration
+
+No impact.
+
+=== Importing Existing Configuration
+
+=== Deployments
+
+The required librairies should be added automatically on the deployment classpath. 
+
+=== Interoperability
+
+== Implementation Plan
+
+=== Embeddings models
+
+The extension should provide resources to define `dev.langchain4j.model.embedding.EmbeddingModel`.
+
+It should expose a simple `in-memory-embedding-model` resource with the following attributes:
+
+* module: the jboss module containing the code of the model.
+* embedding-class: the name of the class to use to load the model.
+
+----
+/subsystem=ai/in-memory-embedding-model=myembedding:add(module=dev.langchain4j.embeddings.all-minilm-l6-v2, embedding-class=dev.langchain4j.model.embedding.AllMiniLmL6V2EmbeddingModel)
+----
+
+It should also support LLM backed embedding models like for ollama for example.
+We should have an `ollama-embedding-model` resource with the following attributes:
+
+* base-url: endpoint to connect to an Ollama chat model.
+* connect-timeout: timeout for the Ollama embedding model.
+* log-requests: enabling the tracing of requests going to Ollama.
+* log-responses: enabling the tracing of responses from Ollama.
+* model-name: the name of the embedding model served by Ollama.
+
+----
+subsystem=ai/ollama-embedding-model=myembedding:add(base-url="http://192.168.1.11:11434", model-name="llama3:8b")
+----
+
+=== Embeddings stores
+
+The extension should provide resources to define `dev.langchain4j.store.embedding.EmbeddingStore`.
+
+It should expose a simple `in-memory-embedding-store` resource with the following attributes:
+
+* path: the file to load the in memory embedding store content from.
+* relative-to: if the file is relative to a know path.
+----
+/subsystem=ai/in-memory-embedding-store=mystore:add(path=embeddings.json, relative-to=jboss.server.config.dir)
+----
+
+It should also support vector database backed embedding store like for Weaviate.
+It should expose a simple `weaviate-embedding-store` resource with the following attributes:
+
+* avoid-dups: If true the object id is a hashed ID based on provided text segment else a random ID will be generated.
+* consistency-level: How the consistency is tuned when writing into weaviate embedding store. Allowed values: ONE, QUORUM, ALL (defaults to ALL).
+* metadata: the list of metadata keys to store with the embeddings.
+* object-class: the name of the object class under which the embeddings are stored.
+* ssl-enabled: if the connection to the Weaviate store is https or not.
+* socket-binding: the name of the outbound socket binding to connect to the Weaviate store.
+
+----
+/socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=weaviate:add(host=localhost, port=8090)
+/subsystem=ai/weaviate-embedding-store=mystore:add(socket-binding=weaviate, ssl-enabled=false, object-class=Simple, metadata=[url,language,parent_url,file_name,file_path,title,subtitle])
+----
+
+It should also support Chroma vector database backed embedding store.
+It should expose a simple `chroma-embedding-store` resource with the following attributes:
+
+* api-version: the Chroma API version (V1 or V2).
+* base-url: the endpoint to connect to the Chroma database.
+* collection-name: the name of the collection under which the embeddings are stored.
+* connect-timeout: timeout for the Chroma embedding store.
+* database-name: the name of the database (defaults to "default").
+* log-requests: enabling the tracing of requests going to Chroma.
+* log-responses: enabling the tracing of responses from Chroma.
+* tenant-name: the name of the tenant (defaults to "default").
+
+----
+/subsystem=ai/chroma-embedding-store=mystore:add(api-version=V2, base-url="http://localhost:8000", collection-name=embeddings, database-name=default, tenant-name=default)
+----
+
+It should also support Neo4j graph database backed embedding store.
+It should expose a simple `neo4j-embedding-store` resource with the following attributes:
+
+* bolt-url: the Neo4j bolt connection URL.
+* credential-reference: credential reference for authentication.
+* database-name: the name of the Neo4j database.
+* dimension: the dimension of the embeddings (required, positive integer).
+* embedding-property: the property name for storing embeddings.
+* id-property: the property name for storing IDs.
+* index-name: the name of the vector index.
+* label: the node label.
+* metadata-prefix: prefix for metadata properties.
+* retrieval-query: custom Cypher query for retrieval.
+* text-property: the property name for storing text.
+* username: the username for Neo4j authentication.
+
+----
+/subsystem=ai/neo4j-embedding-store=mystore:add(bolt-url="bolt://localhost:7687", username=neo4j, credential-reference={clear-text=password}, dimension=384, label=Document, index-name=vector_index)
+----
+
+=== Chat models
+
+The extension should provide resources to define `dev.langchain4j.model.chat.ChatModel` to chat with a llm.
+
+It should expose a simple `openai-chat-model` resource with the following attributes:
+
+* api-key: the API key to authenticate to an OpenAI chat model.
+* base-url: the endpoint to connect to an OpenAI chat model.
+* connect-timeout: the timeout for the OpenAI chat model.
+* frequency-penalty: the frequency penalty of the OpenAI chat model.
+* log-requests: enabling the tracing of requests going to openAI.
+* log-responses: enabling the tracing of responses from openAI.
+* max-token: the number of tokens returned by the OpenAI chat model.
+* model-name: the name of the model served by OpenAI.
+* organization-id: the organization id served by OpenAI.
+* presence-penalty: the presence penalty of the OpenAI chat model.
+* response-format: the response format (JSON or TEXT).
+* seed: the seed of the OpenAI chat model.
+* streaming: enables streaming responses.
+* temperature: the temperature of the OpenAI chat model.
+* top-p: the top P of the OpenAI chat model.
+
+----
+/subsystem=ai/openai-chat-model=mychat:add(base-url="https://api.openai.com/v1", api-key="${env.OPENAI_API_KEY}",model-name="o4-mini")
+
+/subsystem=ai/openai-chat-model=mychat:add(base-url="https://api.groq.com/openai/v1", api-key="${env.GROQ_API_KEY}",model-name="llama3-8b-8192")
+----
+
+It should also support a simple `mistral-ai-chat-model` resource with the following attributes:
+
+* api-key: the API key to authenticate to an Mistral AI chat model.
+* base-url: the endpoint to connect to an Mistral AI chat model.
+* connect-timeout: the timeout for the Mistral AI chat model.
+* log-requests: enabling the tracing of requests going to Mistral AI.
+* log-responses: enabling the tracing of responses from Mistral AI.
+* max-token: the number of tokens returned by the Mistral AI chat model.
+* model-name: the name of the model served by Mistral AI.
+* temperature: the temperature of the Mistral AI chat model.
+
+----
+/subsystem=ai/mistral-chat-model=mychat:add(base-url="https://api.mistral.ai/v1", api-key="${env.MISTRAL_API_KEY}",model-name="mistral-small-latest")
+----
+It should also support Ollama.
+It should expose a simple `ollama-chat-model` resource with the following attributes:
+
+* base-url: the endpoint to connect to an Ollama chat model.
+* connect-timeout: the timeout for the Ollama chat model.
+* log-requests: enabling the tracing of requests going to Ollama.
+* log-responses: enabling the tracing of responses from Ollama.
+* model-name: the name of the chat model served by Ollama.
+* temperature: the temperature of the Ollama chat model.
+
+----
+/subsystem=ai/ollama-chat-model=mychat:add(model-name="llama3:8b", base-url="http://192.168.1.11:11434")
+----
+
+It should also support Gemini.
+It should expose a simple `gemini-chat-model` resource with the following attributes:
+
+* allowed-code-execution: allows code execution.
+* api-key: the API key to authenticate to a Gemini chat model.
+* civic-integrity: civic integrity threshold. Allowed values: HARM_BLOCK_THRESHOLD_UNSPECIFIED, BLOCK_LOW_AND_ABOVE, BLOCK_MEDIUM_AND_ABOVE, BLOCK_ONLY_HIGH, BLOCK_NONE.
+* connect-timeout: the timeout for the Gemini chat model.
+* dangerous-content: dangerous content threshold. Allowed values: HARM_BLOCK_THRESHOLD_UNSPECIFIED, BLOCK_LOW_AND_ABOVE, BLOCK_MEDIUM_AND_ABOVE, BLOCK_ONLY_HIGH, BLOCK_NONE.
+* enable-enhanced-civic-answers: enables enhanced civic answers.
+* frequency-penalty: the frequency penalty of the Gemini chat model.
+* harassment: harassment threshold. Allowed values: HARM_BLOCK_THRESHOLD_UNSPECIFIED, BLOCK_LOW_AND_ABOVE, BLOCK_MEDIUM_AND_ABOVE, BLOCK_ONLY_HIGH, BLOCK_NONE.
+* hate-speech: hate speech threshold. Allowed values: HARM_BLOCK_THRESHOLD_UNSPECIFIED, BLOCK_LOW_AND_ABOVE, BLOCK_MEDIUM_AND_ABOVE, BLOCK_ONLY_HIGH, BLOCK_NONE.
+* include-code-execution-output: includes code execution output.
+* include-thoughts: includes internal reasoning thoughts in responses.
+* log-probs: the number of log probabilities to return.
+* log-requests: enabling the tracing of requests going to Gemini.
+* log-responses: enabling the tracing of responses from Gemini.
+* max-output-token: the number of tokens returned by the Gemini chat model.
+* model-name: the name of the model served by Gemini.
+* presence-penalty: the presence penalty of the Gemini chat model.
+* response-format: the response format (JSON or TEXT).
+* response-log-probs: enables returning log probabilities in the response.
+* return-thinking: returns extended thinking process.
+* seed: the seed for deterministic generation.
+* sexually-explicit: sexually explicit threshold. Allowed values: HARM_BLOCK_THRESHOLD_UNSPECIFIED, BLOCK_LOW_AND_ABOVE, BLOCK_MEDIUM_AND_ABOVE, BLOCK_ONLY_HIGH, BLOCK_NONE.
+* stop-sequences: list of sequences that will stop generation.
+* streaming: enables streaming responses.
+* temperature: the temperature of the Gemini chat model.
+* thinking-budget: budget for extended thinking (in tokens).
+* top-k: the top K of the Gemini chat model.
+* top-p: the top P of the Gemini chat model.
+
+----
+/subsystem=ai/gemini-chat-model=mychat:add(api-key="${env.GEMINI_API_KEY}", model-name="gemini-1.5-flash-latest")
+----
+
+It should also expose a simple way to test the connection to the LLM with a *chat* operation with the following parameter:
+ * user-message: a required STRING which contains the test message to send to the LLM.
+
+For example with Ollama it should be like this:
+----
+/subsystem=ai/ollama-chat-model=ollama:chat(user-message=Hello)
+{
+   "outcome" => "success",
+   "result" => "Hello! How can I assist you today?"
+}
+----
+=== Content retrievers
+
+The extension should provide resources to define `dev.langchain4j.rag.content.retriever.ContentRetriever` to retrieve content to send to the llm as part of the prompt.
+
+It should support a content retriever that can retrieve content from an embedding store using the contents close to the embedding of the user prompt.
+It should expose a simple `embedding-store-content-retriever` resource with the following attributes:
+
+* embedding-model; the embedding model used to compute embeddings.
+* embedding-store: the embedding store were the contents and embeddings are retrieved from.
+* min-score: the minimum relevance score for the returned contents.Contents scoring below this score are excluded from the results.
+* max-results: the maximum number of contents to retrieve.
+
+----
+/subsystem=ai/embedding-store-content-retriever=myretriever:add(embedding-model=myembedding,embedding-store=mystore, max-results=2, min-score=0.7)
+----
+
+It should also support a content retriever that can retrieve content from a web search.
+It should expose a simple `web-search-content-retriever` resource with the following attributes:
+
+* google: a complex attribute to use a Google Custom Search Engine with the following sub-attributes:
+** api-key: the API key for Google Custom Search.
+** connect-timeout: timeout for Google search requests (defaults to 60000ms).
+** custom-search-id: the custom search engine ID.
+** include-images: whether to include images in results.
+** log-requests: enabling the tracing of requests.
+** log-responses: enabling the tracing of responses.
+** max-retries: maximum number of retries.
+** site-restrict: whether to restrict to specific sites.
+* max-results: the maximum number of contents to retrieve.
+* tavily: a complex attribute to use Tavily Search Engine with the following sub-attributes:
+** api-key: the API key for Tavily.
+** base-url: the endpoint to connect to Tavily.
+** connect-timeout: timeout for Tavily search requests.
+** exclude-domains: list of domains to exclude from results.
+** include-answer: whether to include direct answers.
+** include-domains: list of domains to include in results.
+** include-raw-content: whether to include raw content.
+** search-depth: the depth of search (basic or advanced).
+
+----
+/subsystem=ai/web-search-content-retriever=myretriever:add(tavily={api-key=${env.TAVILY_API_KEY}, base-url=https://api.tavily.com, connect-timeout=20000, exclude-domains=[example.org], include-domains=[example.com], include-answer=true, search-depth=basic})
+----
+
+It should also support a content retriever that can retrieve content from a Neo4j graph database using natural language queries with a chat model.
+It should expose a simple `neo4j-content-retriever` resource with the following attributes:
+
+* bolt-url: the Neo4j bolt connection URL.
+* chat-language-model: reference to a chat language model to use for converting natural language queries to Cypher.
+* credential-reference: credential reference for authentication.
+* prompt-template: custom prompt template for generating Cypher queries.
+* username: the username for Neo4j authentication.
+
+----
+/subsystem=ai/neo4j-content-retriever=myretriever:add(bolt-url="bolt://localhost:7687", username=neo4j, credential-reference={clear-text=password}, chat-language-model=mychat, prompt-template="Convert the following question to a Cypher query: {question}")
+----
+
+=== Chat Memory
+
+The extension should provide resources to define chat memory for conversation history management.
+
+It should expose a simple `chat-memory` resource with the following attributes:
+
+* size: the maximum number of messages to retain in memory (required, positive integer).
+* type: the type of chat memory (e.g., MESSAGE_WINDOW for keeping a sliding window of messages).
+* use-http-session: if true, uses HTTP session to store chat memory, allowing memory to persist across requests for the same user session (defaults to true).
+
+----
+/subsystem=ai/chat-memory=mymemory:add(size=10, type=MESSAGE_WINDOW, use-http-session=true)
+----
+
+=== MCP (Model Context Protocol) Clients
+
+The extension should provide support for Model Context Protocol (MCP) clients to enable tool use and external integrations.
+
+It should also support MCP clients via Standard I/O (stdio) for local process communication.
+It should expose a simple `mcp-client-stdio` resource with the following attributes:
+
+* cmd: the command to execute for the MCP server process.
+* args: list of command-line arguments to pass to the MCP server process.
+
+----
+/subsystem=ai/mcp-client-stdio=myclient:add(cmd="python", args=["-m", "mcp_server"])
+----
+
+It should also support Streamable HTTP MCP clients.
+It should expose a simple `mcp-client-stream` resource with the following attributes:
+
+* connect-timeout: timeout for the MCP client connection.
+* log-requests: enabling the tracing of requests to the MCP server.
+* log-responses: enabling the tracing of responses from the MCP server.
+* socket-binding: the outbound socket binding to connect to the MCP server.
+* stream-path: the stream endpoint path on the MCP server.
+* ssl-enabled: if the connection to the MCP server is https or not.
+
+----
+/socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=mcp-stream:add(host=localhost, port=8081)
+/subsystem=ai/mcp-client-stream=myclient:add(socket-binding=mcp-stream, stream-path=/stream, ssl-enabled=false)
+----
+
+It should also support MCP tool providers that make MCP tools available to AI models.
+It should expose a simple `mcp-tool-provider` resource with the following attributes:
+
+* mcp-clients: list of references to MCP clients to use for tool execution.
+* fail-if-one-server-fails: if true, the tool provider will fail if any of the MCP servers fail (defaults to false).
+
+----
+/subsystem=ai/mcp-tool-provider=mytools:add(mcp-clients=[myclient, myclient2], fail-if-one-server-fails=false)
+----
+
+== Admin Clients
+
+=== JBoss CLI
+
+The AI subsystem is fully manageable through JBoss CLI. All resources (embedding models, embedding stores, chat models, content retrievers, chat memory, and MCP clients) can be added, removed, modified, and queried using standard CLI commands as shown in the Implementation Plan examples above.
+
+The `chat` operation on chat model resources allows administrators to test LLM connectivity directly from the CLI, which is useful for validating configurations.
+
+=== Admin Console (HAL)
+
+The Admin Console (HAL) is impacted by this feature and will require updates to provide a graphical management interface for the AI subsystem resources.
+
+At the Preview stability level, CLI management is sufficient. HAL support can be considered for future enhancements if the feature is promoted to Community or Default stability levels.
+
+== Security Considerations
+
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+
+== Test Plan
+
+== Community Documentation
+
+The feature will be documented in WildFly AI Feature Pack project, as well as in the catalog.
+
+== Release Note Content
+
+**WildFly Generative AI Feature Pack (Experimental)**
+
+WildFly now offers an experimental Galleon feature pack for building Generative AI applications using Jakarta EE and CDI. The feature pack integrates LangChain4j to enable Retrieval-Augmented Generation (RAG) applications with support for:
+
+- Multiple LLM providers: OpenAI, Google Gemini, GitHub Models, Ollama, Mistral AI, and Groq
+- Vector databases: Weaviate, Chroma, Neo4j, and in-memory stores
+- Pre-trained embedding models: All-MiniLM-L6-v2, BGE-Small-EN, E5-Small-v2
+- Content retrievers: embedding-based semantic search, web search (Google/Tavily), and Neo4j graph queries
+- Model Context Protocol (MCP) support for tool integration via stdio and streamable HTTP transports
+- Chat memory providers for conversation history management
+
+Developers can configure AI resources through the WildFly management model and inject them into applications via CDI using LangChain4j annotations (@RegisterAIService, @Tool). The feature pack includes Galleon layers for flexible server provisioning tailored to specific application needs.
+
+As an external feature pack, it enables rapid AI innovation without being tied to the WildFly release cycle, allowing enterprise developers to build production-ready AI applications on familiar Jakarta EE infrastructure.
