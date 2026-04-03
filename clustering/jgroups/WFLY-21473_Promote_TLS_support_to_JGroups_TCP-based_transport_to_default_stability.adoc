@@ -1,0 +1,142 @@
+---
+categories:
+  - clustering
+  - cloud
+  - openshift
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/808
+feature-team:
+ developer: rhusar
+ sme:
+  - mkopecky
+ outside-perspective:
+  - rchettri
+promotes: https://github.com/wildfly/wildfly-proposals/pull/552
+promoted-by:
+---
+= WFLY-21473 Promote TLS support to JGroups TCP-based transport to default stability
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This proposal promotes the "TLS support to JGroups TCP-based transport" feature from `community` stability to `default` stability.
+This feature was implemented in https://issues.redhat.com/browse/WFLY-15836[WFLY-15836] with the corresponding community proposal at https://github.com/wildfly/wildfly-proposals/pull/552[wildfly-proposals#552].
+
+For complete details on the feature's design and implementation, refer to the link:WFLY-15836_Add_TLS_support_to_JGroups_TCP-based_transports.adoc[original proposal].
+
+=== User Stories
+
+User wants to secure internal cluster TCP communication using TLS leveraging Elytron subsystem capabilities at `default` stability level.
+
+== Issue Metadata
+
+* https://issues.redhat.com/browse/WFLY-21473[WFLY-21473 Promote 'TLS support to JGroups TCP-based transport' to 'default' stability]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-15836[WFLY-15836 Add TLS support to JGroups TCP-based transport] (Original implementation)
+* https://redhat.atlassian.net/browse/WFCORE-7538[WFCORE-7538 Elytron SSLContext requirements cannot discern between client vs server SSLContext] (related usability issue)
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly
+
+=== Other Interested Projects
+
+* N/A
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+All requirements from the link:WFLY-15836_Add_TLS_support_to_JGroups_TCP-based_transports.adoc[original proposal] remain in effect.
+
+=== Changed requirements
+
+All requirements from the link:WFLY-15836_Add_TLS_support_to_JGroups_TCP-based_transports.adoc[original proposal] remain in effect.
+
+=== Non-Requirements
+
+All requirements from the link:WFLY-15836_Add_TLS_support_to_JGroups_TCP-based_transports.adoc[original proposal] remain in effect.
+
+=== Future Work
+
+* Cloud feature pack can add support for this mechanism out-of-box as it uses TCP stack by default.
+* https://issues.redhat.com/browse/WFLY-19459[WFLY-19459 Add DTLS support to JGroups UDP-based transports w/multicast disabled]
+* https://issues.redhat.com/browse/WFLY-21665[WFLY-21665 Add TLS support to JGroups TCP_NIO2 transport]
+
+== Backwards Compatibility
+
+There are no backwards compatibility concerns with promoting this feature.
+The feature remains opt-in and does not change the default configuration.
+
+All backwards compatibility aspects from the link:WFLY-15836_Add_TLS_support_to_JGroups_TCP-based_transports.adoc[original proposal] remain in effect.
+
+=== Default Configuration
+
+The default configuration will not be changed.
+Users will have to configure this explicitly.
+
+All configuration aspects from the link:WFLY-15836_Add_TLS_support_to_JGroups_TCP-based_transports.adoc[original proposal] remain in effect.
+
+=== Importing Existing Configuration
+
+All configuration aspects from the link:WFLY-15836_Add_TLS_support_to_JGroups_TCP-based_transports.adoc[original proposal] remain in effect.
+
+=== Deployments
+
+All configuration aspects from the link:WFLY-15836_Add_TLS_support_to_JGroups_TCP-based_transports.adoc[original proposal] remain in effect.
+
+=== Interoperability
+
+All interoperability aspects from the link:WFLY-15836_Add_TLS_support_to_JGroups_TCP-based_transports.adoc[original proposal] remain in effect.
+
+== Implementation Plan
+
+This feature will be promoted in a single PR to WildFly upstream repository.
+No further coordination is necessary.
+
+== Admin Clients
+
+No changes required beyond what was done for the original implementation.
+
+* JBoss CLI doesn't require changes as it supports everything natively.
+* HAL changes were tracked as https://issues.redhat.com/browse/HAL-2043[HAL-2043] and are picked up automatically at a higher stability.
+
+== Security Considerations
+
+No changes from the link:WFLY-15836_Add_TLS_support_to_JGroups_TCP-based_transports.adoc[original proposal].
+The feature builds on verified security concepts and the attributes referencing the Elytron SSL contexts are marked as security sensitive.
+
+[[test_plan]]
+== Test Plan
+
+All existing tests from the original implementation remain in place.
+These include management model unit tests and integration tests with both positive and negative test cases.
+
+For promotion to `default` stability, the following additional validation has been performed:
+
+* Verification that all existing tests pass at the `default` stability level.
+* Manual verification of attribute descriptions and error messages for clarity.
+* Verification that the feature documentation is complete and accurate.
+
+== Community Documentation
+
+Documentation was included with the original implementation's pull request and resides in the High Availability Guide.
+No additional documentation changes are required for this promotion.
+
+== Release Note Content
+
+The "TLS support to JGroups TCP-based transport" feature has been promoted to `default` stability level.
+This feature allows securing internal cluster TCP communication using TLS with references to Elytron SSL contexts.
+Please refer to the 'High Availability Guide' in the user documentation for more information.
