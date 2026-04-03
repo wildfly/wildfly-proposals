@@ -43,14 +43,14 @@ https://redhat.atlassian.net/browse/WFLY-21698
 
 === Affected Projects or Components
 
-Galleon
-Cloud Feature Pack
-Datasources Feature Pack
-AI Feature Pack
-GraphQL feature pack
-Deployment transformer feature pack
-MyFaces Feature pack
-WildFly container images
+* Galleon
+* Cloud Feature Pack
+* Datasources Feature Pack
+* AI Feature Pack
+* GraphQL feature pack
+* Deployment Transformer Feature Pack
+* MyFaces Feature Pack
+* WildFly container images
 
 === Other Interested Projects
 
@@ -98,7 +98,8 @@ WildFly container images
 
 * Quickstarts using the EE 10 variant. The purpose of the variant is to support existing applications.
 * Maven archetypes using the EE 10 variant. The purpose of the variant is to support existing applications.
-* A alternative `wildfly-core` feature pack variant that provides alternative EE API dependencies. The `wildfly-core` feature pack is a piece of test infrastructure used to drive the WildFly Core testsuite. The WildFly Core testsuite does not exercise any EE functionality that differs between EE 10 and EE 11.
+* Support for running deployments compiled against EE 11 APIs on a server provisioned using the `wildfly-ee-10` feature pack.
+* An alternative `wildfly-core` feature pack variant that provides alternative EE API dependencies. The `wildfly-core` feature pack is a piece of test infrastructure used to drive the WildFly Core testsuite. The WildFly Core testsuite does not exercise any EE functionality that differs between EE 10 and EE 11.
 
 
 === Future Work
@@ -159,7 +160,7 @@ Feature packs provided by other repos that can alternatively use `wildfly-ee-10`
 
 == Community Documentation
 
-The https://docs.wildfly.org/39/WildFly_and_WildFly_Preview.html[WildFly and WildFly Preview, window=_blank] will be retitled and updated to cover this new variant.
+The https://docs.wildfly.org/39/WildFly_and_WildFly_Preview.html[WildFly and WildFly Preview, window=_blank] document will be retitled and updated to cover this new variant.
 
 The https://docs.wildfly.org/39/WildFly_Maven_Plugin_Guide.html[WildFly Maven Plugin Guide, window=_blank] will be updated to illustrate using the `wildfly-ee-10` feature pack.
 
@@ -169,4 +170,4 @@ Use of the feature pack will be a significant section of the release announcemen
 
 == Release Note Content
 
-This will be a major part of the release announcement, not just the typical few sentences that would be outlined in this part of the analysisc
+This will be a major part of the release announcement, not just the typical few sentences that would be outlined in this part of the analysis.
