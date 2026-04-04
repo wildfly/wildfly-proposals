@@ -148,6 +148,13 @@ Users wishing to use this variant will need to update their provisioning configu
 __<This section is optional. I've left it blank for now as I don't know
    if using this analysis to describe this will be productive.>__
 
+* Within the main WildFly code base, the term 'legacy' will be in non-end-user facing strings (e.g. directory names, comment text, artifactIds for things that are internal details). The intent there is to make as much code as possible generic in nature so that it can be repurposed easily in the future to provide, say, a `wildfly-ee-11` when standard WildFly moves on to EE 12. The term `wildfly-ee-10` or similar will be reserved for things the end user would type.
+** The artifactId of the feature pack.
+** The artifactIds of user boms.
+** The artifactId of the channels.
+** The artifactIds of the thin and fat server builds.
+*** This last one is somewhat debatable. It impacts the file name of the downloadable tars/zips.
+
 == Admin Clients
 
 Admins clients will just work. A client connecting to a server or Host Controller provisioned using this feature will be manageable in the same way the EE 11 variant of the same release is. There may be differences in particular items in the server configuration, but every WildFly installation is expected to have differences versus what's in our OOTB configs.
