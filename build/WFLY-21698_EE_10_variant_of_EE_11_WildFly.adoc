@@ -96,6 +96,10 @@ https://redhat.atlassian.net/browse/WFLY-21698
 ** They are running versions that are supported in a mixed domain by the EE 11 variant of the Domain Controller's version. (In other words, the EE 10 variant doesn't support additional versions.)
 ** They are running a version that predates the introduction of the `wildfly-ee-10` feature pack, or they were provisioned using the `wildfly-ee-10` feature pack.
 ** See also the Non-Requirements related to domain mode.
+* TODO -- what about `org.wildfly:wildfly-client-all` and other client jars?
+** Not used in a WF installation, but still deployed to JBoss Nexus / Maven Central
+** How does the 'recipe' for it end up driving what goes in the provisioning-time-generated jar?
+** Probably a non-issue as none of the EE specs that end up in these client jars have changed between EE 10 and 11. So this is likely more an issue for future variations of this concept.
 
 === Non-Requirements
 
@@ -108,6 +112,7 @@ https://redhat.atlassian.net/browse/WFLY-21698
 * An alternative `wildfly-core` feature pack variant that provides alternative EE API dependencies. The `wildfly-core` feature pack is a piece of test infrastructure used to drive the WildFly Core testsuite. The WildFly Core testsuite does not exercise any EE functionality that differs between EE 10 and EE 11.
 * Using a Domain Controller provisioned using the `wildfly-ee-10` feature pack to manage a secondary Host Controller provisioned using the `wildfly-ee` feature pack is not supported.
 * Using a Domain Controller provisioned using the `wildfly-ee` feature pack to manage a secondary Host Controller provisioned using the `wildfly-ee-10` feature pack is not supported.
+
 
 
 === Future Work
