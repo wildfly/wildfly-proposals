@@ -79,7 +79,7 @@ Hibernate ORM
 ** Execution of it against an EE 10 server will be added as a release task requirement.
 * There will be a quickstart demonstrating use of Jakarta Data.
 * The extension will be listed in the OOTB domain mode `host-excludes` settings.
- * When our OOTB configuration files are provisioned using a feature pack that provides Jakarta EE 11 support, the `jakarta-data` subsystem will be present in the  `standalone.xml`, `standalone-full.xml`, `standalone-ha.xml` and `standalone-full-ha.xml`, `standalone-microprofile.xml` and `standalone-microprofile.xml` configuration files, and also in any `domain.xml` profiles whose intended feature set aligns with one of those standalone variant..
+ * When our OOTB configuration files are provisioned using a feature pack that provides Jakarta EE 11 support, the `jakarta-data` subsystem will be present in the  `standalone.xml`, `standalone-full.xml`, `standalone-ha.xml` and `standalone-full-ha.xml`, `standalone-microprofile.xml` and `standalone-microprofile-ha.xml` configuration files, and also in any `domain.xml` profiles whose intended feature set aligns with one of those standalone variant.
 
 === Changed requirements
 
