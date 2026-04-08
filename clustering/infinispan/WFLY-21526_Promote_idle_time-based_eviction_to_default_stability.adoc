@@ -1,0 +1,122 @@
+---
+categories:
+  - clustering
+  - ejb
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/813
+feature-team:
+ developer: rhusar
+ sme:
+  - pferraro
+  - atucek
+ outside-perspective:
+  - rchettri
+promotes: https://github.com/wildfly/wildfly-proposals/issues/767
+promoted-by:
+---
+
+= Promote idle time-based eviction for distributable HttpSessions, SFSBs, and Timers to default stability
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WildFly added support for idle time-based eviction configuration for distributable HttpSessions, Stateful Session Beans (SFSBs), and EJB Timers in version 39.0.0.Final at the community stability level.
+This proposal seeks to promote this feature to the default stability level.
+
+The promotion is necessary because test cases fail when running on containers that do not support the community stability level (WFLY-21369), making the feature inaccessible in certain deployment scenarios.
+Additionally, promoting this feature to default stability will make it available to a broader audience and better align with WildFly's resource management capabilities.
+
+=== User Stories
+
+As a WildFly administrator, I want to configure eviction based on idle time rather than just cache size at the default stability level, so that I can better manage memory usage when my sessions and beans have highly variable sizes without requiring community stability support.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-21526[WFLY-21526] Promote 'WFLY-20918 Add idle time-based eviction configuration for distributable HttpSessions, SFSBs, Timers' to DEFAULT stability
+* https://issues.redhat.com/browse/WFLY-21369[WFLY-21369] Idle time-based eviction configuration test cases fail when running on a container that does not support 'community' stability (testing issue for downstream) – will be reverted with promotion
+
+Original issues that added this feature to the community stability:
+
+* https://issues.redhat.com/browse/WFLY-20918[WFLY-20918] Add idle time-based eviction configuration for distributable HttpSessions, SFSBs, Timers
+* https://issues.redhat.com/browse/WFLY-20839[WFLY-20839] Remove max-active-timers from default configuration
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly[wildfly/wildfly]
+* https://github.com/wildfly-clustering/wildfly-clustering[wildfly-clustering/wildfly-clustering]
+
+=== Other Interested Projects
+
+N/A
+
+=== Relevant Installation Types
+
+See the link:WFLY-20918_Add_max-idle_based_eviction_configuration_for_distributable_HttpSessions_SFSBs_Timers.adoc[original proposal].
+
+== Requirements
+
+See the link:WFLY-20918_Add_max-idle_based_eviction_configuration_for_distributable_HttpSessions_SFSBs_Timers.adoc#requirements[Requirements section] of the original proposal.
+
+=== Changed Requirements
+
+No changed requirements other than availability in the default stability level.
+
+=== Non-Requirements
+
+See the link:WFLY-20918_Add_max-idle_based_eviction_configuration_for_distributable_HttpSessions_SFSBs_Timers.adoc#non-requirements[Non-Requirements section] of the original proposal.
+
+=== Future Work
+
+See the link:WFLY-20918_Add_max-idle_based_eviction_configuration_for_distributable_HttpSessions_SFSBs_Timers.adoc#future-work[Future Work section] of the original proposal.
+
+== Backwards Compatibility
+
+This enhancement maintains full backwards compatibility.
+The promotion to default stability does not change the behavior of the feature.
+Existing configurations using this feature at community stability will continue to work identically at default stability.
+
+See the link:WFLY-20918_Add_max-idle_based_eviction_configuration_for_distributable_HttpSessions_SFSBs_Timers.adoc#backwards-compatibility[Backwards Compatibility section] of the original proposal for additional details.
+
+== Implementation Plan
+
+The implementation involves updating the schema and model stability levels for the affected subsystems:
+
+1. Update `distributable-web` subsystem schema and model to expose `idle-threshold` attributes at default stability
+2. Update `distributable-ejb` subsystem schema and model to expose `idle-threshold` attributes at default stability
+3. Update integration tests to run at default stability
+4. Update documentation to reflect default stability availability
+
+All underlying functionality is already implemented and tested at the community stability level.
+
+== Admin Clients
+
+See the link:WFLY-20918_Add_max-idle_based_eviction_configuration_for_distributable_HttpSessions_SFSBs_Timers.adoc#admin-clients[Admin Clients section] of the original proposal.
+
+== Security Considerations
+
+See the link:WFLY-20918_Add_max-idle_based_eviction_configuration_for_distributable_HttpSessions_SFSBs_Timers.adoc#security-considerations[Security Considerations section] of the original proposal.
+
+[[test_plan]]
+== Test Plan
+
+* Default - This stability level is reserved and requires approval by a professional Quality Engineer with subject matter expertise.
+
+The existing test suite from the link:WFLY-20918_Add_max-idle_based_eviction_configuration_for_distributable_HttpSessions_SFSBs_Timers.adoc#test_plan[community stability implementation] will be executed at the default stability level, with additional verification that the feature works correctly on containers that do not support community stability.
+
+== Community Documentation
+
+Documentation will be updated to remove references to community stability and indicate that this feature is available at the default stability level.
+The documentation PR will be part of the implementation PR to WildFly main.
+
+== Release Note Content
+
+Idle time-based eviction for distributable HttpSessions, Stateful EJBs, and EJB Timers has been promoted to default stability.
+This feature, previously available at community stability, allows administrators to configure eviction based on how long a state object has been idle using the `idle-threshold` attribute.
+This provides more flexible resource management options, particularly useful when distributed state objects have highly variable sizes, and complements the existing count-based eviction mechanism.
