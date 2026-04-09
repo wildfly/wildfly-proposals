@@ -1,0 +1,151 @@
+---
+categories:
+- security
+- elytron
+- wf-galleon
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/TBD
+feature-team:
+ developer:
+ - luck3y
+ sme:
+  - skyllarr
+ outside-perspective:
+  - TODO
+promotes: https://github.com/wildfly/wildfly-proposals/pull/810
+promoted-by: skyllarr
+---
+
+= Promote WildFly Vault feature pack and hashicorp-vault layer/subsystem to default stability
+:author:            Diana Krepinska
+:email:             dvilkola@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+
+== Overview
+
+The https://github.com/wildfly-security-incubator/wildfly-vault-feature-pack[WildFly Vault feature pack] (HashiCorp Vault integration) delivers a Galleon feature pack and a `hashicorp-vault` subsystem that lets administrators define Vault-backed credential stores, manage aliases, and resolve `+$\{HC_VAULT::...\}+` expressions against those stores. The feature pack is currently in community stability levels.
+
+=== User Stories
+
+* As an administrator, I want to add the `hashicorp-vault` layer when provisioning WildFly with Galleon and configure `subsystem=hashicorp-vault` at **default** stability
+
+== Issue Metadata
+
+- *WildFly JIRA:* https://issues.redhat.com/browse/WFLY-TBD[WFLY-TBD]
+
+=== Related Issues
+
+- TBD
+
+=== Affected Projects or Components
+
+- https://github.com/wildfly-security-incubator/wildfly-vault-feature-pack[wildfly-vault-feature-pack] (feature pack impl, tests)
+- https://github.com/wildfly/wildfly[wildfly] (documentation)
+- https://github.com/wildfly/wildfly-galleon-feature-packs[wildfly-galleon-feature-packs] (add to default)
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable JAR
+
+== Requirements
+
+The functional requirements are unchanged from the community-level feature; only the **stability classification** and **packaging/documentation** expectations change.
+
+There are more options as to where this feature pack and a layer should be located. We can either maintain it a separate feature pack, or add the layer under the wildfly-ee feature pack or elsewhere.
+
+Argument to keep it as a separate feature pack was based on the fact that it might later contain more external secret storages than just HashiCorp Vault, which will probably require more 3rd party libraries to be used. This might lead to having to release updates at various times. But note that this would NOT help with the application server's schedule, as the FP would need to be updated in the manifest which forces to keep the schedule anyway.
+
+Given the additional cost of maintaining separate feature pack, since there is no good reason to keep it separate, the hashicorp-vault layer it will be included within the wilfly-ee feature pack.
+
+The hashicorp-vault module will be included in the default server ZIP, but it will not be included in default server configuration. So it will be possible to use the management operations to add hashicorp vault extension by referencing this module, but it won't be part of the default configuration.
+
+Requirements copied from community stability proposal:
+
+=== Credential store
+
+* The feature pack must provide a new subsystem (eg. `hashicorp-vault` subsystem) with a `credential-store` resource type.
+* Credential store will be able to connect to a HashiCorp Vault server and authenticate with one of the following methods:
+
+** token via credential-reference
+** certificate authentication thanks to the ssl-context configured in the authentication-context attribute
+* TLS for the connection to Vault must be configurable (e.g. via authentication-context) so that server and client certificates can be used.
+* The credential store must implement the Elytron credential store SPI so that it is usable everywhere where elytron credential store resources are usable.
+* Credential store management operations must be supported as usual: add credential store, remove credential store, add-alias, remove-alias, read-aliases
+* The feature pack must be integrated with GLOW and be discoverable.
+
+=== Expression resolver
+
+* An expression resolver must support expressions that resolve to secrets stored in a configured Vault credential store.
+* Expression format can for example be `${HC_VAULT::store-name:alias}`. Resolution occurs at RUNTIME.
+* All attributes in management model that support expression resolution can use these Vault e
+
+=== Changed requirements
+
+* none
+
+=== Non-Requirements
+
+=== Future Work
+
+* Quickstart/example, guide to wildfly.org
+
+== Backwards Compatibility
+
+* Existing configurations that were created at community stability should continue to work
+
+=== Default configuration
+
+* none
+
+=== Importing existing configuration
+
+* none
+
+=== Deployments
+
+* Feature not applicable to deployments.
+
+=== Interoperability
+
+* HashiCorp Vault can be used as an external secrets storage that WildFly accesses
+
+== Implementation Plan
+
+. Update the **wildfly-vault-feature-pack** (and any WildFly aggregate repo) so subsystem extensions, XML schemas, and Galleon feature-pack metadata use **default** stability where policy allows.
+. Align **wildfly-elytron** dependency versions in the feature pack if resolver or client fixes are required for default support.
+. Add or update **management model transformers** so older model versions remain valid for domain mixed versions, if the namespace or model version increments.
+. Update **WildFly / Elytron documentation** and **release notes** to remove preview-only caveats where appropriate and document default-stability usage (including Galleon `install` examples without preview-only packs, if applicable).
+. Run **QE** scenarios: provision with `hashicorp-vault` layer, configure credential store, `credential-reference` from at least one consumer subsystem, and expression resolution where in scope.
+
+== Admin Clients
+
+* `jboss-cli` and the management API continue to administer `subsystem=hashicorp-vault` if the layer was provisioned
+* HAL/console can add credential stores
+
+== Security Considerations
+
+* allowing multiple authentication methods to HC vault required as described in previous proposal
+
+[[test_plan]]
+== Test Plan
+
+* QE approval
+* Automated tests in **wildfly-vault-feature-pack** (subsystem + integration).
+* Manual tests against HC Vault running locally.
+
+== Community Documentation
+
+* Update WildFly documentation so the feature is described at **default** stability.
+
+== Release Note Content
+
+WildFly now supports the WildFly Vault feature pack and `hashicorp-vault` layer at **default stability**, allowing Galleon provisioning of the `hashicorp-vault` layer and configuration of Vault-backed credential stores in default stability.
