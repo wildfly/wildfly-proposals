@@ -1,0 +1,141 @@
+---
+categories:
+  - mod_cluster
+  - microprofile
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/805
+feature-team:
+  developer: rhusar
+  sme:
+    - TBD
+  outside-perspective:
+    - TBD
+---
+= Include mod_cluster subsystem in standalone-microprofile-ha.xml
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          clustering,mod_cluster,microprofile
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The `standalone-microprofile-ha.xml` configuration file currently does not include the mod_cluster subsystem,
+despite including other clustering subsystems such as JGroups and Infinispan.
+This omission was originally deliberate but not specifically discussed,
+as the configuration was designed to be composed entirely of Galleon layers and no mod_cluster layer existed at the time.
+
+There is no technical incompatibility between mod_cluster and MicroProfile.
+The mod_cluster subsystem integrates seamlessly with other clustering features and provides load balancing support for HA deployments.
+Now that a mod_cluster Galleon layer exists, the original design constraint no longer applies.
+
+This proposal adds the mod_cluster layer to the `standalone-microprofile-ha.xml` configuration,
+making it consistent with other HA configurations and providing users with integrated load balancing support out of the box.
+
+=== User Stories
+
+A user deploying a MicroProfile-based application in a high-availability configuration
+expects mod_cluster to be included by default to leverage load balancing capabilities without manually
+adding the subsystem to the configuration.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-21500[WFLY-21500] Include mod_cluster subsystem in standalone-microprofile-ha.xml
+
+//* https://issues.redhat.com/browse/JBEAP-22626[JBEAP-22626] Consider inclusion of mod_cluster subsystem in standalone-microprofile-ha.xml
+//* https://issues.redhat.com/browse/EAP7-1883[EAP7-1883] Include mod_cluster subsystem in standalone-microprofile-ha.xml
+//* https://issues.redhat.com/browse/EAP7-1882[EAP7-1882] Add a new supported mod-cluster layer
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly[WildFly]
+
+=== Other Interested Projects
+
+N/A
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* The `standalone-microprofile-ha.xml` configuration must include the mod_cluster extension and subsystem with default configuration.
+* The `mod_cluster` Galleon layer must be added to the set of layers used to compose `standalone-microprofile-ha.xml`.
+* Users provisioning a server by specifying Galleon layers must be able to reproduce the configuration.
+
+=== Non-Requirements
+
+* This proposal does not change the `standalone-microprofile.xml` configuration (non-HA variant).
+
+=== Future Work
+
+N/A
+
+== Backwards Compatibility
+
+This change is additive and does not remove or modify any existing functionality.
+Existing configurations will continue to work as before.
+
+=== Default Configuration
+
+The `standalone-microprofile-ha.xml` configuration will now include the mod_cluster extension and subsystem with the default configuration.
+
+=== Importing Existing Configuration
+
+No impact on existing configurations.
+Users upgrading from previous versions who use `standalone-microprofile-ha.xml` will gain mod_cluster support automatically.
+
+=== Deployments
+
+No impact on deployments.
+
+=== Interoperability
+
+No impact on interoperability.
+
+== Implementation Plan
+
+The implementation consists of adding the `mod_cluster` layer to the Galleon configuration that composes the `standalone-microprofile-ha.xml` configuration file.
+The existing `mod_cluster` layer is defined in `ee-feature-pack/galleon-shared/src/main/resources/layers/standalone/mod_cluster/layer-spec.xml`.
+
+== Admin Clients
+
+No changes required in admin clients.
+The mod_cluster subsystem is already fully supported by JBoss CLI and the Admin Console (HAL).
+
+== Security Considerations
+
+No new security considerations.
+The mod_cluster subsystem uses standard security mechanisms that are already available in WildFly.
+
+[[test_plan]]
+== Test Plan
+
+The feature will be tested at the default stability level:
+
+* Verify that `standalone-microprofile-ha.xml` includes the mod_cluster extension and subsystem.
+* Verify that the server starts successfully with the new configuration.
+* Verify that the mod_cluster subsystem is operational and can register with a load balancer.
+* Verify that the configuration can be reproduced by provisioning a server using the documented Galleon layers.
+* Integration tests should verify that mod_cluster works correctly alongside other MicroProfile and clustering subsystems.
+
+== Community Documentation
+
+The existing WildFly documentation for mod_cluster applies.
+The `standalone-microprofile-ha.xml` documentation should be updated to reflect the inclusion of mod_cluster.
+
+== Release Note Content
+
+The `standalone-microprofile-ha.xml` configuration now includes the mod_cluster subsystem by default,
+providing integrated load balancing support for MicroProfile high-availability deployments.
+This brings the configuration in line with other HA configurations and allows users to leverage mod_cluster's
+dynamic load balancing capabilities without manual configuration.
