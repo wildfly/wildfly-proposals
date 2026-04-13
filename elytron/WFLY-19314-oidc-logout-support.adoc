@@ -108,16 +108,9 @@ This URI will be called after logout is executed.
 For Front-Channel and Back-Channel Logout, we'll introduce the following new configuration options:
 
 * `logout-callback-path`: This is an optional property. It designates the path component of a URL
-which is called after logout has completed.  The declared URL path is appended to the client's application
-context URL.  The default path is `/logout/callback`.
-- The option can not be declared as an empty string or "/" only
-- It is expected that the text start with a forward slash (e.g. "/").
-- It can be a sequence of path segments (e.g. "/call/back/home")
+which is called after logout has completed. The value of this property must be an absolute URL.
 
-The value of this property can also be an absolute URL.  When the callback URL is outside the client
-application's context an absolute URL is required.
-
-For both scenarios the absolute URL must be registerd with the OpenId Provider.
+The absolute URL must be registerd with the OpenId Provider.
 
 ```
 Example
