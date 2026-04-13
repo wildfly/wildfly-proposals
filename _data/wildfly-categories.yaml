@@ -66,6 +66,9 @@ categories:
   - name: JBoss MSC
     id: msc
     description: JBoss Modular Service Container
+  - name: Kubernetes
+    id: kubernetes
+    description: Building and Running a WildFly application on Kubernetes
   - name: Logging
     id: logging
     description: Logging
