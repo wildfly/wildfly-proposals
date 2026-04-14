@@ -94,7 +94,7 @@ The use of `id_token_hint` is recommended by the spec.
 We'll introduce the following new configuration options:
 
 * `logout-path`: This option designates the path component of a URL.  It is the path component to trigger a logout
-of the user.  Elytron uses it to identify a logout request and take the appropriate action internally.  The default
+of the user from OP.  Elytron uses it to identify a logout request and take the appropriate action internally (redirecting to OP's Logout Endpoint with `id_token_hint` and `post_logout_redirect_uri` parameters if available).  The default
 values is `/logout`.
 - The option can not be declared as an empty string or "/" only
 - It is expected that the text start with a forward slash (e.g. "/").
