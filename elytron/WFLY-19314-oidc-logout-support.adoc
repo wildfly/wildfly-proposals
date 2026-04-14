@@ -102,6 +102,7 @@ values is `/logout`.
 * `post-logout-redirect-uri`: This attribute must be an absolute URI.  It must be registered with the OpenId Provider.
 This URI will be called after logout is executed.
 
+The local log out of the End-User is not performed before redirecting the User Agent to the OP's Logout Endpoint. We rely on a logout message from the OP triggering the Front-Channel Logout or Back-Channel Logout mechanism.
 
 ==== Front-Channel Logout and Back-Channel Logout
 
@@ -122,7 +123,7 @@ Example
 
 * `logout-session-required`: A boolean value. The default value is true
    - For Front-Channel Logout the boolean value specifies whether the request requires the iss (issuer) and sid (session ID) query parameters be included to identify the session with the OpenId Provider.
-   - For Back-Channel Logout the boolean value specifies whether the request requires the sid (session ID) Claim be included in the Logout Token to identify the session with the OpenId Provider.  This value must be `true` for back-channel logout to be executed.  If the value is `false` the `sid` will be marked for invalidation using a bounded map so that subsequent requests from the user will force the session to be invalidated.
+   - For Back-Channel Logout to be executed, the value must be `true`.
 
 * `back-channel-logout-session-invalidation-limit`: The maximum size for a bounded map when marking sessions for invalidation during back-channel logout. Once this maximum size has been reached, the eldest entry will be removed.  The default size is 16.
 
