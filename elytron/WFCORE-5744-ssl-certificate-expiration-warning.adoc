@@ -137,6 +137,7 @@ CLI should not be affected. However, HAL will most likely require follow up, sin
 
 Slightly increase security risk compared to current state. If attacker has access to log/events it will provide view of current health of server, rather than possible peek on startup. Convenient, but not something that could not be circumvented without this feature.
 
+RBAC: reading and writing the configuration attributes provided by this feature will require that the user is in a role that grants read or write permissions for security sensitive items. Declaration of this requirement is handled at the elytron subsytem root resource level and inherited, so no specific handling is required as part of this feature.
 [[test_plan]]
 == Test Plan
 
