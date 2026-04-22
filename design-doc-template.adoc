@@ -48,6 +48,9 @@ promoted-by:
 The entire document should be one to two pages long. We will write each analysis document as if it is a conversation
 with a future developer. This requires a good writing style, with full sentences organized into paragraphs. Bullets are
 acceptable only for visual style, not as an excuse for writing sentence fragments.
+
+NOTE: this template includes instruction comments like this one that will visibly render and must be removed. 
+It also includes instruction comments in asciidoc format that will not render and can be left in place or removed, at the discretion of the analysis author.
 ////
 
 == Overview
