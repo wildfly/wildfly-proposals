@@ -1,0 +1,115 @@
+---
+categories:
+  - microprofile
+  - observability
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/823
+feature-team:
+ developer: jasondlee
+ sme:
+  - TBD
+ outside-perspective:
+  - TBD
+promotes:
+promoted-by:
+---
+
+= WFLY-21793 - Upgrade to MicroProfile Telemetry 2.2
+:author:            Jason Lee
+:email:             jasondlee@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WildFly currently supports MicroProfile Telemetry 2.1 as part of the MicroProfile 7.0 platform. To support
+MicroProfile 7.2, we need to upgrade our support of Telemetry to 2.2.
+
+=== User Stories
+
+As a developer, I would like to use MicroProfile Telemetry 2.2 in my applications.
+
+== Issue Metadata
+
+- Feature tracker: https://redhat.atlassian.net/browse/WFLY-21793
+
+=== Related Issues
+
+N/A
+
+=== Affected Projects or Components
+
+- `microProfile-telemetry`
+- `wildfly-opentelemetry`
+
+=== Other Interested Projects
+
+None
+
+=== Relevant Installation Types
+
+[x] Traditional standalone server (unzipped or provisioned by Galleon)
+[ ] Managed domain
+[x] OpenShift Source-to-Image (S2I)
+[x] Bootable jar
+
+== Requirements
+
+- Must support MicroProfile Telemetry 2.2
+- Must pass MicroProfile Telemetry 2.2 TCK
+
+=== Non-Requirements
+
+N/A
+
+=== Future Work
+
+N/A
+
+== Backwards Compatibility
+
+MicroProfile Telemetry 2.2 should be a drop-in replacement for 2.1 deployments.
+
+=== Default Configuration
+
+No configuration changes needed
+
+=== Importing Existing Configuration
+
+Existing configurations will work unchanged
+
+=== Deployments
+
+- The https://github.com/microprofile/microprofile-telemetry/issues/321[addition] of `code.*` support in `@WithSpan` will result in extra metadata in the exported data, but the behavior of the system should be otherwise unchanged.
+
+=== Interoperability
+
+No concerns.
+
+== Implementation Plan
+
+Not needed. Implementation can be handled in one change.
+
+== Admin Clients
+
+None affected
+
+== Security Considerations
+
+No changes are expected to impact security in any way.
+
+[[test_plan]]
+== Test Plan
+
+- This is a version upgrade, so the existing test suites both in WildFly and the QE workspaces should be mostly sufficient.
+- Test will need to be added to verify correct support of the `code.*` changes
+
+== Community Documentation
+
+"MicroProfile Telemetry has been updated to support version 2.2 of the specification. For complete details on new features in this update, see the spec page https://microprofile.io/specifications/telemetry/[here]"
+
+== Release Note Content
+
+MicroProfile Telemetry and supporting libraries (e.g., OpenTelemetry) have been updated to support the newest version of the specification
