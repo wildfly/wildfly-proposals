@@ -1,0 +1,172 @@
+---
+categories:
+- mcp
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/829
+feature-team:
+ developer: jmesnil
+ sme:
+  - ehsavoie
+ outside-perspective:
+  -
+---
+= Promote MCP Server features to the default stability level
+:author:            Jeff Mesnil
+:email:             jmesnil@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The https://github.com/wildfly-extras/wildfly-ai-feature-pack[WildFly AI feature-pack] provides features to integrate AI capabilities in WildFly applications. Among these features, the MCP (Model Context Protocol) Server support allows WildFly users to expose their existing Jakarta EE applications as MCP servers. This enables AI agents and tools to interact with enterprise applications through the standardized MCP protocol.
+
+The https://github.com/wildfly-extras/wildfly-ai-feature-pack[WildFly AI feature-pack] did not use stability levels and was
+usable at the community stability level ("by default").
+However, it contains many different features at varying degrees of stability and it will be updated to require the 
+`experimental` stability level.
+
+The MCP Server features have matured enough to be promoted to the `default` stability level. This promotion will give users a stable, supported API to expose their applications to AI tooling through MCP without requiring them to opt into experimental features.
+
+Note that this proposal only covers the MCP *Server* features. The MCP Client features (used to connect WildFly applications to external MCP servers) and all other AI features provided by the feature-pack remain at the `experimental` stability level.
+
+=== User Stories
+
+As a WildFly application developer, I want to expose my existing Jakarta EE application through a MCP server so that AI agents can discover and invoke my application's capabilities (tools, prompts, and resources) through the standardized MCP protocol.
+
+As an enterprise architect, I want to rely on MCP Server support at a stable API level so that I can build production integrations between my WildFly applications and AI tooling without depending on experimental features that may change.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://github.com/wildfly/wildfly-proposals/issues/829[wildfly-proposals#829] - Feature Development tracker issue for this promotion
+* https://github.com/wildfly-extras/wildfly-ai-feature-pack/issues/249[wildfly-ai-feature-pack#249] - Implement the Server features of MCP 2025-11-25 specification
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly-extras/wildfly-ai-feature-pack
+
+=== Other Interested Projects
+
+* https://github.com/mcp-java/java-mcp-annotations[MCP Java Annotations] - Provides the standardized MCP annotations used by the feature-pack
+
+=== Relevant Installation Types
+
+* Traditional standalone server (provisioned by Galleon)
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+The WildFly AI feature-pack will be promoted to the `default` stability level.
+Only the MCP Server features will be promoted to the `default` stability level.
+All other features and packages in the feature-pack will be available at the `experimental` stability level.
+
+The Maven coordinates of the WildFly AI feature pack will not change and remain `org.wildfly.generative-ai:wildfly-ai-feature-pack`
+
+The following features and packages must move to the `default` stability level:
+
+* The `mcp-server` Galleon layer and its associated packages.
+* The `mcp` subsystem that provides the server-side MCP runtime.
+
+The MCP Server implementation must fully support the latest MCP specification (https://modelcontextprotocol.io/specification/2025-11-25[MCP 2025-11-25]). The outstanding development effort to implement the remaining server features is tracked by https://github.com/wildfly-extras/wildfly-ai-feature-pack/issues/249[wildfly-ai-feature-pack#249].
+
+The MCP Server features must provide:
+
+* Support for exposing Jakarta EE application methods as MCP tools, prompts, and resources using the standardized https://github.com/mcp-java/java-mcp-annotations[MCP Java annotations].
+* A stable management API for the `mcp` subsystem.
+* Domain transformation support for the `mcp` subsystem.
+* Logging messages that can be localized.
+* Published documentation for the feature-pack, its capabilities and management model.
+
+The Git repository for the AI feature-pack is under the https://github.com/wildfly-extras[wildfly-extras] organization.
+It should be moved under the  https://github.com/wildfly[wildfly] organization during this promotion.
+
+The AI feature pack must move outside of the `incubating` namespace in WildFly Glow and be referenced with other feature-packs (such as cloud, datasource, etc.)
+
+=== Non-Requirements
+
+* MCP Client features (the `mcp-client-sse`, `mcp-client-stdio`, and `mcp-client-streamable` layers) are not part of this promotion and will remain at the `experimental` stability level.
+* All other AI features provided by the feature-pack (chat models, embedding models, embedding stores, content retrievers, chat memory, web search, WebAssembly) are not part of this promotion.
+* OAuth 2.1 Protected Resource Metadata and experimental MCP Tasks are not required for this promotion.
+
+=== Future Work
+
+Support for MCP Client features at a higher stability level may be considered in a future proposal once those features have matured sufficiently.
+
+A quickstart demonstrating how to expose a Jakarta EE application as an MCP server should be added to https://github.com/wildfly/quickstart[WildFly quickstarts].
+
+== Backwards Compatibility
+
+Since the WildFly AI feature-pack was developed without any stability level, it could be provisioned at any stability level.
+It will not be available at the `default` stability level *ony for the MCP server features*.
+Existing users that are relying on any other features will have to provision the feature pack at the `experimental`
+stability level and start WildFly at the `experimental` stability level. This is a breaking change that must be 
+highlighted in the release notes.
+
+=== Default Configuration
+
+The promotion does not change the default configuration of the WildFly AI feature-pack. Users must still explicitly provision the `mcp-server` Galleon layer to enable MCP Server support. The `mcp` subsystem configuration generated by the `mcp-server` layer does not change.
+
+=== Importing Existing Configuration
+
+Users with existing configurations using the `mcp` subsystem level will be able to use the same configuration at the `default` stability level without changes.
+
+=== Deployments
+
+No incompatible changes to deployment behavior. Applications using the MCP annotations to expose tools, prompts, and resources will continue to work as before.
+
+=== Interoperability
+
+The MCP Server features improve interoperability by allowing WildFly applications to be accessed by any MCP-compatible AI agent or tool through the standardized MCP protocol.
+
+== Implementation Plan
+
+The implementation work is tracked by https://github.com/wildfly-extras/wildfly-ai-feature-pack/issues/249[wildfly-ai-feature-pack#249] and consists of:
+
+. Complete the implementation of all server features from the MCP 2025-11-25 specification (tool annotations, structured content, progress notifications, logging notifications, list-changed notifications, etc.).
+. Update the stability metadata of the `mcp-server` layer and its packages from `experimental` to `default`.
+. Update the stability metadata of the `mcp` subsystem from `experimental` to `default`.
+. Implement domain transformation support for the `mcp` subsystem.
+. Ensure all other features and packages in the feature-pack remain at the `experimental` stability level.
+
+== Admin Clients
+
+The `mcp` subsystem management model must be compatible with the JBoss CLI. Administrators can configure the MCP subsystem using standard CLI operations. No HAL Web Console integration is required at this time, but the management model changes must not break existing CLI functionality.
+
+== Security Considerations
+
+The MCP Server exposes application functionality over HTTP through the Streamable HTTP transport. The MCP endpoints are served by the WildFly web server (Undertow) and benefit from WildFly's existing security infrastructure, including authentication and authorization through Elytron. No additional security-sensitive management attributes are introduced beyond standard socket and HTTP configuration.
+
+[[test_plan]]
+== Test Plan
+
+* Default - This stability level is reserved and requires approval by a professional Quality Engineer with subject matter expertise.
+
+The testing approach includes:
+
+* Unit tests for MCP message handling, protocol negotiation, and annotation processing
+* Integration tests covering the full lifecycle of MCP Server features: tool invocation, prompt retrieval, resource access, and notification delivery.
+* Subsystem tests for the `mcp` subsystem management model, including parsing, marshalling, and domain transformation.
+* Manual verification of end-to-end MCP Server functionality using MCP-compatible clients (such as Claude Code)
+
+== Community Documentation
+
+Documentation for the MCP Server features will be provided as part of the WildFly AI feature-pack documentation. This includes:
+
+* Updated feature-pack documentation to reflect the `default` stability level for MCP Server features.
+* Galleon layer documentation for the `mcp-server` layer.
+* Documentation for this feature pack should be published to https://docs.wildfly.org.
+
+== Release Note Content
+
+The WildFly AI feature-pack now provides MCP (Model Context Protocol) Server support at the `default` stability level. WildFly users can expose their Jakarta EE applications as MCP servers, allowing AI agents and tools to discover and invoke application capabilities through the standardized MCP protocol. The MCP Server implementation supports the MCP 2025-11-25 specification, including tools, prompts, resources, and the Streamable HTTP transport.
+
+[WARNING]
+====
+__Breaking change__: the WildFly AI feature-pack now uses stability levels for its various features. The MCP server features are at the `default` stability level. All other features are at the `experimental` stabibity level.
+If you were using any of these other feature, the feature-pack must now be provisioned at the `experimental` stability level and WildFly must be started at that level too (`bin/standalone.sh --stability=experimental`).
+====
+
