@@ -1,0 +1,127 @@
+---
+categories:
+ - elytron
+ - security
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/pull/792
+feature-team:
+ developer: 
+  - Rebecca Searls 
+  - Farah Juma implemented Wildfly enhancements
+  - Prarthona Paul implemented Elytron enhancements
+ sme:
+  - Darran Lofthouse
+  - Diana Krepinska
+ tester
+  - SME 
+ outside-perspective:
+  - writer
+promotes: https://github.com/wildfly/wildfly-proposals/blob/main/elytron/WFLY-16532-additional-scope-for-auth-request.adoc
+	
+---
+= Promote ability to configure additional OIDC `scope` values for request claims in the `elytron-oidc-client` subsystem from Preview to Default Stability Level.
+:author:            R Searls
+:email:             rsearls@redhat.com, rsearls@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This document is about promoting the implementation of https://issues.redhat.com/browse/EAP7-2212 [elytron-oidc-client: add ability to configure additional scope for authentication request]
+projects https://issues.redhat.com/browse/WFLY-16532 [WFLY-16532] and https://issues.redhat.com/browse/ELY-2574 [ELY-2574] from stability level `preview` to stability level `default`.
+
+=== User Stories
+
+The user can specify custom OIDC scope values used in request claims to specify access privileges being requested for Access Tokens from the Authorization Server. 
+The user can do this via two options, one
+in the `oidc.json` configuration file in the `WEB-INF` directory of the application and
+two via the `elytron-oidc-client` subsystem under the `secure-deployment` and the 'secure-server' resource.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-21413[WFLY-21413] - Promotion from `preview` to `default`
+* https://issues.redhat.com/browse/WFLY-16532[WFLY-16532] - Addition of customer scope value in elytron-oidc-client
+* https://issues.redhat.com/browse/ELY-2574[ELY-2574] - Addition of customer scope value support 
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server
+* Managed domain
+
+== Requirements
+
+There are no specific integration requirements. The implementations exist in Elytron and Wildfly.
+
+=== Changed requirements
+
+
+=== Non-Requirements
+
+N/A
+
+=== Future Work
+
+N/A
+
+== Backwards Compatibility
+
+There are no backwards compatibility issues.
+
+=== Default Configuration
+
+There are no new default configuration options required for this feature.
+
+=== Importing Existing Configuration
+
+There is no issue using a current WildFly configuration with this change.
+
+=== Deployments
+
+There is no incompatible changes to the API or implementation.
+
+=== Interoperability
+
+N/A
+
+== Implementation Plan
+
+The implementation plan only requires the elytron-oidc-client.xsd file moved from `preview` to
+`default`.
+
+== Admin Clients
+
+It must be possible to configure this attribute using cli commands. For example: 
+
+```
+    /subsystem=elytron-oidc-client/secure-deployment=my-secure-deployment:write-attribute(name=scope, value="profile offline_access")
+```
+
+== Security Considerations
+
+There would be no changes to security considerations for this upgrade.
+
+[[test_plan]]
+== Test Plan
+
+Wildfly `elytron-oidc-client` contains feature unit tests and `testsuite/integration/` contains
+more complex feature tests.
+
+Elytron contains unit tests for this feature.
+
+== Community Documentation
+
+Feature documentation has been added to the Wildfly Elytron OIDC Client doc set.
+The `preview` mention in it has been removed.
+
+== Release Note Content
+
