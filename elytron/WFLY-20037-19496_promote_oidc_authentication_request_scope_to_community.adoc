@@ -11,8 +11,8 @@ feature-team:
  outside-perspective:
   - jmesnil
 promotes:
- - https://issues.redhat.com/browse/WFLY-20037
- - https://issues.redhat.com/browse/WFLY-19496
+ - https://github.com/wildfly/wildfly-proposals/pull/527
+ - https://github.com/wildfly/wildfly-proposals/pull/532
 promoted-by:
 ---
 
@@ -69,7 +69,7 @@ WildFly 33 https://docs.wildfly.org/wildfly-proposals/elytron/WFLY-17143-request
 
 **OIDC whith Request Parameters**
 
-* Some new attributes named `authentication-request-format`, `request-object-signing-algorithm`, `request-object-encryption-alg-value` and `request-object-encryption-enc-value` will be added to the `secure-deployment`, `secure-server`, `realm` and `provider` resources under the elytron-oidc-client subsystem. 
+* Some new attributes named `authentication-request-format`, `request-object-signing-algorithm`, `request-object-encryption-alg-value` and `request-object-encryption-enc-value` will be added to the `secure-deployment`, `secure-server`, `realm` and `provider` resources under the elytron-oidc-client subsystem.
 * It is possible to specify the algorithm used to sign the JWT request using the `request-object-signing-algorithm` attribute which will also be added to the resources specified above. This algorithm must be one of the Request Object signature algorithms supported by the OpenID provider.
 ** The values for `request-object-signing-algorithm` attribute are of type String. Default value for this attribute would be none, specifying that the request would be sent as a plaintext. In order to sign the jwt using an algorithm other than none, the user must specify the KeyPair used. This can be done using the `request-object-signing-keystore-file`, `request-object-signing-keystore-password`, `request-object-signing-key-password`, `request-object-signing-key-alias` and `request-object-signing-keystore-type` attributes.
 
