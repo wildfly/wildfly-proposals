@@ -128,7 +128,7 @@ None
 
 * Update Elytron OIDC Client documentation to `community` instead of `preview`;
 * Update Elytron OIDC Subsystem Schema to `community` instead of `preview`;
-* Update all OIDC client source code to `community`instead of `preview`;
+* Update all OIDC client source code to `community` instead of `preview`;
 * Update all tests required to OIDC client to `community` instead of `preview`;
 
 [[test_plan]]
@@ -149,4 +149,9 @@ None
 
 == Release Note Content
 
-This feature allows authentication requests to be sent as a signed and encrypted request object using request and request_uris, also scope parameters.
+Previously two features had been added to the `elytron-oidc-client` subsystem at the Preview stability level, these have now been
+promoted to the `Community` stability level enabling their use by default in WildFly:
+
+* Ability to configure the `scope` value passed to the OIDC provider.
+* An attribute `authentication-request-format` to control the use of signed or encrypted tokens,
+a set of supporting attributes have also been promoted to support this functionality.
