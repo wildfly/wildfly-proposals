@@ -92,7 +92,7 @@ This proposal does not require HAL specific UI changes for the feature to be com
 
 === Future Work
 
-Future work may include promoting the feature from `preview` to `community` stability after broader compatibility and interoperability testing.
+Future work may include promoting the feature from `preview` to `community` or `default` stability after broader compatibility and interoperability testing.
 
 Future work may also include additional documentation examples for certificate authorities that require EAB.
 
