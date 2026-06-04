@@ -26,13 +26,13 @@ promoted-by:
 
 WildFly Elytron provides ACME client support for creating and managing ACME accounts used in automated certificate issuance. Some certificate authorities require ACME External Account Binding, commonly referred to as EAB, when creating a new ACME account. EAB allows the certificate authority to associate the ACME account with an existing non-ACME account, such as a customer account in the CA platform.
 
-This proposal adds support for configuring EAB values on the Elytron `certificate-authority-account` resource in WildFly Core. Users will be able to configure the CA supplied key identifier and HMAC key as part of the ACME account configuration. During ACME account creation, WildFly will pass these values into the Elytron ACME client so the ACME `newAccount` request can include the required `externalAccountBinding` data.
+This proposal adds support for configuring EAB values on the Elytron `certificate-authority-account` resource in WildFly Core. Users will be able to configure an optional `external-account-binding` configuration containing a key identifier and credential reference for the HMAC key. During ACME account creation, WildFly will pass these values into the Elytron ACME client so the ACME `newAccount` request can include the required `externalAccountBinding` data.
 
 The feature is proposed at `preview` stability. Existing ACME account configurations will continue to work without modification, and EAB will only be used when explicitly configured.
 
 === User Stories
 
-As a WildFly administrator using a certificate authority that requires External Account Binding, I want to configure the EAB key identifier and HMAC key in the Elytron `certificate-authority-account` resource, so that WildFly can create the ACME account directly.
+As a WildFly administrator using a certificate authority that requires External Account Binding,I want to configure the EAB key identifier and HMAC key credential reference in the Elytron `certificate-authority-account` resource, so that WildFly can create the ACME account directly.
 
 As a WildFly administrator using a certificate authority that does not require EAB, I want my existing ACME account configuration to continue working without any new required configuration.
 
@@ -201,4 +201,4 @@ The documentation should include a short CLI example showing a `certificate-auth
 
 == Release Note Content
 
-WildFly now supports configuring ACME External Account Binding on Elytron certificate authority accounts at `preview` stability. This allows WildFly to create ACME accounts with certificate authorities that require a key identifier and HMAC key during account registration.
+WildFly now supports configuring ACME External Account Binding on Elytron certificate authority accounts at `preview` stability. This allows WildFly to create ACME accounts with certificate authorities that require a key identifier and HMAC key credential reference during account registration.
