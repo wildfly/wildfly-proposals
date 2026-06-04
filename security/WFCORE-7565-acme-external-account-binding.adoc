@@ -63,14 +63,16 @@ No additional projects are expected to be directly affected by this feature.
 
 The Elytron `certificate-authority-account` resource must allow users to configure the values required for ACME External Account Binding.
 
-The management model must expose two optional attributes:
+The management model must expose an optional `external-account-binding` configuration containing:
 
-* `external-account-binding-key-identifier`
-* `credential-reference` containing the EAB HMAC key
+* `key-identifier`
+* `credential-reference`
 
-Both attributes must remain optional so existing ACME account configurations continue to work without modification.
+The `credential-reference` contains the EAB HMAC key.
 
-If the EAB key identifier is configured, an EAB HMAC key credential reference must also be configured. WildFly must reject incomplete EAB configurations with a clear error message.
+The `external-account-binding` configuration must remain optional so existing ACME account configurations continue to work without modification.
+
+If `external-account-binding` is configured, both `key-identifier` and `credential-reference` must be configured. WildFly must reject incomplete EAB configurations with a clear error message.
 
 When both EAB attributes are configured, WildFly must pass the values to the Elytron ACME account builder during ACME account creation.
 
@@ -122,9 +124,9 @@ This feature improves interoperability with ACME certificate authorities that re
 
 The implementation will update the Elytron subsystem in WildFly Core.
 
-`CertificateAuthorityAccountDefinition` will be updated to add the new EAB management attributes.
+`CertificateAuthorityAccountDefinition` will be updated to add an optional `external-account-binding` configuration containing `key-identifier` and `credential-reference`.
 
-Validation logic will ensure that the EAB key identifier and HMAC key credential reference must be configured together.
+Validation logic will ensure that when `external-account-binding` is present, both `key-identifier` and `credential-reference` are configured.
 
 The runtime service creation path will resolve the new attributes and pass them to `AcmeAccountService`.
 
@@ -141,8 +143,10 @@ An example CLI configuration may look like:
     key-store=account-key-store,
     alias=account-key,
     contact-urls=["mailto:admin@example.com"],
-    external-account-binding-key-identifier="example-kid",
-    external-account-binding-hmac-key-credential-reference={clear-text="example-hmac-key"}
+    external-account-binding={
+        key-identifier="example-kid",
+        credential-reference={clear-text="example-hmac-key"}
+    }
 )
 ----
 
@@ -177,11 +181,11 @@ This feature is proposed at `preview` stability, so the test plan will focus on 
 
 Automated tests should verify that a `certificate-authority-account` can still be added without EAB attributes configured.
 
-Automated tests should verify that a `certificate-authority-account` can be added with both EAB attributes configured.
+Automated tests should verify that a `certificate-authority-account` can be added with `external-account-binding` configured.
 
-Automated tests should verify that configuring only `external-account-binding-key-identifier` fails.
+Automated tests should verify that configuring `external-account-binding` with only `key-identifier` fails.
 
-Automated tests should verify that configuring only `external-account-binding-hmac-key` fails.
+Automated tests should verify that configuring `external-account-binding` with only `credential-reference` fails.
 
 Automated tests should verify that the configured EAB values are passed into the ACME account creation path.
 
@@ -189,7 +193,7 @@ Lower level tests for construction of the ACME `externalAccountBinding` payload 
 
 == Community Documentation
 
-WildFly Elytron documentation should be updated to describe the new EAB attributes on the `certificate-authority-account` resource.
+WildFly Elytron documentation should be updated to describe the new `external-account-binding` configuration on the `certificate-authority-account` resource.
 
 The documentation should explain that the key identifier is supplied by the certificate authority and that the HMAC key should be configured using an Elytron credential reference.
 
