@@ -150,6 +150,21 @@ An example CLI configuration may look like:
 )
 ----
 
+The equivalent XML configuration may look like:
+
+[source,xml,options="nowrap"]
+----
+<certificate-authority-account name="my-ca" ...>
+    <account-key key-store="..." alias="...">
+        <credential-reference clear-text="..."/>
+    </account-key>
+    <external-account-binding>
+        <key-identifier>example-kid</key-identifier>
+        <credential-reference store="my-cs" alias="eab-hmac-key"/>
+    </external-account-binding>
+</certificate-authority-account>
+----
+
 == Admin Clients
 
 The new EAB attributes will be exposed through the standard WildFly management model.
