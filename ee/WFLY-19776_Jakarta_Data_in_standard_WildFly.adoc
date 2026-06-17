@@ -16,7 +16,7 @@ promotes:
 # This should be blank during initial development of a feature. It may be used
 # after the feature is completed if a subsequent issue is field to track promotion
 # of this feature to a higher stability level
-promoted-by:
+promoted-by: https://github.com/wildfly/wildfly-proposals/issues/702
 ---
 = Jakarta Data support in standard WildFly
 :author:            Brian Stansberry
