@@ -1,0 +1,233 @@
+---
+# Add any category for this proposal as a YAML list, e.g.
+# - core
+# - management
+# If missing, add it to _data/wildfly-categories and use its id
+categories: 
+ - security
+ - elytron
+# Specify the stability level of the feature.
+# Values can be one of: experimental, preview, community, or default
+stability-level: default
+# Specify the Feature Development tracker issue for the feature.
+# This must be an issue tracked in https://github.com/orgs/wildfly/projects/7/views/1.
+# To create a Feature Development tracker issue, go to https://github.com/wildfly/wildfly-proposals/issues/new/choose
+# and select 'Feature Development'
+issue: https://github.com/wildfly/wildfly-proposals/issues/842
+# Provide the GitHub ids of the feature team members, organized by role.
+# Provide a single id for the 'assignee' role. Use a YAML list for the 'sme' and
+# 'outside-perspective' roles, even if there is only one person in a role.
+feature-team:
+ developer: bbaranow@ibm.com
+ sme:
+  - Darran.Lofthouse@ibm.com
+ outside-perspective:
+  - ropalka@ibm.com
+# If this issue tracks the promotion of a previously completed feature to a higher stability level, provide the URL of
+# the original https://github.com/wildfly/wildfly-proposals/issues issue that was used to track the implementation of
+# that feature.
+promotes:
+# During initial development of a feature, this field should be left blank. If after the feature is completed and its
+# stability level is promoted via a later issue, the developer promoting the issue should return to this document ("this"
+# being the original analysis document for the feature). The field should be updated to point to the
+# https://github.com/wildfly/wildfly-proposals/issues issue that promotes it.
+# For example,
+#              | Implementation Issue (A) | Promotion Issue (B)
+# promotes:    |                          | https://github.com/.../A
+# promoted-by: | https://github.com/.../B |
+promoted-by:
+---
+
+= Switch sasl-authentication-factor to mandatory in model
+:author:            Bartosz Baranowski
+:email:             bbaranow@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+__<The entire document should be one to two pages long. We will write each analysis document as if it is a conversation
+with a future developer. This requires a good writing style, with full sentences organized into paragraphs. Bullets are
+acceptable only for visual style, not as an excuse for writing sentence fragments.>__
+
+== Overview
+
+Source switch of sasl-authentication-factory in management interfaces happened sometimes ago. In standalone mode it is not readily apparent. In domain mode, it causes immediate failure as described in linked ticket
+
+=== User Stories
+
+__<Provide one or more brief user stories that illustrate the intended users of the feature and the goal they will seek
+to achieve by using the feature.>__
+
+== Issue Metadata
+
+=== Related Issues
+
+ * https://redhat.atlassian.net/browse/EAP7-2377[EAP7-2377]
+ * https://redhat.atlassian.net/browse/JBEAP-25043[JBEAP-25043]
+ * https://redhat.atlassian.net/browse/WFCORE-7547[WFCORE-7547]
+
+=== Affected Projects or Components
+
+ * elytron Integration
+ * WFCORE testsuite
+ * WFLY testsuite(single test, fixed)
+ * QE testsuite(TBV)
+ * galleon-plugin
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+Switch **sasl-authentication-factory** in management interface type to required in model, since its mandatory at runtime anyway.
+
+=== Changed requirements
+
+=== Non-Requirements
+
+=== Future Work
+
+== Backwards Compatibility
+
+Transformers should handle config versions. However this is configuration model enforcement of something that was mandatory during runtime for some time now.
+
+=== Default Configuration
+
+
+Domain/host configuration require proper definition of management security. This is done by default in current build. Notice "$local" and "local" references and definitions - this
+is special case for host user to access server.
+
+[Elytron subsystem configuration example]
+----
+<subsystem xmlns="urn:wildfly:elytron:19.0" >
+  ...
+  <security-domains>
+      <security-domain name="ManagementDomain" default-realm="ManagementRealm" permission-mapper="default-permission-mapper">
+          <realm name="ManagementRealm" role-decoder="groups-to-roles"/>
+          <realm name="local" role-mapper="super-user-mapper"/>
+      </security-domain>
+  </security-domains>
+  <security-realms>
+      <identity-realm name="local" identity="$local"/>
+      <properties-realm name="ManagementRealm">
+          <users-properties path="mgmt-users.properties" relative-to="jboss.domain.config.dir" digest-realm-name="ManagementRealm"/>
+          <groups-properties path="mgmt-groups.properties" relative-to="jboss.domain.config.dir"/>
+      </properties-realm>
+  </security-realms>
+  <mappers>
+      <simple-permission-mapper name="default-permission-mapper" mapping-mode="first">
+          <permission-mapping>
+              <principal name="anonymous"/>
+              <permission-set name="default-permissions"/>
+          </permission-mapping>
+          <permission-mapping match-all="true">
+              <permission-set name="login-permission"/>
+              <permission-set name="default-permissions"/>
+          </permission-mapping>
+      </simple-permission-mapper>
+      <constant-realm-mapper name="local" realm-name="local"/>
+      <simple-role-decoder name="groups-to-roles" attribute="groups"/>
+      <constant-role-mapper name="super-user-mapper">
+          <role name="SuperUser"/>
+      </constant-role-mapper>
+  </mappers>
+  ...
+  <sasl>
+      <sasl-authentication-factory name="management-sasl-authentication" sasl-server-factory="configured" security-domain="ManagementDomain">
+          <mechanism-configuration>
+              <mechanism mechanism-name="JBOSS-LOCAL-USER" realm-mapper="local"/>
+              <mechanism mechanism-name="DIGEST-MD5">
+                  <mechanism-realm realm-name="ManagementRealm"/>
+              </mechanism>
+          </mechanism-configuration>
+      </sasl-authentication-factory>
+      <configurable-sasl-server-factory name="configured" sasl-server-factory="elytron">
+          <properties>
+              <property name="wildfly.sasl.local-user.default-user" value="$local"/>
+              <property name="wildfly.sasl.local-user.challenge-path" value="${jboss.domain.temp.dir}/auth"/>
+          </properties>
+      </configurable-sasl-server-factory>
+      <mechanism-provider-filtering-sasl-server-factory name="elytron" sasl-server-factory="global">
+          <filters>
+              <filter provider-name="WildFlyElytron"/>
+          </filters>
+      </mechanism-provider-filtering-sasl-server-factory>
+      <provider-sasl-server-factory name="global"/>
+  </sasl>
+</subsystem>
+----
+
+
+Given above default config for both host.xml and standalone.xml configuration files, management interfaces configuration for both http and native would look like follows:
+
+[management-interface example]
+----
+<management>
+    ...
+    <management-interfaces>
+        <http-interface http-authentication-factory="management-http-authentication">
+            <http-upgrade enabled="true" sasl-authentication-factory="management-sasl-authentication"/>
+            ...
+        </http-interface>
+        <native-interface sasl-authentication-factory="management-sasl-authentication">
+            ...
+        </native-interface>
+    </management-interfaces>
+</management>
+----
+
+Important distinction here is that for http interface, for non sasl related use cases, there is separate authentication factory without "$local" capability.
+
+=== Importing Existing Configuration
+
+ TBD
+
+=== Deployments
+
+No, current build create config with sasl-authentication configured out of the box with 'local' as fallback.
+
+=== Interoperability
+
+
+== Implementation Plan
+
+Implementation, aside of test updates is simple - its a switch of attribute flag with model update.
+
+== Admin Clients
+
+Shouldnt be a factor, as authentication has been enabled for some time with default configs.
+
+== Security Considerations
+
+There is nothing new, other than model restriction on already present runtime one.
+
+[[test_plan]]
+== Test Plan
+
+There are already tests covering authentication. Those need some adjustment in WFCORE for sure. Some need revisit as "not-auth" is no longer possible. Either tests need to be retired or switch to
+anonymous-sasl. Given that this is simply switch of attribute flag, it does not seem pertinent to add something new.
+
+However impact needs assesment as this change affect galleon-plugin, tests in multiple places/repositories.
+
+Problematic resources:
+  
+  * https://github.com/wildfly/wildfly-core/blob/main/testsuite/manualmode/src/test/ja[…]s/test/manualmode/management/cli/CLIAuthenticationTestCase.java[CLIAuthenticationTestCase] - require no auth.
+  * https://github.com/wildfly/wildfly-core/blob/main/testsuite/standalone/src/test/ja[…]st/integration/management/cli/SecurityAuthCommandsTestCase.java[SecurityAuthCommandsTestCase] - require no auth.
+  * https://github.com/wildfly/wildfly-core/blob/main/core-model-test/tests/src/test/java/org/jboss/as/core/model/test/host/ServerConfigTestCase.java[ServerConfigTestCase] - test fail because bad commands no longer fail in model phase(?).
+  * WFLY - single test, simple fix already in temporary branch
+  * QE TS(TBV)
+
+== Community Documentation
+
+Intitial work: https://github.com/baranowb/wildfly/pull/new/WFLY-18168[WFLY-18168]
+
+== Release Note Content
+
+As of WFLYXXX management interfaces require sasl-authentication-factory to be present.
