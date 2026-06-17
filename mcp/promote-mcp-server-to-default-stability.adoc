@@ -1,6 +1,7 @@
 ---
 categories:
 - mcp
+- ai
 stability-level: default
 issue: https://github.com/wildfly/wildfly-proposals/issues/829
 feature-team:
@@ -33,7 +34,7 @@ Note that this proposal only covers the MCP *Server* features. The MCP Client fe
 
 === User Stories
 
-As a WildFly application developer, I want to expose my existing Jakarta EE application through a MCP server so that AI agents can discover and invoke my application's capabilities (tools, prompts, and resources) through the standardized MCP protocol.
+As a WildFly application developer, I want to expose my existing Jakarta EE application as a MCP server so that AI agents can discover and invoke my application's capabilities (tools, prompts, and resources) through the standardized MCP protocol.
 
 As an enterprise architect, I want to rely on MCP Server support at a stable API level so that I can build production integrations between my WildFly applications and AI tooling without depending on experimental features that may change.
 
@@ -75,6 +76,7 @@ The MCP Server implementation must fully support the latest MCP specification (h
 
 The MCP Server features must provide:
 
+* Support for the `Streamable HTTP` transport protocol
 * Support for exposing Jakarta EE application methods as MCP tools, prompts, and resources using the standardized https://github.com/mcp-java/java-mcp-annotations[MCP Java annotations].
 * A stable management API for the `mcp` subsystem.
 * Domain transformation support for the `mcp` subsystem.
@@ -90,7 +92,8 @@ The AI feature pack must move outside of the `incubating` namespace in WildFly G
 
 * MCP Client features (the `mcp-client-sse`, `mcp-client-stdio`, and `mcp-client-streamable` layers) are not part of this promotion and will remain at the `experimental` stability level.
 * All other AI features provided by the feature-pack (chat models, embedding models, embedding stores, content retrievers, chat memory, web search, WebAssembly) are not part of this promotion.
-* OAuth 2.1 Protected Resource Metadata and experimental MCP Tasks are not required for this promotion.
+* `stdio` transport protocol is not supported
+* `HTTP+SSE` transport is not supported
 
 === Future Work
 

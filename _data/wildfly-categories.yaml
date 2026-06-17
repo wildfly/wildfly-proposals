@@ -3,6 +3,9 @@ categories:
   - name: Agroal
     id: agroal
     description: Agroal DataSources
+  - name: AI
+    id: ai
+    description: Artificial Intelligence
   - name: Bootable Jar
     id: bootable-jar
     description: WildFly and an application packaged as an executable jar
