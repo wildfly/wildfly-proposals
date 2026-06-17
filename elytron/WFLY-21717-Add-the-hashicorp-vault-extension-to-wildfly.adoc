@@ -4,7 +4,7 @@ categories:
 - elytron
 - wf-galleon
 stability-level: default
-issue: https://github.com/wildfly/wildfly-proposals/issues/21717
+issue: https://github.com/wildfly/wildfly-proposals/issues/821
 feature-team:
  developer:
  - skyllarr
@@ -12,7 +12,7 @@ feature-team:
   - darranl
  outside-perspective:
   - honza-kasik
-promotes: https://github.com/wildfly/wildfly-proposals/pull/810
+promotes: https://github.com/wildfly/wildfly-proposals/issues/809
 promoted-by: skyllarr
 ---
 
