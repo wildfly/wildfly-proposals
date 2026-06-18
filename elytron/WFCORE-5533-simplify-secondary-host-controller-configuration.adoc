@@ -1,0 +1,87 @@
+= WFCORE-5533 Simplify secondary host controller configuration
+:author:            Diana Krepinska
+:email:             dvilkola@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The secondary host now needs to define and use an authentication context resource in the elytron subsystem to provide the credentials with which to connect to the primary host. This issue seeks to add a simple username / password variant that uses a credential reference instead of having to define authentication context resource.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-5533[WFCORE-5533]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1823[EAP7-1823] - EAP issue tracker
+
+=== Dev Contacts
+
+* TODO
+
+=== QE Contacts
+
+* TODO
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+[x] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly-core[WildFly Core project]
+
+== Requirements
+
+=== Hard Requirements
+
+* It must be possible to configure the secondary host's credentials by providing username and password using a credential reference and without having to specify authentication context
+* This username and password will be used to initialize AuthenticationContext for the connection.
+* Backwards compatibility should be kept in mind as well as which credentials should have precedence in case both are defined
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+== Implementation Plan
+
+New elements `username` and `credential-reference` will  be added to remote's configuration.
+
+Example configuration:
+
+```
+<remote host="${jboss.test.host.primary.address}" port="9999", username=userName>
+    <credential-reference clear-text="secondary_password"/>
+</remote>
+```
+
+The provided username and credential reference will be used to initialize new https://github.com/wildfly-security/wildfly-elytron/blob/1.x/auth/client/src/main/java/org/wildfly/security/auth/client/AuthenticationContext.java[AuthenticationContext] internally that will be used for the outbound connection.
+
+The backwards compatibility should be kept in mind as well as whether both the authentication-context and username/credential reference can be configured and which credentials would have precedence over the other in such a case.
+
+
+== Test Plan
+
+* WildFly Core test suite: Functional tests + transformer tests
+
+== Community Documentation
+
+WildFly - community documentation will be added to WildFly repository.
+
+== Release Note Content
+
+TODO
+
