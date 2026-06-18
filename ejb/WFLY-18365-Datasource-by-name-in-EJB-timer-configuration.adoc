@@ -1,0 +1,125 @@
+---
+categories:
+ - ejb
+stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/801
+feature-team:
+ developer: Michal Petrov
+ sme:
+  -
+ outside-perspective:
+  - Tomasz Adamski
+---
+= [WFLY-18365] Datasource by name in EJB timer configuration
+:author:            Tomasz Adamski
+:email:             tomasz.adamski@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently in order to configure data source for the EJB timer users must provide JNDI name of a datasource. This can be configured in more convenient way - via datasource name.
+
+
+=== User Stories
+
+Users would like to be able to configure datasource in EJB timer using datasource name.
+
+== Issue Metadata
+
+=== Affected Projects or Components
+
+https://github.com/wildfly/wildfly
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Hard requirements
+
+* Users would be able to provide datasource-name parameter in EJB timer configuration.
+
+== Nice-to-have requirements
+
+* None
+
+== Non-requirements
+
+* None
+
+== Proposed solution
+
+'datasource-name' attribute would be added to timer configuration in ejb3 subsystem.
+
+[source]
+----
+    <subsystem xmlns="urn:jboss:domain:ejb3:10.0">
+    (...)
+        <timer-service (...)">
+        <data-stores>
+            (...)
+            <database-data-store name="foo" datasource-jndi-name="foo-datasource" (...)/>
+        </data-stores>
+    </timer-service>
+----
+[source]
+
+Datasource parameter would be mapped to CLI attribure as follows:
+
+[source]
+----
+/subsystem=ejb3/service=timer-service/database-data-store:read-resource
+
+[standalone@localhost:9990 database-data-store] :read-resource
+{
+    "outcome" => "success",
+    "result" => {
+        (...)
+        "datasource-name" => "foo"
+        (...)
+}
+----
+[source]
+
+
+== Backwards Compatibility
+
+I'm not anticipating backward compatibility issues.
+
+=== Default Configuration
+
+* no change
+
+=== Importing Existing Configuration
+
+* no impact
+
+=== Deployments
+
+* no
+
+=== Interoperability
+
+* no
+
+
+== Admin Clients
+
+* no impact on admin clients
+
+
+[[test_plan]]
+== Test Plan
+
+WildFly integration tests that are currently present and rely on datasource-jdni-name can be modified to check also the new datasource-name argument.
+
+== Community Documentation
+
+The new attribute will be documented in wildscribe.
