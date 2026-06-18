@@ -1,0 +1,138 @@
+= Title
+:author:            Stuart Douglas
+:email:             sdouglas@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The idea of this JIRA is to add hot class replacement support using Fakereplace to
+WildFly, so that hot replacement is supported 'out of the box'.
+
+This will be a gradual process that will involve several iterations. This document
+contains the requirements for the initial support.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-10083[WFLY-10083]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-975[EAP7-975]
+
+=== Dev Contacts
+
+* mailto:mjurc@redhat.com[Michal Jurc]
+
+=== QE Contacts
+
+=== Affected Projects or Components
+
+ * Wildfly
+ * Wildfly Core
+ * Undertow
+ * Weld
+ * Hibernate
+
+=== Other Interested Projects
+
+ * This may affect all components that work on user provided classes.
+
+== Requirements
+
+=== Hard Requirements
+
+The Fakereplace library will be shipped with Wildfly, and an option added to the startup scripts to run with the agent
+enabled. This will not be enabled by default, but will require the user to start wildfly with a specific option
+(tentatively `--developer-mode`).
+
+In general there are three specific parts to this support:
+
+* Figuring out which classes need to be replaced, and providing them to the Agent
+* Updating the bytecode
+* Informing any frameworks that use these classes, so they can rebuild their internal data structures to reflect the
+changes
+
+===== Class change notification
+
+Hot replacement will only be supported for exploded deployments. There are two different ways that classes can be
+replaced:
+
+ * By replacing the classes inside the exploded deployment. The hot replacement support will install an Undertow handler
+ inside the deployment chain, that will check for changed classes when a request arrives (in much the same manner as the
+ old Seam 2 hot replacement filter).
+ * Using a debugger over the JDWP. In this case the class bytes will be updated on the filesystem
+ to keep the class file in sync with what is loaded into the VM. This means that if the
+ developer restarts the server or deployment the class change will be persistent.
+
+The main difficulty in supporting non-exploded deployments is that it is generally not possible to update the jar file
+with the new classes, so if the deployment is restarted it will have the old versions of the classes. It may be possible
+to address this in future via various strategies, such as queuing the updates and applying them on redeploy/restart.
+
+==== Replacing the Bytecode
+
+The Fakereplace agent will be responsible for replacing the bytecode of any changed classes. This operation is not
+guaranteed to succeed, as some changes are too invasive to be handled by the agent (e.g. changing the superclass or
+implemented interfaces). When this happens an error will be logged.
+
+It may be desirable to do an automatic redeployment if the hot replacement fails, although this should probably be a
+configurable option.
+
+Note that only Fakereplace core will be consumed by WildFly. The existing integrations that are packaged in the dist
+jar are not going to be included, but will instead be provided by WildFly itself.
+
+==== Framework Support
+
+Support for Framework changes will be implemented in a combination of both Wildfly and the frameworks themselves. For
+some frameworks such as JAX-RS it should be possible to implement this in Wildfly directly, as all that should be required
+is a restart of the JAX-RS Servlet. For others such as Weld it will require potentially significant changes to the
+framework itself.
+
+Rather than forcing frameworks to consume Fakereplace as a dependency to use Fakereplace API's WildFly will act as the
+glue that connects Fakereplace and the frameworks. Essentually frameworks will provide their own APIs for hot replacement
+notification, and WildFly will bridge the gap between the frameworks and Fakereplace.
+
+This means that frameworks can add hot replacement support without any additional dependencies, and also allows WildFly
+fine grained control of notifications. For example WildFly has knowledge of which deployments a given class belongs to,
+so if a deployment does not have any changed classes the framework will not be notified that classes have been updated.
+
+This also avoids any class loading issues that arise from having Fakreplace on the boot class path.
+
+Initially this feature will target JAX-RS for full support, as it can be achieved fairly easily by simply restarting
+the JAX-RS Servlet. If time and resources allow support for Weld and Hibernate may also be added to varying degrees.
+
+It is expected that once the core support is in place improvements will be able to be delivered incrementally, without
+going through the full feature development process.
+
+=== Nice-to-Have Requirements
+
+It would be nice to support dcevm as well as bytecode based replacement.
+
+It may be possible to support partial redeployment, where class definitions are retained after a redeploy for a faster
+redeploy. This could be used in situations where we can successfully replace a class definition, but cannot update
+framework metadata
+
+=== Non-Requirements
+
+This feature is not supported in production. It is a development tool only.
+
+Hot replacement is provided as a 'best effort' attempt. It is simply not possible or practical
+to support all possible class changes. The idea of this initial attempt it to get close
+to the 80% case, which would result in the average developer needing to deploy/restart
+significantly less.
+
+== Test Plan
+
+There are two parts to this testing, one is to test that the server still functions as expected with the Fakereplace
+agent installed, the other is to test that the agent performs as expected.
+
+To test that the server functions as expected an option will be added to the test suite to run the full test suite with
+the agent present.
+
+To validate the second an additional test module will need to be added that tests various forms of replacement work as
+expected. These tests should be added at the same time as any hot replacement functionality.
