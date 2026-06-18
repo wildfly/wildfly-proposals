@@ -1,0 +1,243 @@
+---
+categories:
+- client
+- ejb
+- clustering
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/770
+# Provide the GitHub ids of the feature team members, organized by role.
+# Provide a single id for the 'assignee' role. Use a YAML list for the 'sme' and
+# 'outside-perspective' roles, even if there is only one person in a role.
+feature-team:
+ developer:
+ sme:
+  - tadamski
+  - flavia
+ outside-perspective:
+  - ropalka
+---
+
+= Provide distributed deployment repository functionality
+:author:            Richard Achmatowicz
+:email:             rachmato@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The purpose of this Request For Enhancement (RFE) is to provide an enhanced version of the deployment repository
+service to facilitate discovery by the EJB client discovery mechanism. The current deployment repository service
+only holds information on modules deployed locally. The enhanced deployment repository will hold information on
+all modules deployed in a cluster: the module name and the cluster nodes the module is deployed on.
+This additional information will facilitate the discovery process in two ways:
+* for a EJB/Remoting client, a connection to a single node will provide module deployment information for all
+nodes in the cluster, even those with no active connection with no active connection
+* for an EJB/HTTP client, discovery will now return module information for all nodes behind a load balancer,
+as opposed to a single node which is currently the case
+
+=== User Stories
+
+When using an EJB/HTTP client, discovery works by sending a discovery request to the load balancer, which will
+route the request to a node in the cluster at random, and return the set of modules available on that node.
+This leads to a requirement that clusters be homogenous - i.e. evey node has the same set of deployments available.
+A distributed deployment repository will remove this restriction.
+
+When using an EJB/Remoting client, discovery works by the server sending a module availability update to the client
+upon connection establishment. Only deployments local to that server will be included, and for servers with no
+active connections, no module information will be available. A distributed deployment repository will make cluster-wide
+module availability available to discovery upon the fiest established connection.
+
+== Issue Metadata
+
+=== Related Issues
+
+* WFLY-20091: the Wildfly issue for describing this issue and tracking the changes
+
+
+=== Affected Projects or Components
+
+* JBoss EJB client library (https://github.com/wildfly/jboss-ejb-client)
+* Wildfly HTTP client library (https://github.com/wildfly/wildfly-http-client)
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+This change impacts how module availability updates are constructed and sent to connected EJB client
+applications.
+
+=== 1. Implement a ServiceProviderRegistrar to allow all nodes in the cluster to register their module deployments
+
+A ServiceProviderRegistrar is a clustering-based distributed data structure which permits a node to register
+a "service" and obtain a view of the "providers" of that service. In this case the service is an EJBModuleIdentifier
+and the providers are a set of GroupMember instances which hold node names. Each change to the ServiceProviderRegistrar
+state will generate callbacks to ServiceProviderRegistrarListeners so that nodes can know when a module has been
+deployed on another node.
+
+Previous to these changes, the data structure for holding module availablility information is a local map.
+
+The ServiceProviderRegistrar will become an encapsulated member variable of the DeploymentRepositoryService.
+
+=== 2. Use the registrar as a mechanism for generating and sending module availability updates to connected clients
+
+A key function of the current DeploymentRepositoryService is to maintain a list of modules which are locally deployed
+and, when that list changes, due to additions or removals, asynchronously send messages to all connected EJB client
+applications with those changes. This updated information is used to update the "discovery database" held by
+the client - a data structure which the client can use to find which modules are deployed where. The messages,
+referred to as MODULE_AVAILABILITY messages, are part of the EJB client protocol message set and contain
+a cluster identifier followed by a list of EJBModuleIdentifiers.
+
+With the ServiceProviderRegistrar in place, the MODULE_AVAILABILITY messages will now be able to send information
+concerning module availability across the cluster. This will require the addition of a new message type
+MODULE_AVAILABILITY_CLUSTER which will contain a cluster identifier together with a map of node to list of
+EJBModuleIdentifiers.
+
+=== Future Work
+
+As mentioned in the previous section, a new message type MODULE_AVAILABILITY_CLUSTER amd associated processing
+will be used to send the cluster-wide information to the EJB client applications. THis implies modifications
+to the EJB client protocol as well as changes to the way MODULE_AVAILABIITY and MODULE_AVAILABILITY_CLUSTER
+messages are processed by the client.
+
+This work will be addressed in a separate RFE.
+
+== Backwards Compatibility
+
+As a new message will be added to the EJB client protocol, the complete implementation of this issue (including
+the Requirements defined above as well as the Future Work mentioned) will affect backward compatability between
+EJB client applications and the servers they connect to.
+
+In this case, to maintain backward compatability with existing EJB client applications, although cluster-wide
+module availability information will be available, we shall generate MODULE_AVAILABILITY messages which
+are consistent with what current clients expect to receive: a list of modules local to the server in question.
+
+=== Default Configuration
+
+This work does incorporate changes to the default configuration of both the distributable-ejb subsystem
+as well as the Infinispan subsystem. These changes have two aspects.
+
+First, a ServiceProviderRegistrar is a clustering-based distributed data structure and so requires
+configuration of a backing Infinispan cache in the Infinispan subsystem as well as potentially its own
+configuration in the distributable-ejb subsystem.
+
+Second, the current distributable-ejb subsystem contained configuration for another distributed data structure
+used by EJB client applications, called a client mappings Registry. A Registry is another type of clustering-based
+distributed data structure, which allows a node in a cluster to register a key-value pair in the registry,
+such that any node can see the key-value pairs of any other node in the cluster. For the client mappings registry,
+the key is the node name and the value is a List<ClientMapping>.
+
+Rather than define two resources in the distributable-ejb subsystem, one for a regisrty and one for the new
+service provider registrar, we plan to create a new resource, called ejb-client-services, and use that as
+a basic for configuring both distrubuted data structures.
+
+The new configuration element is as follows:
+
+[source,xml]
+----
+<subsystem xmlns="urn:jboss:domain:distributable-ejb:3.0">
+    ...
+    <infinispan-ejb-client-services cache-container="ejb" cache="client-services"/>
+    ...
+</subsystem>
+----
+
+In the configuration of the infinispan subsystem, to support this configuration, a new cache definition called
+client-services will be added to the ejb cache container:
+
+[source,xml]
+----
+<subsystem xmlns="urn:jboss:domain:infinispan:15.0">
+    <cache-container name="ejb" default-cache="dist" aliases="sfsb" modules="org.wildfly.clustering.ejb.infinispan" marshaller="PROTOSTREAM">
+        <transport lock-timeout="60000"/>
+        ...
+        <replicated-cache name="client-services">
+            <expiration interval="0"/>
+        </replicated-cache>
+        ...
+    </cache-container>
+    ...
+</subsystem>
+----
+
+=== Importing Existing Configuration
+
+These changes are designed to work with legacy configurations.
+
+The distributed deployment repository depends on the existence of a ServiceProviderRegistrar
+distrbuted data structure and this is nomally provided by the distributable-ejb subsystem. If
+an older version of the distributable-ejb substeme is present (not including the changes to the
+XML configuration as described above) or if it is not present at all, legacy service installers
+will be used to configure the necessary service.
+
+=== Deployments
+
+This issue does not affect the behaviour of deployments.
+
+=== Interoperability
+
+If interoperability refers to the interoperability between EJB client components and other components,
+the public API of the EJB client is not changing as a result of these changes.
+
+== Implementation Plan
+
+The implementation plan is to implement the distributed deployment repository functionality first, add it
+to Wildfly, and then address the changes to the EJB client protool subsequently.
+
+== Admin Clients
+
+This work has no impact on admin clients.
+
+== Security Considerations
+
+These changes have no impact on security.
+
+[[test_plan]]
+== Test Plan
+
+This feature is to be tested in accordance with the 'default' stability level. Important test classes
+include the following categories:
+
+=== Integration
+The distributed deployment repository touches on the following integration aspects, integration between:
+
+* deployment processing and the distributed deployment repository content
+* the service provider registrar and the distriubted depplyment repository content and
+* the EJB client topology and module availability updates and the distributed deployment content
+
+The existing integration tests in the Wildfly clustering testsuite exercise all of these integration points.
+
+Another very important aspect is to verify that the above integration tests pass when either:
+
+* a legacy version of the distributable-ejb subsystem is in use or
+* no distributable-ejb subsystem is present in the server configuration
+
+=== Component
+
+A component test for the new DeploymentRepositoryService would be advised, given that it has specific
+behavioural requirements based on what happens to the state of the components it interfaces with,
+specifically, depoyment additions and removals, service provider registrar changes and the resulting calls
+to topology and module availability listeners.
+
+=== Subsystem
+
+Given that the distributable-ejb subsystem configuration has changed, we need tests to vaidate the correct
+addition and removal of the XML element <ejb-client-services/>.
+
+== Community Documentation
+
+This feature does not impact the user directly and so requires no community documentation. The changes
+are internal.
+
+== Release Note Content
+
+Enhanced discovery for the EJB client applications: this version of Wildfly includes enhanced support
+for discovering the availability of EJB deployments in a cluster, leading to better performance.
