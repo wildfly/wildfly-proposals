@@ -1,0 +1,21 @@
+
+name: "Close stale pull requests"
+on:
+  schedule:
+  - cron: "0 0 * * *"
+
+# see: https://github.com/actions/stale
+jobs:
+  stale:
+    permissions:
+      contents: write # only for delete-branch option
+      pull-requests: write
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/stale@v9
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        stale-pr-message: 'There has been no activity on this PR for 90 days. It will be auto-closed after 120 days.'
+        close-pr-message: 'There has been no activity on this PR for 120 days and it has been closed automatically.'
+        days-before-stale: 90
+        days-before-close: 120
