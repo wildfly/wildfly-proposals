@@ -1,0 +1,97 @@
+= Ability to add Properties binding in Naming subsystem
+:author:            Parul Sharma
+:email:             parsharm@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+In naming subystem we have four diffirent types of binding:
+
+1. Simple
+2. Object Factory
+3. External Context
+4. Lookup
+
+In 'simple' type of binding, we can bind only single simple value to a single jndi location. In case we want to store the multiple properties in single JNDI location
+or we want to group the multiple properties, than we won't be able to do it with 'simple' binding.
+
+Hence, it is proposed to implement a way where we can add multiple java properties, which are bound with a single location in JNDI.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-9551
+
+=== Related Issues
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+
+* Engineering
+
+=== Affected Projects or Components
+
+* wildfly-naming-client
+* wildfly-http-client
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* This feature should allow to add multiple "properties" into single jndi location
+like:
+
+         <subsystem xmlns="urn:jboss:domain:naming:2.0">
+            <bindings>
+                <properties name="java:/global/myAppConfig">
+                    <property name="configProperty1" value="configValue1" type=String/>
+                    <property name="configProperty2" value=3 type=int/>
+                </properties>
+            </bindings>
+        </subsystem> 
+        
+ * The CLI command will be like: 
+ 
+ /subsystem=naming/binding=java\:\/global\/myAppConfig:add(binding-type=properties, properties=[{name=configname1, type=String, value=configvalue1}, 
+{name=configname2, type=String, value=configvalue2}]
+               
+* Support of injection Properties props in any beans(MBean / EJB)
+* This feature should allow "allow-expressions" to be stored in "value".
+
+=== Nice-to-Have Requirements
+
+//=== Non-Requirements
+
+== Implementation Plan
+
+== Test Plan
+1. The developed feature is able to accomodate multiple properties bound with a single JNDI location.
+2. The developed feature provide the capability to remove single/multiple properties.
+3. The developed feature should allow "allow-expressions" to be stored in "value".
+4. The developed feature should be capable of adding/remove the property and its value to *.xml.
+5. In a servlet of a war deployment, uses @Resource(lookup = "java:myprops") to verify that the properties can be injected correctly
+ 
+
+The standard WildFly testsuite will be enhanced to verify that the user can add multiple properties. The implemented tests will use different variants to verify by adding or removing properties binding.
+
+== Community Documentation
+
+Update the WildFly documentation to document the new binding "Properties" to use.
+
+== Release Note Content
+
+Add one more binding-type "properties" where we can add multiple properties into single JNDI location
+
+
