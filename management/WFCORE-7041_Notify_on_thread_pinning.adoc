@@ -1,0 +1,152 @@
+---
+categories:
+ - core
+ - management
+stability-level: preview
+issue: https://github.com/wildfly/wildfly-proposals/issues/660
+feature-team:
+ developer: bstansberry
+ sme:
+  -
+ outside-perspective:
+  -
+---
+= WFCORE-7041 Notify users on ocurrences of virtual thread pinning
+:author:            Brian Stansberry
+:email:             bstansbe@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Java SE 21 introduced a new feature, link:https://openjdk.org/jeps/444[virtual threads, window=_blank], which offer the possibility of improved performance or resource utilization when Java application tasks make blocking calls. This is achieved by executing tasks on a new type of thread, a 'virtual thread'. One of a set of native platform threads execute the virtual thread tasks, but if the task makes a blocking call the JVM is able to suspend execution of the task, "unmount" the virtual thread and shift the native thread to a different virtual thread, with some native thread resuming the suspended virtual thread when the blocking work is complete.
+
+However, a risk with virtual threads is link:https://openjdk.org/jeps/444#Pinning[thread pinning] where a virtual thread does something that prevents the native thread unmounting the virtual thread, resulting in the native thread blocking when the virtual thread's task blocks. This can hurt performance or even cause deadlocks if the limited pool of native threads end up blocking. link:https://openjdk.org/jeps/491[JEP 491, window=_blank] should help with thread pinning, but may not completely eliminate all cases of it, and in any case will not appear in an LTS SE release before 25, while virtual threads are available in SE 21.
+
+Because thread pinning can have such negative effects, if WildFly is going to support virtual threads in any workflows it needs a mechanism to notify users when thread pinning occurs and to record data about the number of occurrences and the duration of pinning events. This mechanism should be regarded as a foundational feature needed for other virtual thread-based features. Even if WildFly doesn't provide features backed by virtual threads, users may create their own so there is value in providing this mechanism.
+
+Since SE 14 Java SE's Java Flight Recorder (JFR) functionality has provided an API for listening for JFR events, and since SE 21 they have emitted events for occurrences of virtual thread pinning. This provides the foundation for a WildFly feature where we can listen for those events, log them, and expose metrics data about them via the management API.
+
+The `core-management` subsytem is a good fit for this kind of feature. It provides various bespoke functionality related to managing WildFly.
+
+=== User Stories
+
+I'm a developer of applications that run on WildFly and I wish to use Jakarta Concurrency 3.1 virtual threads in my application but I'm concerned about thread pinning. I want to be able to see pinning events in the server log when I test my application.
+
+I'm a platform engineer and if WildFly adds support for running its own services on virtual threads I'd be interested in exploring the benefits of that, but I'm concerned about thread pinning. I want to be able to see pinning events in the server log when evaluating these features and when using them in production.
+
+I administer WildFly servers and if thread pinning occurs I want to be able to see it in the log and to see metrics about the number of events and their duration. I want to be able to mute the logging without losing metrics updates.
+
+== Issue Metadata
+
+=== Related Issues
+
+https://issues.redhat.com/browse/WFCORE-7041[WFCORE-7041, window=_blank]
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly-core[WildFly Core]
+* https://github.com/hal/console[HAL]
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+* New `urn:org.wildfly.core-management:preview:2.0` schema.
+* Add a new `preview` stability `thread-pinning-reporter` resource to the `core-management` subystem.
+** Resource will add capability `org.wildfly.extension.core-management.virtual-thread-pinning` that exposes a Void service.
+** On SE < 21, at start the service will log at INFO that thread-pinning-reporting is not available
+** On SE 21 or later, service will begin monitoring for JFR `jdk.VirtualThreadPinned` events.
+** Events will result in writing to a `org.wildfly.extension.core.management.virtual-thread-pinning` logger a message with the following information:
+*** Name of thread that resulted in pinning
+*** Duration of the pinning in nanoseconds
+*** Time the pinning started, formatted per the system default Locale
+*** Stack trace of the thread when pinning occurred. This is either a partial or complete stack trace, depending on the resource configuration.
+** The occurrence of the pinning and its duration will be recorded in a metric recording object maintained by the resource.
+** The resource will provide the following configuration options:
+*** `start-mode` attribute to let the user control whether the pinning monitoring service is `always` started or only `on-demand`, when some other service requires the resource's capability. The default is `on-demand`. Changing the value requires a reload.
+*** `log-level` attribute that controls the log level of event reporting. Valid values are the JBoss Logging `Logger.Level` enum values. Default is `WARN`. Changing this takes immediate effect.
+*** `max-stack-depth` controls the maximum number of frames in the logged stack trace. Default is `20`. A value of `-1` means no limit; `0` effectively suppresses stack trace reporting.  Changing this takes immediate effect.
+** The resource will expose the following metrics:
+*** `pinning-count` -- number of pinning events since the resource service started.
+*** `total-pinning-time` -- total duration in nanoseconds of pinning events.
+*** `average-pinning-time` -- average duration in nanoseconds of pinning events
+* The `org.wildfly.extension.core.management.virtual-thread-pinning` logger will not be used for any other messages than the one described above, ensuring users can control the visibility of these messages without needing to be concerned about other messages.
+* In *WildFly Preview only*, the `core-management` layer will be updated to include the new resource, with default attribute values.
+** Since the `core-management` layer is used in the set of layers used for generating the OOTB standalone configuration files, those files will also include the resource.
+** The OOTB `domain.xml` profiles that include the `core-management` subsystem will also be updated to include the new resource.
+* In standard WildFly, no changes to the Galleon layers or OOTB configuration files will be made. (See <<future_work, Future Work>>.)
+
+=== Non-Requirements
+
+* Recording of information about what stack frames acquired object monitors, which may be the cause of thread pinning. Users can use the `-Djdk.tracePinning=full` system property to have this information logged by the JVM, but the JFR events this feature can monitor do not include this data. 
+
+NOTE: The `-Djdk.tracePinning`-driven thread pinning logging is expected to be removed in a future SE release, which is one reason this feature is needed.
+
+[[future_work]]
+=== Future Work
+
+* When this feature is promoted to 'community' stability, update the `core-management` layer (used to generate the OOTB standalone configuration files) and the OOTB domain configurations to include this feature's resource. See <<default_configuration>> below for more on the impact of this.
+* HAL screens related to configuration of or reading metrics from the `core-management` subsystem _may_ need updating. I believe there are no other metrics from this subsystem.
+* The expectation is no other work would be done beyond standard feature promotion boilerplate. The API exposed by this feature is quite simple and is constrained by things like what data JFR events provide, so there is not a lot of room for API evolution, beyond general "we didn't use the best names" kind of things discovered via bake (but ideally before this is merged at preview.)
+
+== Backwards Compatibility
+
+[[default_configuration]]
+=== Default Configuration
+
+In WildFly Preview, the `core-management` layer, which is used in creating the OOTB standalone configuration files, will include the new resource, with default attribute values. The default `start-mode` behavior is `on-demand`, so unless some other WildFly feature demands this resource's service, the presence of this resource will not result in any runtime overhead beyond a minimal amount of work during boot.
+
+=== Importing Existing Configuration
+
+None. Existing configurations will not include this feature's resource. There is no expectation that the server migration tool would add it. The primary use case for this feature is in support of other features that also would not be part of an existing configuration.
+
+=== Deployments
+
+None
+
+=== Interoperability
+
+Prometheus scrapes or Micrometer or MicroProfile Telemetry pushes of metrics data will include three new metrics. These will be properly namespaced consistent with other server metrics so there should be no incompatibility here.
+
+== Admin Clients
+
+See the discussion of HAL in <<future_work, Future Work>> above.
+
+== Security Considerations
+
+The feature logs thread names and stack traces in whatever log appenders are configured to write events from the `org.wildfly.extension.core.management.virtual-thread-pinning` logger. So, typically the `server.log` file and the console. However, this data isn't particularly different from the kinds of things that routinely end up in such logs.
+
+[[test_plan]]
+== Test Plan
+
+* Standard subsytem tests
+* Integration tests:
+** On SE < 21
+*** Adding the resource results in logging at INFO that it is ignored
+** On SE 21+
+*** Deploy an app with an Undertow handler that does pinning when handling a request. App does not demand the reporting capability. Capture logging in a test log appender.
+**** With a default resource config, confirm that no pinning reporting occurs. (Capability is not demanded)
+**** Change the start-mode to 'always'. Confirm that expected pinning reporting occurs and that expected metrics are available.
+*** Deploy an app with an Undertow handler that does pinning when handling a request. App includes an MSC service that demands the reporting capability. Capture logging in a test log appender.
+**** Confirm that pinning reporting occurs and that expected metrics are available.
+**** Manipulate the resource log-level (and the test log appender setup) and confirm behavior.
+**** Manipulate the resource max-stack-depth settings to -1 and 0 and confirm behavior
+
+
+== Community Documentation
+
+* Addition of a subsection in the Admin Guide "Core Management Subsystem" section.
+ 
+== Release Note Content
+
+The `core-management` subsystem can now be configured to log information about virtual thread pinning events and to expose metrics about the number and duration of such events.
