@@ -1,0 +1,80 @@
+= JBoss Jakarta EE8 APIs BOMs Removal
+:author:            Eduardo Martins
+:email:             emartins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently we deliver the JBoss JakartaEE Specs BOMs with JBoss EAP, yet the Jakarta EE artifacts in such BOMs are also present in the JBoss EAP Jakarta EE8 BOMs, and thus it makes little sense to continue including these with EAP. We should then remove such BOMs from EAP 8, and update any reference to such BOMs in our documentation, to point instead to the JBoss EAP Jakarta EE BOM. The Migration Toolkit for Applications should also have rules to identify and automatically (when possible) fix customer Maven projects that rely on the BOMs removed.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/EAP7-1849[EAP7-1849]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* Jan Stourac
+
+=== Testing By
+
+[ ] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+
+* JBoss EAP
+
+=== Other Interested Projects
+
+* Migration Toolkit for Applications
+
+== Requirements
+
+=== Hard Requirements
+
+* BOMs Removal
+** The `JBoss Jakarta EE 8 Specification APIs` BOM, with Maven groupId:artifactId coordinates `org.jboss.spec:jboss-jakartaee-8.0`, should be not provided with JBoss EAP 8.
+** The `JBoss Jakarta EE 8 Web Profile APIs` BOM, with Maven groupId:artifactId coordinates `org.jboss.spec:jboss-jakartaee-web-8.0`, should be not provided with JBoss EAP 8.
+
+* BOMs Documentation
+** A new `JBoss Jakarta EE8 APIs BOMs Removal` section should be added to the `Application Migration` chapter of the `EAP Migration Guide`, guiding customers to manually do the needed changes in their Maven Projects:
+*** Replace the Maven Coordinates of the `JBoss Jakarta EE 8 Specification APIs` BOM in Maven dependency management imports, with the coordinates of the `JBoss EAP EE` BOM, specified by EAP7-1852.
+*** Replace the Maven Coordinates of the `JBoss Jakarta EE 8 Web Profile APIs` BOM in Maven dependency management imports, with the coordinates of the `JBoss EAP EE` BOM, specified by EAP7-1852.
+** Any other EAP Documentation reference to the `JBoss Jakarta EE 8 Specification APIs` and `JBoss Jakarta EE 8 Web Profile APIs` BOMs should be updated to point customers to the `JBoss EAP EE` BOM instead.
+
+* Migration Toolkit for Applications
+** New `JBoss Jakarta EE BOMs Removal` rules should be added to the `Migration Toolkit for Applications`, to warn customers and automatically, when possible, do the needed changes in their Maven Projects:
+*** Change the Maven Coordinates of the BOMs in Maven dependency management imports.
+*** Provide a link to the `JBoss Jakarta EE8 APIs BOMs Removal` section of the EAP Migration Guide.
+
+=== Nice-to-Have Requirements
+
+* NONE
+
+=== Non-Requirements
+
+* NONE
+
+== Test Plan
+
+* TODO
+
+== Community Documentation
+
+* Any WildFly Documentation reference to the `JBoss Jakarta EE 8 Specification APIs` and `JBoss Jakarta EE 8 Web Profile APIs` BOMs should be updated to instead point users to the `WildFly EE` BOM.
+
+== Release Notes Content
+
+* The "JBoss Jakarta EE 8 Specification APIs" BOM was removed, Maven projects should instead use the "JBoss EAP EE" BOM.
+* The "JBoss Jakarta EE 8 Web Profile APIs" BOM was removed, Maven projects should instead use the "JBoss EAP EE" BOM.
+
