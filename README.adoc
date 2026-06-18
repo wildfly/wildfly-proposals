@@ -11,7 +11,8 @@ This process is evolving, but is mandatory for all new features and requirements
 ## Get Started
 
 1. Socialize an idea with others.  Make sure others think the work is worth doing, and are willing to review design and code changes required.
-2. Create a Pull Request with your new analysis document based on the link:./design-doc-template.adoc[template].
+2. Familiarize yourself with the [WildFly Feature Development Process](https://docs.wildfly.org/wildfly-proposals/FEATURE_PROCESS.html).
+3. Create a Pull Request with your new analysis document based on the link:./design-doc-template.adoc[template]. Follow the guidance in the template.
 
 ## FAQs
 
