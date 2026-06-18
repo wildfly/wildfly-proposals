@@ -1,0 +1,114 @@
+---
+categories:
+  - scripts
+stability-level: default
+issue: https://issues.redhat.com/browse/WFCORE-7450
+feature-team:
+ developer: lvydra
+ sme:
+  -
+ outside-perspective:
+  -
+promotes:
+promoted-by:
+---
+
+= [WFCORE-7450] service.bat: Support for startup mode "delayed"
+:author:            Lukas Vydra
+:email:             lvydra@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The WildFly `service.bat` script allows installing WildFly as a Windows service. Currently, the `/startup` parameter supports only configuring manual or auto service startup mode. "delayed" startup mode option is not supported. As the delayed startup mode is a standard Windows service feature that delays automatic service startup until after other automatic services have started, it should be supported.
+
+This enhancement clarifies and eventually adds support for all three Windows service startup modes (manual, auto, delayed) in the `service.bat` script, ensuring that the delayed mode is properly validated and documented.
+
+=== User Stories
+
+User want to configure WildFly as a delayed auto-start service so that it starts automatically after critical dependencies (such as database services, network infrastructure, and other foundational services) have fully initialized. This ensures WildFly has all required resources available at startup and reduces the risk of startup failures due to missing dependencies.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-2351[EAP7-2351]
+
+=== Affected Projects or Components
+
+* WildFly, WildFly Core
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+
+== Requirements
+
+* The `service.bat` script should support setting the Windows service startup mode to "delayed" (Automatic - Delayed Start).
+* The default startup mode when no `/startup` parameter is provided should remain "manual" to maintain backwards compatibility.
+* When `/startup` is specified without a value, startup mode should be set to "auto" for backwards compatibility.
+* The `/startup` parameter should accept three values: manual, auto, or delayed (case-insensitive).
+* Invalid startup mode values should be rejected with a clear error message.
+* The implementation must pass the startup mode value to `prunsrv.exe` via the `--Startup` parameter.
+
+=== Changed requirements
+
+=== Non-Requirements
+
+* This feature does not require changes to Linux/Unix shell scripts, as delayed startup is Windows-specific.
+
+=== Future Work
+
+== Backwards Compatibility
+
+This feature maintains full backwards compatibility with existing installations:
+
+* The default startup mode when no `/startup` parameter is provided remains "manual".
+* When `/startup` is specified without a value, the startup mode defaults to "auto" as it does currently.
+* Existing service installations will continue to function without changes.
+
+=== Default Configuration
+
+This feature does not change any default configuration attributes or Galleon layers.
+
+=== Importing Existing Configuration
+
+This feature does not affect the ability to run WildFly with an existing configuration. No changes to the server migration tool are required.
+
+=== Deployments
+
+This feature does not affect deployments.
+
+=== Interoperability
+
+This feature does not impact interoperability.
+
+== Implementation Plan
+
+== Admin Clients
+
+This feature does not affect admin clients (JBoss CLI and HAL) as it is specific to the Windows service installation script.
+
+== Security Considerations
+
+This feature has no security impact. It only affects the Windows service startup configuration, which is an administrative operation already requiring appropriate system privileges.
+
+== Test Plan
+
+Tests should be added to the WildFly Core testsuite.
+
+== Community Documentation
+
+Documentation will be added to the WildFly installation guide explaining the `/startup` parameter options and when to use delayed startup mode. The documentation will include:
+
+* Examples of all three startup modes
+
+== Release Note Content
+
+WildFly's Windows service installation script (`service.bat`) now supports all three Windows service startup modes: Manual, Automatic, and Automatic (Delayed Start). Use `service.bat install /startup delayed` to configure the service to start automatically after other automatic services have completed initialization.
