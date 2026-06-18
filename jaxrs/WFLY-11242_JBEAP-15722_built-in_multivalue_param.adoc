@@ -1,0 +1,92 @@
+= Provide builtin ParamConverter* classes for multi valued parameters
+:author:            Ron Sigal
+:email:             rsigal@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          resteasy
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/JBEAP-15722
+ 
+== Overview
+The JAX-RS specification, implemented by RESTEasy, provides for ParamConverter<T> classes that can
+convert T objects to and from strings. For example, a FooParamConverter, designed to translate Foo objects
+to and from strings, could be used to convert the HTTP header
+----
+f: <foo representation>
+----
+to a Foo object and pass it to the resource method
+--------------------------
+@Path("header")
+@GET
+public String header(@HeaderParam("f") Foo foo) { ... }
+--------------------------
+
+RESTEasy goes beyond the JAX-RS specification by supporting ParamConverters which handle lists, sets, and arrays.
+For example, FooListParamConverter might be designed to convert HTTP header
+--------------------------
+fs: <foo representation 0>,<foo representation 1>
+--------------------------
+
+for  
+
+----
+@Path("header/list")
+@GET
+public String header(@Separator(",") @HeaderParam("fs") List<Foo> foos) { ... }
+----
+
+Out of the box, RESTEasy has not provided any multi-element ParamConverters. However, work in progress for
+RESTEASY-1996 "Provide builtin ParamConverter* classes for multi valued params"
+provides MultiValuedCollectionParamConverter and MultiValuedArrayParamConverter, which support
+arrays and collections, respectively. Also, RESTEasy introduces the @Separator annotation, which
+allows the developer to specify one or more characters which can be used to separate individual
+elements in the string representation of a collection or array.
+
+These two ParamConverters
+
+1. are useful in themselves, and
+2. can serve as templates for application specific ParamConverters.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/JBEAP-15722 "Provide builtin ParamConverter* classes for multi valued params"
+
+* https://issues.jboss.org/browse/WFLY-11242 "Provide builtin ParamConverter* classes for multi valued params"
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1034 "RESTEasy extended support for multivalue @*Param"
+
+* https://issues.jboss.org/browse/WFLY-10646 "RESTEasy extended support for multivalue @*Param"
+
+* https://issues.jboss.org/browse/RESTEASY-1996 "Provide builtin ParamConverter* classes for multi valued params"
+
+=== Dev Contacts
+
+* mailto:rsigal@redhat.com[Ron Sigal]
+* mailto:asoldano@redhat.com[Alessio Soldano]
+
+=== QE Contacts
+
+* TBD
+
+=== Affected Projects or Components:
+
+* Wildfly
+* RESTEASY
+
+== Requirements
+
+The necessary changes will be made in RESTEasy.
+
+=== Test Plan
+
+Arquillian tests using Wildfly will be added to the RESTEasy testsuite.
+
+=== Documentation
+
+A section will be added to Chapter 27. "String marshalling for String based @*Param" of the RESTEasy
+User Guide at https://resteasy.github.io/docs.html.
