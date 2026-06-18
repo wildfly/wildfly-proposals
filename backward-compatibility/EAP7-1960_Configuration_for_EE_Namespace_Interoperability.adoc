@@ -1,0 +1,134 @@
+---
+categories:
+- backward-compatibility
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/799
+feature-team:
+ developer: fl4via
+ sme:
+  -
+ outside-perspective:
+  -
+promotes:
+promoted-by:
+---
+
+= Configuration for Namespace Interoperability
+:author:            Flavia Rainone
+:email:             frainone@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+With WFLY-16296 (Java EE and Jakarta EE Compatibility) it became possible for two servers using different EE namespace to interoperate via remote calls. The namespace interoperability feature is enabled via a system property,`org.wildfly.ee.namespace.interop`.
+In this feature proposal, we want to make interoperability configurable in the server model.
+
+=== User Stories
+
+As a system administrator, I want to enable EE namespace interoperability on the server, So that it can seamlessly communicate with legacy servers (WildFly 26.1 or older) that still use the javax namespace.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-16296[WFLY-16296] WildFly server based on Jakarta EE API should communicate successfully with previous versions of the server based on Java EE
+* https://issues.redhat.com/browse/WFLY-17676[WFLY-17676] Add a configuration for enabling EE namespace interoperability: this is the Jira equivalent to issue #799
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+* mailto:ropalka@redhat.com[Richard Opálka]
+
+=== QE Contacts
+
+* mailto:{msvehla}[{Martin Švehla}]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [X] QE
+
+=== Affected Projects or Components
+This affects the same projects as WFLY-16296:
+
+* https://github.com/wildfly/jboss-ejb-client[JBoss EJB Client]
+* https://github.com/wildfly/wildfly-naming-client/[WildFly Naming Client]
+* https://github.com/wildfly/wildfly-http-client/[WildFly Http Client]
+
+Currently, those projects directly verify the value of the system property `org.wildfly.ee.namespace.interop` to determine if the
+interoperability mode is enabled or disabled. We need to have add boolean parameters to those projects APIs, so WildFly can pass
+the value of interoperability configuration.
+
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+We will use the server model to configure EE namespace interoperability, ensuring the setting is persisted and manageable.
+
+=== Non-Requirements
+
+No configuration changes are required on the legacy server.
+
+== Backwards Compatibility
+
+This feature is fully backwards compatible and maintains support for all previous server versions.
+
+=== Default Configuration
+
+The EE namespace interoperability mode will remain disabled by default, as before.
+
+=== Importing Existing Configuration
+
+This feature does not imply in any migration requirements. The only exception applies to users currently using the system property for interoperability; these users must port their settings to the new model configuration.
+
+=== Interoperability
+
+This feature enhances interoperability. The server remains compatible with previous versions and, when the interoperability mode is enabled, it gains the ability to communicate with legacy Javax EE servers.
+
+== Implementation Plan
+
+An new boolean element named `"ee-namespace-interoperable"` will be added to EE subsystem. The element is not mandatory
+and the default value is `false`. The server wil pass that configuration over to the JBoss EJB Client and
+WildFly Http Client APIs when setting up those client objects.
+
+
+== Admin Clients
+
+The new `ee-namespace-interoperable` attribute is automatically supported by the Management Console. Since the EE subsystem form dynamically displays all simple attributes, the new field will appear as "EE Namespace Interoperable" without requiring additional UI development.
+
+== Security Considerations
+
+This feature has no significant impact on the security posture of the server. It introduces a new management attribute, `ee-namespace-interoperable`, which follows the standard RBAC behavior (readable by any authenticated management user; writeable only to users with Maintainer or Administrator roles; execution limited to Operator or higher).
+
+The attribute does not hold credentials, security-relevant references (like socket bindings), or sensitive security configurations. Therefore, no special sensitivity classifications are required.
+
+[[test_plan]]
+== Test Plan
+
+__<Depending on the selected stability level, the appropriate section below should be completed, including a brief
+description of how testing is to be performed in accordance with the selected stability level. The non-relevant sections
+may be removed as needed.>__
+
+** Default - This stability level is reserved and requires approval by a professional Quality Engineer with subject matter expertise.
+
+== Community Documentation
+
+The community documentation will be updated to describe the new feature. The system property will be either removed or
+deprecated, something that we need to clarify.
+
+== Release Note Content
+
+Add `ee-namespace-interoperable` element to EE subsystem to configure EE namespace interoperability.
