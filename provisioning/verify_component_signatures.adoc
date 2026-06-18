@@ -1,0 +1,304 @@
+---
+categories:
+ - provisioning
+ - cli
+ - console
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/657
+feature-team: 
+ developer: spyrkob
+ sme:
+  -
+ outside-perspective:
+  -
+promotes: n/a
+promoted-by:
+---
+= Verify component signatures during provisioning and updates.
+:author:            Bartosz Spyrko-Smietanko
+:email:             bspyrkos@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+When provisioning or updating a server using WildFly Channels, the components are downloaded from Maven repositories. Currently there is
+no way to verify the origin of the artifacts, thus making it impossible to verify that resulting server contains expected artifacts.
+
+The purpose of this proposal is to add ability to the WildFly Channels and provisioning tooling to verify detached GPG signatures distributed
+alongside the components in Maven repositories. By verifing that all artifacts downloaded from subscribed channels are valid, we can
+guarantee that resulting server contains only expected artifacts.
+
+To achieve this, the server has to have an ability to store and manage trusted public keys, and download and validate the detached signatures. 
+
+=== User Stories
+
+As a user I want to list all public keys used by the server to validate components.
+
+As a user I want to import a new public key to be used to validate components.
+
+As a user I want to remove a previously imported key from the server so that it is no longer used to validate components.
+
+As a user I want to perform provisoning with GPG-enabled channels using Prospero or wildfly-maven-plugin.
+
+As a user I want to perform update with GPG-enabled channels using Prospero, JBoss CLI or Web Console.
+
+As a user I want to perform revert with GPG-enabled channels using Prospero, JBoss CLI or Web Console.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-2183
+* https://github.com/wildfly-extras/wildfly-channel/issues/112
+* https://github.com/wildfly-extras/prospero/pull/763
+* https://issues.redhat.com/browse/WFCORE-7033
+* https://issues.redhat.com/browse/HAL-1992
+* https://issues.redhat.com/browse/WFMP-275
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly-extras/wildfly-channel/
+* https://github.com/wildfly-extras/prospero
+* https://github.com/wildfly/wildfly-maven-plugin
+* https://github.com/wildfly-extras/wildfly-installation-manager-api
+* https://github.com/wildfly/wildfly-core
+* https://github.com/hal/console
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+
+== Requirements
+
+ * All the artifacts used during provisioning of the new server via Prospero, wildfly-maven-plugin or wildfly-jar-maven-plugin are verified before being applied.
+ * All the artifacts used during update of a server via Prospero (including via JBoss CLI or Web Console) are verified before they are applied.
+ * Any artifacts signed using revoked or out of date certificates cause the update or installation to fail.
+ * [Prospero/jboss-cli/web console] When an artifact is signed with a key that the user has not yet been presented with, the user has to be presented with the key information (e.g. user information, fingerprint, etc) and import the key to continue.
+ * [Prospero/jboss-cli/web console] Previously accepted keys can be used to verify new artifacts without user interaction.
+ * [Prospero/jboss-cli/web console] The user can manage (list, add, remove or revoke) certificates used to verify the signatures
+ * [wildfly-maven-plugin/wildfly-jar-maven-plugin] The user can provide a keyring with the trusted certificates in the plugin configuration. Only artifacts signed with one of those certificates can be used in the provisioning.
+ * Each channel definition can specify whether it requires gpg check separately from other channels the installation is subscribed to.
+ * Each channel can specify a default location of the key certificate that will be used to import the certificate if it’s not already present. The user still has to explicitly accept the certificate.
+ * The artifacts in the internal cache (.installation/.cache) are not verified when re-used in an update/revert.
+ * The user can mix channels requiring and not-requiring gpg-checks. In this case only the artifacts from the channels enabling gpgCheck should be verified.
+ * The user can verify that an existing WildFly installation contain only trusted artifacts
+
+
+=== Non-Requirements
+
+ * Automatic certification revocation check on update/revert. The public key revocation status has to manually updated for each server.
+ This might be a future enhancment when integrating with public keyservers, but is not in scope of this proposal.
+
+=== Future Work
+
+ * Resolving required public keys from public keyservers.
+ * Checking imported public keys against public keyservers.
+ * Leniant-mode in the plugin(s) to generate warnings if the public key is not trusted instead of errors.
+
+== Backwards Compatibility
+
+The proposal requires changes to the Channel schema, therefore older versions of provisioning tools will not be able to consume new channel
+definitions. The users will have to update their provisioning tools before using this feature.
+
+=== Default Configuration
+
+The GPG checks will not be enabled by default for WildFly project, therefore there will be no configuration changes.
+
+=== Importing Existing Configuration
+
+No
+
+=== Deployments
+
+No
+
+=== Interoperability
+
+No
+
+== Implementation Plan
+
+=== Detached signatures in maven repository
+According to the https://issues.redhat.com/browse/MMENG-3627[MMENG-3627], detached signatures for Maven artifacts are deployed to the repository with the same GAV as the original artifact, but with ‘.asc’ suffix (alongside md5/sha1 checksums). For example https://maven.repository.redhat.com/ga/commons-codec/commons-codec/1.16.1.redhat-00006/.
+
+=== Wildfly-channels
+The channel definition will be updated to include two new fields: ‘gpg-check’ and `gpg-keys`.
+
+
+|===
+| Name | Default value | Description
+
+| gpg-check | false | If set to true, requires all artifacts resolved from this channel to have valid detached signatures attached to them.
+
+| gpg-keys | - | An array of URL(s) to the public key(s) needed to verify signatures in the channel. If not set, the user has to provide the signatures in another way.
+|===
+
+If the channel requires the GPG check, the detached signature files will be downloaded alongside the actual artifacts and a `SignatureValidator#validateSignature` will be called for each artifact. Users of the channel library can provide their own implementation of `SignatureValidator` or use a default implementation in Wildfly-Channels. An implementation of `SignatureValidator` has to be provided when creating a ChannelSession.
+
+==== Channel definition
+An example configuration of the channel definition with the new elements:
+
+    ---
+    schemaVersion: "2.0.0"
+    name: "wildfly"
+    description: ""
+    repositories:
+    - id: "central"
+      url: "https://repo1.maven.org/maven2/"
+    manifest:
+      maven:
+        groupId: "org.wildfly.channels"
+        artifactId: "wildfly"
+    gpg-check: true
+    gpg-keys:
+    - “https://keyserver.url/public_key.gpg"
+
+Example definition in the wildfly-maven-plugin:
+
+    <plugin>
+      <groupId>org.wildfly.plugins</groupId>
+      <artifactId>wildfly-maven-plugin</artifactId>
+      <configuration>
+        <...>
+        <channels>
+          <channel>
+            <manifest>
+              <groupId>org.jboss.eap.channels</groupId>
+              <artifactId>eap-8.0</artifactId>
+            </manifest>
+            <gpgCheck>true</gpgCheck>
+            <gpgKeys>
+              <gpgKey>
+                https://keyserver.url/public_key.gpg
+              </gpgKey>
+            </gpgKeys>
+          </channel>
+        </channels>
+      </configuration>
+    </plugin>
+
+
+=== Prospero key management
+
+When a server is installed or updated using Prospero, the public keys used to verify the components are stored in a GPG keyring located in the .installation directory.
+
+When `SignatureValidator` attempts to verify a signature, it will query the keystore for the signature’s key ID. If the key is not found, it will attempt to download and use the keys defined in that channel's `gpg-urls`. If one of those matches the signature, the user will be asked to verify the key’s fingerprint, and if accepted, the key will be added to the local keyring.
+
+Following commands will be added to the installation manager:
+
+|===
+| Command | Options | Description
+
+| certificate add | --certificate=<certificateFile>
+--dir=<installationDir> | Adds a certificate from a certificate file to the store, if it doesn’t already exist. Added certificate is considered to be trusted.
+
+| certificate list | --dir=<installationDir> |Lists all certificates stored in the keystore.
+
+| certificate remove | --key-id=<certificateName>
+--revoke-certificate=<revokeCertificatePath>
+--dir=<installationDir> | Removes or revokes the certificate in the keystore. If the certificate is removed, the next time update or installation requires that certificate (and if the channel provides a way to resolve it), the user will be prompted to accept it.
+Revoking certificate requires a revocation certificate.
+
+|===
+
+=== Distributing signing keys with Prospero
+
+It's possible to distribute a public key within Prospero distribution. In this case, the key can be referred to in the channel definition using `classpath:<key_file_name>` URL.
+
+=== Wildfly-maven-plugin key management
+Since the maven execution cannot wait for user input to accept a new certificate, the user has to provide a keyring with all the trusted certificates. If the artifact signature requires a different key, the provisioning should fail. It’s up to the user to generate the keyring (e.g. using gpg command).
+
+The trusted keyring will be defined using a trusted-keyring configuration option in the plugin, e.g.:
+
+    <plugin>
+      <groupId>org.wildfly.plugins</groupId>
+      <artifactId>wildfly-maven-plugin</artifactId>
+      <configuration>
+        <...>
+        <trusted-keyring>/path/to/keyring</trusted-keyring>
+        <...>
+      </configuration>
+    </plugin>
+
+
+== Admin Clients
+
+=== JBoss CLI
+
+New commands need to be added to the CLI to support managing public keys.
+The update/revert commands do not support callbacks during the execution of operation. It makes it impossible to prompt the user to accept a new public key discovered during the operation. To mitigate this, before update, the command will check if the server's channels define any required public keys and if so ask the user to import them. If any additional required keys are discovered during update or revert operation, the user will be presented with an error describing required public key.
+
+The changes are implemented as part of https://issues.redhat.com/browse/WFCORE-7033
+
+=== Web Console
+
+The installer screen will be extended by adding a new "Certificates" page allowing users to add, remove and list component public keys.
+Similar to the JBoss CLI, online update and revert wizards will be modified to discover and import missing public keys before the update is performed.
+
+The changes are implemented as part of https://issues.redhat.com/browse/HAL-1992
+
+== Security Considerations
+
+The new features only apply to the provisioning operations and have no impact on other functions of the server.
+
+[[test_plan]]
+== Test Plan
+
+The implementation of this RFE is split among multiple projects with tests at appropriate levels.
+
+=== WildFly Channels
+
+Unit tests were added to verify parsing GPG related settings in the channel, and resolving and verifing artifact signatures.
+The tests include invalid and missing signatures as well as expired and revoked public keys.
+
+=== Prospero
+
+Unit tests were added to verify new commands to manage public keys.
+Integration tests were added to verify installation, update and revert process when using GPG-enabled channels. The tests cover 
+expired public key, missing component signatures and invalid component signatures.
+
+=== JBoss CLI
+
+Existing resource tests were extended to include new operations for managing public keys.
+
+=== Additional tests
+
+==== Manual tests
+
+ * Verify ability to add/remove and list public keys via JBoss CLI and Web Console
+ ** Include error messaging when adding invalid public key or non-existing file.
+ * Verify ability to perform an update using JBoss CLI and Web Console from a GPG-enabled channel.
+ ** Verify that an update containing unsigned artifact will be rejected
+ ** Verify that an expired public key is not used to trust components.
+ * Verify ability to perform a revert using JBoss CLI and Web Console from a GPG-enabled channel.
+
+==== Integration test
+
+Integration tests were added in Prospero and existing integration tests in WildFly Core have been extended.
+
+==== Compatibility tests
+
+n/a
+
+
+__Default - This stability level is reserved and requires approval by a professional Quality Engineer with subject matter expertise.__
+
+== Community Documentation
+
+The configuration of GPG checks at channel level will be contained in the channel spec in the wildfly-channels project.
+
+Prospero documentation will cover managing public keys.
+
+Wildfly-maven-plugin documentation will describe usage of GPG related fields in the channel configuration.
+
+JBoss CLI help content will contain description of new commands. The installer operations are not covered by WildFly documentation.
+ 
+== Release Note Content
+
+Enable verification of components' signatures during updates.
