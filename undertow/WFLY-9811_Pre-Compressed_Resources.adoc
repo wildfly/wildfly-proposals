@@ -1,0 +1,64 @@
+= WFLY-9811 Pre-compressed Resources
+:author:            Stuart Douglas
+:email:             sdouglas@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org
+
+== Overview
+
+The goal of this feature is to enable resources to be pre-compressed, and if a resource is requested and the client
+accepts the encoding then the pre-compressed resource will be served instead of the resource itself.
+
+This has many benefits, as compression is expensive and generally requires chunked encoding unless the resource is
+small.
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/WFLY-9811[WFLY-9811]
+
+=== Related Issues:
+
+* {issue-base-url}/UNDERTOW-797[UNDERTOW-797]
+* {issue-base-url}/EAP7-834[EAP7-833]
+
+=== Dev Contacts:
+
+* mailto:{email}[{author}]
+
+=== QE Contacts:
+
+=== Affected Projects or Components:
+
+* Undertow
+
+== Requirements
+
+This will be enabled by specifying a mapping from content encoding to file extension (the most common one will be
+gzip->.gz). This can either be specified in `jboss-web.xml` on a per deployment basis or in the `servlet-container`
+resource to apply it to all deployments.
+
+When a resource is requested and the `Accept-Encoding` header contains one or more of these encodings then the container
+will check for the presence of a file with the same name followed by the specified extension. If this exists then this
+file will be served instead, and the appropriate `Content-Encoding` header will be set on the response.
+
+== Test Plan
+
+Testing for this feature should be split between the Undertow and Wildfly test suites. The Undertow test suite should
+contain detailed testing of different scenarios, while the Wildfly test suite should have a smoke test to ensure that
+the config options work as expected.
+
+The existing Undertow test developed as part of the upstream work is at:
+
+https://github.com/undertow-io/undertow/blob/master/core/src/test/java/io/undertow/server/handlers/file/PreCompressedResourceTestCase.java
+
+This tests resources are served as expected when using `ResourceHandler`. An additional test will be developed for the
+Undertow test suite to verify that this also works when using the default Servlet.
+
+Two additional tests should also be added to the WildFly test suite as part of the WildFly development work. This should
+test that both the per deployment and server wide methods of configuring this work as expected.
