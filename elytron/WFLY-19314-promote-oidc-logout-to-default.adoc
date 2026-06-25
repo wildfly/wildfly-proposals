@@ -1,0 +1,146 @@
+---
+categories:
+- security
+- elytron
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/676
+feature-team:
+ developer:
+ - skyllarr
+ sme:
+  - TODO
+ outside-perspective:
+  - TODO
+promotes: https://github.com/wildfly/wildfly-proposals/issues/676
+promoted-by:
+---
+= Promote OIDC Logout Support to Default Stability
+:author:            Diana Krepinska
+:email:             dvilkola@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+OIDC logout support (RP-Initiated Logout, Front-Channel Logout, and Back-Channel Logout) is currently available under PREVIEW stability.
+This analysis proposes promoting the feature to DEFAULT stability so the functionality is available in the standard WildFly distribution and defaults.
+
+=== User Stories
+
+* A user secures applications with `elytron-oidc-client` and expects a complete logout flow (local application logout plus provider-driven session termination) without requiring preview-only server operation.
+* A user needs front-channel or back-channel logout in production deployments using the default WildFly installation profile.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-19314[WFLY-19314]
+* https://issues.redhat.com/browse/WFLY-19959[WFLY-19959]
+* https://issues.redhat.com/browse/WFLY-19960[WFLY-19960]
+* https://issues.redhat.com/browse/ELY-2534[ELY-2534]
+* https://issues.redhat.com/browse/ELY-3050[ELY-3050]
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly[WildFly]
+* https://github.com/wildfly/wildfly-core[WildFly Core]
+* https://github.com/wildfly-security/wildfly-elytron[WildFly Elytron]
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+The OIDC logout functionality moves from PREVIEW to DEFAULT stability:
+
+* RP-Initiated Logout remains supported.
+* Front-Channel Logout remains supported.
+* Back-Channel Logout remains supported.
+
+Existing configuration attributes remain available:
+
+* `logout-path`
+* `post-logout-redirect-uri`
+* `logout-callback-path`
+* `logout-session-required`
+* `back-channel-logout-session-invalidation-limit`
+* `provider-jwt-claims-typ`
+
+The same logout flows remain supported, but default values of attributes and path matching behavior are tightened compared to the previous proposal.
+
+=== Changed Requirements
+
+* The `elytron-oidc-client` logout capabilities are available in DEFAULT stability.
+* *OIDC logout attributes no longer have default values.*
+** `logout-path` and `logout-callback-path` are not defaulted to `/logout` and `/logout/callback`.
+** Deployments that enable logout must configure the required attributes explicitly.
+* Logout configuration is applied only when at least one of `logout-path`, `logout-callback-path`, or `post-logout-redirect-uri` is set.
+** `logout-path` is optional; configure it only when the application exposes an RP-initiated logout entry point. Front-channel and back-channel logout require only `logout-callback-path`.
+** `post-logout-redirect-uri` remains optional.
+* `logout-callback-path` is optional and accepts either:
+** a relative path (for example `/myapp/logout/callback`), or
+** an absolute `http` or `https` URI (only the URI path component is matched against the incoming request).
+* Request-path matching is exact (normalized path equality), not suffix matching.
+** `logout-path` and `logout-callback-path` must match the request relative path exactly.
+* RP-Initiated Logout invalidates the local application session before redirecting to the provider `end_session_endpoint`.
+
+=== Non-Requirements
+
+* No new OIDC logout configuration attributes are introduced.
+
+=== Future Work
+
+* Evaluate additional logout interoperability scenarios against providers beyond currently covered testing sets.
+
+== Backwards Compatibility
+
+Deployments that relied on PREVIEW defaults or suffix-based path matching may need configuration updates when moving to DEFAULT.
+
+* Deployments that depended on implicit defaults (`/logout`, `/logout/callback`) must set them explicitly now
+* Deployments that relied on suffix matching for `logout-path` must use the exact callback/logout path.
+
+=== Default Configuration
+
+No implicit default values are provided for OIDC logout paths when logout is enabled.
+This promotion removes PREVIEW-era defaults rather than introducing new subsystem defaults.
+
+=== Deployments
+
+Deployments with explicit logout configuration continue to work after updating paths/URIs to the stricter matching rules.
+Deployments no longer need PREVIEW stability solely to use OIDC logout support.
+
+=== Interoperability
+
+No new interoperability concerns are introduced by this stability promotion.
+
+== Implementation Plan
+
+* Promote OIDC logout support and related model/schema elements from PREVIEW to DEFAULT.
+
+== Admin Clients
+
+TODO
+
+== Security Considerations
+
+TODO
+
+[[test_plan]]
+== Test Plan
+
+* Continue and expand integration coverage in `testsuite/integration/elytron-oidc-client` for logout flows at default stability.
+* Verify RP-Initiated, Front-Channel, and Back-Channel logout behavior in default server configurations.
+
+== Community Documentation
+
+Update `Elytron_OIDC_Client` documentation to remove/adjust any PREVIEW-only wording, document DEFAULT availability for logout support, and document explicit logout attribute requirements (no defaults, what is optional and what is not, and format options).
+
+== Release Note Content
+
+OIDC RP-initiated, front-channel, and back-channel logout support in elytron-oidc-client is now available at default stability. 
