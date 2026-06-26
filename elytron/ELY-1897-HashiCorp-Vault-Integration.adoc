@@ -19,7 +19,7 @@ feature-team:
  outside-perspective:
   - jasondlee
 promotes:
-promoted-by: https://github.com/wildfly/wildfly-proposals/pull/822
+promoted-by: https://github.com/wildfly/wildfly-proposals/issues/821
 ---
 
 = HashiCorp Vault Integration — Credential Store and Expression Resolver
