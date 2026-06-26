@@ -1,0 +1,122 @@
+---
+categories:
+  - ejb
+---
+= [WFLY-18749] Deploying a jar with unsatisfied dependencies does not warn/throw an exception
+:author:            Christina Dasoula
+:email:             cdasoula@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The proposed feature aims to enhance the recognition of deprecated "javax" imports and give a detailed view
+of their location inside the codebase. This targeted approach can significantly reduce the time and effort
+required to address deprecated imports, allowing developers  to focus mostly on the problem.
+The incorporation of a configurable option for developers to enable or disable the deprecation check based on their needs,
+adds flexibility and is beneficial, especially during transitions to different Enterprise Edition (EE) versions
+The proposed feature aims to facilitate the maintenance process, codebase health and developer productivity.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-18749[WFLY-18749]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/JBEAP-26071[JBEAP-26071]
+
+=== Dev Contacts
+
+* cdasoula@redhat.com[Christina Dasoula]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* Provide a centralized point of configuration within the codebase in the form of a configuration hook that gives
+the ability to enable/disable checks for the “javax” imports.
+* Provide, in every subsystem, a check designed to identify unsatisfied dependencies within a deployment pertaining to "javax.
+* Provide warnings when “javax” imports exist, delineating the exact subsystem to which each import belongs.
+
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Backwards Compatibility
+
+// Does this enhancement affect backwards compatibility with previously released
+// versions of WildFly?
+// Can the identified incompatibility be avoided?
+
+=== Default Configuration
+
+=== Importing Existing Configuration
+
+=== Deployments
+
+=== Interoperability
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+
+== Security Considerations
+
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+
+== Test Plan
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature
+is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation.
+Indicate which of these will happen.
+////
+
+* Addition to the specification section in the https://docs.wildfly.org/30/Getting_Started_Guide.html[Getting Started Guide].
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
