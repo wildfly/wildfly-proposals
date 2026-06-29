@@ -1,0 +1,274 @@
+---
+categories:
+  - grpc
+  - management
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/796
+# Provide the GitHub ids of the feature team members, organized by role.
+# Provide a single id for the 'assignee' role. Use a YAML list for the 'sme' and
+# 'outside-perspective' roles, even if there is only one person in a role.
+feature-team:
+ developer: jamezp
+ sme:
+  -
+ outside-perspective:
+  -
+---
+
+= Add gRPC Support to WildFly
+:author:            James R. Perkins
+:email:             jperkins@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently, gRPC support in WildFly is provided via an external feature pack that runs a standalone Netty server on a
+separate port. This proposal aims to integrate gRPC as a first-class citizen within the WildFly, allowing gRPC services
+to be deployed as CDI beans and served over the existing Undertow HTTP/2 listeners.
+
+=== User Stories
+
+1. As a Developer, I want to define a gRPC service using standard `.proto` files and implement it as a CDI bean so I
+can inject JPA/REST resources.
+2. As a System Administrator, I want gRPC services to be exposed on the same port as my REST endpoints (8080) to
+simplify network and firewall configurations.
+3. As a Security Officer, I want to use WildFly Elytron to authenticate gRPC calls using the same security domains used
+for the rest of the application.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-15495[WFLY-15495]
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly[wildfly]
+* https://github.com/wildfly-extras/wildfly-grpc-feature-pack[wildfly-grpc-feature-pack] (superseded by this
+proposal)
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+* Request Handling: The gRPC subsystem will add an Undertow `HttpHandler` to handle the `application/grpc` requests.
+* Automatic Service Discovery: The subsystem must use Jandex during the DEPLOY phase to identify all classes that
+extend `io.grpc.BindableService` without requiring manual registration.
+* CDI Integration: All discovered gRPC services must be managed as CDI beans, allowing for standard injection behavior.
+    ** Note that these beans will be scoped to `@ApplicationScoped`.
+* Port Unification: The system must multiplex gRPC traffic over the existing Undertow HTTP/2 listeners (defaulting to
+port 8080), avoiding the need for a secondary port.
+* Security Integration: The subsystem must authenticate gRPC requests using Elytron and support `@RolesAllowed`,
+`@PermitAll`, and `@DenyAll` annotations on service methods via a gRPC `ServerInterceptor`.
+* Context Propagation: The subsystem must ensure that the authenticated `SecurityIdentity` and Transaction state are
+available to the gRPC service thread.
+* Non-blocking Execution: The `HttpHandler` must avoid blocking the Undertow IO thread. Requests should be dispatched
+to the WildFly worker thread pool.
+* Minimal Overhead: The bridge between Undertow's `HttpServerExchange` and the gRPC-Java engine must minimize data
+copying.
+* Standard Compliance: The implementation must support the full gRPC wire protocol, including Unary, Server-streaming,
+Client-streaming, and Bidirectional streaming.
+* Lifecycle Awareness: gRPC services must be gracefully shut down when a deployment is stopped or the server is
+reloaded.
+* Deployment: Only one gRPC deployment will be allowed. The gRPC path is very specific in the way it is defined:
+`/serverName/methodName`. See the https://grpc.github.io/grpc/core/md_doc__p_r_o_t_o_c_o_l-_h_t_t_p2.html[documentation]
+for more details.
+    ** This means if more than one deployment is allowed, there is no way to use the context path to determine which
+       service to call.
+
+=== Changed requirements
+
+N/A
+
+
+=== Non-Requirements
+
+* gRPC Client Injection: No support for injecting gRPC Stubs.
+* Protobuf Compilation: No protoc execution within the server.
+* Non-CDI Services: Only CDI-managed beans will be eligible for registration.
+* Custom Transport: No support for gRPC-over-Unix-Domain-Sockets or other non-Undertow transports.
+* Transaction Support for Streaming RPCs: Only unary (request-response) gRPC methods will support `@Transactional`.
+Streaming methods (server-streaming, client-streaming, bidirectional) are inherently long-lived and unsuitable for
+transactional semantics.
+
+=== Future Work
+
+N/A
+
+== Backwards Compatibility
+
+This is a new feature and subsystem. However, it is **not compatible** with the existing wildfly-extras gRPC feature
+pack (https://github.com/wildfly-extras/wildfly-grpc-feature-pack). The new subsystem uses a fundamentally different
+architecture:
+
+* **Old feature pack:** Runs a standalone Netty server on a separate port
+* **New subsystem:** Integrates with Undertow's HTTP/2 listeners on the default port (8080)
+
+Users currently deploying the wildfly-extras feature pack will need to:
+1. Remove the old feature pack from their WildFly installation
+2. Reconfigure their gRPC services to work as CDI beans (no configuration changes to `.proto` files or service
+implementations required beyond CDI annotations)
+3. Update client connection code to use port 8080 instead of the separate gRPC port
+
+=== Default Configuration
+
+This will change the default configuration to add the `grpc` subsystem. This will be different from the previous `grpc`
+subsystem defined in the https://github.com/wildfly-extras/wildfly-grpc-feature-pack.
+
+=== Importing Existing Configuration
+
+Automatic migration of configuration from the wildfly-extras gRPC feature pack is not planned for the initial release.
+The configuration models are fundamentally different (Netty-based vs Undertow-based). Migration documentation will be
+provided to guide users through manual reconfiguration.
+
+=== Deployments
+
+N/A
+
+=== Interoperability
+
+This feature is expected to have a high degree of interoperability. Because it implements the standard gRPC-over-HTTP/2
+wire protocol, any compliant gRPC client (regardless of language) will be able to communicate with services hosted on
+WildFly.
+
+* Wire Format: The implementation will strictly follow the gRPC-Java internal transport logic to ensure compatibility
+with non-Java clients.
+* Trailers: Specific care will be taken in the Undertow bridge to ensure HTTP/2 Trailers are correctly propagated, as
+these are essential for client-side status resolution.
+* Protobuf: Interoperability is maintained through the use of standard `.proto` contracts, which allow for seamless
+versioning and cross-language data exchange.
+
+== Implementation Plan
+
+1. **Subsystem & Discovery:** Implement Jandex-based DUP and CDI Portable Extension for service registration.
+2. **Undertow Bridge:** Develop the `HttpHandler` to bridge `HttpServerExchange` to the gRPC-Java `InternalServer`.
+3. **Security Integration:** Implement gRPC `ServerInterceptor` to:
+   - Extract credentials from gRPC metadata (HTTP/2 headers or TLS client certificates)
+   - Authenticate via Elytron `SecurityDomain`
+   - Enforce `@RolesAllowed` annotations using reflection and role checks
+   - Propagate `SecurityIdentity` to service thread context
+4. **Transaction Integration:** Connect Jakarta Transactions TransactionManager for `@Transactional` support.
+5. **Management:** Add management resource tree with two-level metrics:
+   - **Subsystem level** (`/subsystem=grpc`): Aggregated metrics across all deployments
+     * total-services-registered (gauge)
+     * total-active-calls (gauge)
+     * total-calls-received (counter)
+     * total-calls-failed (counter)
+   - **Per-deployment level** (`/deployment=X.war/subsystem=grpc/grpc-service=Y`): Per-service metrics
+     * service-name
+     * active-calls (gauge)
+     * total-calls (counter)
+     * total-errors (counter, can break down by gRPC status code)
+
+== Admin Clients
+
+The gRPC subsystem will be compatible with existing WildFly admin clients:
+
+* **JBoss CLI:** All standard subsystem operations are supported without CLI changes, including reading subsystem
+configuration, listing deployed services, viewing service details, and reading runtime metrics.
+
+* **HAL (Admin Console):** Basic configuration options will be automatically available in HAL. Enhanced features
+(service listings, metrics visualization, custom management UI) will be verified in manual testing, and follow-up issues
+will be created to track HAL enhancements if required.
+
+== Security Considerations
+
+* Identity Mapping: Leverage Elytron to extract credentials from HTTP/2 headers or TLS certificates.
+* Authorization: Standard Jakarta EE annotations (e.g., `@RolesAllowed`) on gRPC service methods will be enforced via
+a gRPC `ServerInterceptor` that integrates with Elytron's security domain. The interceptor will authenticate requests
+using credentials from gRPC metadata headers and perform role-based authorization checks.
+* ALPN: Mandatory support for Application-Layer Protocol Negotiation on HTTPS listeners to negotiate `h2`.
+
+[[test_plan]]
+== Test Plan
+
+=== Unit Tests
+
+Standard subsystem unit tests will verify:
+
+* Management model serialization and deserialization correctness
+* XML parsing for subsystem configuration elements
+* Attribute validation and default value handling
+
+=== Integration Tests
+
+Integration tests will be implemented using **Arquillian** to verify end-to-end functionality:
+
+**Service Discovery & Deployment:**
+* Verify Jandex correctly identifies all classes extending `io.grpc.BindableService`
+* Verify discovered services are registered as `@ApplicationScoped` CDI beans
+* Verify multiple gRPC services can coexist in the same deployment
+* Verify services are properly unregistered during undeployment
+
+**Wire Protocol Support:**
+* **Unary RPC:** Simple request-response communication
+* **Server Streaming:** Single request, multiple response messages over time
+* **Client Streaming:** Multiple request messages, single response
+* **Bidirectional Streaming:** Simultaneous bidirectional message flow with interleaved reads/writes
+
+**Jakarta EE Integration:**
+* Verify CDI injection works in gRPC services (injecting `@Inject` beans, JPA `EntityManager`)
+* Verify `@Transactional` methods participate in Jakarta Transactions with proper commit/rollback
+* Verify `@RolesAllowed` and other security annotations are honored via gRPC ServerInterceptor
+* Verify `SecurityContext` is properly propagated to gRPC service threads
+
+**Port Unification:**
+* Verify gRPC and JAX-RS requests both work on port 8080
+* Verify HTTP/2 detection correctly routes `application/grpc` requests
+* Verify standard HTTP/1.1 and HTTP/2 REST traffic is unaffected
+
+**Error Handling:**
+* Verify HTTP/2 trailers (`grpc-status`, `grpc-message`) are correctly sent
+* Verify gRPC error codes map properly (UNAUTHENTICATED, PERMISSION_DENIED, etc.)
+* Verify client receives proper error details
+
+**Lifecycle Management:**
+* Verify graceful shutdown when deployment is stopped
+* Verify services are cleaned up on server reload
+
+Test client example using grpc-java `ManagedChannel`:
+
+[source,java]
+----
+final ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", 8080)
+    .usePlaintext() // Uses h2c (Cleartext HTTP/2)
+    .build();
+----
+
+=== Management API Tests
+
+* Verify `/subsystem=grpc:read-resource` returns correct configuration
+* Verify runtime metrics are exposed (service count, active calls)
+* Verify CLI operations work (add/remove configuration)
+
+== Community Documentation
+
+Documentation will be added to the WildFly Admin Guide covering:
+
+* gRPC subsystem configuration in `standalone.xml`
+* Implementing gRPC services as CDI beans
+* Security configuration with Elytron
+* Context propagation for transactions and security
+
+A quickstart will be contributed to the `wildfly-quickstarts` repository demonstrating:
+
+* A simple gRPC service implementation using CDI
+* Client invocation examples
+* Security integration with `@RolesAllowed`
+* Transaction support with `@Transactional`
+
+== Release Note Content
+
+WildFly now features native gRPC support integrated directly into the Undertow web server. Developers can implement
+high-performance gRPC services as standard CDI beans, benefiting from full injection and transaction support while
+serving requests on the default HTTP/2 port (8080).
