@@ -1,0 +1,168 @@
+---
+categories:
+- observability
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/844
+feature-team:
+ developer: jasondlee
+ sme:
+  - TBD
+ outside-perspective:
+  - TBD
+promotes:
+promoted-by:
+---
+
+= Support fine-grained/individual meter filtering
+:author:            Jason Lee
+:email:             jasondlee@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently, a large number of system meters are automatically registered with the metrics system(s).
+This includes a variety of JMX beans and JVM statistics, as well as various subsystem properties.
+All of these are then published to an aggregation system of some type. In large deployments, this
+creates challenges for Operations, as the data for all the meters from a potentially large number
+of servers can cause memory capacity issues for the aggregation system. Often, many of these meters
+are of no interest to the system administrator(s), but they have to be managed, as there is no way to
+_not_ publish them.
+
+This RFE will provide a way for system administrators to filter which meters
+are actually published, enabling finer-grained control over the data produced -- and the memory
+required downstream to monitor them. The primary focus will be Micrometer, but a solution for
+OpenTelemetry will also considered.
+
+=== User Stories
+
+* As a system administrator, I need to be able to configure Micrometer to filter out meters that are of no interest to operations, etc.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://redhat.atlassian.net/browse/WFLY-22046[WFLY-22046]
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly[WildFly]
+
+=== Other Interested Projects
+
+* OpenShift
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain footnote:[For push-based exports only. i.e., Prometheus is not supported.]
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+* The administrator must be able to list 0 or more meters to exclude from publishing
+** If no filter applies to a given meter, then it is allowed to publish.
+** If a meter _is_ matched to a filter, then it is not allowed to publish.
+* The user should be able to filter by
+** Meter id
+** Meter type
+** Meter tags
+* The filter definition should support regular expressions to give the user flexibility in defining
+  the match.
+* The filter should apply to all meters, including
+** JMX beans
+** System meters
+** WildFly subsystem meters
+** User-defined/application meters
+* The solution should consider both Micrometer and OpenTelemetry Metrics to ensure that the configuration
+of the two subsystems are as alike as possible, reducing complexity for users
+** Micrometer has an explicit `MeterFilter`
+** OpenTelemetry offers https://github.com/open-telemetry/opentelemetry-java/issues/5393#issuecomment-1516263005[views]
+
+=== Nice-to-have requirements
+
+* OpenTelemetry Metrics support
+* Some applications might bundle libraries that configure unwanted meters, so per-deployment
+  configuration of application-specific filters would be helpful. They could be configured by,
+  for example:
+** A WildFly-specific XML deployment file
+** WildFly-specific MicroProfile Config properties
+
+=== Non-Requirements
+
+* Legacy metrics systems (e.g., WildFly/"base" Metrics) are out of scope.
+* Transforming a meter (see https://docs.micrometer.io/micrometer/reference/concepts/meter-filters.html#_transforming_metrics[here], for example) is not in scope, so the following actions are not supported:
+** Renaming a meter (id) or a tag
+** Adding tags to every meter
+** Dropping certain tags
+** Replacing tag values
+** Limiting the number of tags on a meter
+* A unified configuration for both Micrometer and OpenTelemetry, while interesting, given their similarities, is not in scope.
+
+=== Future Work
+
+* Any nice-to-have feature that is not included in the initial implementation should be considered
+  and issued filed for its implementation, or the feature should be rejected and discarded.
+
+== Backwards Compatibility
+
+There are no compatibility issues anticipated, as filtering will be opt-in.
+
+=== Default Configuration
+
+No existing configurations or default values will be modified as part of this effort.
+
+=== Importing Existing Configuration
+
+There are no migration concerns anticipated.
+
+=== Deployments
+
+Existing deployments should see no change in behavior. Filtering will be opt-in, so only deployments
+on systems where the feature is configured will see any behavioral change.
+
+=== Interoperability
+
+No.
+
+== Implementation Plan
+
+* Initial implementation will focus primarily on Micrometer, though the design will certainly
+  consider OpenTelemetry Metrics as well.
+* If there is time, the implementation (and this plan) will be updated to include OpenTelemetry Metrics.
+* If there is no time (or desire) to implement this for OpenTelemetry Metrics as well, a follow-up issue
+  will be created to track that implementation at a future, though preferable not distant time.
+
+== Admin Clients
+
+* There are currently no plans to implement support in HAL for configuring meter filters.
+
+== Security Considerations
+
+There are no security impacts anticipated.
+
+[[test_plan]]
+== Test Plan
+
+The existing test suite in `testsuite/integration/expansion` will be modified to add tests to verify and
+validate filtering support. Tests should include coverage for:
+
+* JMX-based meters
+* System meters
+* WildFly subsystem meters
+* User-defined meters
+
+== Community Documentation
+
+The documentation in `src/main/asciidoc/_admin-guide/subsystem-configuration/` will be updated to show
+the changes to the affected subsystem(s). Changes will include a description of the feature, as well as
+examples of how to configure it.
+
+== Release Note Content
+
+The Micrometer subsystem has been updated to allow administrators to define meter filters, giving
+fine-grained control over what meters are published.
