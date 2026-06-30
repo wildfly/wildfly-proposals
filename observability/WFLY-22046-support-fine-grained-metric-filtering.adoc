@@ -1,0 +1,477 @@
+---
+categories:
+- observability
+stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/844
+feature-team:
+ developer: jasondlee
+ sme:
+  - rhusar
+ outside-perspective:
+  - darranl
+promotes:
+promoted-by:
+---
+
+= Support fine-grained/individual meter filtering
+:author:            Jason Lee
+:email:             jasondlee@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:   **
+
+== Overview
+
+Currently, a large number of system meters are automatically registered with the metrics
+system(s). This includes a variety of JMX beans and JVM statistics, as well as various
+subsystem properties. All of these are then published to an aggregation system of some type.
+In large deployments, this creates challenges for Operations, as the data for all the
+meters from a potentially large number of servers can cause memory capacity issues for the
+aggregation system. Often, many of these meters are of no interest to the system
+administrator(s), but they have to be managed, as there is no way to _not_ publish them.
+
+This RFE will provide a way for system administrators to filter which meters are actually
+published, enabling finer-grained control over the data produced and the memory required
+downstream to monitor them. Support for both Micrometer and OpenTelemetry is planned.
+
+=== User Stories
+
+* As a system administrator, I need to be able to configure filters to manage which meters
+are to be included/excluded in the reported metrics data.
+** The complete set of metrics might be _too_ much data, so the administrator would like to limit what is published
+** Some metrics might have security implications and should not be published
+** The administrator might prefer to suppress publication of metrics by default, and only allow a small subset to be published
+
+An example of "restrict all, allow some" might look like:
+
+[source,xml]
+----
+<filters>
+    <filter outcome="reject" field="meter-name" condition="matches" value=".*"/>
+    <filter outcome="accept" field="meter-name" condition="starts-with" value="acmecorp"/>
+</filters>
+----
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://redhat.atlassian.net/browse/WFLY-22046[WFLY-22046]
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly[WildFly]
+
+=== Other Interested Projects
+
+* OpenShift
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain footnote:[For push-based exports only. i.e., Prometheus is not supported.]
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+* The administrator must be able to list 0 or more meters to exclude from publishing
+** If no filter applies to a given meter, then it is allowed to publish.
+** If a meter _is_ matched to a filter, then it is not allowed to publish.
+* The user should be able to filter by
+** Meter id
+** Meter type
+** Meter tags, either a simple tag name or a tag name=value combination
+* The filter should apply to all meters, including
+** JMX beans
+** System meters
+** WildFly subsystem meters
+** User-defined/application meters
+* The solution will consider both Micrometer and OpenTelemetry Metrics to ensure that the
+configurations of the two subsystems are as alike as possible, reducing complexity for users
+** Micrometer has an explicit `MeterFilter`
+** OpenTelemetry offers https://github.com/open-telemetry/opentelemetry-java/issues/5393#issuecomment-1516263005[views]
+
+=== Planned Filter Details
+
+The `wildfly-micrometer` and the `wildfly-opentelemetry` subsystems will be modified to
+support a list of meter filter definitions, which can be either positive ("accept") or
+negative ("reject"). To avoid polluting this document with too many internal API details, the
+proposed filter definition will be shown here as XML. Note, though, that the actual WildFly
+management model structure need not reflect this structure identically.
+
+[code,xml]
+----
+<subsystem xmlns="urn:wildfly:micrometer:community:2.1">
+  <otlp-registry endpoint="http://localhost:4318/v1/metrics" step="1"/>
+  <filters>
+    <filter name="accept-application" outcome="accept" field="meter-name"
+            condition="starts-with" value="my_application" />
+    <filter name="accept-non-jvm" outcome="accept" field="meter-name"
+            condition="starts-with" value="jvm" negate="true" />
+    <filter name="reject-tag" outcome="reject" field="tag-name"
+            condition="equals" value="someValue" />
+  </filters>
+</subsystem>
+----
+
+Each filter is a named child resource. Filter names must be unique within the subsystem
+and are used to address filters through the management model and CLI. Filter order does
+not determine evaluation order.
+
+Most attributes on these two elements (excepting only `value`) will be constrained and their
+values validated. Those fields and their values will be as follows:
+
+|===
+|Field|Legal values|Default value|Notes
+
+|`outcome`
+a|
+* `accept`
+* `reject`
+|`reject`
+|The most common action will be to reject, so the system will default to that
+
+|`field`
+a|
+* `meter-name`
+* `meter-type`
+* `tag-name`
+* `tag-value`
+|
+|
+
+|`meter-type`
+a|
+* `counter`
+* `gauge`
+* `timer`
+* `long-task-timer`
+* `distribution-summary`
+* `other`
+* `sum`
+* `histogram`
+* `exponential-histogram`
+* `summary`
+|
+|The generic meter type to match. See the mapping table below. The `matches` condition is
+not valid with this field.
+
+|`condition`
+a|
+* `starts-with`
+* `ends-with`
+* `contains`
+* `equals`
+* `matches`
+|
+|For `starts-with`, `ends-with`, `contains`, and `equals`, `value` is a literal,
+case-sensitive string. For `matches`, `value` is compiled as a JDK regular expression
+and matched against the entire target string. The `matches` condition is not valid with
+`field=meter-type`. Invalid regular expressions fail when the filter model is created while
+the subsystem configuration is being applied, such as during service restart.
+
+|`negate`
+a|
+* `true`
+* `false`
+|`false`
+|Invert the check defined (e.g., "starts with"->"does not start with")
+
+|`value`
+|String
+|
+|The value to filter for
+
+|`tag-name`
+|String
+|
+|Optional exact tag name used with `field=tag-value`. If omitted,
+the filter matches the configured value on any tag. This attribute is invalid with
+all fields other than `field=tag-value`.
+|===
+
+[NOTE]
+====
+When filtering by `field=meter-name`, matching uses the meter name as the metrics system sees it. So if a Micrometer meter
+is registered via `registry.counter ("cache.gets.latency")`, the meter name evaluated would be `cache.gets.latency`, and not, say,
+`cache_get_latency_seconds` that one might see in a Prometheus export.
+====
+
+`field=tag-name` evaluates the names of all tags on the meter. For example, a `contains` filter with value `env` matches
+both `env` and `environment`.
+
+=== Filter Evaluation Semantics
+
+Each filter evaluates one meter or metric point independently. The selected field is
+matched first, then `negate` inverts the result.
+
+* `field=meter-name` evaluates the name exposed by the metrics API, before exporter-specific
+  name conversion.
+* `field=meter-type` evaluates the canonical value in the meter-type table below. A missing
+  meter type does not match before negation.
+* `field=tag-name` evaluates all tag names. The filter matches when any tag name matches.
+* `field=tag-value` evaluates all tag values unless `tag-name` is supplied. With `tag-name`,
+  only the value of that exact tag is evaluated. A missing selected tag does not match before
+  negation, but matches when the filter is negated.
+
+The conditions have these meanings:
+
+* `starts-with`: the target begins with `value`.
+* `ends-with`: the target ends with `value`.
+* `contains`: the target contains `value`.
+* `equals`: the target equals `value`.
+* `matches`: the target matches the complete JDK regular expression in `value`.
+
+String comparisons are case-sensitive. The `matches` condition follows JDK regular-expression
+rules, including inline flags such as `(?i)`.
+
+Filter outcomes are combined using the following rules in this order:
+
+1. If any matching `accept` filter exists, the meter or metric point is accepted.
+2. If any matching `reject` filter exists, it is rejected.
+3. It is accepted.
+
+Thus, filters with the same outcome use OR semantics, and an `accept` match takes precedence
+over a `reject` match. The default `reject` value applies to an individual filter; it does
+not change the final default in step 3.
+
+Micrometer applies filtering when a meter is registered, so a rejected meter is excluded as
+a whole. OpenTelemetry applies filtering to each exported metric point and omits the metric
+only when all of its points are filtered out.
+
+=== Meter Type Values
+
+The `meter-type` values are canonical WildFly filter values. Micrometer derives its value
+from `Meter.Type`, while OpenTelemetry derives it from the exported `MetricDataType`. The
+two APIs do not have identical type systems, so not every value has a direct equivalent in
+both systems.
+
+|===
+|Canonical value | Micrometer type | OpenTelemetry type | Notes
+
+|`counter`
+|`Meter.Type.COUNTER`
+|`SUM` (`LONG_SUM` or `DOUBLE_SUM`)
+|OpenTelemetry counters are represented as sums.
+
+|`gauge`
+|`Meter.Type.GAUGE`
+|`GAUGE` (`LONG_GAUGE` or `DOUBLE_GAUGE`)
+|
+
+|`timer`
+|`Meter.Type.TIMER`
+|`HISTOGRAM`
+|OpenTelemetry has no timer data type; duration distributions are exported as histograms.
+
+|`long-task-timer`
+|`Meter.Type.LONG_TASK_TIMER`
+|—
+|No direct OpenTelemetry metric data type is defined by the implementation.
+
+|`distribution-summary`
+|`Meter.Type.DISTRIBUTION_SUMMARY`
+|`HISTOGRAM`
+|OpenTelemetry represents distributions as histograms.
+
+|`other`
+|`Meter.Type.OTHER`
+|—
+|No direct OpenTelemetry metric data type is defined by the implementation.
+
+|`sum`
+|—
+|`SUM` (`LONG_SUM` or `DOUBLE_SUM`)
+|This value is available for OpenTelemetry sum data; Micrometer uses `counter` instead.
+
+|`histogram`
+|—
+|`HISTOGRAM`
+|This value is available for OpenTelemetry histogram data.
+
+|`exponential-histogram`
+|—
+|`EXPONENTIAL_HISTOGRAM`
+|This value is available for OpenTelemetry exponential histogram data.
+
+|`summary`
+|—
+|`SUMMARY`
+|This value is available for OpenTelemetry summary data.
+|===
+
+A filter using `timer` or `distribution-summary` therefore matches Micrometer meters, while the
+equivalent OpenTelemetry data is matched with `histogram`. A literal meter-type filter is not
+necessarily portable between the two subsystems.
+
+`field=tag-value` evaluates tag values. When `tag-name` is supplied, only the value
+associated with that exact tag name is evaluated. When it is omitted, values from all tags
+are considered. The `tag-name` attribute may only be used with `field=tag-value`.
+
+The current design is for meter filtering only, so there is no need to specify the signal
+type to filter. If and when support for other signals is defined, the model/schema can be
+updated to add those, with existing configurations migrated to specify that pre-existing
+filters target meters.
+
+If an "accept" filter and a "reject" filter overlap, the "accept" filter will win, since
+the inclusion of the meter was explicitly configured.
+
+=== Nice-to-have requirements
+
+* Support for a `system-metrics` boolean option to disable the registration of system
+  metrics altogether
+* Some applications might bundle libraries that configure unwanted meters, so per-deployment
+  configuration of application-specific filters would be helpful. They could be configured by,
+  for example:
+** A WildFly-specific XML deployment file
+** WildFly-specific MicroProfile Config properties
+
+=== Non-Requirements
+
+* Legacy metrics systems (i.e., WildFly/"base" Metrics) are out of scope.
+* Filtering of telemetry signals other than meters (i.e., spans, span events, logs, etc).
+* Transforming a meter (for example, see https://docs.micrometer.io/micrometer/reference/concepts/meter-filters.html#_transforming_metrics[here])
+is not in scope, so the following actions are not supported:
+** Renaming a meter (id) or a tag
+** Adding tags to every meter
+** Dropping certain tags
+** Replacing tag values
+** Limiting the number of tags on a meter
+* A unified configuration for both Micrometer and OpenTelemetry, where the common
+configuration data (protocol, endpoints, export frequencies, filters, etc) are configured
+in a single place -- while interesting -- is not in scope.
+** That means, for the time being, any filters configured for Micrometer will need to be
+configured separately for OpenTelemetry if/when filter support is added there. Note that
+this does not preclude the use of shared implementation code where possible.
+** This repetition will have to be addressed in future enhancements (e.g.
+https://redhat.atlassian.net/browse/WFLY-18290).
+* Arbitrarily complex compound filters (e.g., "X == 'foo' && Y != 'bar'"). This can be
+considered later if there is sufficient demand.
+
+=== Future Work
+
+* Any nice-to-have feature not included in the initial implementation should be considered
+  and issued filed for its implementation, or the feature should be rejected and discarded.
+* Support for simple compound filters, such as matching a meter name together with a specific
+  tag name and value, may be added if there is sufficient demand.
+
+== Backwards Compatibility
+
+There are no compatibility issues expected, as filtering will be opt-in.
+
+=== Default Configuration
+
+No existing configurations or default values will be modified as part of this effort.
+
+=== Importing Existing Configuration
+
+There are no migration concerns expected.
+
+=== Deployments
+
+Existing deployments should see no change in behavior. Filtering will be opt-in, so only
+deployments on systems where the feature is configured will see any behavioral change.
+
+=== Interoperability
+
+No.
+
+== Implementation Plan
+
+* All planned features should be implementable in a single change.
+* Both the Micrometer and OpenTelemetry subsystems will require
+** Model version bump
+** A new community schema
+
+== Admin Clients
+
+* There are currently no plans to implement support in HAL for configuring meter filters.
+
+== Security Considerations
+
+There are no security impacts expected.
+
+[[test_plan]]
+== Test Plan
+
+The existing test suite in `testsuite/integration/expansion` will be modified to add tests to verify and validate
+filtering support. Tests should include coverage for:
+
+- Subsystem transformers tests will be augmented to verify that new schemas are properly transformed for older WildFly versions
+- JVM/system metrics are or are not exported, based on the value of `system-metrics`.
+- Test each combination of `outcome`, `field`, `condition`, and `negate`.
+- Test that management validation rejects `condition=matches` when `field=meter-type`.
+- Test `matches` with valid and invalid JDK regular expressions, including full-target
+  matching, case-sensitive matching, inline flags, and the literal `*` value.
+- Test filter names for uniqueness, management-model addressing, persistence, and reload.
+- Test OR semantics for filters with the same outcome, accept-over-reject precedence, and
+  order-independent evaluation.
+- Test every valid `meter-type` value and verify the Micrometer and OpenTelemetry mappings
+  described in the meter-type table.
+- Test `field=tag-name` independently for `starts-with`, `ends-with`, `contains`, and
+  `equals`, including negated filters and meters with multiple tags.
+- Test `field=tag-value` with and without the optional `tag-name` selector:
+** A matching value under the selected tag is rejected or accepted.
+** The same value under a different tag does not match.
+** Omitting `tag-name` matches the value under any tag.
+** A missing selected tag does not match before negation; a negated filter matches it.
+- Test that `tag-name` is rejected during management-model validation when used with any
+  field other than `field=tag-value`.
+- Test that rejected meters are not exported, while accepted meters still are.
+- Test that Micrometer rejects meters as a whole, while OpenTelemetry filters individual
+  metric points and removes a metric only when no points remain.
+- Ensure that test coverage applies equally for OpenTelemetry and Micrometer.
+
+=== Tests to be added
+
+Branch WFLY-22046 adds or changes these tests relative to upstream/main:
+
+* observability/shared/src/test/java/org/wildfly/extension/observability/shared/FilterModelTest.java
+** 47 tests covering filter parsing, enum values, meter-name/tag-name/tag-value matching,
+tag-value matching scoped by an exact tag name, all conditions including regular expressions,
+invalid regular expressions, negation, multi-tag behavior, invalid tag-name usage, and edge cases.
+* observability/micrometer/src/test/java/org/wildfly/extension/micrometer/FilterTest.java
+** 8 tests verifying conversion of FilterModel rules into Micrometer filters, including
+regular-expression matching.
+* observability/opentelemetry-api/src/test/java/org/wildfly/extension/opentelemetry/api/FilteringMetricExporterTest.java
+** 5 tests covering point-level filtering, point ordering, all OpenTelemetry metric data types,
+double-sum data, filter combinations, and regular-expression matching.
+* observability/micrometer/src/test/java/org/wildfly/extension/micrometer/WildFlyMicrometerConfigTest.java
+** Adds coverage that filter lists are copied and exposed immutably.
+* observability/opentelemetry-api/src/test/java/org/wildfly/extension/opentelemetry/api/WildFlyOpenTelemetryConfigTest.java
+** Verifies properties and filter lists are defensively copied and immutable.
+* observability/micrometer/src/test/java/org/wildfly/extension/micrometer/SubsystemTransformersTestCase.java
+** Updates transformer tests for JUnit 5 lifecycle handling and removes the new filter model before legacy-model comparison.
+* observability/opentelemetry/src/test/java/org/wildfly/extension/opentelemetry/SubsystemTransformersTestCase.java
+** Adds coverage that system-metrics is discarded when transforming to model version 1.0.0; also updates lifecycle handling.
+* testsuite/integration/expansion/src/test/java/org/wildfly/test/integration/observability/micrometer/filters/MicrometerFilterTest.java
+** 4 end-to-end tests for starts-with/matches, ends-with/contains, tag-name filters, and
+negated filters. Includes tag-value filters with and without a tag-name selector.
+* testsuite/integration/expansion/src/test/java/org/wildfly/test/integration/observability/opentelemetry/filters/OpenTelemetryFilterTest.java
+** Equivalent 4 end-to-end tests using the OpenTelemetry collector, including regular-expression
+matching and tag-value filters scoped to an exact tag name.
+* testsuite/integration/expansion/src/test/java/org/wildfly/test/integration/observability/micrometer/MicrometerSystemMetricsTestCase.java
+** Verifies system metrics can be disabled and re-enabled.
+* testsuite/integration/expansion/src/test/java/org/wildfly/test/integration/observability/opentelemetry/OpenTelemetrySystemMetricsTestCase.java
+** Verifies system metrics can be disabled and re-enabled for OpenTelemetry.
+
+Integration-test fixtures configure the server, create metrics, and expose them for assertions:
+
+* testsuite/integration/expansion/src/test/java/org/wildfly/test/integration/observability/micrometer/filters/MicrometerFilterResource.java
+* testsuite/integration/expansion/src/test/java/org/wildfly/test/integration/observability/micrometer/filters/MicrometerFilterSetupTask.java
+* testsuite/integration/expansion/src/test/java/org/wildfly/test/integration/observability/opentelemetry/filters/OpenTelemetryFilterResource.java
+* testsuite/integration/expansion/src/test/java/org/wildfly/test/integration/observability/opentelemetry/filters/OpenTelemetryFilterSetupTask.java
+
+== Community Documentation
+
+The documentation in `src/main/asciidoc/_admin-guide/subsystem-configuration/` will be
+updated to show the changes to the affected subsystem(s). Changes will include a
+description of the feature, as well as examples of how to configure it.
+
+== Release Note Content
+
+The Micrometer and OpenTelemetry subsystems have been updated to allow administrators to
+define meter filters, giving fine-grained control over what meters are published.
