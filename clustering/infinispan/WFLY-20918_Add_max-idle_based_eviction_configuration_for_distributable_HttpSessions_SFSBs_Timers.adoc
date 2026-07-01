@@ -11,7 +11,7 @@ feature-team:
  outside-perspective:
   - jasondlee
 promotes:
-promoted-by:
+promoted-by: https://github.com/wildfly/wildfly-proposals/issues/813
 ---
 
 = WFLY-20918 Add idle time-based eviction configuration for distributable HttpSessions, SFSBs, Timers
