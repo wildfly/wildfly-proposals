@@ -1,0 +1,208 @@
+---
+categories:
+  - concurrency
+stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/846
+feature-team:
+  developer: emmartins
+  sme:
+    - bstansberry
+  outside-perspective:
+    -
+---
+
+= Support use of virtual threads in the Jakarta Concurrency 3.1 implementation
+:author:            Eduardo Martins
+:email:             emartins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Java 21 introduced virtual threads as part of Project Loom, providing lightweight threads that can potentially significantly improve application scalability and throughput for I/O-bound workloads. Jakarta Concurrency 3.1 specification has added support for virtual threads, as defined in https://github.com/jakartaee/concurrency/issues/268[Jakarta Concurrency Issue #268].
+
+This feature enhances WildFly's Jakarta Concurrency 3.1 implementation to support the creation and use of virtual threads through managed thread factories, managed executor services, and managed scheduled executor services. When virtual thread support is enabled, the underlying implementation will utilize Java's virtual thread capabilities instead of traditional platform threads.
+
+=== User Stories
+
+* As an application developer, I want to configure managed executor services, managed scheduled executor services, and managed thread factories, to use virtual threads instead of platform threads. Such configurations should be done through standard Jakarta EE 11 deployments descriptors and resource definition annotations. 
+
+* As a system administrator, I want to configure instances of managed executor services, managed scheduled executor services, and managed thread factories, to use virtual threads so that applications can benefit from lightweight threading on the platform shared resources.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-19563[WFLY-19563] - Support use of virtual threads in the Jakarta Concurrency 3.1 implementation
+* https://github.com/jakartaee/concurrency/issues/268[Jakarta Concurrency Issue #268] - Support Loom Virtual Threads
+
+=== Affected Projects or Components
+
+* WildFly EE subsystem (ee)
+* WildFly Concurrency SPI module (concurrency/spi)
+* WildFly Concurrency Implementation modules (concurrency/impl-30, concurrency/impl-31)
+
+=== Other Interested Projects
+
+* None
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* The EE subsystem schema must be updated to version 7.0 to include a new `virtual` boolean attribute for managed thread factories, managed executor services, and managed scheduled executor services.
+
+* The `virtual` attribute must default to `false`, to not only match the default value on deployment descriptors and resource definition annotations, but also for maintain backwards compatibility.
+
+* When `virtual=true` is configured on a managed thread factory, the factory must create virtual threads instead of platform threads (when the underlying Jakarta Concurrency implementation supports virtual threads).
+
+* When `virtual=true` is configured on a managed executor service or managed scheduled executor service, the service must use virtual threads for task execution (when the underlying Jakarta Concurrency implementation supports virtual threads).
+
+* The `@ManagedExecutorDefinition`, `@ManagedScheduledExecutorDefinition`, and `@ManagedThreadFactoryDefinition` resource definition annotations must support the `virtual` attribute.
+
+* Deployment descriptor processors must support parsing the `virtual` attribute from deployment descriptors.
+
+* Domain transformation support must be provided to allow newer domain controllers with virtual thread support to manage older host controllers without this feature.
+
+* The implementation must work with both Jakarta Concurrency 3.0 (impl-30) and 3.1 (impl-31) implementations, though virtual thread support is only functional in the 3.1 implementation, and fully pass related TCKs.
+
+=== Non-Requirements
+
+* This feature does not require Java runtime support for virtual threads if `virtual=false` (the default). Applications will continue to use platform threads as before.
+
+* Virtual threads do not support thread priorities, so the `priority` attribute is effectively ignored when `virtual=true`.
+
+* This feature does not automatically migrate existing managed executor configurations to use virtual threads. Administrators must explicitly configure `virtual=true` to opt-in.
+
+=== Future Work
+
+* Performance tuning and best practices documentation for virtual thread usage in enterprise applications.
+
+* Potential subsystem refactoring to move concurrency-related code from the EE module to a dedicated concurrency subsystem (WFLY 45+).
+
+* Consolidation of test resources currently duplicated between impl-30 and impl-31 modules.
+
+== Backwards Compatibility
+
+This feature maintains full backwards compatibility.
+
+=== Default Configuration
+
+The new `virtual` attribute defaults to `false`, ensuring that existing configurations continue to use platform threads without any changes. No changes are made to default configuration or Galleon layers.
+
+=== Importing Existing Configuration
+
+Existing configurations without the `virtual` attribute will behave identically to before, using platform threads. The domain transformation support ensures that older host controllers can be managed by newer domain controllers.
+
+=== Deployments
+
+Existing deployments that use Jakarta Concurrency resources will continue to work without modification. The `virtual` attribute is optional in resource definition annotations and deployment descriptors.
+
+Applications that explicitly configure `virtual=true` require Java 21 or later runtime with virtual thread support. On older Java versions, the behavior when `virtual=true` is configured will depend on the underlying Jakarta Concurrency implementation (likely falling back to platform threads or rejecting the configuration).
+
+=== Interoperability
+
+Domain mode transformers are included to ensure interoperability between:
+* Domain controllers with EE subsystem 7.0 (with virtual thread support)
+* Host controllers with EE subsystem 6.0 (without virtual thread support)
+
+The transformers remove the `virtual` attribute when communicating with older host controllers.
+
+== Implementation Plan
+
+The implementation is delivered as a single enhancement with the following components:
+
+1. **Schema Update**: Add `virtual` attribute to EE subsystem schema version 7.0
+2. **Resource Definitions**: Update managed thread factory, executor service, and scheduled executor service resource definitions to include the virtual attribute
+3. **Service Layer**: Update service classes to pass the virtual flag to the underlying implementation
+4. **Virtual Thread Implementations**: Create WildFly-specific wrapper implementations for GlassFish Concurro's virtual thread classes
+5. **Concurrency Implementation**: Update the concurrency implementation abstraction to support the virtual thread flag
+6. **Resource Definition Processors**: Update annotation and descriptor processors to handle the virtual attribute
+7. **Domain Transformers**: Implement transformation logic for domain mode compatibility
+8. **Tests**: Add test coverage for virtual thread configurations and transformations
+
+== Admin Clients
+
+=== JBoss CLI
+
+The JBoss CLI will support the new `virtual` attribute for all concurrency resources. Example commands:
+
+[source]
+----
+# Create a managed thread factory with virtual threads
+/subsystem=ee/managed-thread-factory=virtual-thread-factory:add(jndi-name=java:jboss/ee/concurrency/virtual-factory, virtual=true)
+
+# Create a managed executor service with virtual threads
+/subsystem=ee/managed-executor-service=virtual-executor:add(jndi-name=java:jboss/ee/concurrency/virtual-executor, virtual=true, max-threads=200)
+
+# Create a managed scheduled executor service with virtual threads
+/subsystem=ee/managed-scheduled-executor-service=virtual-scheduled:add(jndi-name=java:jboss/ee/concurrency/virtual-scheduled, virtual=true, core-threads=5)
+----
+
+=== HAL Management Console
+
+The HAL console will need to be updated to expose the new `virtual` boolean attribute in the UI for:
+* Managed Thread Factory configuration forms
+* Managed Executor Service configuration forms
+* Managed Scheduled Executor Service configuration forms
+
+The attribute should be presented as a checkbox with appropriate help text explaining virtual thread support.
+
+== Security Considerations
+
+Virtual threads will properly propagate security identity context just as platform threads do.
+
+The `virtual` attribute does not introduce new security-sensitive configuration.
+
+== Test Plan
+
+=== Unit Tests
+
+* Test parsing of the `virtual` attribute from XML configurations
+* Test resource definition add operations with and without the `virtual` attribute
+* Test domain transformation logic to ensure the attribute is properly removed for older model versions
+* Test resource definition annotation and descriptor processors handle the virtual attribute
+
+=== Integration Tests
+
+* Test creation of managed thread factories with `virtual=true` and verify virtual threads are created (on Java 21+)
+* Test managed executor services with `virtual=true` execute tasks on virtual threads
+* Test managed scheduled executor services with `virtual=true` execute scheduled tasks on virtual threads
+* Test hung task detection and termination works with virtual threads
+* Test runtime statistics are correctly reported for virtual thread executors
+
+=== Subsystem Tests
+
+* Standard subsystem test coverage including schema validation
+* Transformation tests for domain mode compatibility between EE subsystem 6.0 and 7.0
+* Test that existing configurations without the `virtual` attribute continue to work
+
+=== Manual Tests
+
+* None
+
+=== Compatibility Tests
+
+* Test domain mode with mixed versions (7.0 domain controller, 6.0 host controller)
+* Verify transformation correctly removes the `virtual` attribute when needed
+* Test that configurations with `virtual=false` behave identically to previous versions
+
+== Community Documentation
+
+This feature will be documented in the WildFly documentation with the following additions:
+
+* **EE Subsystem Configuration Guide**: Document the new `virtual` attribute for all concurrency resources, including XML configuration examples and CLI commands
+* **Resource Definition Annotations**: Update examples to show the `virtual` attribute usage in `@ManagedExecutorDefinition`, `@ManagedScheduledExecutorDefinition`, and `@ManagedThreadFactoryDefinition`
+
+== Release Note Content
+
+WildFly now supports virtual threads in its Jakarta Concurrency 3.1 implementation. The EE subsystem has been updated to version 7.0, adding a new `virtual` boolean attribute to managed thread factories, managed executor services, and managed scheduled executor services. When configured with `virtual=true`, these resources will utilize Java's virtual threads (introduced in Java 21) instead of traditional platform threads, potentially enabling better scalability for I/O-bound workloads. Virtual thread support is opt-in and fully backwards compatible with existing configurations. 
