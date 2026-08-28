@@ -1,0 +1,123 @@
+---
+categories:
+- operator
+stability-level: default
+issue:
+feature-team:
+  developer: yersan
+  sme: yersan
+  -
+  outside-perspective:
+  -
+---
+= Allow to mount ConfigMap at arbitrary locations from the operator
+:author:            Yeray Borges
+:email:             yborgess@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+ConfigMaps allow you to decouple configuration artifacts from image content to keep containerized applications portable. The Operator mounts the config maps as a volumes under the following path `/etc/configmaps/<config map name>`. This path currently is not configurable, which makes impossible to use the extension mechanism available in the server images. One of the use case of this extension mechanism is to execute any arbitrary bash script before / after the server configuration at runtime which requires the capability to mount a config map containing the bash scripts under `$JBOSS_HOME/extensions`.
+
+The goal of this feature is to allow the users to configure the mount path where the config map should be mounted.
+
+=== User Stories
+
+As a user, I have an application image already built. I want to tweak the server configuration by adding management operations in a ConfigMap without building again the application image.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://github.com/wildfly/wildfly-operator/issues/135[wildfly-operator/issues/135]
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly-operator[WildFly Operator]
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* OpenShift Source-to-Image (S2I)
+
+== Requirements
+
+Provide the ability to the user to specify not only the ConfigMap name, but also the path on the image filesystem where this config map should be mounted.
+
+* The specification of the mount path should be optional.
+* If a config map does not specify the mount path, the config map will be mounted under `/etc/configmaps/<config map name>`
+* Users should be able to specify absolute or relative paths. If it is a relative path, the path will be treated as relative to `JBOSS_HOME`.
+* The Operator should validate if the path does not contain invalid characters before try to mount it.
+* The structure used to parse the ConfigMap definition will be changed to allow the following configuration:
++
+----
+spec:
+  configMaps:
+    - name: <Name of the config map to mount>
+      mountPath: <Absolute or relative path>
+----
+
+=== Changed requirements
+
+* N/A
+
+=== Non-Requirements
+
+* It is up the user to specify where the config map should be mounted. The Operator will not validate if the path is valid or already exists in the application image.
+
+=== Future Work
+
+* N/A
+
+== Backwards Compatibility
+
+* In order to allow users to specify the mount path, the structure of the Custom Resource Definition (CRD) will be changed; for this feature we need to specify a config map name and a mount path, whereas before we only needed to specify the config map name. This will break the compatibility with the previous CRD version since the ConfigMap type definition will be changed.
+** There are two possible solutions to this problem:
+*** The most straightforward solution is to use the same current ConfigMap.name field to specify the name and mount path by using a specific separator. Although easy to implement, it is not user-friendly approach.
+*** The other approach is to introduce a new CRD API version, v1alpha2, which with a conversion Web Hook, the Operator will be able to handle both versions of the CRD at the same time. This solution is more user-friendly and will help with future incompatibilities, and although it is more complex to implement, it is the expected approach.
+
+=== Default Configuration
+
+* N/A
+
+=== Importing Existing Configuration
+
+* N/A
+
+=== Deployments
+
+* N/A
+
+=== Interoperability
+
+* N/A
+
+== Implementation Plan
+
+A conversion webhook is necessary to allow the Operator to handle both versions of the CRD. Once the webhook is available, we can start the implementation of the config map changes.
+
+== Admin Clients
+
+* N/A
+
+== Security Considerations
+
+ * In Progress
+
+[[test_plan]]
+== Test Plan
+
+** Test Plan will be delivered by a Red Hat Quality Engineer with subject matter expertise.
+
+== Community Documentation
+
+* The https://github.com/wildfly/wildfly-operator/blob/master/doc/apis.adoc[apis.adoc] and https://github.com/wildfly/wildfly-operator/blob/master/doc/user-guide.adoc[user-guide.adoc] files will be modified to include a description of this new feature.
+* An example project using the extension mechanism to configure the server before and after the standard server runtime configuration will be added under the https://github.com/wildfly/wildfly-operator/tree/master/examples[examples] section.
+
+== Release Note Content
+
+* N/A
