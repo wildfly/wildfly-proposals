@@ -1,0 +1,125 @@
+= ELY-1778 Enhanced Audit Logging - Feature Parity with Legacy Audit Logging
+:author:            Justin Michael Cook
+:email:             jucook@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse
+
+== Overview
+
+Currently, Audit Logging in Elytron does not have the same capabilities as Legacy Security. This task is to enhance Elytron Audit Logging to have the same capabilities as Legacy Security Audit Logging through the addition of an @Audit annotation and additional audit events.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/ELY-1778[ELY-1778]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/EAP7-1230[EAP7-1230]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:jkasik@redhat.com[Jan Kašík]
+
+=== Testing By
+
+[ ] Engineering
+
+[X] QE
+
+=== Affected Projects or Components
+
+* Security
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* There should be the ability to specify a Java class should be logged by using an @Audit Java annotation, similarly to what was https://developer.jboss.org/wiki/PicketBoxSecurityAnnotations#jive_content_id_SecurityAudit_Annotation[available in Picketbox]
+** This annotation would be available to be added onto a class for signifying when a method from that class is called it should be logged
+
+* Additional ```AuditEvent``` should be added for feature parity with Legacy Security Audit Logging. The following table lists a legacy event, its use case, and what its name will be in WildFly Elytron.
+** These methods will be fired when the corresponding "use case" happens
+|===
+|Legacy Event | Use Case | Elytron Name
+
+| PreAuthenticateEvent
+| Creates a log entry just before authentication begins
+| PreAuthenticateEvent
+
+| PostAuthenticateEvent
+| Creates a log entry just after authentication begins
+| PostAuthenticateEvent
+
+| PreLoggedOutEvent
+| Creates a log entry just before the user un-authenticates
+| PreLoggedOutEvent
+
+| PostLoggedOutEvent
+| Creates a log entry just after the user un-authenticates
+| PostLoggedOutEvent
+
+| Audit Log Enabled
+| Creates a log entry for the audit logging being enabled
+| AuditLogEnabledEvent
+
+| Audit Log Disabled
+| Creates a log entry for the audit logging being disabled
+| AuditLogDisabledEvent
+
+|===
+
+* The following table shows legacy events that are already handled by an Elytron equivalent:
+|===
+|Event |Use |Handled By
+
+| LoggedInEvent
+| Event for when a user successfully logs in
+| SecurityAuthenticationSuccessfulEvent
+
+| AlreadyLoggedInEvent
+| Fires when an already authenticated users attempts to authenticate again
+| SecurityAuthenticationFailedEvent
+
+| LoginFailedEvent
+| Fires when an authentication attempt fails
+| SecurityAuthenticationFailedEvent
+
+| LockedAccountEvent
+| Fires during the authentication process if the account is disabled
+| SecurityAuthenticationFailedEvent
+
+|===
+
+* Additional ```SecurityEvent``` that should be added as ```AuditEvent``` that do not have a direct Legacy equivalent are:
+** RealmAbandonedAuthenticationEvent
+** RealmAuthenticationEvent
+** RealmAuthorizationEvent
+** RealmDefiniteOutcomeAuthenticationEvent
+** RealmFailedAuthenticationEvent
+** RealmIdentityAuthorizationEvent
+** RealmIdentityFailedauthorizationEvent
+** RealmIdentitySuccessfulAuthorizationEvent
+** RealmSuccessfulAuthenticationEvent
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+
+Unit tests for the new Audit Logging capabilities will be added within WildFly Elytron.
+
+== Community Documentation
+
+These new Audit Logging capabilities will be documented in the WildFly documentation under Audit.
