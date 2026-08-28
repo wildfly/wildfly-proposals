@@ -1,0 +1,88 @@
+= Optional expressions
+:author:            Michal Petrov
+:email:             mpetrov@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Introduce a new type of expression without an explicit default value. The default value will be taken from the attribute for which the expression is being resolved.
+
+Proposed syntax: `${<PROPERTY>?}`
+
+Behavior is the same as the current expression except in the case where PROPERTY is not defined.
+In this case the evaluation will return an empty string instead of throwing an OperationFailedException.
+If the resolution happens inside `AttributeDefinition.resolveModelAttribute()` the definition will try to supply its default value.
+
+This will not change "?" into a special character. The resolution of `${foo.bar?}` will still try to resolve "foo.bar?" first and only then try to resolve "foo.bar" as optional.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-5339[WFCORE-5339]
+* https://issues.redhat.com/browse/EAP7-1789[EAP7-1789]
+
+=== Related Issues
+
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+WildFly
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+Add a new expression variant
+
+* resolution of this expression will be more lenient, i.e. no exception in case of a missing property
+* if the property is missing the expression will be treated as if no value was provided (and attribute definition will supply its default value if available)
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Test Plan
+Unit test will be added to controller.
+
+== Community Documentation
+Documentation will be added to wildfly master.
+
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature.
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list
+of features containing a few words on each, use "Bullet point: <The few words>"
+////
