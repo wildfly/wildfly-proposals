@@ -1,0 +1,79 @@
+= WFCORE-5426 deployment-info command should display enabled timestamp
+:author:            Jean-Francois Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse/
+
+== Overview
+
+The intent of this feature is to introduce a new piece of information in the output of the ```deployment-info``` or ```deployment info``` CLI command. 
+
+The command displays a table containing deployment related information. The structure of the table is different if the CLI is connected to a domain vs a standalone server.
+
+The goal of this proposal is to add the last timestamp attribute value to the displayed table.
+
+An open question is do we also display the disabled timestamp? The output contains the "enabled" state of a deployment that can be true/false.
+It can be of interest for a disabled deployment to visualize when it was last disabled. The information contained in this proposal for "enabled timestamp" 
+would apply to the disabled one too.
+ 
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}WFCORE-5426[WFCORE-5426]
+
+
+=== Related Issues:
+
+* None
+
+=== Dev Contacts:
+
+* mailto:jdenise@redhat.com[Jean-François Denise]
+
+=== QE Contacts:
+
+* TBD
+
+=== Testing By
+
+TBD, ENG unit tests should be enough to cover the output changes.
+
+=== Affected Projects or Components:
+
+* WildFly Core CLI
+
+
+== Requirements
+
+Some constraints exist for the enabled (and disabled) timestamp attribute availability:
+
+* The attribute is only available for a standalone server started in normal mode. 
+* In domain, the attribute is not available at all.
+* For a server started in admin mode, the attribute is available but undefined.
+
+This proposal doesn't introduce changes in the server, the command output is adjusted according to the attribute availability.
+
+=== Hard requirements
+
+* In standalone mode, the displayed table is evolved to contain the enabled timestamp 
+   in a new column ```LAST_ENABLED``` located at the end of the table.
+* In standalone mode, in case  no value is to be displayed (deployment not enabled or server started in admin mode), ```undefined``` value is displayed in the cell.
+* For domain mode, the column is not present in the table.
+
+=== Non-Requirements
+
+* No support in domain mode.
+
+== Test Plan
+
+New test cases to cover the new output will be added to WFCORE repository.
+
+== Community Documentation
+
+No community doc exists for the "deployment-info" command, the CLI help is the documentation.
