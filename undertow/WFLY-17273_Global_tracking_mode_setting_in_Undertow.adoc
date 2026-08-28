@@ -1,0 +1,93 @@
+= WFLY-17273 Global tracking-mode setting in Undertow
+:author:            Lin Gao
+:email:             lgao@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+There is an element: `tracking-mode` in `session-config` section of web descriptor, which is used to specify the session tracking mode, the available value can be: `COOKIE`, `URL`, `SSL`. Example in the web.xml is like:
+
+[source,xml]
+----
+<session-config>
+    <tracking-mode>COOKIE</tracking-mode>
+    <tracking-mode>URL</tracking-mode>
+</session-config>
+----
+
+When it is not defined, undertow uses `COOKIE` and falls over to `URL` if the browser does not allow cookie for the deployed web applications.
+
+When users want to have different set up for all web applications, they need to update the web.xml in each application. It would be great if undertow subsystem supports specifying a session tracking mode globally at the servlet container level.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-17273[WFLY-17273]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1980[EAP7-1980]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+[X] Engineering
+
+[ ] QE
+
+=== Affected Projects or Components
+
+WildFly Undertow subsystem
+
+=== Other Interested Projects
+
+N/A
+
+== Requirements
+
+Provide a way to specify a global session tracking mode at servlet container level. The configuration is used for all applications deployed to the servlet container, and it takes effect only if there are no session tracking mode specified in the deployment. So the configuration either in `web.xml` or updated in a `ServletContextListener` implementation takes precedence, which keeps consistent behavior as what it is now.
+
+=== Hard Requirements
+
+Users can set up a global session tracking mode at the servlet container level:
+
+- Use an attribute at the servlet container to specify a global session tracking mode.
+* The attribute name is: `default-tracking-mode`, the value type is a String, and can only be one of: `COOKIE`, `URL`, `SSL`.
+** As `SSL` is exclusive, and currently undertow uses `COOKIE` and `URL` by default, so using a single mode here is sufficient.
+* The update of the attribute: `default-tracking-mode` requires restarting all services.
+* Example CLI to write to the attribute is like:
+[source,bash]
+----
+/subsystem=undertow/servlet-container=default:write-attribute(name="default-tracking-mode", value=COOKIE)
+----
+
+=== Non-Requirements
+
+== Implementation plan
+
+Whenever a web application is deployed to a servlet container, there is a new https://github.com/wildfly/wildfly/blob/27.0.0.Final/undertow/src/main/java/org/wildfly/extension/undertow/deployment/UndertowDeploymentInfoService.java#L375[UndertowDeploymentInfoService] started which tries to set the https://github.com/undertow-io/undertow/blob/2.3.0.Final/servlet/src/main/java/io/undertow/servlet/api/ServletSessionConfig.java[ServletSessionConfig] to the https://github.com/undertow-io/undertow/blob/2.3.0.Final/servlet/src/main/java/io/undertow/servlet/api/DeploymentInfo.java#L894[DeploymentInfo] from both configuration in the web deployment and settings in the servlet container. The plan is to check if there is global session tracking mode at the service start time and update it accordingly.
+
+It does not need changes in undertow project, only changes in wildfly undertow subsystem is sufficient.
+
+== Test Plan
+
+New test cases will be added into `/testsuite/integration/web/` in wildfly testsuite. With a ServerSetupTask to set up the global session tracking mode, and multiple deployments, the test case tries to verify if an HTTP response from a servlet contains `Set-Cookie: JSESSIONID=xx` header in case of `COOKIE`, or an encoded URL like: `/next;jsessionid=xx` in the response content in case of `URL`.
+
+There will be no test on case `SSL` unless someone thinks it is necessary.
+
+
+== Community Documentation
+
+Update the WildFly documentation to document the new attribute and the system property to use.
