@@ -1,0 +1,439 @@
+---
+categories:
+  - ejb
+  - cloud
+  - transactions
+  - clustering
+stability-level: default
+issue: https://issues.redhat.com/browse/WFLY-22192
+# TODO WFLY-22192: sme and outside-perspective ids to be filled once the team is gathered.
+feature-team:
+ developer: tadamski
+ sme:
+  -
+ outside-perspective:
+  -
+promotes:
+promoted-by:
+---
+
+= EJB over HTTP: Reference Architecture and Conformance Testsuite for Cloud Deployments
+:author:            WildFly EJB Team
+:email:             wildfly-dev@lists.jboss.org
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+NOTE: This proposal is not a typical WildFly feature. It adds no subsystems or management resources to WildFly main, and its defining deliverable is a *policy* — a set of requirements that describe how Jakarta Enterprise Beans must be deployed and invoked when WildFly runs in a cloud environment. That policy is validated by a *conformance testsuite*, which is itself new code maintained alongside it. The policy is backed by real code changes spread across several components rather than a single feature landing in WildFly main: the affinity-, stickiness-, and recovery-aware transport in `wildfly-http-client`; the proxy-provisioning change in the WildFly Operator (requirement B5); and the conformance testsuite itself. The design-doc process is being reused here because it is the project's established way to record and review an architectural decision, even though what is under review spans a policy plus code distributed across multiple repositories.
+
+== Overview
+
+WildFly has supported remote EJB invocation over its native Remoting protocol for a long time, but Remoting does not travel well through cloud infrastructure. Layer-7 load balancers, service meshes, and ingress controllers speak HTTP; they terminate, inspect, and route it, and they generally do not understand a long-lived binary Remoting connection. The practical consequence is that teams moving EJB workloads onto OpenShift and other Kubernetes-style platforms have no single, validated story for how remote EJB calls, clustering, and transaction recovery are supposed to work.
+
+This proposal defines that story. The transport is EJB-over-HTTP, carried by `wildfly-http-client`, which is the natural fit because HTTP is what cloud networking is built to route. On top of the transport sit two more pieces: an affinity-aware HTTP client that encodes the server's routing decisions so the load balancer can honor them, and a stable-identity deployment model (a StatefulSet driven by the WildFly Operator on OpenShift) that gives each server the durable identity that transaction recovery requires. Together these form a three-pillar architecture — HTTP transport, affinity-aware client, stable identity — sitting behind a strict-routing load balancer.
+
+The goal is a policy customers can follow to get correct, spec-conformant EJB behavior in the cloud, and a testsuite that proves the policy actually delivers it. OpenShift is the first-class target, but the requirements are written against abstract capabilities (stable identity, durable object store, recovery-reachable addressing) rather than against OpenShift primitives, so that the same policy can be satisfied on other platforms. The testsuite is the `wildfly-cloud-ejb-conformance` module, which exercises the architecture end to end against a real cluster.
+
+=== Policy Goal and Shape
+
+The guiding goal is a customer-facing policy that is as short as it can honestly be. The ideal — the target this work steers toward — is essentially two instructions: *deploy EJB workloads through the WildFly Operator and use HTTP for communication between them.* Everything else — the topology itself, the strict-routing proxy, stable identity, cluster discovery, distributed caching, recovery-gated scaledown — is the platform's responsibility to absorb, not the customer's to configure. That ideal is the target end-state, not a claim about the policy as it stands today.
+
+The first instruction deliberately names the operator rather than a specific Kubernetes topology. The operator, not the customer, owns how the required guarantees are realized, and it is not restricted to StatefulSets — it can equally manage Deployment-based topologies. The requirements this document lists are therefore written abstractly (stable identity, durable object store, recovery-reachable addressing, recovery-gated scaledown), and a StatefulSet is one implementation of them, not a requirement in itself. Those abstract requirements admit a range of topologies with progressively weaker guarantees, which this document identifies as four distinct tiers, A through D, running from strongest to weakest. They are enumerated in Future Work and detailed in the topology appendix. This issue deliberately deals with *only the strictest of the four* — Tier A, the StatefulSet tier — which is the default and the only tier validated and recommended here. The three looser tiers (B, C, and D) are explicitly out of scope for this issue: each is described in Future Work and is to be examined and validated through its own separate issue, so that this transport work is not held up by topology analysis that is orthogonal to whether the transport itself is correct.
+
+In practice the policy has two parts. The first is the **transport policy** itself: the requirements that describe correct EJB-over-HTTP behavior, validated by the conformance testsuite. This is the scope of the present issue, and the issue is considered complete when the testsuite validates the transport — the constraints described next do not block it. The second part is a **current-constraints section**: non-transport requirements that this work has uncovered but that do not belong to the transport, and which the customer must nonetheless observe for now.
+
+Those constraints are of two distinct kinds, and the distinction governs how the policy evolves. **Temporary constraints** are limitations that can eventually be engineered away; each is given its own tracking issue and a removal condition, and when that issue is resolved the constraint is deleted from the policy, moving the shipped policy one step closer to the two-line ideal. The need to package the application into the container image (a "fat image", the C5 scope note) is the first such constraint, tracked separately as the hollow-image deployment problem — it is out of this issue's EJB scope entirely, but it is recorded here because it shapes the current deployment recipe. **Intrinsic constraints**, by contrast, are properties of distributed transactions themselves rather than of this transport — the need for XA datasources in two-phase workloads (D5) and the requirement that the transaction coordinator live inside the cluster (D3) are examples. No issue can remove these; any honest policy must state them permanently, and filing work to "fix" them would chase behavior the specification deliberately places out of scope. The general rule is that every non-transport problem this effort discovers is pushed out of the transport scope into its own issue and recorded here as a constraint — temporary or intrinsic — so that the policy converges on the ideal over time instead of accreting permanent complexity.
+
+=== User Stories
+
+* As an application team, we want to deploy our existing EJB application onto OpenShift and have remote invocation, clustering, and transactions behave the way the specification says they should, by following a documented deployment recipe rather than reverse-engineering the infrastructure ourselves.
+* As a platform/operations engineer, we want a clear statement of what the load balancer, the object store, and the pod lifecycle must guarantee, so that we can reproduce the supported topology on our platform and know exactly which guarantees we forfeit if we deviate.
+* As a WildFly maintainer, we want a conformance testsuite that fails when a change to the transport, the client, or the layers breaks a required behavior, so that the policy stays honest over time instead of drifting from reality.
+* As a support engineer, we want to be able to point a customer at a single supported architecture and a matrix of what is and is not covered, so that triage starts from a known-good baseline.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-22192 — this proposal.
+* WEJBHTTP-81 and WEJBHTTP-153 — the affinity/stickiness work in `wildfly-http-client` (protocol V3 route-encoded stickiness, `StrictStickinessHost`, per-transaction node pinning) that the transport pillar depends on.
+* WFLY-21337 — related cloud EJB transaction/recovery work.
+* Cross-service transaction propagation over HTTP is currently blocked pending a matching WildFly runtime image; tracked internally and folded into Future Work below.
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly-http-client — the EJB-over-HTTP transport and the affinity-aware client (the load-bearing dependency).
+* https://github.com/wildfly/jboss-ejb-client — client-side invocation, affinity, and failover behavior.
+* https://github.com/wildfly/wildfly-operator — StatefulSet management, recovery-gated scaledown, and (new in this proposal) provisioning of the strict-routing proxy so the routing tier is a managed part of the topology rather than a customer responsibility.
+* https://github.com/wildfly/wildfly — Galleon layers and packaging that produce the required server configuration, and the documentation that will host the policy.
+* The `wildfly-cloud-ejb-conformance` testsuite — the conformance suite that validates the policy.
+
+=== Other Interested Projects
+
+* Narayana — transaction recovery semantics, node-identifier uniqueness, object-store options, and subordinate/imported-transaction recovery all originate here.
+* Infinispan / JGroups — distributed SFSB caching and cluster formation under the various cloud discovery protocols.
+
+=== Relevant Installation Types
+
+The relevant installation type is a WildFly server provisioned by Galleon and run in a container, orchestrated on OpenShift (and, by extension, other Kubernetes-style platforms). The traditional bare-metal-oriented installation list in the template does not map cleanly onto this feature; the meaningful axis here is the container/orchestration platform rather than the packaging format.
+
+* OpenShift, managed by the WildFly Operator (primary, first-class target).
+* Traditional standalone server (provisioned by Galleon) running in a container on another Kubernetes-style platform (supported to the extent the platform can satisfy the abstract identity/routing/store requirements).
+
+== Requirements
+
+The requirements are grouped into nine domains, A through I. Each requirement is tagged with the reason it exists, because the whole point of the exercise is to distinguish what the specification forces from what the cloud environment forces. The tags are: *[Spec]* (mandated by the Jakarta EE / EJB / Transactions specifications), *[Correctness]* (needed to avoid a functional defect), *[Integrity]* (needed to avoid data or transaction corruption), *[Security]*, *[Availability]*, *[Performance]*, *[Portability]* (needed for the architecture to hold on more than one platform), and *[Operability]*.
+
+Because this analysis targets the `default` stability level, it lists all requirements rather than only new ones.
+
+=== A. Transport
+
+*A1 (MUST) [Correctness][Portability].* Remote EJB invocation must be carried over HTTP(S) using `wildfly-http-client`. HTTP is the transport that cloud layer-7 infrastructure is built to route; native Remoting is not reliably routable through it.
+
+*A2 (MUST) [Correctness].* All invocation context that the specification expects to cross the wire must in fact cross the HTTP boundary intact: the transaction context, the security identity, application-supplied invocation context data, and application/system exceptions with their correct wrapping semantics. Each of these is a distinct thing that can be lost or mangled by a transport, so each is a distinct requirement.
+
+*A3 (SHOULD) [Performance].* The transport should reuse connections and support HTTP/2 multiplexing so that per-invocation overhead does not dominate; the cost of moving from a persistent binary connection to request/response HTTP must be understood and bounded.
+
+*A4 (MUST) [Correctness].* Marshalling and unmarshalling over the HTTP transport must preserve object identity and type fidelity to the same degree the native transport does, including for user exception types.
+
+=== B. Load Balancer / Routing
+
+*B1 (MUST) [Correctness][Portability].* The load balancer must perform *strict, token-value-keyed routing to a stable per-backend identity*. The server decides affinity, the client encodes that decision as a routing token (a route-encoded session id and/or the `StrictStickinessHost` header), and the load balancer's only job is to route a given token to the specific backend it names. This is the real cross-cloud portability boundary and it is stricter than generic "sticky sessions."
+
+*B2 (MUST) [Integrity].* For transactional invocations, stickiness must be strict, not best-effort. A web session tolerates best-effort stickiness because replication covers a mis-route; a transactional call that lands on the wrong node fails (surfacing as `WFTXN0031`, "commit not allowed on imported transaction"). Load balancers that offer only best-effort or IP-hash affinity (as several managed cloud load balancers do) are insufficient for this architecture. Concretely, "strict" means the proxy must *fail fast rather than reroute*: a request whose token names a pod that is unknown or currently unreachable must be denied (an HTTP 503), never silently redispatched to a different pod. A proxy configured with connection redispatch or retries onto other backends violates this, because it can move an in-flight transactional request to a node that never prepared it. Failover to a new node is the client's responsibility (re-resolving affinity), not the proxy's.
+
+*B3 (MUST NOT) [Correctness].* The load balancer must not be treated as the affinity decider. It does not compute ownership; it enforces a decision made upstream. Configurations that rely on the load balancer to "figure out" stickiness are outside the policy.
+
+*B4 (SHOULD) [Operability].* The load balancer's idle timeout must be coherent with the transaction timeout, so that a long-running transaction is not severed mid-flight by an infrastructure timeout.
+
+*B5 (MUST) [Correctness][Operability][Portability].* The strict-routing proxy must be provided and configured as a managed part of the topology, not left to the customer to install and configure. On OpenShift this means the WildFly Operator provisions and manages the proxy with a configuration that actually meets B1 and B2. This is not merely convenience: the default platform routing — for example an OpenShift Route's best-effort cookie stickiness — does not satisfy the strict transactional stickiness of B2, so leaving the proxy to the customer invites a setup that appears to work and is silently incorrect under transactional load (surfacing later as `WFTXN0031`). Furthermore, the proxy's routing configuration is coupled to the client's stickiness encoding (the route-encoded session id and `StrictStickinessHost` header), so shipping the two together keeps them in lockstep across protocol upgrades rather than relying on the customer to match versions by hand. A customer may substitute their own proxy provided it demonstrably meets B1, B2, and B4, but the supported and default path is operator-provided. This is provisioned through a `spec.proxy` section on the `WildFlyServer` resource, which brings up a per-service proxy (a ConfigMap-driven proxy deployment fronting the StatefulSet's headless service) configured for strict token-keyed routing — no redispatch and no cross-backend retries, denying (HTTP 503) any request whose token names an unknown or unreachable pod, per B2. A per-service proxy rather than one shared ingress is the right granularity here, because the routing tokens are specific to a given service's pods.
+
+=== C. Topology / Identity
+
+*C1 (MUST) [Integrity].* Each server instance must have a *stable and unique* node identifier for the lifetime of any transaction it may need to recover. Narayana requires both stability (the same node keeps the same id across restarts) and uniqueness (no two live nodes ever share an id); two live nodes with the same identifier can corrupt recovery. On OpenShift the operator sets this identifier from the stable pod name — the same source as the affinity token, so identity is single-sourced — which gives both stability and uniqueness from the StatefulSet without any customer configuration, and supersedes the cloud image's fixed default that would otherwise give every pod the same identifier.
+
+*C2 (MUST) [Correctness].* Each pod must be individually and stably addressable so that the routing token in B1 can resolve to it. A round-robin virtual IP in front of interchangeable pods cannot satisfy this.
+
+*C3 (MUST) [Integrity].* The transaction object store must be durable across a pod restart — either a reattached persistent volume or a shared database (see domain D).
+
+*C4 (MUST) [Integrity].* Pod scaledown must be recovery-gated: a node must not be removed until its in-doubt transactions have been recovered, or its store must remain reachable by a survivor that can recover on its behalf.
+
+*C5 (Scope note) — deployment, not EJB.* Keeping the application binary present across a pod restart is a real precondition for running anything in this topology — an archive dropped into `standalone/deployments/` by the scanner sits on the ephemeral container filesystem and is gone after any restart (scale event, crash, rolling update, node eviction, or recovery), after which every EJB lookup fails; pointing the scanner at the PVC does not help either, because the operator recreates the volume during scale operations. This surfaced during recovery testing, but it is a *deployment and packaging* concern with nothing EJB- or transport-specific about it, so it is out of scope for this issue rather than a requirement of it. For the purposes of this issue the application is assumed present at pod start; the only currently-proven way to ensure that is a "fat image" (the application baked in via Galleon provisioning, S2I, or a multi-stage container build, matching the Operator's `applicationImage` design intent), which the conformance suite treats as a test precondition. Making a production-grade hollow-image workflow (a runtime-only image with the archive delivered after start) supported is tracked in Future Work and will be carried by its own separate issue.
+
+*C6 (Note) [Portability].* On OpenShift the four identity/store requirements C1–C4 are satisfied by a StatefulSet plus the WildFly Operator (stable `${env.HOSTNAME}`-derived identifiers, stable per-pod DNS and route labels, PVC reattachment, and operator-driven recovery-gated scaledown). The StatefulSet is one implementation of C1–C4, not a requirement in itself; the abstract form is what makes the policy portable and doubles as the migration checklist for other platforms.
+
+=== D. Transactions / Recovery
+
+*D1 (MUST) [Spec][Integrity].* Distributed transactions initiated by an in-cluster coordinator must honor full two-phase-commit semantics across the HTTP transport, including correct behavior on commit, rollback, and recovery.
+
+*D2 (MUST) [Integrity].* The choice of object store is the pivot decision for this domain and flips several downstream requirements between MUST and SHOULD:
++
+--
+* With a *filesystem/PVC store*, exact-pod recovery is mandatory: the store belongs to one node, so recovery must run on that node (or on a pod that has reattached that node's volume). This makes C4's recovery-gated scaledown and exact-pod return mandatory.
+* With a *shared JDBC store* and `xaRecoveryNodes=*`, any surviving node can recover a dead node's branches. This relaxes the exact-pod requirement for top-level transaction recovery and decouples much of the architecture from the StatefulSet.
+--
+
+*D3 (MUST) [Spec].* The location of the transaction coordinator must be stated and respected. A call from a client *outside* the cluster (for example, an `@RunAsClient` caller reaching in over a Route) arrives as an imported/subordinate transaction and cannot be driven as a top-level transaction; JTA 2.0 places subordinate two-phase commit out of scope. This is a documented constraint, not a defect to be fixed — the policy must state that the coordinating transaction manager lives inside the cluster.
+
+*D4 (SHOULD) [Correctness].* A distinction matters here between two recovery paths. *Top-level* transaction recovery after a crash is *store-mediated, not proxy-mediated*: with a shared JDBC store and `xaRecoveryNodes=*`, any surviving node recovers a dead node's branches, so recovery is deliberately proxy-agnostic and does not depend on routing a callback to a specific pod. This is the common case and it is the correct behavior. *Subordinate/imported-transaction* recovery (via `HttpRemoteTransactionPeer`) is the one recovery path that genuinely depends on the transport: the recovery callback has to reach the specific pod that prepared the branch, which strict routing must guarantee. This subordinate path is not rescued by the shared store in the same way and remains the case that needs exact-pod routing; it is flagged for the Narayana study in Future Work, and it is currently a coverage gap in the testsuite (see the Test Plan).
+
+*D5 (MUST) [Integrity].* A distributed (two-phase) datasource must use a genuine XA datasource; a non-XA datasource cannot participate correctly in 2PC recovery.
+
+=== E. Clustering / State
+
+*E1 (MUST) [Spec][Correctness].* A clustered SFSB's state must survive the loss of the node that created it, to the degree the clustering configuration promises. With a distributed cache (`ejb-dist-cache`), the SFSB is recoverable on another node; with a local cache, it is not, and the policy must say which is in effect.
+
+*E2 (MUST) [Correctness].* Cluster formation must work with a cloud-appropriate JGroups discovery protocol (KUBE_PING / DNS_PING / TCPPING) rather than multicast, which is generally unavailable in cloud networks. On OpenShift the cloud application image configures KUBE_PING, and the operator provisions the least-privilege RBAC it needs to query the Kubernetes API (a `Role`/`RoleBinding` granting the pod's service account read access to pods and endpoints, created when the server is clustered), so cluster formation needs no customer configuration.
+
+*E3 (MUST) [Correctness].* Server-computed affinity must be respected end to end: strong affinity (`ClusterAffinity`) and weak affinity (`NodeAffinity` / primary-owner, with SFSB ids hashing to their owning node) are decided by the server's `AssociationImpl`, encoded by the client, and enforced by the load balancer per B1.
+
+*E4 (SHOULD) [Availability].* SFSB failover across nodes should be transparent to the client when a distributed cache is configured.
+
+=== F. EJB Semantic Preservation (across the transport)
+
+*F1 (MUST) [Spec].* The transport must not alter EJB invocation semantics. The specification's behavior for transaction attributes, security constraints, asynchronous invocation, exception handling, and lifecycle must be observationally identical whether the call is local or carried over HTTP.
+
+*F2 (Scope note).* Verifying that the *engine* implements those semantics correctly (for example, that `@Mandatory` throws without a transaction, or that a `@RolesAllowed` matrix admits and denies the right callers) is owned by the WildFly bare-metal testsuite and is not re-tested here. This conformance suite tests only that the semantics *survive the transport*. The distinction is developed in the appendix on transport-versus-semantic testing.
+
+=== G. Security
+
+*G1 (MUST) [Spec][Security].* The caller's security identity must propagate across the HTTP transport so that `getCallerPrincipal()` and role-based checks see the authenticated identity on the server side.
+
+*G2 (MUST) [Security].* The transport must reject unauthenticated and wrongly-authenticated calls at the boundary. Authentication (rejecting bad credentials, propagating and matching the identity) is a transport concern and is validated here; authorization (`@RolesAllowed` allow/deny) is an engine concern validated in bare-metal tests.
+
+*G3 (MUST) [Security].* All EJB-over-HTTP traffic must be able to run over TLS, and the supported topology must assume TLS between the load balancer and the pods for identity and credential material in transit.
+
+*G4 (MUST) [Security].* Recovery authentication (the credentials used by `HttpRemoteTransactionPeer` / `HttpSubordinateTransactionHandle` to drive recovery) must be configurable and are credential material — they must be treated with the same care as any other stored credential.
+
+=== H. Lifecycle / Operability
+
+*H1 (MUST) [Correctness].* Graceful suspend/resume (server quiesce) must interact correctly with the transport: an invocation in flight during a suspend must complete or fail cleanly, and a suspended node must stop attracting new work.
+
+*H2 (MUST) [Operability].* Node startup must not begin serving transactional traffic before recovery is ready, so that a restarting pod does not accept new work while it still owes recovery on old work.
+
+*H3 (SHOULD) [Operability].* The architecture should expose enough observability to detect in-doubt transactions and stuck recovery, since these are the failure modes that matter most in production and are hard to see otherwise.
+
+=== I. Performance / Non-functional
+
+*I1 (SHOULD) [Performance].* The per-invocation overhead of EJB-over-HTTP relative to native Remoting must be measured and documented, so that adopters can size accordingly.
+
+*I2 (SHOULD) [Performance].* The disk and memory footprint of the required Galleon layers and configuration should be characterized.
+
+=== Non-Requirements
+
+The following are deliberately out of scope for this proposal:
+
+* *Message-driven beans and Jakarta Messaging.* This architecture covers synchronous and asynchronous EJB invocation over HTTP, not MDB/JMS delivery.
+* *Multi-cluster and disaster-recovery topologies.* The policy targets a single cluster; cross-cluster replication and DR are not addressed.
+* *Re-testing EJB/JTA engine semantics.* As stated in F2, the correctness of the container's implementation of specification semantics is owned by the WildFly bare-metal testsuite. This suite validates only that those semantics survive the transport.
+* *Using an outside-cluster client as a transaction coordinator.* Per D3, this is not supported; it is a documented constraint of the imported-transaction model, not a gap to be closed.
+* *Application-binary persistence across pod restart (hollow-image deployment).* Per the C5 scope note, keeping the deployed archive present across restarts is a deployment/packaging concern with nothing EJB-specific about it. This issue assumes a fat image as a test precondition; making a hollow-image workflow production-grade is tracked in Future Work under its own issue.
+
+=== Future Work
+
+* *Tier-1 hardening research.* Three studies could still introduce new MUSTs: a failure-mode and idempotency audit (can a mid-call failover double-execute a non-idempotent invocation, and can that be bounded or disabled); a Narayana recovery-in-cloud deep dive (node-identifier constraints, object-store options, `xaRecoveryNodes`, orphan detection, subordinate recovery, presumed-abort — this is what would settle D4); and an adjacent-spec sweep (EJB Timer Service clustered/persistent-timer recovery, the JCA XA contract, Jakarta Concurrency executors, JPA-JTA integration).
+* *Production-grade hollow-image deployment.* This is the deployment concern the C5 scope note pushes out of the issue. The fat image is the only proven way to keep a deployment present across restarts today, but many customers will want a runtime-only image with the application delivered after start. Making that supported requires a mechanism that keeps the deployment present across pod restarts despite the ephemeral deployments directory and the operator's volume lifecycle. Candidate approaches — a ConfigMap carrying the archive with an init container that stages it on start, a management-API redeploy driven by an external controller, or a CI/CD hook triggered on scale events — are unproven and need validation before any of them can enter the policy. That evaluation belongs to the separate hollow-image issue, not this one.
+* *Looser topologies for portability.* Customers who cannot or will not run StatefulSets, and platforms that lack the primitive, need a documented degradation path. Four tiers have been identified, running from strongest to weakest. This issue validates only the first; each of the other three is future work, to be examined and validated through its own separate issue (the topology appendix carries the full guarantee-degradation matrix):
++
+--
+** *Tier A — StatefulSet + Operator + object store.* Full guarantees. The default, and the only tier this issue validates.
+** *Tier B — StatefulSet + shared JDBC store, no PVC.* Functionally full; recovery leans on the shared store rather than volume reattachment.
+** *Tier C — Deployment + headless Service + shared JDBC + `xaRecoveryNodes=*` + distributed cache + cookie stickiness.* The looser candidate for platforms or customers that avoid StatefulSets. It forfeits two guarantees — strict transaction stickiness across pod churn, and reliable subordinate/imported-transaction recovery — so it would carry explicit caveats.
+** *Tier D — Deployment + ClusterIP round-robin.* Only stateless, idempotent SLSB workloads; no transactional or stateful guarantees.
+--
++
+As each looser tier is validated by its own issue, the operator would grow the corresponding topology option and the supported set would widen.
+* *Cross-service transaction propagation over HTTP*, currently blocked on a matching WildFly runtime image.
+* *Mixed-version / rolling-upgrade compatibility* of the protocol, which needs its own test story (see the Test Plan).
+* *Clustered EJB timers* over this transport, pending the adjacent-spec sweep.
+* *Operator route reconciliation for the proxy.* The initial operator implementation sets the Route's target to the proxy only when the Route is first created; toggling `spec.proxy` on a `WildFlyServer` that already has a Route does not repoint existing traffic, which would silently bypass strict routing. The operator should reconcile an existing Route's target when the proxy is enabled or disabled.
+* *Platform ownership of the cloud runtime configuration the conformance suite injects by hand.* To run a clustered or transactional deployment correctly in the cloud, several server settings must be true that the testsuite currently rewrites into the configuration itself, but that no shipped component owns in production. Two of these have now been taken into the operator as part of this issue, the sibling of the B5 proxy responsibility, since both are topology-dependent and the operator already owns pod identity (it derives the node name from the pod name): a stable per-pod transaction node-identifier, now set by the operator from the pod name (single-sourcing pod identity rather than the image's non-unique fixed default); and cloud-safe cluster discovery, where the cloud application image configures KUBE_PING and the operator provisions the least-privilege RBAC it needs, replacing the multicast stack cloud networks drop and the hand-supplied host list. One piece of the substrate remains unowned: the transaction recovery listener, which the cloud image currently ships disabled and neither the operator nor a Galleon default yet turns on — so the testsuite still rewrites `recovery-listener="true"` and will until the cloud galleon pack defaults it on (see below). The remaining injected settings are recorded here for follow-up rather than carried by this issue: the shared JDBC transaction object store and `xaRecoveryNodes` (covered by the Narayana recovery study above), the recovery thread's outbound credentials, and the coherence between the transaction timeout and the proxy idle timeout — candidates for the operator; and the build-time concerns — the transport module content, and the XA-datasource obligations that D5 and G4 already state (must be an XA datasource, must set a recover-credential) — which belong to the application image, not the operator. Until each is owned, the testsuite's hand-configuration stands in for it, and should be labelled as such rather than mistaken for the supported recipe.
+* *Default the transaction recovery listener on in the cloud galleon pack.* Correct XA recovery in the cloud needs the Narayana recovery-manager socket reachable (`recovery-listener="true"` on the transactions subsystem). The cloud application image ships it disabled and the operator does not flip it, so the conformance suite enables it by rewriting the configuration. The durable fix is to default it on in the WildFly cloud galleon pack for the topologies that need recovery, removing the last identity-and-recovery setting the testsuite has to inject by hand.
+* *Consolidate the EJB conformance tests into an existing testsuite.* The dedicated suite exists to prove this policy quickly against an architecture that was still being discovered (see the Test Plan and Appendix E). Once the policy is proven for the EJB components, the intent is to fold these scenarios into an existing WildFly cloud testsuite and retire the standalone suite, so cloud test coverage keeps a single home rather than a parallel track.
+
+== Backwards Compatibility
+
+This proposal does not change existing WildFly behavior; it defines a supported way to deploy and invoke EJBs in the cloud. The compatibility questions that matter here are about the transport protocol and the cluster topology rather than about server configuration migration.
+
+=== Default Configuration
+
+The policy prescribes a specific server configuration, produced by Galleon layers: the distributed EJB cache layer (`ejb-dist-cache` rather than `ejb-local-cache`) where SFSB failover is required, a cloud-appropriate JGroups discovery stack (KUBE_PING), an XA datasource for two-phase workloads, the HTTP recovery listener, and periodic recovery tuned for the environment. The stable, unique transaction `node-identifier` is not a Galleon prescription but is set by the operator from the pod name (see Appendix D). These are prescriptions the policy makes for cloud deployments; they do not alter the defaults of an ordinary WildFly server.
+
+=== Importing Existing Configuration
+
+Not applicable. This proposal does not change the server migration tooling and does not affect the ability to run an existing configuration.
+
+=== Deployments
+
+Applications do not need code changes to fit the architecture — that is a design goal. What changes is the deployment recipe (layers, datasource type, cluster topology, load-balancer configuration). Where an application currently relies on behavior that only works with an outside-cluster coordinator, D3 applies and the application must move its coordinator inside the cluster.
+
+The most consequential change is the packaging model (C5): the deployed application has to survive pod restart, which in practice today means baking it into the container image rather than hot-deploying via the deployment scanner. This is a genuine break from a common bare-metal and dev habit of dropping an archive into `standalone/deployments/`. In a cloud topology only the operator-mounted persistent volume at `standalone/data/` survives a pod restart; the deployments directory does not, so a scanner-deployed archive silently disappears on the next scale event, crash, rolling update, or recovery, and every EJB lookup then fails. The supported recipe builds the application into the image (Galleon provisioning, S2I, or a multi-stage container build) so the archive is always present when a pod starts. Many customers will prefer a hollow-image workflow, and supporting one is desirable, but it needs a persistence mechanism that does not yet exist in production-grade form (see Future Work).
+
+=== Interoperability
+
+The interoperability surface is the HTTP client/server protocol (currently V3, carrying the stickiness and recovery semantics). Client and server must agree on the protocol version, and mixed-version clusters during a rolling upgrade are a real scenario that the Test Plan calls out as a gap to be covered. The strict-routing requirement (B1) is the portability contract with the load balancer: any load balancer that can do token-keyed strict routing to a stable backend can host the architecture, which is what allows it to move beyond OpenShift.
+
+== Implementation Plan
+
+The deliverables do not land in sequence; the review process gates them as a single unit. The policy (this document and its appendices) and the code it depends on are gathered, reviewed, and pushed together — a policy without the code that satisfies it, or code merged without the policy that governs it, would each be incomplete on its own. That unit is the policy plus three code components: the affinity-, stickiness-, and recovery-aware transport in `wildfly-http-client` (route-encoded stickiness and the strict-affinity path the routing relies on); the operator changes that turn the transport architecture from "assemble it yourself correctly" into a managed topology, which are two related responsibilities landing together: the strict-routing proxy the operator provisions and manages (B5), encoding the testsuite's validated proxy configuration and keeping it versioned together with the client's stickiness encoding; and the identity-and-recovery substrate a clustered or transactional server needs to work in the cloud — the stable per-pod transaction node-identifier set from the pod name (C1), and the least-privilege RBAC that lets the cloud image's KUBE_PING discovery form a cluster without a hand-applied binding (E2) — so that a correct clustered or transactional deployment needs no manual server configuration. The reconcile-time behavior of both is described in Appendix D. Finally, the conformance testsuite itself, which is new code that validates the policy and is maintained alongside it.
+
+*What the operator changes deliver.* The operator work, implemented in the WildFly Operator on the `WFLY-22192-strict-routing-proxy` branch, is what moves this architecture from something a customer assembles by hand into something the platform manages, and it is two related responsibilities rather than one. The first is the strict-routing proxy: a reconcile loop provisions, per service, a dedicated proxy whose generated configuration routes each affinity token to exactly the pod it names and refuses rather than reroutes when that pod is gone (B5), regenerating those rules as pods come and go so routing stays correct under change. The second is the identity-and-recovery substrate a clustered or transactional server needs to be correct in the cloud: the operator derives Narayana's transaction node-identifier from the stable pod name so every pod is uniquely and durably identified (C1) — closing the cloud image's fixed default, which is stable but identical on every pod and therefore a latent recovery-corruption hazard — and it provisions the least-privilege RBAC that lets the image's KUBE_PING discovery form a cluster without the hand-applied binding customers previously had to add (E2). Both responsibilities are gated to the topologies that need them, so a stateless single-replica server is left untouched. What ties this to the testsuite is that these settings were previously made true only by the conformance suite rewriting the server configuration at provisioning time; moving them into the operator is precisely what lets a real deployment get the same behavior with no manual server configuration, and it is why the suite could then delete those rewrites. The reconcile-time detail of both responsibilities is specified in Appendix D.
+
+Two efforts genuinely follow this unit rather than gate it: hardening the policy with the Tier-1 research, folding any new MUSTs back into the Requirements; and closing the testsuite's known coverage gaps (compatibility/mixed-version, manual/exploratory, and performance/footprint cases).
+
+== Admin Clients
+
+This feature introduces no new management resources, attributes, or operations, so there is no new CLI or HAL surface. The operational touch points it relies on — graceful suspend/resume and recovery status — are existing management capabilities; no follow-up work in the admin clients is anticipated.
+
+== Security Considerations
+
+The transport moves a security identity and, for recovery, credentials across the network, so TLS is assumed throughout the supported topology (G3). Two kinds of credential material are in play: the caller's authentication and the recovery credentials used to drive imported-transaction recovery (G4). Any attribute that ends up holding recovery credentials must be treated as `CREDENTIAL`-sensitive in the sense of WildFly's `SensitivityClassification`, so that it is not exposed to under-privileged management users. Because the feature adds no new management resources, the standard RBAC behavior applies to everything else; the only non-typical consideration is the credential handling just described. Authentication is enforced at the transport boundary (G2); authorization remains an engine concern.
+
+[[test_plan]]
+== Test Plan
+
+Testing is what makes this policy more than a document: the `wildfly-cloud-ejb-conformance` suite deploys the architecture against a real cluster (the operator-provisioned strict-routing proxy, a StatefulSet-style topology, and the affinity-aware client) and asserts the required behaviors.
+
+*Why a dedicated conformance suite.* WildFly already has OpenShift and cloud testsuites, and a permanent parallel suite is not the goal. This policy, however, had to be _discovered_ as much as validated: at the outset the requirements, the topology, and the transport mechanics were open questions, and settling them called for a harness that could stand up an arbitrary combination of topology, client, and object store against a real cluster and tear it back down cheaply, iteration after iteration. A purpose-built, fully-scripted suite provided that freedom to experiment while the architecture was still in motion, without coupling the pace of that experimentation to the shared suites. It is delivered with this issue because it is the issue's validation vehicle — the executable form of the policy defined above — and its architecture is summarized in Appendix E. Its intended end state is not to persist alongside the existing suites but to fold into them once the policy is proven (see Future Work).
+
+The suite is built on a single organizing principle: it is a *transport* testsuite. For each kind of context that must cross the wire it keeps *one witness* that the context crosses correctly, and it deliberately does not re-test the engine semantics behind that context (those are covered by the WildFly bare-metal suite). The reasoning behind that principle is developed in the transport-versus-semantic appendix.
+
+*Integration tests (present).* The suite covers, at minimum: transaction-context propagation and two-phase commit/rollback/recovery over HTTP; security-identity propagation and boundary rejection; asynchronous invocation; SFSB affinity, distribution, and failover; graceful suspend/resume; cluster reformation; and transaction recovery across pods. Both transports are exercised where they differ — in-cluster (a local transaction manager over service DNS) and outside-cluster (a `RemoteTransactionContext` over a Route) — because they are genuinely different paths, and one witness in each is justified rather than duplicative. The traceability matrix below maps each requirement to the test class(es) that witness it and marks the requirements that are not yet witnessed.
+
+The test classes named below are the current witnesses (simple class names; most `cluster` scenarios have an `ejb.outsidecluster` twin that runs the same assertion through the Route, noted as "both transports"). Requirements whose validation is planned rather than automated today point to the corresponding roadmap item (the compatibility, performance, and manual-check paragraphs below, or Future Work).
+
+[cols="1,4,4", options="header"]
+|===
+| Req | Witnessing test(s) | Notes
+
+| A1 | StatelessInvocation, StatefulInvocation, SingletonBean, SimpleExternalStateful (both transports) | Remote EJB reachable over HTTP through the strict-routing proxy and the Route.
+| A2 | TxCommit / TxRollback (tx context), CallerPrincipalPropagation (identity), EjbClientInterceptor (context data), ExceptionHandling (exceptions) | One witness per kind of context that must cross the wire.
+| A3 | ConcurrentInvocation (load) | SHOULD. Connection reuse / HTTP-2 overhead is part of the performance work (below).
+| A4 | ExceptionHandling, EjbClientInterceptor | User exception types and context data marshalled with fidelity.
+| B1 | StatefulStickiness, CookiePath, MixedBeanAffinity, ObfuscatedRoute, OutsideClusterStatefulStickiness | Token-keyed routing to a stable pod.
+| B2 | TransactionAffinityStateful (mid-TX kill must throw, not reroute), TxAffinityAndRelease, MixedBeanAffinity | Strict transactional stickiness: fail-fast, never silently reroute.
+| B3 | Exercised by the B1 affinity tests | The LB enforces, and does not compute, affinity.
+| B4 | TxTimeout, InvocationTimeout | SHOULD. Timeout coherence is set as a topology configuration.
+| B5 | The entire in-cluster (`cluster`) suite runs against the operator-provisioned strict-routing proxy | Validated by construction; StatefulInvocation is the smoke witness on the operator-provisioned proxy.
+| C1 | TxRecovery, JdbcTxStoreRecovery | Assert unique, stable node identifiers.
+| C2 | ObfuscatedRoute (direct pod DNS), StatelessDistribution | Each pod individually addressable.
+| C3 | JdbcTxStoreRecovery, FileStoreRecoveryLimitation, TxRecovery | Durable object store across restart.
+| C4 | TxRecovery (scale-down TX-log behavior), DnrCleanup (scale 2→0→2) | Recovery-gated scaledown / store reachability.
+| C5 | — | Scope note (deployment, not EJB), not a requirement. The suite uses a fat image as a test precondition; hollow-image deployment is a separate Future-Work issue.
+| D1 | TxCommit, TxRollback, JpaCrashRecovery, JdbcTxStoreRecovery, LocalTransaction | 2PC over HTTP: commit, rollback, recovery.
+| D2 | JdbcTxStoreRecovery (shared JDBC) vs FileStoreRecoveryLimitation (file/PVC) | The object-store pivot, tested from both sides.
+| D3 | OutsideClusterTxRoundTrip, the `ejb.outsidecluster` Tx suite | Coordinator-location constraint: an outside-cluster client drives a remote `UserTransaction`.
+| D4 | JpaCrashRecovery, JdbcTxStoreRecovery (store-mediated recovery) | SHOULD. Subordinate/imported-tx recovery is addressed by the Narayana study (Future Work); see the clarification below.
+| D5 | FileStoreRecoveryLimitation, JpaCrashRecovery, JdbcTxStoreRecovery | Real XA datasource for genuine 2PC.
+| E1 | StatefulFailover, ConcurrentStatefulFailover, SecuredEjbFailover; PassivationDisabledStatefulFailover (negative) | SFSB state survives node loss with a distributed cache; a non-distributable SFSB correctly does not.
+| E2 | DnrCleanup, RollingRestart | Cluster formation / reformation under cloud discovery.
+| E3 | MixedBeanAffinity, StatefulStickiness, StatelessDistribution | Server-computed affinity respected end to end.
+| E4 | StatefulFailover, ConcurrentStatefulFailover | SHOULD. Transparent SFSB failover.
+| F1 | AsyncEjbInvocation, AsyncTxNonPropagation, SingletonBean, SingletonLock, SfsbConcurrentAccess, StatefulPassivation, StatefulRemove, StatefulTimeout, StatefulTimeoutDuringTx, TxMandatoryEnforcement, NeverTransaction, RequiresNewTransaction, BeanManagedTransaction, SetRollbackOnly, AppExceptionRollback, SessionSynchronization, SfsbStateAfterRollback, SessionSurvivesTxCommit, TxNoXAResource, TxCleanLifecycle, TxAttributeProbe, ExceptionHandling, EjbForwarding (many with a Route twin) | One witness each that the semantic survives the transport; engine correctness itself is out of scope per F2.
+| F2 | — | Scope note; engine semantics owned by the bare-metal suite.
+| G1 | CallerPrincipalPropagation (both transports), OutsideClusterSecurity | Caller identity propagates over HTTP.
+| G2 | SecurityRejection, OutsideClusterSecurity | Boundary rejects unauthenticated / wrongly-authenticated calls.
+| G3 | TLS-terminated Route and proxy topology | The transport runs over TLS in the supported topology.
+| G4 | Exercised via the crash-recovery tests | Recovery credentials are treated as credential-sensitive material.
+| H1 | SuspendResume, RollingRestart | Graceful suspend/resume; in-flight work drains, suspended pod stops attracting work.
+| H2 | Exercised via the crash-recovery tests | A restarting pod completes recovery before taking new work.
+| H3 | Operability roadmap (Future Work) | SHOULD. Observability of in-doubt transactions.
+| I1 | Performance work (below) | SHOULD. Per-invocation overhead measurement.
+| I2 | Performance work (below) | SHOULD. Footprint characterization.
+|===
+
+Two cross-service tests (`CrossDeploymentLookup`, `CrossServiceTransaction`) exercise D1/F1 across two separate WildFly resources; `CrossServiceTransaction` is currently blocked on a matching runtime image and is tracked in Future Work. A REST smoke test (`OutsideClusterInvocation` in the `remote` package) checks Route reachability and is not tied to an EJB requirement.
+
+*A clarification on what the recovery tests witness.* The present crash-recovery cases validate *store-mediated* recovery: with a shared JDBC store and `xaRecoveryNodes=*`, a survivor recovers a dead node's branches (and the file/PVC-store cases are limitation tests demonstrating why the shared store is needed). That behavior is proxy-agnostic by design. Subordinate/imported-transaction recovery — the one recovery path that must reach the exact pod that prepared the branch (D4) — is the subject of the Narayana recovery study in Future Work; the live-affinity (SFSB) path and the failover behavior are the suite's proxy-routing witnesses today.
+
+*Compatibility tests (gap to close).* Mixed-version clusters during a rolling upgrade, and client/server protocol-version skew, are real scenarios that are not yet covered and must be before the `default` claim is final.
+
+*Manual / exploratory checks (to formalize).* A short checklist for the corner cases not worth automating: that a misconfigured load balancer (best-effort instead of strict) is easy to detect from its symptoms, that a non-XA datasource is rejected or clearly diagnosed, and that recovery status is legible to an operator.
+*Miscellaneous / performance and footprint checks (to formalize).* Per-invocation overhead of EJB-over-HTTP versus native Remoting, and the footprint of the required layers, should be captured as named test cases building on the existing performance work in the suite.
+
+== Community Documentation
+
+The primary documentation artifact *is* the policy: a cloud EJB deployment guide that states the requirements above in customer-facing terms, accompanied by the topology-tier matrix so adopters understand exactly what each supported and unsupported topology guarantees. It will live in the WildFly documentation (alongside the existing cloud/OpenShift guides) and reference the conformance testsuite as the executable specification of the policy. Existing quickstarts in the EJB-on-OpenShift space are candidates to be aligned with the recipe.
+
+== Release Note Content
+
+WildFly now defines a supported reference architecture for running Jakarta Enterprise Beans in the cloud over an HTTP transport. Backed by an affinity-aware HTTP client and a stable-identity deployment model, the architecture preserves EJB invocation, clustering, and transaction semantics — including distributed transaction recovery — through cloud load balancers that speak HTTP. A conformance testsuite validates the policy end to end against a real cluster, and a topology matrix documents exactly which guarantees hold for each supported deployment shape.
+
+== Appendix A: Full Requirements Catalogue
+
+The catalogue in the Requirements section above is the authoritative list. This appendix records the two structural facts that shape how it should be read. First, the MUSTs are the `[Spec]` and `[Integrity]` items plus a small number of non-spec `[Correctness]`/`[Portability]` items that the cloud environment forces rather than the specification — chiefly strict token-keyed load-balancer routing (B1/B2) and stable per-node identity (C1–C4). These non-spec MUSTs are the ones most likely to surprise a reader who expects "the spec says so" to be the only source of obligation. Second, the object-store choice in D2 is a pivot: selecting a shared JDBC store with `xaRecoveryNodes=*` demotes several exact-pod recovery MUSTs to SHOULDs and decouples much of the architecture from the StatefulSet, which is precisely the lever the topology appendix pulls.
+
+== Appendix B: Topology Tiers and Guarantee-Degradation Matrix
+
+The StatefulSet is one implementation of four abstract requirements — a stable and unique per-node transaction identifier, a durable transaction object store, recovery-reachable node addressing, and controlled recovery-gated scaledown (C1–C4). Other platforms can satisfy these with static hostnames, assigned IPs, an external database, and drain hooks. Stating the requirements abstractly makes the architecture portable and gives customers a migration checklist. The lever that decouples most guarantees from the StatefulSet is a shared JDBC object store plus `xaRecoveryNodes=*` plus a distributed SFSB cache: top-level transaction recovery is then done by any survivor, SFSB failover by Infinispan, and cluster formation by a controller-agnostic discovery protocol.
+
+The degradation ladder runs from strongest (Tier A) to weakest (Tier D). Each step down drops one platform guarantee in exchange for a looser, more familiar deployment shape, and each dropped guarantee narrows the set of EJB workloads that remain correct. Only Tier A is validated by this issue and is the default; Tiers B, C, and D are forward-looking and are each to be examined and validated through their own separate issues, so none of them should be read as supported on the strength of this document alone.
+
+The table reads top to bottom as a chain of consequences: the deployment primitive determines pod identity, identity determines how a pod can be addressed, addressing determines whether stickiness can be strict, and the store plus addressing together determine which forms of recovery are possible. The final rows are the payload — which workloads stay correct, and what is given up relative to Tier A.
+
+[cols="2,3,3,3,3", options="header"]
+|===
+| Aspect | Tier A (default, validated) | Tier B | Tier C | Tier D
+
+| Deployment primitive | StatefulSet + Operator | StatefulSet + Operator | Deployment + headless Service | Deployment + ClusterIP
+| Pod identity / node-identifier | Stable and unique: ordinal name, operator-set node-id from pod name | Same as A | Churns on restart; uniqueness needs external coordination | Churns (irrelevant -- no transactions)
+| Pod addressing (routing target) | Stable per-pod DNS (headless service): a token can name one pod | Same as A | Per-pod DNS exists but names churn -- addressable within a pod's life, not across restarts | Round-robin virtual IP: no per-pod target
+| Stickiness enforcement | Strict proxy: fail-fast, exact pod, HTTP 503 on unknown/down (Appendix D) | Same as A | Cookie best-effort: holds within a pod lifetime, not across rolling churn | None
+| Transaction object store | PVC, pod-local, reattached to the same-identity pod on restart | Shared JDBC store | Shared JDBC store, cross-node recovery enabled | None (no XA workloads)
+| Top-level crash recovery | Pod-local: same identity restarts, reattaches its PVC, completes its own branches | Any survivor recovers immediately from the shared store | Any survivor recovers from the shared store | N/A
+| Subordinate / imported-tx recovery (D4) | Recovery callback reaches the exact prepared pod (strict routing helps) | Same as A | Not guaranteed -- round-robin cannot target the prepared pod (unverified; Narayana study) | N/A
+| SFSB failover | State replicated (Infinispan), but transparent client failover through the strict proxy is not provided -- see Appendix D | Same as A | Distributed cache -- failover works, affinity best-effort under churn | N/A (stateless only)
+| Scaledown safety | Recovery-gated by the Operator (C4) | Recovery-gated by the Operator | Uncontrolled churn is a hazard; needs external drain coordination | Safe (stateless)
+| Workloads that stay correct | All EJB, including XA 2PC and SFSB | All EJB, including XA 2PC and SFSB | XA + SFSB with churn caveats (below) | Stateless, idempotent SLSB only
+| Given up vs Tier A | Nothing (baseline) | Nothing functional -- recovery timing differs (survivor-driven vs restart-driven), not weaker | Strict stickiness across churn; reliable subordinate-tx recovery | All transactional and stateful guarantees
+| Validation status | Validated here | Own future issue | Own future issue | Own future issue
+|===
+
+Two guarantees cannot survive a looser topology and are the reason Tier C carries caveats — both are the "given up vs Tier A" entries for that column, expanded:
+
+. *Strict transaction stickiness across pod churn.* A live transaction is node-local and is not replicated. Cookie stickiness keeps a caller on one pod for as long as that pod lives, which is enough for a transaction that begins and ends within a single pod lifetime; the hazard is churn *during* an active transaction — a rolling update or rescheduled pod — after which the caller's next call can land elsewhere and fail with `WFTXN0031`. Tier A's strict proxy turns that silent misroute into an explicit 503; Tier C's best-effort cookie does not.
+. *Subordinate/imported-transaction recovery.* The recovery callback must reach the specific pod that prepared the branch. Stable per-pod addressing (Tiers A/B) can guarantee that; round-robin over churning identities (Tier C/D) cannot. Whether a shared JDBC store partially rescues this for Tier C is unverified and is the subject of the Narayana study in Future Work.
+
+Underlying both is the identity trap in the second row: a plain Deployment's pod names churn across restarts, so an identifier tied to the pod name is unstable, while hardcoding an identifier risks two pods sharing one — either of which corrupts recovery, because Narayana needs the identifier to be both stable *and* unique. A StatefulSet provides both for free (the operator sets the node-identifier from the ordinal-stable pod name); a Deployment (Tiers C/D) needs external coordination to achieve it, which is why the identity, stickiness, and recovery rows all degrade together at the A/B → C boundary rather than one at a time.
+
+== Appendix C: Transport-versus-Semantic Test Classification
+
+This suite is a transport testsuite. The discriminator for whether a test belongs here is simple: strip the HTTP transport away — does the assertion still hold, and could it still fail? If yes, the test is exercising the EJB/JTA engine, which is already covered by the WildFly bare-metal suite, and it is redundant here. A test belongs in this suite only if its failure would implicate the transport.
+
+From that follows the *one-witness-per-context-type* principle. The transport needs exactly one witness that each context crosses the wire — transaction context, security identity, invocation context data, exception marshalling — plus one witness each for affinity, load distribution, failover, quiesce, and cluster reformation. Beyond the first witness, an attribute matrix (every `@TransactionAttribute` variant), a full rollback-semantics cycle, or a `@RolesAllowed` authorization matrix is re-testing the engine, not the transport. The in-cluster path (a local transaction manager over service DNS) and the outside-cluster path (a `RemoteTransactionContext` over a Route) are genuinely different transports, so one witness in each is justified rather than duplicative.
+
+Applying this cleanly separates two security concerns that are easy to conflate: authentication — rejecting bad credentials, and propagating and matching the identity — is a transport concern and belongs here; authorization — `@RolesAllowed` allow/deny — is an engine concern and does not.
+
+The ongoing classification of individual tests against this principle — which are genuine transport witnesses, which re-test the engine, and where a witness should be tightened — is a suite-maintenance activity tracked with the testsuite itself rather than in this document.
+
+== Appendix D: Operator Contract for EJB-over-HTTP
+
+The two-line policy — deploy through the operator, communicate over HTTP — holds only because the operator absorbs a set of responsibilities the customer would otherwise have to assemble by hand and get exactly right. This appendix specifies that contract for the EJB-over-HTTP transport: what the operator provides in the default topology (Tier A, the StatefulSet tier), and why each piece is shaped the way it is by an EJB or transaction requirement rather than by preference. It is deliberately narrow — it covers only what the transport, its routing, and its recovery need, not general operator behavior.
+
+Because every item traces back to an abstract requirement (the B, C, D, E, and G domains), this contract doubles as the portability checklist: a platform other than OpenShift can host the architecture exactly to the extent it can meet the same obligations by other means. The three looser topologies that relax parts of this contract — and precisely what each forfeits — are in Appendix B.
+
+=== Why Tier A looks the way it does
+
+Tier A is a StatefulSet, fronted by a strict-routing proxy, with a persistent volume for the transaction store, all run and lifecycle-managed by the WildFly Operator. None of those choices is incidental; each is forced by something EJB-over-HTTP has to guarantee.
+
+*Stable, unique node identity.* The operator runs the servers as a StatefulSet, which gives each pod an ordinal-stable name, and injects that name into the server through the Kubernetes downward API as `POD_NAME`, from which it sets *both* `-Djboss.node.name=$(POD_NAME)` and Narayana's transaction `node-identifier` (`-Djboss.tx.node.id=$(POD_NAME)`) — one source, so the two never diverge. That single source does double duty: node.name is the value the client encodes as the affinity token so a request can name one specific pod (B1), and the node-identifier is what recovery keys on. Recovery (C1) requires that identifier to be both stable — the same node keeps its id across restarts, so it can find and complete its own in-doubt branches — and unique — no two live nodes ever share one, since a collision lets two managers claim the same branches and corrupt recovery. The stable StatefulSet pod name satisfies both at once. Setting the node-identifier explicitly matters because the cloud image otherwise ships a fixed default (`1`) on every pod — stable but not unique, a latent recovery-corruption hazard the moment there is more than one pod — so binding it to the pod name closes that. The operator applies this only when transaction recovery is active for the server. A plain Deployment churns the name across restarts and risks collisions, which is why identity, addressing, and recovery all stand or fall together on it.
+
+*Individually addressable pods.* The StatefulSet's headless service gives each pod a stable, per-pod DNS name, and the operator keeps the routing labels stable. This is what lets the affinity token (B1) resolve to one specific backend. A single round-robin virtual IP over interchangeable pods cannot be a routing target (C2): there would be no way for a token that names pod N to arrive at pod N.
+
+*The strict-routing proxy.* When `spec.proxy` is set on the server, the operator provisions a dedicated strict proxy for that service — its own proxy `Deployment`, a `ConfigMap` holding the generated proxy configuration, and a `ClusterIP` service in front of it — and this is done per service rather than as one shared proxy for the cluster. The generated configuration routes a token to exactly the pod it names and otherwise fails fast: no redispatch, no cross-backend retries, and an HTTP 503 for any token that names a pod which is either unknown or currently down. Transactional stickiness must be strict, not best-effort (B2): a transactional call that lands on the wrong pod fails with `WFTXN0031`, and the platform's default routing (an OpenShift Route's best-effort cookie stickiness) would produce a setup that looks correct and is silently wrong under load. The proxy's idle timeout is configurable (`IdleTimeoutSeconds`, default 300s) so it can be held at or above the transaction timeout (B4). The operator owns the proxy (B5) both because asking customers to reproduce the configuration is unsafe and because the proxy's routing is coupled to the client's stickiness encoding and must move with it across versions.
+
+*Durable, restart-surviving transaction store.* The operator mounts a persistent volume at `standalone/data/`, where the transaction object store lives. On a crash the StatefulSet recreates the pod under the same identity and reattaches the same volume, so the restarted pod reads its own store and completes its own in-doubt branches locally. This satisfies the durability requirement (C3), and it is also why top-level recovery is proxy-agnostic: recovery happens on the node that owns the store, driving the resource managers directly, never by routing an EJB call back to a pod that may be gone. A shared JDBC store is an alternative that additionally lets a survivor recover a dead node's branches immediately rather than waiting for it to restart; that is an operator enhancement, not a Tier A requirement — see D2 and D4.
+
+*Recovery-gated scaledown.* When scaling in, the operator does not remove a pod until its in-doubt transactions have been recovered, or its store remains reachable by a survivor that can recover on its behalf. Without this gate (C4), a scale-in during an in-doubt transaction would discard the log and orphan prepared branches.
+
+*Recovery listener and periodic recovery.* The server profile the operator runs enables the HTTP recovery endpoint and tunes periodic recovery for the environment. The transport has to expose a recovery endpoint at all for imported-transaction recovery to have somewhere to call (the D domain, and G4 for its credentials), and periodic recovery is what actually drives in-doubt branches to completion after a crash.
+
+*Cluster formation and distributed SFSB state.* Discovery uses KUBE_PING — configured by the cloud application image — rather than multicast, which cloud networks generally drop. The operator's part is to provision the least-privilege RBAC that KUBE_PING needs to query the Kubernetes API: a `Role`/`RoleBinding` granting the pod's service account read access to pods and endpoints, created when the server is clustered and garbage-collected with it. That closes what used to be a manual customer step (a hand-applied `view` binding). A distributed EJB cache (`ejb-dist-cache`) is provisioned where SFSB failover is required. Cluster formation (E2) is a precondition for SFSB distribution and failover; a local cache cannot survive the loss of the node that created the bean (E1/E4).
+
+=== How the operator provisions the proxy
+
+The strict proxy is not a static manifest the customer applies; the operator builds it from the live state of the server and keeps it in step as pods come and go. The mechanism is worth describing because it is the concrete shape of the B5 responsibility above, and because keeping routing correct under change is the whole reason the proxy is operator-owned rather than hand-written. The work was implemented in the WildFly Operator on the `WFLY-22192-strict-routing-proxy` branch — a new `pkg/resources/proxy/` package plus a reconcile hook and the node-identity wiring in the StatefulSet. The current implementation uses HAProxy as the proxy engine, but that is an implementation detail behind the operator contract: what the contract fixes is the routing behavior described below — deterministic token-to-pod stickiness that refuses rather than reroutes — not the choice of proxy product, which the operator is free to change. The concrete artifacts named below (`haproxy.cfg`, the HAProxy pods) are therefore how today's operator delivers that behavior, not a commitment. In behavioral terms the reconcile loop does the following whenever it evaluates a server:
+
+. *It reads the intent.* It checks `spec.proxy`. If the proxy is absent or disabled, it makes sure any proxy resources it created earlier are removed, so toggling the proxy off leaves nothing behind; if the proxy is enabled, it converges the resources below. This runs before the Route is handled, because whether the Route should point at the proxy or at the plain application service depends on it.
+. *It builds the backend pod list.* It enumerates the application's StatefulSet pods, which have stable, ordinal names (`<name>-0`, `<name>-1`, and so on). That list is the source of truth for routing: one backend entry per pod, each addressed by its stable per-pod DNS name through the headless service rather than the load-balanced service. The list sizes to the *application's* replica count, which is independent of how many replicas the proxy itself runs.
+. *It generates the routing rules.* From that pod list it renders the `haproxy.cfg` whose only purpose is deterministic stickiness. Each request carries a routing token — an explicit header the WildFly client sets, or failing that the route suffix of the `JSESSIONID` cookie. The token names exactly one pod, and the rules map token to pod one-to-one. If the token names a pod that is not in the known set, or names a known pod that is currently down (each backend has a cheap health check, so "is it up?" is a live question with a roughly two-second detection lag), the request is refused with a 503 and never quietly sent elsewhere. That "refuse, do not reroute" rule is the point: it stops a transaction-affinity request from landing on a pod that never prepared the branch.
+. *It materializes three Kubernetes resources, each for a reason.* A *ConfigMap* holds the generated `haproxy.cfg`, kept separate because the routing rules are data that change whenever the pod set changes — a ConfigMap lets the operator regenerate them without rebuilding anything and lets HAProxy mount them as a file. A *Deployment* runs the HAProxy pods themselves; it is a Deployment rather than a StatefulSet because the proxy is stateless — the stickiness lives in the configuration, not in any proxy instance, so any replica can serve any request. A *ClusterIP service* gives the proxy one stable in-cluster address (port 8080) that clients target, behind which the proxy fans out to the correct pod. All three are created per server (`<name>-proxy…`), so each application gets its own routing surface and its own blast radius rather than sharing one multi-tenant proxy.
+. *It stamps each application pod's identity to match the tokens.* When the proxy is enabled, the operator injects into each application pod the node name derived from that pod's own stable name (the node-identity binding described above). This is what makes the affinity token the client emits line up one-to-one with the pod the proxy routes to; without it the token and the server map would not share a vocabulary.
+. *It fronts external traffic through the proxy.* When the proxy is enabled the OpenShift Route is pointed at the proxy service instead of the application service, so traffic entering from outside the cluster also passes through strict routing.
+
+The net effect is a routing surface that is deterministic and self-updating: the operator sees `spec.proxy`, derives the live pod list, generates strict token-to-pod rules into a ConfigMap, runs stateless HAProxy pods fronted by one stable service, stamps each pod's identity to match the tokens, and routes external traffic through the proxy — refusing, rather than rerouting, whenever the named pod is gone.
+
+=== What the operator does not (yet) absorb
+
+Three things sit outside this contract, and the distinction matters for reading the policy honestly.
+
+* *The application's XA datasource (D5).* A two-phase workload needs a genuine XA datasource for the application's own business data. This is the customer's to configure, but it is intrinsic to distributed transactions everywhere — the same requirement holds on bare metal — not a cloud or transport tax. It is the one small, permanent line the customer owns.
+* *Application-binary presence across restart (the C5 scope note).* Keeping the deployed archive present after a restart is a deployment and packaging concern, not EJB or transport. Today it is met by a fat image as a test precondition; making a hollow-image workflow production-grade is a separate issue in Future Work.
+* *A shared transaction object store for immediate cross-pod recovery.* This is not required for Tier A correctness — PVC recovery is correct and proxy-agnostic — but it is a desirable enhancement for faster, survivor-driven recovery and for the looser tiers. When it is wanted it should be operator-provisioned, by the same reasoning that puts the proxy in the operator's hands (B5) rather than the customer's; it is tracked as future operator work, not a standing customer obligation.
+
+The looser topologies — Tier B, which trades PVC reattachment for a shared store; Tier C, which drops the StatefulSet entirely; and Tier D, which keeps only stateless workloads — together with the specific guarantees each one forfeits, are described in Appendix B.
+
+=== Consequences and known caveats
+
+The strict-routing choice has one deliberate consequence and one implementation gap that a reader of this contract should know.
+
+*Transparent stateful-bean failover is not provided through the strict proxy.* The proxy applies the same fail-closed rule to every affinity token, whether the affinity is *strong* (a transaction pinned to the pod that owns it) or *weak* (a stateful session bean pinned to the pod that holds its state). When a pinned pod dies, a request carrying its token is refused rather than rerouted, so the client does not transparently fail over to a surviving replica through the single proxy endpoint — even though the session state itself is replicated in the distributed cache. This is the direct cost of strict stickiness, the B2/E4 trade-off: the guarantee that a transaction never lands on the wrong pod is bought by refusing to reroute, and weak affinity currently pays the same price as strong. Whether the proxy should relax the fail-closed rule for *weak* affinity while keeping it strict for *strong* affinity — which would restore safe stateful-bean failover without weakening transaction routing — is an open design question recorded in Future Work. It is worth noting the trade-off runs the other way in the looser tiers: Tier C's best-effort cookie stickiness does allow stateful-bean failover, precisely because it is willing to reroute, at the cost of the transaction guarantee (see Appendix B).
+
+*Enabling the proxy on a server that already has a Route does not repoint the Route.* The operator points the Route at the proxy only at the moment it creates the Route; if a Route already exists, toggling the proxy on leaves that Route pointing at the plain application service, so external traffic silently bypasses strict routing until the Route is recreated. This is an operator implementation gap rather than an architectural one; it is tracked as its own Future Work item and needs to be closed before the proxy can be turned on safely for a server that is already exposed.
+
+== Appendix E: Conformance Testsuite Architecture
+
+This appendix describes how the conformance testsuite is built, at the level a capable engineer needs to read or extend it. The rationale for its being a dedicated suite, and the intent to consolidate it later, are in the Test Plan and Future Work; this is the mechanism.
+
+The design intent is a single sentence: _a cloud test should read like a bare-metal WildFly test._ An author writes an ordinary Arquillian/JUnit test — `@Deployment` methods and `@Test` methods — and the extension turns that into a real multi-pod OpenShift deployment and runs the assertions inside the cluster. Four elements make that work.
+
+*Deployment model.* A `@Deployment` that returns a `WildFlyServerDescriptor` (an application archive plus a replica count and credentials) is materialized by a custom Arquillian container as a `WildFlyServer` custom resource — that is, an operator-managed StatefulSet, the same deployment path a customer uses. A `@Deployment` that returns a plain archive gets a minimal single-replica service. Several deployments in one test become several independent services, which is how cross-pod and cross-service scenarios are expressed.
+
+*In-cluster execution.* This is the load-bearing trick. Running the `@Test` body in the client JVM would exercise the client's transport, not the server's, so instead a custom Arquillian protocol ships a small test-executor endpoint alongside the application; for each test method the client issues an HTTP call carrying the test class and method name, and the endpoint reflectively runs that method _inside the pod_, returning success or a `500` with the server-side stack trace that the client re-throws. The assertions therefore run where the EJB-over-HTTP client, JNDI, and transaction manager actually live: the code under test is the real in-cluster invocation path, not a client-side approximation of it.
+
+*Two transport profiles.* Base classes select the path under test. In-cluster invocations traverse the strict-routing proxy over the service network; outside-cluster invocations traverse the OpenShift Route and a `RemoteTransactionContext`. A scenario is kept in both profiles only where the two paths genuinely differ (transaction plumbing, stickiness, the security boundary); where they do not, the duplication is redundant, as noted in Appendix C.
+
+*Environment provisioning.* The environment is stood up entirely from scripts (`setup_crc.sh`, `prepare_project.sh`): create the namespace, install the operator CRDs, build the operator image from the checked-out branch and push it to the cluster-internal registry, deploy the operator, and provision supporting services such as the PostgreSQL XA database the recovery tests use. Building the operator from source rather than pulling a published image is what let the suite track a moving operator contract during development, and is what makes a run reproducible from a clean cluster.
+
+The consequence of these choices is that a green test is evidence about the policy rather than about a mock: the deployment, the transport, and the topology are the real ones. The corresponding cost is that the suite requires a live cluster and the specific operator build under test, which is one more reason its scenarios are intended to migrate into a shared cloud testsuite once the policy they prove is settled.
