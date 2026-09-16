@@ -3,6 +3,7 @@
 ENV['BUNDLE_GEMFILE'] ||= File.expand_path('../Gemfile', __dir__)
 require 'bundler/setup'
 require 'fileutils'
+require 'pathname'
 require 'yaml'
 
 class FrontMatterExtractor
@@ -58,6 +59,11 @@ class MetadataChecker
       @stability_levels.map { | level | system("gh pr edit #{pr_number} --remove-label stability-level/#{level}") }
     end
 
+    relationship_errors = check_relationships(front_matter)
+    if relationship_errors.length() > 0
+      errors << relationship_errors
+    end
+
     errors
   end
 
@@ -91,6 +97,61 @@ class MetadataChecker
     end
   end
 
+  def check_relationships front_matter
+    errors = []
+    relationships = {
+      "promotes" => "promoted-by",
+      "promoted-by" => "promotes",
+      "follows-up-on" => "followed-up-by",
+      "followed-up-by" => "follows-up-on"
+    }
+
+    relationships.each do |relationship, reciprocal|
+      proposals = front_matter[relationship]
+      next if proposals == nil
+
+      unless proposals.is_a?(Array)
+        errors << "#{relationship} must be a YAML list of repository-relative proposal paths"
+        next
+      end
+
+      proposals.each do |proposal|
+        unless valid_proposal_path?(proposal)
+          errors << "#{relationship} contains invalid proposal path: #{proposal.inspect}"
+          next
+        end
+
+        unless File.exist?(proposal)
+          errors << "#{relationship} references a proposal that does not exist: #{proposal}"
+          next
+        end
+
+        target_front_matter = FrontMatterExtractor.new.process(File.readlines(proposal))
+        reciprocal_proposals = target_front_matter[reciprocal]
+        unless reciprocal_proposals.is_a?(Array) && reciprocal_proposals.include?(current_file_path)
+          errors << "#{relationship} reference #{proposal} must be reciprocated by #{reciprocal}: #{current_file_path}"
+        end
+      end
+    end
+
+    errors
+  end
+
+  def valid_proposal_path? proposal
+    return false unless proposal.is_a?(String) && proposal.end_with?(".adoc")
+    return false if proposal.start_with?("/", "./", "../")
+
+    Pathname.new(proposal).cleanpath.to_s == proposal
+  end
+
+  def current_file_path
+    @current_file_path
+  end
+
+  def current_file_path= file
+    @current_file_path = file.sub(%r{\A\./}, "")
+  end
+
   def load_all_categories
     yaml = YAML.load_file("_data/wildfly-categories.yaml")
     return yaml["categories"]
@@ -113,6 +174,7 @@ ARGV.each do |file|
   begin
     content = File.read(file)
     front_matter = front_matter_extractor.process content.split("\n")
+    metadata_checker.current_file_path = file
     errors = metadata_checker.check pr_number, front_matter
     if errors.length() > 0
       check_succeeds = false

@@ -21,19 +21,23 @@ feature-team:
   -
  outside-perspective:
   -
-# If this issue tracks the promotion of a previously completed feature to a higher stability level, provide the URL of
-# the original https://github.com/wildfly/wildfly-proposals/issues issue that was used to track the implementation of
-# that feature.
-promotes:
-# During initial development of a feature, this field should be left blank. If after the feature is completed and its
-# stability level is promoted via a later issue, the developer promoting the issue should return to this document ("this"
-# being the original analysis document for the feature). The field should be updated to point to the
-# https://github.com/wildfly/wildfly-proposals/issues issue that promotes it.
-# For example,
-#              | Implementation Issue (A) | Promotion Issue (B)
-# promotes:    |                          | https://github.com/.../A
-# promoted-by: | https://github.com/.../B |
-promoted-by:
+# List the repository-relative paths of proposals whose features this proposal promotes. A proposal can promote all or
+# part of one or more earlier proposals. Add this proposal's relative path to the corresponding `promoted-by` field in
+# each earlier proposal.
+#
+# Use the source proposal path, including the `.adoc` extension, for example:
+# - elytron/WFLY-12345-my-feature.adoc
+promotes: []
+# List the repository-relative paths of proposals that promote all or part of this proposal's features. This field is
+# the reciprocal of `promotes`; update both fields whenever a promotion relationship is added or removed.
+promoted-by: []
+# List the repository-relative paths of proposals that this proposal follows up on. Use this for work that extends or
+# continues a proposal without being a stability promotion. Add this proposal's path to the corresponding
+# `followed-up-by` field in each earlier proposal.
+follows-up-on: []
+# List the repository-relative paths of proposals that follow up on this one. This field is the reciprocal of
+# `follows-up-on`; update both fields whenever a follow-up relationship is added or removed.
+followed-up-by: []
 ---
 
 = <INSERT TITLE HERE>
