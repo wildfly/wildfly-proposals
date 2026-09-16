@@ -3,6 +3,8 @@ categories:
  - elytron
  - security
 stability-level: community
+promoted-by:
+  - elytron/WFLY-20788-promote-dynamic-ssl-to-default-stability.adoc
 ---
 = SSLContext to support delegation to alternate instances based on peer information
 :author:            Diana Krepinska

@@ -2,6 +2,10 @@
 categories:
  - undertow
 stability-level: preview
+promotes: []
+promoted-by:
+  - undertow/WFLY-19808_ajp-listener_allowed_attr_pattern.adoc
+  - undertow/WFLY-20476_ajp-listener_allowed_attr_pattern_community.adoc
 ---
 = Modify ajp-listener to allow specifying pattern for ajp request attributes
 :author:            Bartosz Baranowski

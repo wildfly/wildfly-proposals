@@ -2,6 +2,10 @@
 categories:
  - undertow
 stability-level: preview
+promotes: []
+promoted-by:
+  - undertow/WFLY-20477_reuse-x-forwarded_rewrite-host_community.adoc
+  - undertow/WFLY-21525_Make_resuseXForwarded_and_rewriteHost_configurable.adoc
 ---
 = Make ReuseXForwarded and RewriteHost configurable
 :author:            Bartosz Baranowski

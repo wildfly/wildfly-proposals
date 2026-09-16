@@ -3,7 +3,8 @@ categories:
  - elytron
  - security
 stability-level: preview
-promoted-by: https://github.com/wildfly/wildfly-proposals/issues/720
+promoted-by:
+  - elytron/WFLY-20037-19496_promote_oidc_authentication_request_scope_to_community.adoc
 ---
 = Add the ability to specify that the OIDC Authentication Request should include request and request_uri parameters
 :author:            Prarthona Paul
