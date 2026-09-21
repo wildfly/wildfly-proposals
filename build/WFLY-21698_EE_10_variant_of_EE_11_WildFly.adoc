@@ -1,0 +1,198 @@
+---
+categories:
+ - ee
+ - wf-galleon
+ - cloud
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/818
+# Provide the GitHub ids of the feature team members, organized by role.
+# Provide a single id for the 'assignee' role. Use a YAML list for the 'sme' and
+# 'outside-perspective' roles, even if there is only one person in a role.
+feature-team:
+ developer: bstansberry
+ sme:
+  -
+ outside-perspective:
+  -
+---
+
+= Provide an EE10 variant of standard WildFly once the main variant moves to EE11
+:author:            Brian Stansberry
+:email:             bstansberry@gmail.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+
+== Overview
+
+When standard WildFly moves to a new version of Jakarta EE, this can be a fairly significant transition for users. It's possible to prepare for such a transition by consuming WildFly Preview as support for the new EE version is being developed, but WildFly Preview has significant differences from standard WildFly.
+
+Since WildFly doesn't provide updates to existing feature releases once the next feature release is out, users who need time to complete an EE transition are left with no way to get important bug fixes or consume useful new features. So, for a limited time (probably two quarters), when standard WildFly moves to EE 11 we will provide a 'new' EE 10 variant that still provides EE 10.
+
+=== User Stories
+
+I need time to transition to new versions of Jakarta EE when WildFly moves to them, but I still need to get the bug fixes and some new features that only come in the latest WildFly releases. I'd like to continue to have access to updated versions of WildFly that provide the old EE version.
+
+== Issue Metadata
+
+=== Related Issues
+
+https://redhat.atlassian.net/browse/WFLY-21698
+
+=== Affected Projects or Components
+
+* Galleon
+* Cloud Feature Pack
+* Datasources Feature Pack
+* AI Feature Pack
+* GraphQL feature pack
+* Deployment Transformer Feature Pack
+* MyFaces Feature Pack
+* WildFly container images
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+* A new `wildfly-ee-10` feature pack will be created.
+** It will have a Galleon Feature Pack Locator of `wildfly-ee-10@maven(org.jboss.universe:community-universe)`
+** It will have a Maven coordinate GA of `org.wildfly:wildfly-ee-10-feature-pack`
+*** Note the use of `feature-pack`, not the `galleon-pack` that unfortunately is used for historical reasons by the `wildfly-ee` feature pack. The expectation is most users are not directly dealing with the artifactId of `wildfly-ee`, so there is not much to gain in terms of migration by adding another use of `galleon-pack`.
+** It will provide EE 10 APIs and implementations.
+** It will provide other functionality equivalent to the `wildfly-ee` feature pack.
+** It will provide OOTB configurations equivalent to the `wildfly-ee` feature pack, except:
+*** The `jakarta-data` extension and subsystem will not be present (although they can be added.)
+*** The `security-manager` extension and subsystem will be present.
+* The `wildfly-ee-10` feature pack will be part of the `jakarta-ee-deployment` and `jakarta-ee-10+` families, allowing its use with other feature packs that support those families.
+** See https://docs.wildfly.org/wildfly-proposals/provisioning/WFLY-21122-WildFly-Feature_pack-Family.html[WildFly Feature Packs, family and criteria] for more on feature pack families.
+* The `wildfly` feature pack will support the `jakarta-ee-deployment` and `jakarta-ee-10+` families, thus allowing `wildfly-ee-10` to be used as the base feature pack, instead of the default `wildfly-ee`.
+* The WildFly build will provide thin and fat server builds provisioned using the `wildfly-ee-10` feature pack, along with thin and fat server builds provisioned using the `wildfly` feature pack in combination with the `wildfly-ee-10` feature pack.
+** The fat server build provisioned using the `wildfly` feature pack in combination with the `wildfly-ee-10` feature pack will be made available from the GitHub release page and from the https://wildfly.org/downloads page.
+** Note: a 'thin' server build is one where artifact jars are not included in the various module directories in the `$WILDFLY_HOME/modules` dir; instead the `module.xml` files provide a Maven GAV reference and at runtime JBoss Modules finds the artifacts in a Maven repository. A 'fat' server build has the artifacts provisioned in the `modules` directory tree.
+* The cloud feature pack will support the `jakarta-ee-10+` family, thus allowing `wildfly-ee-10` to be used as the base feature pack, instead of the default `wildfly-ee`.
+* The datasources feature pack will support the `jakarta-ee-10+` family, thus allowing `wildfly-ee-10` to be used as the base feature pack, instead of the default `wildfly-ee`.
+* The GraphQL feature pack will support the `jakarta-ee-10+` family, thus allowing `wildfly-ee-10` to be used as the base feature pack, instead of the default `wildfly-ee`.
+* The AI feature pack will support the `jakarta-ee-10+` family, thus allowing `wildfly-ee-10` to be used as the base feature pack, instead of the default `wildfly-ee`.
+* The deployment transformer feature pack will support the `jakarta-ee-deployment` family, thus allowing `wildfly-ee-10` to be used as the base feature pack, instead of the default `wildfly-ee`.
+* The MyFaces feature pack 2.x series will support the `jakarta-ee-10+` family, thus allowing `wildfly-ee-10` to be used as the base feature pack, instead of the default `wildfly-ee` provided by early WildFly releases the provided EE 10.
+** The expectation is a new 3.x series of this feature pack will provide EE 11. Unlike the other feature packs discussed in this analysis, the same release of this feature pack cannot be used with both an EE 10 and and EE 11 base WildFly, because the feature pack depends on EE APIs that differ between EE 10 and 11.
+* User BOMs specifying EE 10 dependencies will be provided that are equivalent to the usual boms (that will now provide EE 11 dependencies).
+* A WildFly Channels channel and manifest will be provided for the `wildfly-ee-10` feature pack with the Maven GA `org.wildfly.channels:wildfly-ee-10`.
+* A Galleon channel will be provided for the `wildfly-ee-10` feature pack.
+* The WildFly Container project will produce images based on the tgz archive of the WildFly fat build from the wildfly-ee-10 feature pack. These images will be:
+** `quay.io/wildfly/wildfly:${wildfly-version}-ee-10-jdk{java-version}` (with `java-version` being 17 and 21)
+** `quay.io/wildfly/wildfly:${wildfly-version}-ee-10-latest` (pointing to the jdk21 tag)
+* A Domain Controller provisioned using the `wildfly-ee-10` feature pack will be able to manage secondary Host Controllers that are running previous versions of WildFly. Such a domain is referred to as a 'mixed domain'. Mixed domain support is limited to secondary installations that meet the following requirements:
+** They are running versions that are supported in a mixed domain by the EE 11 variant of the Domain Controller's version. (In other words, the EE 10 variant doesn't support additional versions.)
+** They are running a version that predates the introduction of the `wildfly-ee-10` feature pack, or they were provisioned using the `wildfly-ee-10` feature pack.
+** See also the Non-Requirements related to domain mode.
+* TODO -- what about `org.wildfly:wildfly-client-all` and other client jars?
+** Not used in a WF installation, but still deployed to JBoss Nexus / Maven Central
+** How does the 'recipe' for it end up driving what goes in the provisioning-time-generated jar?
+** Probably a non-issue as none of the EE specs that end up in these client jars have changed between EE 10 and 11. So this is likely more an issue for future variations of this concept.
+
+=== Non-Requirements
+
+* Quickstarts using the EE 10 variant. The purpose of the variant is to support existing applications.
+* Maven archetypes using the EE 10 variant. The purpose of the variant is to support existing applications.
+* Any long term commitment to continuing to provide the `wildfly-ee-10` feature pack in later WildFly versions.
+** The purpose of the feature pack is to ease a bit the transition to EE 11, not to remove the need to make that transition.
+** The hope is to provide it for two WildFly releases, but if something prevents us providing it in the second release (e.g. critical CVEs in EE 10 components with no fixes available), we will not.
+* Support for running deployments compiled against EE 11 APIs on a server provisioned using the `wildfly-ee-10` feature pack.
+* An alternative `wildfly-core` feature pack variant that provides alternative EE API dependencies. The `wildfly-core` feature pack is a piece of test infrastructure used to drive the WildFly Core testsuite. The WildFly Core testsuite does not exercise any EE functionality that differs between EE 10 and EE 11.
+* Using a Domain Controller provisioned using the `wildfly-ee-10` feature pack to manage a secondary Host Controller provisioned using the `wildfly-ee` feature pack is not supported.
+* Using a Domain Controller provisioned using the `wildfly-ee` feature pack to manage a secondary Host Controller provisioned using the `wildfly-ee-10` feature pack is not supported.
+
+
+
+=== Future Work
+
+* Impact on WildFly Glow and WildFly catalog that can be done once the new `wildfly-ee-10` feature-pack has been released:
+** WildFly Glow. We need to evolve tooling -- WildFly Maven Plugin and WildFly Glow CLI -- with the notion of a 'variant'. A new option to convey this information will be added.
+** WildFly Catalog. We today have a catalog per WildFly version for the 2 existing variants: WildFly and WildFly Preview. We will add a catalog for the new "EE-10" variant.
+** Some of this _might_ be done after the feature pack is release in WildFly beta but before the Final release; otherwise it will be done later.
+* Support for domains where a Domain Controller provisioned using the `wildfly-ee` feature pack can manage secondary Host Controllers provisioned using the `wildfly-ee-10` feature pack.
+** Support for this primarily a matter of adding testing. Conceptually it should just work.
+** Conceptually the opposite could work (EE 10 managing EE 11), but it's unlikely we would choose to test and support this.
+
+== Backwards Compatibility
+
+
+=== Default Configuration
+
+No incompatibility.
+
+=== Importing Existing Configuration
+
+No incompatibility.
+
+=== Deployments
+
+No incompatibility.
+
+=== Interoperability
+
+No incompatibility.
+
+=== Provisioning
+
+Users wishing to use this variant will need to update their provisioning configuration to specify use of the `wildfly-ee-10` feature pack.
+
+== Implementation Plan
+
+__<This section is optional. I've left it blank for now as I don't know
+   if using this analysis to describe this will be productive.>__
+
+* Within the main WildFly code base, the term 'legacy' will be in non-end-user facing strings (e.g. directory names, comment text, artifactIds for things that are internal details). The intent there is to make as much code as possible generic in nature so that it can be repurposed easily in the future to provide, say, a `wildfly-ee-11` when standard WildFly moves on to EE 12. The term `wildfly-ee-10` or similar will be reserved for things the end user would type.
+** The artifactId of the feature pack.
+** The artifactIds of user boms.
+** The artifactId of the channels.
+** The artifactIds of the thin and fat server builds.
+*** This last one is somewhat debatable. It impacts the file name of the downloadable tars/zips.
+
+== Admin Clients
+
+Admins clients will just work. A client connecting to a server or Host Controller provisioned using this feature will be manageable in the same way the EE 11 variant of the same release is. There may be differences in particular items in the server configuration, but every WildFly installation is expected to have differences versus what's in our OOTB configs.
+
+== Security Considerations
+
+None; this will be a continuation of the existing security functionality.
+
+[[test_plan]]
+== Test Plan
+
+In the main WildFly server code base, a new test execution profile or profiles that provide coverage analogous to the `base-server-tests` and `expansion-tests` profiles will be added that use the `wildfly-ee-10` feature pack instead of `wildfly-ee`. (Perhaps the profiles will simply tailor the execution of `base-server-tests` and `expansion-tests`.)
+
+A CI job will be added that execute these test profiles as part of PR testing.
+
+A full set of nightly CI jobs will be added that execute these test profiles.
+
+The EE 10 TCK will be run against a server using the `wildfly-ee-10` feature pack.
+
+Feature packs provided by other repos that can alternatively use `wildfly-ee-10` as a dependency will add test profiles that exercise that dependency.
+
+== Community Documentation
+
+The https://docs.wildfly.org/39/WildFly_and_WildFly_Preview.html[WildFly and WildFly Preview, window=_blank] document will be retitled and updated to cover this new variant.
+
+The https://docs.wildfly.org/39/WildFly_Maven_Plugin_Guide.html[WildFly Maven Plugin Guide, window=_blank] will be updated to illustrate using the `wildfly-ee-10` feature pack.
+
+A new guide will be created illustrating the use of the `wildfly-ee-10` feature pack.
+
+Use of the feature pack will be a significant section of the release announcement for the first WildFly release where it appears.
+
+All of the above will note the limited number of expected new versions of the new feature pack, i.e. that it will not be produced for WildFly 42 and later.
+
+== Release Note Content
+
+This will be a major part of the release announcement, not just the typical few sentences that would be outlined in this part of the analysis.
