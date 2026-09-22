@@ -1,0 +1,82 @@
+= WFLY-12220 Implement JGroups discovery protocol based on WildFly Discovery SPI
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Using `TCPPING` the configuration of other nodes in the cluster is currently static.
+It consists of a list of references to outbound-socket-bindings.
+Such configuration is thus completely static.
+This can be generalized with WildFly Discovery SPI.
+The general facility allows for any other form of discovery, e.g. general cloud-specific discovery.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-12220[WFLY-12220 Implement JGroups discovery protocol based on WildFly Discovery SPI]
+* https://issues.jboss.org/browse/EAP7-1327[EAP7-1327 JGroups subsystem integration with WildFly Discovery SPI]
+
+=== Related Issues
+
+* https://issues.jboss.org/browse/WFLY-12222[WFLY-12222 Clustering subsystems integration with WildFly Discovery SPI (tracker Jira)]
+* https://issues.jboss.org/browse/EAP7-1249[EAP7-1249 Clustering subsystems integration with WildFly Discovery SPI (tracker Jira)]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:tborgato@redhat.com[Tommasso Borgato]
+
+=== Testing By
+
+[ ] Engineering
+
+[x] QE
+
+=== Affected Projects or Components
+
+* JGroups; but no changes should be required in projects.
+
+=== Other Interested Projects
+
+* N/A
+
+== Requirements
+
+=== Hard Requirements
+
+* A new JGroups protocol can be configured in JGroups subsystem which references discovery provider to be queried
+* Each server group only ever references a single discovery provider - if multiple providers are to be used, the aggregation facility of the discovery subsystem is used.
+* The initial implementation, this can only be used with static list, which is currently implemented in the WildFly Discovery project
+* Capability is in place to enforce model referential integrity.
+
+=== Nice-to-Have Requirements
+
+* N/A
+
+=== Non-Requirements
+
+* N/A
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can
+not be delivered all in one go to suggest the strategy. If your feature falls
+into this category, please mention the Release Coordinators on the pull
+request so they are aware.
+////
+== Test Plan
+
+* Limited coverage might be added to WildFly's integration test suite.
+* QE will provide a test plan.
+
+== Community Documentation
+
+This will be documented in WildFly's JGroups section in High-Availability guide since this is WildFly specific.
