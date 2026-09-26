@@ -1,0 +1,145 @@
+---
+categories:
+ - helm-charts
+stability-level: default
+issue: https://github.com/wildfly/wildfly-charts/issues/37
+feature-team:
+ developer: yersan
+ sme: jmesnil
+  -
+ outside-perspective:
+  - laDok8
+---
+= [Default] Add support for configuring Kubernetes startup probe via Helm Charts
+:author:            Yeray Borges
+:email:             yborgess@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The probes (Liveness and Readiness) added by the Helm Chart use the following kubernetes default values:
+
+[literal]
+failureThreshold: 3
+periodSeconds: 10
+successThreshold: 1
+timeoutSeconds: 1
+initialDelaySeconds: 0
+
+For the liveness probes, for example, this configuration means the server could take until `failureThreshold*periodSeconds=30` seconds to get started. If such a condition doesn't occur the cluster will kill the pod to start over it again (restart policy is always).
+
+Sometimes the pod could need more than 30 seconds to start, for example:
+
+The user has registered other liveness checks in their application code and to satisfy those conditions is needed more time.
+The management operations executed at runtime when the pod is started could also take some time to be applied, which delays the availability of the endpoint used by the default liveness probe.
+The node where the pod is running is slow.
+In such a case, users could be tempted to increase the `initialDelaySeconds` or the `failureThreshold` configuration, however increasing the `initialDelaySeconds` will delay a fixed value, which could compromise the expected fast response. Increasing the `failureThreshold` could also break the established conditions you have decided to check your application at runtime.
+
+The alternative to those issues is to have the ability to configure a Startup Probe. The Startup Probe can be used to delay the initial checks done by the liveness and readiness probes, allowing some configuration without compromising them.
+
+The goal of this RFE is to define the default initial configuration of a Startup Probe so users can tweak it when required.
+For consistency sake same configuration shall also be introduced for liveness and readiness probes
+
+=== User Stories
+
+As a user, I want to delay the initial liveness and readiness check using an Startup probe.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1769
+
+=== Affected Projects or Components
+
+* WildFly Helm Charts
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+* Startup probe configuration will be available in the Helm Chart.
+* The Helm Chart will add by default a Startup Probe to give three minutes as additional time before starting the Readiness and Liveness probes.
+* Users should be able to tweak all parameters of probes, which includes all timeouts, delays or type of probe.
+
+=== Changed requirements
+
+* N/A
+
+=== Non-Requirements
+
+* N/A
+
+=== Future Work
+
+* N/A
+
+== Backwards Compatibility
+
+* N/A
+
+=== Default Configuration
+
+* The proposal for the default configurations is following:
++
+[source,yaml]  
+livenessProbe:
+    httpGet:
+      path: /health/live
+      port: admin
+  readinessProbe:
+    httpGet:
+      path: /health/ready
+      port: admin
+  startupProbe:
+    httpGet:
+      path: /health/live
+      port: admin
+    initialDelaySeconds: 5
+    failureThreshold: 36
+    periodSeconds: 5
+
+=== Importing Existing Configuration
+
+* N/A
+
+=== Deployments
+
+* N/A
+
+=== Interoperability
+
+* N/A
+
+== Implementation Plan
+
+* N/A
+
+== Admin Clients
+
+* N/A
+
+== Security Considerations
+
+* N/A
+
+[[test_plan]]
+== Test Plan
+
+* Test plan will be delivered by a professional Quality Engineer with subject matter expertise.
+
+== Community Documentation
+
+The Helm Chart docs will include a description of the uses of the Startup Probe.
+
+== Release Note Content
+
+Increased default timeouts for startup probe and added the ability to configure a all probes (startup, readiness and liveness)  using WildFly Helm Charts.
