@@ -9,8 +9,9 @@ feature-team:
   - fl4via
  outside-perspective:
   - jamezp
-promotes: https://issues.redhat.com/browse/WFLY-15452
-promoted-by:
+promotes:
+  - undertow/WFLY-15452_ajp-listener_allowed_attr_pattern.adoc
+promoted-by: []
 ---
 = Promote AJP listener `allowed-request-attributes-pattern` attribute to community stability
 :author:            Brian Stansberry

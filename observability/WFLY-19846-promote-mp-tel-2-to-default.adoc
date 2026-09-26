@@ -11,8 +11,8 @@ feature-team:
  outside-perspective:
   - Marek Kopecky
   - Rahuul Chettri
-promotes: https://issues.redhat.com/browse/WFLY-19590
-promoted-by: https://github.com/wildfly/wildfly-proposals/issues/619
+promotes: []
+promoted-by: []
 ---
 = Promote MicroProfile Telemetry 2.0 to WildFly Standard
 :author:            Jason Lee

@@ -10,8 +10,9 @@ feature-team:
   - spriadka
  outside-perspective:
   - rchettri
-promotes: https://github.com/wildfly/wildfly-proposals/issues/767
-promoted-by:
+promotes:
+  - clustering/infinispan/WFLY-20918_Add_max-idle_based_eviction_configuration_for_distributable_HttpSessions_SFSBs_Timers.adoc
+promoted-by: []
 ---
 
 = Promote idle time-based eviction for distributable HttpSessions, SFSBs, and Timers to default stability

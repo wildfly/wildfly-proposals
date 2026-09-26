@@ -30,6 +30,44 @@ It provides a mechanism to communicate features and requirements across the Wild
 If it fits in an existing directory, put it there.
 Otherwise, you can create a new appropriate subdirectory.
 
-### My FAQ isn't answered here
+=== How do I link related proposals?
+
+Use the `promotes`, `promoted-by`, `follows-up-on`, and `followed-up-by` YAML front-matter fields to link proposal
+documents. Each field is a YAML list of repository-relative paths to proposal source files, including the `.adoc`
+extension. The generated site renders these as links to the corresponding proposal pages.
+
+Record each relationship at both ends so readers can navigate in either direction. `promotes` and `promoted-by` describe
+stability promotion; `follows-up-on` and `followed-up-by` describe subsequent work that is not itself a promotion. Each
+relationship supports many-to-many links.
+
+For example, if `elytron/WFLY-23456-promote-feature.adoc` promotes work introduced by two proposals:
+
+[source,yaml]
+----
+# elytron/WFLY-23456-promote-feature.adoc
+promotes:
+  - elytron/WFLY-12345-feature-a.adoc
+  - elytron/WFLY-12346-feature-b.adoc
+promoted-by: []
+follows-up-on: []
+followed-up-by: []
+----
+
+Each earlier proposal records the reciprocal link:
+
+[source,yaml]
+----
+# elytron/WFLY-12345-feature-a.adoc
+promotes: []
+promoted-by:
+  - elytron/WFLY-23456-promote-feature.adoc
+follows-up-on: []
+followed-up-by: []
+----
+
+The same pattern applies to follow-up work: add the later proposal to `followed-up-by` and add the earlier proposal to
+the later proposal's `follows-up-on` list. Do not use GitHub issue, pull-request, or absolute site URLs in these fields.
+
+=== My FAQ isn't answered here
 
 Please open an issue and ask or even better open a PR with a question and proposed answer.

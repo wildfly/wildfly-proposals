@@ -34,11 +34,15 @@ jobs:
 
           # List the changed files through the API, so that no fork code and no
           # fork git history has to be checked out to compute the diff.
-          changed=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" \
-                      --jq '.[] | select(.status != "removed") | .filename' \
-                    | { grep -E '\.adoc$' || true; } \
-                    | { grep -vE '^_[^/]+/' || true; } \
-                    | { grep -vE '^(index|design-doc-template)\.adoc$' || true; })
+          # Each line is "<status><TAB><filename>", so that the newly added
+          # proposals can be told apart from the modified ones.
+          files=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" \
+                    --jq '.[] | select(.status != "removed") | "\(.status)\t\(.filename)"' \
+                  | { grep -E '\.adoc$' || true; } \
+                  | { grep -vE $'\t_[^/]+/' || true; } \
+                  | { grep -vE $'\t(README|index|design-doc-template)\.adoc$' || true; })
+          changed=$(echo "$files" | cut -f2- | { grep . || true; })
+          added=$(echo "$files" | awk -F'\t' '$1 == "added" { print $2 }')
 
           if [ -z "$changed" ]; then
             echo "any_changed=false" >> "$GITHUB_OUTPUT"
@@ -60,12 +64,16 @@ jobs:
             echo "all_changed_files<<EOF"
             echo "$changed" | sed 's|^|pr-proposals/|'
             echo "EOF"
+            echo "new_files<<EOF"
+            echo "$added" | sed 's|^|pr-proposals/|'
+            echo "EOF"
           } >> "$GITHUB_OUTPUT"
       - name: Check files that have changed
         if: steps.changed-proposals.outputs.any_changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PROPOSAL_FILES: ${{ steps.changed-proposals.outputs.all_changed_files }}
+          NEW_PROPOSAL_FILES: ${{ steps.changed-proposals.outputs.new_files }}
           PR_NUMBER: ${{ github.event.number }}
         run: |
           echo "Check all proposals files that have changed: $PROPOSAL_FILES"
