@@ -40,7 +40,7 @@ jobs:
                     --jq '.[] | select(.status != "removed") | "\(.status)\t\(.filename)"' \
                   | { grep -E '\.adoc$' || true; } \
                   | { grep -vE $'\t_[^/]+/' || true; } \
-                  | { grep -vE $'\t(index|design-doc-template)\.adoc$' || true; })
+                  | { grep -vE $'\t(README|index|design-doc-template)\.adoc$' || true; })
           changed=$(echo "$files" | cut -f2- | { grep . || true; })
           added=$(echo "$files" | awk -F'\t' '$1 == "added" { print $2 }')
 

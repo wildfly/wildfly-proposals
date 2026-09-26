@@ -30,7 +30,7 @@ It provides a mechanism to communicate features and requirements across the Wild
 If it fits in an existing directory, put it there.
 Otherwise, you can create a new appropriate subdirectory.
 
-### How do I link related proposals?
+=== How do I link related proposals?
 
 Use the `promotes`, `promoted-by`, `follows-up-on`, and `followed-up-by` YAML front-matter fields to link proposal
 documents. Each field is a YAML list of repository-relative paths to proposal source files, including the `.adoc`
@@ -68,6 +68,6 @@ followed-up-by: []
 The same pattern applies to follow-up work: add the later proposal to `followed-up-by` and add the earlier proposal to
 the later proposal's `follows-up-on` list. Do not use GitHub issue, pull-request, or absolute site URLs in these fields.
 
-### My FAQ isn't answered here
+=== My FAQ isn't answered here
 
 Please open an issue and ask or even better open a PR with a question and proposed answer.

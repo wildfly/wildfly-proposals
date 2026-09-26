@@ -3,6 +3,7 @@ categories:
  - elytron
  - security
 stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/328
 promoted-by:
   - elytron/WFLY-20788-promote-dynamic-ssl-to-default-stability.adoc
 ---

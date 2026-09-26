@@ -2,6 +2,7 @@
 categories:
  - undertow
 stability-level: preview
+issue: https://github.com/wildfly/wildfly-proposals/issues/444
 promotes: []
 promoted-by:
   - undertow/WFLY-20477_reuse-x-forwarded_rewrite-host_community.adoc

@@ -2,6 +2,7 @@
 categories:
  - undertow
 stability-level: preview
+issue: https://github.com/wildfly/wildfly-proposals/issues/435
 promotes: []
 promoted-by:
   - undertow/WFLY-19808_ajp-listener_allowed_attr_pattern.adoc
