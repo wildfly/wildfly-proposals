@@ -206,6 +206,8 @@ The legacy format `secret-path.key` (using dot as delimiter) can be supported vi
 * Otherwise, if `support-legacy-alias-format=true`, it uses the legacy format (split on the last dot)
 * If `support-legacy-alias-format=false`, legacy format is rejected with an error
 
+NOTE: Legacy aliases that contain `@` (e.g. `user@host`) will be incorrectly classified as new-format aliases because `@` is a new-format delimiter. This is a known limitation. Since the legacy format is only supported at Community stability and is intended for removal in a future release, users with such aliases should migrate to the new format.
+
 **When legacy format is enabled and detected:**
 
 * A deprecation warning is logged indicating that users should migrate to the new format
