@@ -1,0 +1,89 @@
+= Application Development Guide
+:author:            Eduardo Martins
+:email:             emartins@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This document specifies the development of the Application Development Guide feature request.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/EAP7-1845[EAP7-1845]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAPDOC-1451[EAPDOC-1451]
+* https://issues.redhat.com/browse/WFLY-15746[WFLY-15746]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:kstekovi@redhat.com
+
+=== Affected Projects or Components
+
+* JBoss EAP
+
+=== Other Interested Projects
+
+* WildFly
+
+== Requirements
+
+=== Hard Requirements
+
+* The guide should have a chapter for first time app developers, which should include the following new content:
+** How to develop a first basic application (helloworld quickstart) from scratch using Maven, a complete user story walkthrough, which should include:
+*** How to create the application Maven Project using standard Maven Archetypes
+*** How add Red Hat specifics to the application Maven Project
+**** Maven repositories
+**** Maven Plugins
+**** BOMs and dependencies
+*** How to build, deploy, run and test on Openshift (basic usage)
+*** How to package, deploy, run and test the application (server distribution zip)
+
+=== Nice-to-Have Requirements
+
+* The guide should have a chapter for advanced app developers, and the following content from the existent Developer Guide may be adapted and included in the Advanced app developers section:
+** Maven and BOMs
+** Modules and Classloading
+** Logging
+** Specific component/technology content (e.g. CDI)
+
+* The specific content/technology content from the existent Quickstart Guides should be adapted and included in the Advanced app developers section, with respect to the Specific component/technology content.
+
+* The chapter for first time app developers should also include the following new content:
+** How to develop a first basic application for each specific supported component/technology (e.g. CDI)
+*** Introduction to the component/Technology
+*** Extends the basic application development content (e.g. add needed Maven dependencies related with component/technology)
+*** Any other basic level content which may be useful with respect to the technology
+
+* The chapter for first time app developers may include the following new content:
+** How to package, deploy and run the application (bootable-jar)
+** How to add logging to the application (basic usage)
+** How to use JBoss Tools (basic usage: add app project, run & debug)
+
+=== Non-Requirements
+
+* NONE
+
+== Implementation Plan
+
+* The new and adapted content will be provided in asciidoc format by EAP developers and documentation writers.
+
+== Test Plan
+
+* NONE
+
+== Community Documentation
+
+* The WildFly community version of this proposal's guide should be delivered in separate, through WFLY-15746.
