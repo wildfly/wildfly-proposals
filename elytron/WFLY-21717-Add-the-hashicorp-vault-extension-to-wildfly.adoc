@@ -12,8 +12,9 @@ feature-team:
   - darranl
  outside-perspective:
   - honza-kasik
-promotes: https://github.com/wildfly/wildfly-proposals/issues/809
-promoted-by: skyllarr
+promotes:
+  - elytron/ELY-1897-HashiCorp-Vault-Integration.adoc
+promoted-by: []
 ---
 
 = Promote WildFly Vault feature-pack and hashicorp-vault layer/subsystem to default stability

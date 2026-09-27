@@ -16,7 +16,8 @@ feature-team:
 # If this issue tracks the promotion of a previously completed feature to a higher stability level, provide the URL of
 # the original https://github.com/wildfly/wildfly-proposals/issues issue that was used to track the implementation of
 # that feature.
-promotes: https://github.com/wildfly/wildfly-proposals/pull/435
+promotes:
+ - undertow/WFLY-15452_ajp-listener_allowed_attr_pattern.adoc
 # During initial development of a feature, this field should be left blank. If after the feature is completed and its
 # stability level is promoted via a later issue, the developer promoting the issue should return to this document ("this"
 # being the original analysis document for the feature). The field should be updated to point to the
@@ -25,7 +26,7 @@ promotes: https://github.com/wildfly/wildfly-proposals/pull/435
 #              | Implementation Issue (A) | Promotion Issue (B)
 # promotes:    |                          | https://github.com/.../A
 # promoted-by: | https://github.com/.../B |
-promoted-by: https://github.com/wildfly/wildfly-proposals/issues/791
+promoted-by: []
 ---
 
 = [Default]modify ajp-listener to allow specifying pattern for ajp request attributes

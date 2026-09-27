@@ -11,9 +11,9 @@ feature-team:
  outside-perspective:
   - jmesnil
 promotes:
- - https://github.com/wildfly/wildfly-proposals/pull/527
- - https://github.com/wildfly/wildfly-proposals/pull/532
-promoted-by:
+  - elytron/WFLY-16532-additional-scope-for-auth-request.adoc
+  - elytron/WFLY-17143-request-uri-parameters.adoc
+promoted-by: []
 ---
 
 = Promote OIDC Authentication with Request and Scope parameters to community stability
