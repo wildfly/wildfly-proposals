@@ -1,0 +1,316 @@
+= OIDC support for WildFly S2I V2 image
+:author:           Jean-Francois Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+For WildFly s2i V2 we are removing the keycloack OIDC client adapter present in the s2i image.
+The only supported integration with keycloak would be based on the `elytron-oidc-client` subsystem and 
+`elytron-oidc-client` Galleon layer.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-15421[WFLY-15421]
+
+=== Related Issues
+
+* OIDC Support for WildFly: https://issues.redhat.com/browse/WFCORE-5178[WFCORE-5178]
+
+* WildFly s2i V2 images: https://issues.redhat.com/browse/WFLY-14936[WFLY-14936]
+
+* WildFly Maven plugin evolutions for the cloud: https://issues.redhat.com/browse/WFLY-14934[WFLY-14934]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly-s2i[WildFly s2i]
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [ ] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [x] OpenShift s2i
+
+* [ ] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+==== Galleon layer for oidc support
+
+This proposal relies on the WildFly `elytron-oidc-client` Galleon layer. This layer must be present when provisioning a server 
+in order for this feature to be available.
+
+==== Descriptor based configuration
+
+This support works out of the box and doesn’t require any addition to the WildFly s2i image. It applies to any kind of OIDC provider.
+
+Users can define expressions in the json file in order to inject values at runtime.
+For example, `provider-url: ${env.OIDC_URL}` would imply that the env variable `OIDC_URL=http://keycloak/auth/realms/WildFly` is set.
+
+NB: This way of configuring a deployment implies that a “client” has been created in the authorization server. That is expected.
+
+==== User CLI scripts called at packaging time
+
+When using the https://issues.redhat.com/browse/WFLY-14934[WildFly Maven plugin] to package an application, a script can be called to configure the OIDC subsystem for the deployed application.
+
+This support works out of the box and doesn’t require any addition to the WildFly s2i image. It applies to any kind of OIDC provider.
+
+This implies a set of WildFly CLI management operations to be called at packaging time.
+
+For example:
+`/subsystem=elytron-oidc-client/secure-deployment=simple-webapp.war:add(client-id=simple-webapp, public-client=true, provider-url=${OIDC_URL}, ssl-required=EXTERNAL)`
+
+NB: This way of configuring a deployment implies that a “client” has been created in the authorization server. That is expected.
+
+==== Environment variable based configuration
+
+This is the main topic of this proposal.
+
+A CLI script is generated at boot time to handle the OIDC subsystem configuration based on discovered 
+deployments (actually deployed and found in content repository or located in `standalone/deployments` directory).
+In addition there is an automatic creation and registration of the clients in the authorization server.
+
+In order for war deployments to be discovered they must have the `OIDC` auth-method in web.xml. 
+Deployments that contain a `WEB-INF/oidc.json` descriptor file are ignored.
+
+NB: A single provider can be configured for a running server. The discovered deployments are all registered inside the same OIDC provider.
+
+We are offering a new set of env variables `OIDC_*` to be used to configure the subsystem, enable the discovery of deployments and registration of 
+clients into the authorization server.
+
+The existing `SSO_*` env variables used for OIDC are usable for Keycloak OIDC integration. 
+It helps transition smoothly to use the native OIDC support. 
+This proposal defines a mapping between the `SSO_*` and `OIDC_*` env variables.
+The `SSO_*` env variables are deprecated.
+
+The env variable `OIDC_PROVIDER_NAME=<name>` MUST be set when using `OIDC_*` env variables. When using `SSO_*` env variables 
+the provider name `keycloak` is internally used.
+
+A mix of `SSO_*` and `OIDC_*` env variables, although not recommended, would work, 
+new env variables will only be added in the `OIDC_*` namespace. We have a first example `OIDC_PROVIDER_SSL_REQUIRED` 
+that would be new without a mapping in the `SSO_*` namespace.
+
+Example of configuration using new OIDC env variables for Keycloak:
+
+```
+OIDC_PROVIDER_NAME=keycloak
+OIDC_PROVIDER_URL=http://keycloak/auth/realms/Wildfly
+OIDC_USER_NAME=foo
+OIDC_USER_PASSWORD=foo
+OIDC_HOSTNAME_HTTP=my-app-myproject.192.168.42.233.nip.io
+```
+
+Example of configuration using the existing SSO env variables:
+
+```
+SSO_URL=http://keycloak/auth
+SSO_REALM=Wildfly
+SSO_USER=foo
+SSO_PASSWORD=foo
+HOSTNAME_HTTP=my-app-myproject.192.168.42.233.nip.io
+```
+
+Example of configuration using new OIDC env variables for a custom provider:
+
+```
+OIDC_PROVIDER_NAME=other
+OIDC_PROVIDER_URL=http://foo/specific/url/for/provider
+OIDC_HOSTNAME_HTTP=my-app-myproject.192.168.42.233.nip.io
+```
+
+===== Env variables mapping table 
+
+|===
+|Env var |SSO|Details|Required|Defaults
+
+|OIDC_PROVIDER_NAME
+|NONE. When SSO_* env var are used, “keycloak” name is internally set.
+|To identify the provider to use.
+|Y
+|
+
+|OIDC_PROVIDER_URL
+|`$SSO_URL/realms/$SSO_REALM`
+|The url of the provider
+|Y
+|
+
+|OIDC_USER_NAME
+|SSO_USERNAME
+|User name used to get a token, used for dynamic client registration.
+|Y
+|
+
+|OIDC_USER_PASSWORD
+|SSO_PASSWORD
+|User password used to get a token, used for dynamic client registration.
+|Y
+|
+
+|OIDC_SECURE_DEPLOYMENT_SECRET
+|SSO_SECRET
+|Secure deployment secret known in the subsystem secure-deployment and the auth server client.
+|N
+|
+
+|OIDC_SECURE_DEPLOYMENT_PRINCIPAL_ATTRIBUTE
+|SSO_PRINCIPAL_ATTRIBUTE
+|Configure the principal value of the principal name.
+|N
+|Default to sub (token id) for keycloak, typical value is preferred_username 
+
+|OIDC_SECURE_DEPLOYMENT_ENABLE_CORS
+|SSO_ENABLE_CORS
+|Enable CORS
+|N
+|False by default 
+
+|OIDC_SECURE_DEPLOYMENT_BEARER_ONLY
+|SSO_BEARER_ONLY
+|Deployment that accepts Bearer token only, no logging.
+|N
+|False by default
+
+|OIDC_PROVIDER_SSL_REQUIRED
+|NONE, new env variable (see CLOUD-3529 )
+|Is https enabled in the realm. By default external (private and local address no https).
+|N
+|external
+
+|OIDC_PROVIDER_TRUSTSTORE
+|SSO_TRUSTSTORE
+|Name of the realm trustore file. If not set, disable-trust-manager=true
+|N
+|
+
+|OIDC_PROVIDER_TRUSTSTORE_DIR
+|SSO_TRUSTSTORE_DIR
+|Directory to find the realm truststore. If not set, disable-trust-manager=true
+|N
+|
+
+|OIDC_PROVIDER_TRUSTSTORE_PASSWORD
+|SSO_TRUSTSTORE_PASSWORD
+|Realm Truststore password. If not set, disable-trust-manager=true
+|N
+|
+
+|OIDC_PROVIDER_TRUSTSTORE_CERTIFICATE_ALIAS
+|SSO_TRUSTSTORE_CERTIFICATE_ALIAS
+|Realm trustore alias, required to interact with auth server to register client
+|N
+|
+
+|OIDC_DISABLE_SSL_CERTIFICATE_VALIDATION
+|SSO_DISABLE_SSL_CERTIFICATE_VALIDATION
+|Disable certificate validation when interacting with auth server to register client.
+|N
+|
+
+|OIDC_HOSTNAME_HTTP
+|HOSTNAME_HTTP
+|Hostname used for unsecure routes 
+|N
+|Routes are discovered
+
+|OIDC_HOSTNAME_HTTPS
+|HOSTNAME_HTTPS
+|Hostname used for secured routes
+|N
+|Secured routes are discovered
+
+|NONE
+|SSO_PUBLIC_KEY
+|Realm public key. This option is no more used, public key being automatically retrieved by the OIDC subsystem.
+|N
+|If set a warning is displayed to advertise that this option is being ignored.
+
+|===
+
+===== Client ID computation
+
+The client-id attribute is computed during deployment discovery:
+
+* If the web.xml file contains a ``<module-name>``, the client-id value is the value of this module-name.
+* If the war file is named ``ROOT.war``, and no ``<module-name>`` has been set, the client-id is ``root``.
+* Otherwise the name of the deployment file (without .war extension) is used as client-id value.
+* In addition, in case the env variable ``APPLICATION_NAME`` is set, the value of the client-id is prefixed by ``$APPLICATION_NAME-``
+
+===== Dynamic registration of clients
+
+This registration is enabled only for the `keycloak` provider. Other providers would need the client to be already 
+registered inside the authorization server.
+
+The user specified in `OIDC_USER_NAME` must have specific permission assigned to be able create the client in the provider. 
+The role `create-client` must be assigned to the Client `realm-management`.
+
+===== Routes discovery
+
+* Route discovery (if no OIDC_HOSTNAME_HTTP(S) is set) is bound to openshift. 
+* This feature can’t be used on other cloud system.
+* The route discovery  implies that complex JSON structure be parsed.  `jq` (small runtime to parse json returned by openshift service)  is expected to be 
+installed in the WildFly s2i v2 builder and runtime images.
+
+* Kubernetes RBAC. User must be able to list the `route` resources. As an example, `oc` commands to create the `routeview` role and associate it  to the `view` user:
+
+`oc create role <role-name> --verb=list --resource=route`
+
+`oc adm policy add-role-to-user <role-name> <user-name> --role-namespace=<your namespace>`
+
+
+==== Implementation notes
+
+* This support is implemented by a set of new bash scripts.
+* The support sources are located in the https://github.com/wildfly/wildfly-cekit-modules[wildfly-cekit-module] repository.
+* The scripts are packaged inside the `org.wildfly:wildfly-cloud-galleon-pack` Galleon feature-pack.
+* The scripts are made available when provisioning the `org.wildfly:wildfly-cloud-galleon-pack`.
+
+==== Impact on quickstarts 
+
+* NONE
+
+=== Nice-to-Have Requirements
+
+* NONE
+
+=== Non-Requirements
+
+* No support for SAML and OIDC keycloak adapters.
+
+== Test Plan
+
+* Add new Behave tests 
+* Add new Openshift QE tests.
+
+== Community Documentation
+
+* WildFly Openshift community doc is required.
+
+== Release Note Content
+
+Yes. Could be integrated in the release notes  that cover WildFly s2i v2.
