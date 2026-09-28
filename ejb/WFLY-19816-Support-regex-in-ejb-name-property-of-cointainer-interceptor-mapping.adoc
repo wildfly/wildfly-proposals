@@ -1,0 +1,154 @@
+---
+categories:
+ - ejb
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/669
+feature-team:
+ developer: Tomasz Adamski
+ sme:
+  -
+ outside-perspective:
+  -
+---
+= [WFLY-19816] Support regex in ejb-name property of container interceptor mapping
+:author:            Tomasz Adamski
+:email:             tomasz.adamski@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Apart from Jakarta EE interceptors, which are mandated by the spec and run after all server specific interceptors, WildFly allows for configuration of container interceptors, which are run before those server specific interceptors. WildFly support for regular expression in Jakarta EE interceptors is already implemented and supported. Such functionality is not supported for container interceptors though. This seems an oversight as there is no reason why regular expressions should be not supported for container interceptors.
+
+
+=== User Stories
+
+Users would like to be able to configure container interceptors using regular expressions in the same way they can do it for Jakarta EE interceptors.
+
+== Issue Metadata
+
+=== Related Issues
+
+https://issues.redhat.com/browse/WFLY-6979 - this is the implementation for Jakarta EE interceptors
+
+=== Affected Projects or Components
+
+https://github.com/wildfly/wildfly
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* When `allow-ejb-name-regex=true` is set in the ejb3 subsystem, `ejb-name` values in container interceptor bindings (`jboss-ejb3.xml`) MUST be evaluated as Java regular expressions using `java.util.regex.Pattern.matches()`.
+* The existing behavior of `ejb-name=*` (match-all wildcard) MUST be preserved regardless of the regex flag — it is NOT treated as a regex.
+* When `allow-ejb-name-regex=false` (the default), `ejb-name` values in container interceptor bindings MUST be treated as literal bean names, not patterns.
+* If an `ejb-name` value is an invalid Java regular expression and `allow-ejb-name-regex=true`, deployment MUST fail with a clear, descriptive error identifying the offending pattern.
+* Exact-name bindings MUST continue to work when `allow-ejb-name-regex=true`.
+
+=== Nice-to-Have Requirements
+
+* None.
+
+=== Non-Requirements
+
+* Regex support for `ejb-name` in `ejb-jar.xml` (Jakarta EE interceptors) — already implemented in WFLY-6979.
+* No new subsystem attributes are introduced; the existing `allow-ejb-name-regex` attribute is reused for container interceptors.
+
+The following example illustrates how a regex `ejb-name` is specified in `jboss-ejb3.xml` when `allow-ejb-name-regex=true`:
+
+[source]
+----
+    <subsystem xmlns="urn:jboss:domain:ejb3:10.0">
+    (...)
+    <allow-ejb-name-regex value="true"/>
+----
+[source]
+
+[source]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright The WildFly Authors
+  ~ SPDX-License-Identifier: Apache-2.0
+  -->
+<jboss xmlns="http://www.jboss.com/xml/ns/javaee"
+       xmlns:jee="http://java.sun.com/xml/ns/javaee"
+       xmlns:ci ="urn:container-interceptors:1.0">
+
+    <jee:assembly-descriptor>
+        <ci:container-interceptors>
+            <jee:interceptor-binding>
+                <ejb-name>\.[A-C][^r]*rTest</ejb-name>
+                <interceptor-class>org.jboss.as.test.integration.ejb.container.interceptor.regex.RegexInterceptor</interceptor-class>
+            </jee:interceptor-binding>
+        </ci:container-interceptors>
+    </jee:assembly-descriptor>
+</jboss>
+----
+[source]
+
+
+== Backwards Compatibility
+
+I'm not anticipating backward compatibility issues. This is the new functionality and the configurations that were valid before, that is without regular expression, should work just fine after this feature is merged.
+
+=== Default Configuration
+
+* no change
+
+=== Importing Existing Configuration
+
+* no impact
+
+=== Deployments
+
+* no
+
+=== Interoperability
+
+* no
+
+=== Deprecations
+
+* None.
+
+
+== Admin Clients
+
+* no impact on admin clients
+
+
+[[test_plan]]
+== Test Plan
+
+Integration tests are located in the `testsuite/integration/basic` module under the `org.jboss.as.test.integration.ejb.container.interceptor.regex` package.
+
+`EJBNameRegexContainerInterceptorTestCase` covers the following scenarios:
+
+* Exact-name binding (`<ejb-name>TestRemote</ejb-name>`) applies when regex is enabled — verifies backwards compatibility.
+* Regex binding matching the bean name (e.g., `[A-Za-z0-9]*Remote[A-Za-z0-9]*`) applies correctly.
+* Regex binding that does not match the bean name does not apply.
+
+Additional scenarios to be covered (as follow-up or in the same PR):
+
+* Deployment fails with a clear error when `ejb-name` contains an invalid Java regular expression and `allow-ejb-name-regex=true`.
+* When `allow-ejb-name-regex=false` (default), a pattern-like string in `ejb-name` is treated as a literal bean name, not a regex — no spurious matches occur.
+
+== Security Considerations
+
+`ejb-name` patterns are supplied by application deployers in `jboss-ejb3.xml`, not by end users at runtime. The regex engine is only invoked at deployment time against the finite set of EJB names in the deployment. The risk of Regular Expression Denial of Service (ReDoS) is therefore bounded by the deployment phase and is not exploitable by unprivileged users. No runtime user input is passed to the regex engine.
+
+== Community Documentation
+
+Information about usage (ejb3 subsystem's allow-ejb-name-regex property change) and regex availability should be added to the documentation.
