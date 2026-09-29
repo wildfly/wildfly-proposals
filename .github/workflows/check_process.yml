@@ -36,11 +36,13 @@ jobs:
           # fork git history has to be checked out to compute the diff.
           # Each line is "<status><TAB><filename>", so that the newly added
           # proposals can be told apart from the modified ones.
+          # Proposals live in subdirectories, so AsciiDoc files in the repository
+          # root (README, index, template, feature process) are not checked.
           files=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" \
                     --jq '.[] | select(.status != "removed") | "\(.status)\t\(.filename)"' \
                   | { grep -E '\.adoc$' || true; } \
                   | { grep -vE $'\t_[^/]+/' || true; } \
-                  | { grep -vE $'\t(README|index|design-doc-template)\.adoc$' || true; })
+                  | { grep -vE $'\t[^/]+\.adoc$' || true; })
           changed=$(echo "$files" | cut -f2- | { grep . || true; })
           added=$(echo "$files" | awk -F'\t' '$1 == "added" { print $2 }')
 
@@ -65,7 +67,7 @@ jobs:
             echo "$changed" | sed 's|^|pr-proposals/|'
             echo "EOF"
             echo "new_files<<EOF"
-            echo "$added" | sed 's|^|pr-proposals/|'
+            echo "$added" | sed '/./s|^|pr-proposals/|'
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
       - name: Check files that have changed
