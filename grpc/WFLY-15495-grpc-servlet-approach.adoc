@@ -1,0 +1,206 @@
+---
+categories:
+  - grpc
+stability-level: experimental
+issue: https://issues.redhat.com/browse/WFLY-15495
+feature-team:
+ developer: jmesnil
+ sme:
+  -
+ outside-perspective:
+  -
+promotes: []
+promoted-by: []
+follows-up-on: []
+followed-up-by: []
+---
+= gRPC Support in WildFly via Jakarta Servlet API
+:author:            Jeff Mesnil
+:email:             jmesnil@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The `wildfly-grpc-feature-pack` currently runs a standalone Netty server on port `:9555` to serve gRPC traffic.
+This requires managing a separate port and duplicates TLS and security concerns already handled by WildFly's Undertow
+subsystem.
+
+This proposal replaces the Netty server with a Servlet-based implementation using `io.grpc:grpc-servlet-jakarta`
+(upstream Experimental API). gRPC traffic is served over the existing Undertow HTTP/2 listeners on the standard WildFly
+ports (`:8080` / `:8443`), and port `:9555` is retired. The extension remains in
+`wildfly-extras/wildfly-grpc-feature-pack`. Feasibility was confirmed by a proof-of-concept at
+https://github.com/jmesnil/wildfly-grpc-feature-pack/tree/worktree-servlet_implementation.
+
+=== User Stories
+
+1. As a Developer, I want gRPC services reachable on ports `:8080`/`:8443` so I don't need a separate firewall port.
+2. As a System Administrator, I want gRPC TLS handled by the Undertow HTTPS listener so I maintain one set of
+certificates for all HTTP-based traffic.
+3. As an Application Developer, I want to inject CDI beans into gRPC services and interceptors without changing my
+`.proto` files or service logic.
+
+== Issue Metadata
+
+* https://issues.redhat.com/browse/WFLY-15495[WFLY-15495]
+
+=== Related Issues
+
+* https://github.com/wildfly/wildfly-proposals/pull/797[PR #797] — superseded proposal for native WildFly gRPC
+integration via a custom Undertow-to-Netty bridge
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly-extras/wildfly-grpc-feature-pack[wildfly-grpc-feature-pack]
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+* *Servlet-based gRPC handler*: The gRPC subsystem registers a dedicated Undertow `DeploymentInfo` (servlet
+container) hosting the `io.grpc:grpc-servlet-jakarta` `ServletAdapter`. This container is separate from the servlet
+containers used by application deployments. An Undertow handler routes `application/grpc` requests to this
+dedicated container; all other traffic is unaffected.
+
+* *Port unification*: gRPC services are served on the existing Undertow HTTP/2 listeners (`:8080` / `:8443`).
+Port `:9555` is no longer opened.
+
+* *HTTP/2 prerequisite*: For cleartext gRPC (h2c), the Undertow `http-listener` must have `enable-http2="true"`.
+The updated Galleon layer sets this automatically.
+
+* *Undertow integration*: The `/subsystem=grpc` resource exposes two new required attributes:
+  ** `server-name` — name of the Undertow server (e.g., `default-server`); capability reference to
+`org.wildfly.undertow.server`.
+  ** `virtual-host` — name of the Undertow virtual host (e.g., `default-host`); capability reference to
+`org.wildfly.undertow.server.host`.
+
+* *Automatic service discovery*: Jandex scans during DEPLOY detect all classes extending `io.grpc.BindableService`
+and all `io.grpc.ServerInterceptor` implementations without manual registration.
+
+* *CDI integration*: Discovered gRPC services and server interceptors are managed as `@ApplicationScoped` or `@Dependent` CDI beans, allowing full injection support.
+
+* *Multiple deployments*: Multiple deployments exposing gRPC services are supported, as long as gRPC service names
+are unique across all active deployments.
+
+* *No TLS or Elytron configuration in the gRPC subsystem*: TLS is delegated to the Undertow HTTPS listener.
+
+* *Standard gRPC streaming*: Unary, Server-streaming, Client-streaming, and Bidirectional streaming must work.
+
+* *Lifecycle*: gRPC services and interceptors are gracefully unregistered on undeployment or server reload.
+
+=== Non-Requirements
+
+* No Elytron integration in the gRPC subsystem; security is handled at the Undertow listener and web application layer.
+* No dedicated port or socket-binding configuration for gRPC.
+* No gRPC client stub injection.
+* No `protoc` invocation within the server.
+* No server-side Netty modules.
+
+=== Future Work
+
+Promote stability from `experimental` to `preview` or `community` once the code and the management model is stabilized.
+
+== Backwards Compatibility
+
+The most significant operational change is that **port `:9555` no longer responds**. Clients must connect to
+`:8080` (cleartext) or `:8443` (TLS).
+
+=== Default Configuration
+
+The Galleon `grpc` layer is updated to:
+
+* Remove the Netty server configuration and its `:9555` socket binding.
+* Set `enable-http2="true"` on the Undertow `http-listener`.
+* Add the `io.grpc:grpc-servlet-jakarta` module and remove server-side Netty modules.
+* Set `/subsystem=grpc` defaults: `server-name="default-server"`, `virtual-host="default-host"`.
+
+=== Importing Existing Configuration
+
+The following `/subsystem=grpc` attributes are deprecated (no effect at runtime; deprecation warning logged at
+boot):
+
+* `port`, `flow-control-window`, `max-concurrent-calls-per-connection`, `max-inbound-message-size`,
+`max-inbound-metadata-size` — Netty-specific tuning, superseded by Undertow listener configuration.
+* `key-manager-name`, `trust-manager-name`, `ssl-context` — TLS is now the Undertow listener's responsibility.
+
+Users must also add `server-name` and `virtual-host` to the `/subsystem=grpc` resource, remove the `:9555` socket
+binding, and ensure `enable-http2="true"` is set on the Undertow `http-listener`.
+
+=== Deployments
+
+No changes to `.proto` files or service implementations are required. Clients must update the target port.
+
+=== Interoperability
+
+The implementation conforms to the gRPC-over-HTTP/2 wire protocol and is interoperable with any spec-compliant
+gRPC client regardless of language. HTTP/2 Trailers are handled by `grpc-servlet-jakarta` per the
+https://grpc.github.io/grpc/core/md_doc__p_r_o_t_o_c_o_l-_h_t_t_p2.html[gRPC HTTP/2 protocol specification].
+
+== Implementation Plan
+
+1. Remove server-side Netty modules and Netty server startup from the feature pack.
+2. Add `io.grpc:grpc-servlet-jakarta` as a Galleon module.
+3. At subsystem start, create a dedicated `DeploymentInfo` hosting the `ServletAdapter`, bound to the server and
+virtual host identified by `server-name` and `virtual-host`.
+4. Install an Undertow `HttpHandler` on the virtual host routing `application/grpc` traffic to the gRPC servlet
+container.
+5. Update deployment unit processing to scan for `BindableService` and `ServerInterceptor` implementations via
+Jandex and register them with the `ServletAdapter`.
+6. Add `server-name` and `virtual-host` to the management model; mark Netty-specific attributes as deprecated.
+7. Update the Galleon layer (HTTP/2, remove `:9555` binding, module changes).
+8. Update documentation and examples
+
+== Admin Clients
+
+Deprecated attributes remain accessible via CLI and HAL so existing management scripts are not immediately broken.
+The two new required attributes (`server-name`, `virtual-host`) integrate with standard CLI and HAL without
+additional work.
+
+== Security Considerations
+
+TLS is delegated entirely to the Undertow HTTPS listener; there is no separate TLS configuration surface in the
+`grpc` subsystem. The deprecated TLS attributes (`key-manager-name`, `trust-manager-name`, `ssl-context`) are
+ignored at runtime and have no effect on the server's security posture.
+
+Authentication and authorization of gRPC calls can be implemented using standard Jakarta Security mechanisms at
+the Undertow listener or web application layer.
+
+[[test_plan]]
+== Test Plan
+
+At the `experimental` stability level, basic unit and integration tests are provided.
+
+Unit tests verify management model parsing (including deprecated attributes), deprecation warning emission, and
+capability reference validation for `server-name` and `virtual-host`.
+
+Integration tests (Arquillian) verify:
+
+* Unary RPC on `:8080` over h2c with `enable-http2="true"` on the Undertow `http-listener`.
+* Server-streaming, client-streaming, and bidirectional streaming.
+* CDI injection in gRPC service implementations and server interceptors.
+* Multiple deployments with unique gRPC service names.
+* Deploy/undeploy lifecycle: services and interceptors are correctly unregistered without affecting other deployments.
+* Standard HTTP/REST traffic on `:8080` is unaffected by the gRPC handler installation.
+* TLS gRPC on `:8443` when TLS is configured on the Undertow `https-listener`.
+
+== Community Documentation
+
+The feature pack README is updated with a migration guide: update client port (`:9555` → `:8080` / `:8443`), enable
+HTTP/2 on the Undertow `http-listener`, add `server-name` and `virtual-host` to the subsystem resource, and remove
+the `:9555` socket binding. The examples are updated to demonstrate the Servlet-based approach.
+
+== Release Note Content
+
+The https://github.com/wildfly-extras/wildfly-grpc-feature-pack[WildFly gRPC feature pack] now serves gRPC over the standard Undertow HTTP/2 listeners (`:8080` / `:8443`),
+replacing the standalone Netty server on port `:9555`. TLS is handled by the Undertow HTTPS listener. To migrate,
+update gRPC clients to connect to `:8080` (cleartext) or `:8443` (TLS) and ensure `enable-http2="true"` is set on
+the Undertow `http-listener`.
