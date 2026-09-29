@@ -38,8 +38,9 @@ jobs:
           # proposals can be told apart from the modified ones.
           # Proposals live in subdirectories, so AsciiDoc files in the repository
           # root (README, index, template, feature process) are not checked.
-          files=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" \
-                    --jq '.[] | select(.status != "removed") | "\(.status)\t\(.filename)"' \
+          pr_files=$(gh api --paginate "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" \
+                       --jq '.[] | select(.status != "removed") | "\(.status)\t\(.filename)"')
+          files=$(echo "$pr_files" \
                   | { grep -E '\.adoc$' || true; } \
                   | { grep -vE $'\t_[^/]+/' || true; } \
                   | { grep -vE $'\t[^/]+\.adoc$' || true; })
@@ -60,6 +61,13 @@ jobs:
             mkdir -p "pr-proposals/$(dirname "$file")"
             git show "FETCH_HEAD:${file}" > "pr-proposals/${file}"
           done <<< "$changed"
+
+          # A pull request may add the categories its proposal uses, so the
+          # checker must validate against the pull request's categories file.
+          if grep -qxF "_data/wildfly-categories.yaml" <<< "$(echo "$pr_files" | cut -f2-)"; then
+            mkdir -p pr-proposals/_data
+            git show "FETCH_HEAD:_data/wildfly-categories.yaml" > pr-proposals/_data/wildfly-categories.yaml
+          fi
 
           {
             echo "any_changed=true"

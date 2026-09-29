@@ -186,7 +186,10 @@ class MetadataChecker
   end
 
   def load_all_categories
-    yaml = YAML.load_file("_data/wildfly-categories.yaml")
+    # Prefer the categories file from the pull request when it modifies it.
+    categories_path = "pr-proposals/_data/wildfly-categories.yaml"
+    categories_path = "_data/wildfly-categories.yaml" unless File.exist?(categories_path)
+    yaml = YAML.load_file(categories_path)
     return yaml["categories"]
   end
 end
