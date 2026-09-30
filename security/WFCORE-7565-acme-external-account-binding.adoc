@@ -1,0 +1,220 @@
+---
+categories:
+- security
+- management
+stability-level: preview
+issue: https://redhat.atlassian.net/browse/WFCORE-7565
+feature-team:
+ developer: Zhang-Charlie
+ sme:
+  - skyllarr
+ outside-perspective:
+  - jasondlee
+ 
+promotes:
+promoted-by:
+---
+
+= Add External Account Binding Support to the Elytron ACME Client
+:author:            Charlie Zhang
+:email:             charliezhangbusiness@gmail.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WildFly Elytron provides ACME client support for creating and managing ACME accounts used in automated certificate issuance. Some certificate authorities require ACME External Account Binding, commonly referred to as EAB, when creating a new ACME account. EAB allows the certificate authority to associate the ACME account with an existing non-ACME account, such as a customer account in the CA platform.
+
+This proposal adds support for configuring EAB values on the Elytron `certificate-authority-account` resource in WildFly Core. Users will be able to configure an optional `external-account-binding` configuration containing a key identifier and credential reference for the HMAC key. During ACME account creation, WildFly will pass these values into the Elytron ACME client so the ACME `newAccount` request can include the required `externalAccountBinding` data.
+
+The feature is proposed at `preview` stability. Existing ACME account configurations will continue to work without modification, and EAB will only be used when explicitly configured.
+
+=== User Stories
+
+As a WildFly administrator using a certificate authority that requires External Account Binding,I want to configure the EAB key identifier and HMAC key credential reference in the Elytron `certificate-authority-account` resource, so that WildFly can create the ACME account directly.
+
+As a WildFly administrator using a certificate authority that does not require EAB, I want my existing ACME account configuration to continue working without any new required configuration.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFCORE-7565[WFCORE-7565]
+* https://issues.redhat.com/browse/ELY-2951[ELY-2951]
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly-core[wildfly-core]
+* https://github.com/wildfly-security/wildfly-elytron[wildfly-elytron]
+
+=== Other Interested Projects
+
+No additional projects are expected to be directly affected by this feature.
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+The Elytron `certificate-authority-account` resource must allow users to configure the values required for ACME External Account Binding.
+
+The management model must expose an optional `external-account-binding` configuration containing:
+
+* `key-identifier`
+* `credential-reference`
+
+The `credential-reference` contains the EAB HMAC key.
+
+The `external-account-binding` configuration must remain optional so existing ACME account configurations continue to work without modification.
+
+If `external-account-binding` is configured, both `key-identifier` and `credential-reference` must be configured. WildFly must reject incomplete EAB configurations with a clear error message.
+
+When both EAB attributes are configured, WildFly must pass the values to the Elytron ACME account builder during ACME account creation.
+
+The HMAC key must be configured using Elytron's credential-reference mechanism and must not be exposed in logs or detailed error messages.
+
+The new management attributes must be marked with `preview` stability metadata.
+
+=== Non-Requirements
+
+This proposal does not implement a new ACME client.
+
+This proposal does not change the ACME account creation flow for users who do not configure EAB.
+
+This proposal does not add CA specific account registration workflows beyond standard External Account Binding support.
+
+This proposal does not introduce a new certificate authority resource type.
+
+This proposal does not require HAL specific UI changes for the feature to be complete.
+
+=== Future Work
+
+Future work may include promoting the feature from `preview` to `community` or `default` stability after broader compatibility and interoperability testing.
+
+Future work may also include additional documentation examples for certificate authorities that require EAB.
+
+== Backwards Compatibility
+
+This feature is backward compatible. The new attributes are optional and existing `certificate-authority-account` resources will continue to function without modification.
+
+=== Default Configuration
+
+The default WildFly configuration is unchanged.
+
+No EAB key identifier or HMAC key is configured by default.
+
+=== Importing Existing Configuration
+
+Existing configurations that do not contain the new EAB attributes will continue to work without migration changes.
+
+=== Deployments
+
+This feature does not change deployment behavior.
+
+=== Interoperability
+
+This feature improves interoperability with ACME certificate authorities that require External Account Binding during account creation.
+
+== Implementation Plan
+
+The implementation will update the Elytron subsystem in WildFly Core.
+
+`CertificateAuthorityAccountDefinition` will be updated to add an optional `external-account-binding` configuration containing `key-identifier` and `credential-reference`.
+
+Validation logic will ensure that when `external-account-binding` is present, both `key-identifier` and `credential-reference` are configured.
+
+The runtime service creation path will resolve the new attributes and pass them to `AcmeAccountService`.
+
+`AcmeAccountService` will pass the values to the Elytron ACME account builder when both attributes are configured.
+
+The lower level ACME request handling is expected to be provided by the corresponding WildFly Elytron implementation for ELY-2951.
+
+An example CLI configuration may look like:
+
+[source,options="nowrap"]
+----
+/subsystem=elytron/certificate-authority-account=my-ca-account:add(
+    certificate-authority=my-ca,
+    key-store=account-key-store,
+    alias=account-key,
+    contact-urls=["mailto:admin@example.com"],
+    external-account-binding={
+        key-identifier="example-kid",
+        credential-reference={clear-text="example-hmac-key"}
+    }
+)
+----
+
+The equivalent XML configuration may look like:
+
+[source,xml,options="nowrap"]
+----
+<certificate-authority-account name="my-ca" ...>
+    <account-key key-store="..." alias="...">
+        <credential-reference clear-text="..."/>
+    </account-key>
+    <external-account-binding>
+        <key-identifier>example-kid</key-identifier>
+        <credential-reference store="my-cs" alias="eab-hmac-key"/>
+    </external-account-binding>
+</certificate-authority-account>
+----
+
+== Admin Clients
+
+The new EAB attributes will be exposed through the standard WildFly management model.
+
+Users will be able to configure the attributes through the CLI and other management clients that interact with the management model.
+
+No new high level CLI command is required.
+
+Existing admin client functionality must remain compatible with the addition of the new attributes.
+
+HAL specific integration is not required for the initial `preview` implementation.
+
+== Security Considerations
+
+The EAB HMAC key is credential-like data supplied by the certificate authority and should be treated as sensitive configuration.
+
+The value must not be written to logs or exposed in detailed error messages.
+
+For management RBAC purposes, the HMAC key attribute should use the `CREDENTIAL` sensitivity classification.
+
+Access to configure or read this value should follow Elytron security-sensitive management behavior and existing RBAC restrictions for security configuration.
+
+Incorrect disclosure of the HMAC key could allow unauthorized attempts to bind an ACME account to an external CA account, depending on the CA policy.
+
+[[test_plan]]
+== Test Plan
+
+This feature is proposed at `preview` stability, so the test plan will focus on automated management model tests and integration coverage for the path between WildFly Core and the Elytron ACME account builder.
+
+Automated tests should verify that a `certificate-authority-account` can still be added without EAB attributes configured.
+
+Automated tests should verify that a `certificate-authority-account` can be added with `external-account-binding` configured.
+
+Automated tests should verify that configuring `external-account-binding` with only `key-identifier` fails.
+
+Automated tests should verify that configuring `external-account-binding` with only `credential-reference` fails.
+
+Automated tests should verify that the configured EAB values are passed into the ACME account creation path.
+
+Lower level tests for construction of the ACME `externalAccountBinding` payload are expected to be covered in the WildFly Elytron implementation.
+
+== Community Documentation
+
+WildFly Elytron documentation should be updated to describe the new `external-account-binding` configuration on the `certificate-authority-account` resource.
+
+The documentation should explain that the key identifier is supplied by the certificate authority and that the HMAC key should be configured using an Elytron credential reference.
+
+The documentation should include a short CLI example showing a `certificate-authority-account` configured with EAB attributes.
+
+== Release Note Content
+
+WildFly now supports configuring ACME External Account Binding on Elytron certificate authority accounts at `preview` stability. This allows WildFly to create ACME accounts with certificate authorities that require a key identifier and HMAC key credential reference during account registration.
