@@ -11,8 +11,15 @@ feature-team:
  outside-perspective:
   - jasondlee
  
-promotes:
-promoted-by:
+promotes: []
+promoted-by: []
+# List the repository-relative paths of proposals that this proposal follows up on. Use this for work that extends or
+# continues a proposal without being a stability promotion. Add this proposal's path to the corresponding
+# `followed-up-by` field in each earlier proposal.
+follows-up-on: []
+# List the repository-relative paths of proposals that follow up on this one. This field is the reciprocal of
+# `follows-up-on`; update both fields whenever a follow-up relationship is added or removed.
+followed-up-by: []
 ---
 
 = Add External Account Binding Support to the Elytron ACME Client
@@ -155,14 +162,14 @@ The equivalent XML configuration may look like:
 
 [source,xml,options="nowrap"]
 ----
-<certificate-authority-account name="my-ca" ...>
-    <account-key key-store="..." alias="...">
-        <credential-reference clear-text="..."/>
-    </account-key>
+<certificate-authority-account name="my-ca-account" certificate-authority="my-ca">
     <external-account-binding>
         <key-identifier>example-kid</key-identifier>
         <credential-reference store="my-cs" alias="eab-hmac-key"/>
     </external-account-binding>
+    <account-key key-store="account-key-store" alias="account-key">
+        <credential-reference clear-text="..."/>
+    </account-key>
 </certificate-authority-account>
 ----
 
