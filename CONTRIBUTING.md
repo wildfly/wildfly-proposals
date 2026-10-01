@@ -57,7 +57,7 @@ Please familiarize yourself with the [WildFly Feature Development Process](https
 Of course there can be other changes to this repository besides new feature analyses, e.g. changes to how the GitHub Pages publishing of the analyses works, changes to documents like this one, 
 or even corrections to existing analyses.
 
-To create a new issue miscellaneous issue, go to the [issues page](https://github.com/wildfly/wildfly-proposals/issues), click the "New Issue"" button, and choose the "Blank issue" option.
+To create a new issue miscellaneous issue, go to the [issues page](https://github.com/wildfly/wildfly-proposals/issues), click the "New Issue" button, and choose the "Blank issue" option.
 
 Once you have selected an issue you'd like to work on, make sure it's not already assigned to someone else.
 Before beginning work on an issue, it's good to start a thread in the [wildfly-developers channel in Zulip](https://wildfly.zulipchat.com/#narrow/channel/174184-wildfly-developers) to let others know what you'll be doing.
