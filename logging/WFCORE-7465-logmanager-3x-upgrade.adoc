@@ -1,0 +1,187 @@
+---
+# Add any category for this proposal as a YAML list, e.g.
+# - core
+# - management
+# If missing, add it to _data/wildfly-categories and use its id
+categories:
+  - logging
+# Specify the stability level of the feature.
+# Values can be one of: experimental, preview, community, or default
+stability-level: default
+# Specify the Feature Development tracker issue for the feature.
+# This must be an issue tracked in https://github.com/orgs/wildfly/projects/7/views/1.
+# To create a Feature Development tracker issue, go to https://github.com/wildfly/wildfly-proposals/issues/new/choose
+# and select 'Feature Development'
+issue: https://github.com/wildfly/wildfly-proposals/issues/778
+# Provide the GitHub ids of the feature team members, organized by role.
+# Provide a single id for the 'assignee' role. Use a YAML list for the 'sme' and
+# 'outside-perspective' roles, even if there is only one person in a role.
+feature-team:
+ developer: jamezp
+ sme:
+  - TBD
+ outside-perspective:
+  - yersan
+---
+
+= Upgrade JBoss Log Manager to 3.x
+:author:            James R. Perkins
+:email:             jperkins@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+We are currently using the `org.jboss.logmanager:jboss-logmanager:2.1.19.Final` in WildFly and JBoss EAP. It would be
+good to be able to upgrade to the 3.x version. This would align WildFly/EAP with Quarkus on the version being used.
+
+Note that this must be implemented at the default stability level because there is no easy or practical way to include
+different log manager modules for different stability levels. This would create overly complex logic for the server's
+bootstrap process.
+
+=== User Stories
+
+1. As a WildFly administrator, I want simplified server configuration that eliminates the need for the bootstrap
+`logging.properties` file, so that I have fewer configuration touchpoints.
+2. As a developer using both Quarkus and WildFly, I want WildFly's logging infrastructure to align with Quarkus,
+so that I have a consistent logging experience across both platforms and can leverage the same patterns and tools.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFCORE-7465[WFCORE-7465]
+* https://issues.redhat.com/browse/WFCORE-157[WFCORE-157]
+* https://issues.redhat.com/browse/WFCORE-474[WFCORE-474]
+* https://issues.redhat.com/browse/WFCORE-2516[WFCORE-2516]
+* https://issues.redhat.com/browse/WFCORE-5275[WFCORE-5275]
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly-core
+* https://github.com/wildfly/wildfly
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+The JBoss Log Manager will be updated to use the latest 3.x version available, currently 3.2.0.Final. This new version
+no longer contains the configuration API that WildFly currently uses. As part of this, it is likely we will need to
+refactor the subsystem. However, this should not change the visible subsystem functionality at all. These will be
+internal details only.
+
+The `logging.properties` file used for bootstrapping the log manager will be removed in favor of using a queue for
+log messages until the logging subsystem has been activated.
+
+Please note this will require some SmallRye Common modules be brought into WildFly Core that are currently in WildFly.
+I understand this is not ideal, but Quarkus seems to need the use of these APIs in the log manager.
+
+There will also be changes required to the `BootableJar` logging initialization and the `EmbeddedLogContext`.
+
+The scripts will also require changes where they previously set the `logging.configuration` property. Along with the
+scripts, the wildfly-launcher API will need to be changed as well. One option for this we can do now is to simply check
+for the files existence before adding the `logging.configuration` property. This would allow us to keep backwards
+compatibility in this project.
+
+=== Changed requirements
+
+N/A
+
+
+=== Non-Requirements
+
+We will not be able to keep compatibility with custom handlers that use the old `outputLock` from the
+`org.jboss.logmanager.ExtHandler`. I do not suspect this will be a large number and the fix is very simple to just
+use the `lock` field which is a `java.util.concurrent.locks.ReentrantLock`.
+
+The configuration API, all APIs under the `org.jboss.logmanager.config` package, have been removed and will not be
+replaced. These were never intended to be used by an end user and should not have been.
+
+=== Future Work
+
+We could, potentially should by default, add a new attribute to the `pattern-formatter` to allow the
+`org.jboss.logmanager.formatter.ColorPatternFormatter` to be used. The current `pattern-formatter` does have an
+option to output ANSI color coded log messages. The new `org.jboss.logmanager.formatter.ColorPatternFormatter` takes
+it a step further and is much more modern.
+
+== Backwards Compatibility
+
+The `outputLock` was removed from the `org.jboss.logmanager.ExtHandler` and replaced with a
+`java.util.concurrent.locks.ReentrantLock` that can be used.
+
+The `org.jboss.logmanager.config` was also removed. There was never an intention for this to be a public API. However,
+there was nothing stopping a user from accessing it.
+
+=== Default Configuration
+
+The default subsystem configuration will not change at all. However, the `logging.properties` will be removed from
+the `$JBOSS_HOME/standalone/configuration` directory.
+
+=== Importing Existing Configuration
+
+This will have no impact on any configuration which includes the logging subsystem. However, if for some reason the user
+removed the logging subsystem and relied on a custom `logging.properties` that would no longer work. We may see if we
+can get that to work, but it's something we may consider not allowing.
+
+=== Deployments
+
+This will have no effect on deployments.
+
+=== Interoperability
+
+N/A
+
+== Implementation Plan
+
+This may change as development happens. However, the current plan is to copy the old `org.jboss.logmanager.config` APIs
+into WildFly and get the log manager working as it currently does.
+
+Next we will start refactoring the subsystem to use a new API. This new API is somewhat TBD and will be for internal use
+only. It may very well be as simple as using an Capability API. There is the possibility we may need to rely on some
+MSC services. However, this should be kept to a minimum as we will only need this for anything that may require another
+service like the `socket-handler`.
+
+There is a chance we will need a new Maven subproject and new module for some specific bootstrap configuration. This
+would use the `org.jboss.logmanager.ConfigurationFactory` API to create an initial context when the
+`org.jboss.logmanager.LogManager` is initialized.
+
+== Admin Clients
+
+This should have no effect on any admin clients. JBoss CLI will use the new log manager, but the
+`jboss-cli-logging.properties` will still work as it currently does.
+
+== Security Considerations
+
+This should not impact security at all.
+
+[[test_plan]]
+== Test Plan
+
+There will likely be no new tests added. However, no test assertions should be changed. The only potential changes
+would be any tests that use APIs that have been removed. There are likely some tests that will also be removed which
+check the generated `logging.properties` file as they will no longer be needed.
+
+== Community Documentation
+
+The current documentation at https://docs.wildfly.org will need to be updated to reflect the removing of the
+`logging.properties` file. We likely need a note that can eventually be removed about why it was removed. We will also
+need to remove references to it.
+
+== Release Note Content
+
+The `logging.properties` file has been removed from the `$\{JBOSS_HOME}/standalone/configuration` and
+`$\{JBOSS_HOME}/domain/configuration/default-server-logging.properties`. The latter was used only when a server within
+a domain is started. These files will no longer be used or honored.
+
+Please note that if you use a `custom-handler` in the logging subsystem and that handler extends the
+`org.jboss.logmanager.ExtHandler` that you ensure you're not using the removed `outputLock`. If you are, please replace
+it by using the new `lock` field which is a `java.util.concurrent.locks.ReentrantLock`.
