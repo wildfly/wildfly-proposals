@@ -3,6 +3,9 @@ categories:
   - name: Agroal
     id: agroal
     description: Agroal DataSources
+  - name: AI
+    id: ai
+    description: Artificial Intelligence
   - name: Bootable Jar
     id: bootable-jar
     description: WildFly and an application packaged as an executable jar
@@ -78,6 +81,9 @@ categories:
   - name: Messaging
     id: messaging
     description: Messaging, including Jakarta Messaging (JMS)
+  - name: MCP
+    id: mcp
+    description: Model Context Protocol
   - name: MicroProfile
     id: microprofile
     description: MicroProfile
