@@ -82,8 +82,8 @@ Requirements copied from community stability proposal:
 * Credential store will be able to connect to a HashiCorp Vault server and authenticate with one of the following methods:
 
 ** token via credential-reference
-** certificate authentication thanks to the ssl-context configured in the authentication-context attribute
-* TLS for the connection to Vault must be configurable (e.g. via authentication-context) so that server and client certificates can be used.
+** certificate authentication using client certificates configured via the `client-ssl-context` attribute
+* TLS for the connection to Vault must be configurable via the `client-ssl-context` attribute (referencing an Elytron `client-ssl-context`) so that server trust and client certificates can be used.
 * The credential store must implement the Elytron credential store SPI so that it is usable everywhere where elytron credential store resources are usable.
 * Credential store management operations must be supported as usual: add credential store, remove credential store, add-alias, remove-alias, read-aliases
 * The credential store must support the following configuration parameters:
