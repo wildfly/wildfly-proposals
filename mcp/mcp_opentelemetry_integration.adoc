@@ -1,0 +1,164 @@
+---
+categories:
+- mcp
+- observability
+stability-level: experimental
+issue: https://github.com/wildfly/wildfly-proposals/issues/838
+feature-team:
+ developer: ehsavoie
+ sme:
+  - ehsavoie
+ outside-perspective:
+  -
+promotes:
+promoted-by:
+---
+
+= OpenTelemetry Integration for MCP Message Handling
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The WildFly AI feature-pack exposes Jakarta EE applications as MCP (Model Context Protocol) servers, allowing AI agents to invoke enterprise tools, prompts, and resources through a standardized JSON-RPC protocol. As MCP server usage grows in production environments, operators need visibility into the behavior of those servers: which methods are called, how long they take, and how often they fail.
+
+This proposal introduces a `MCPMessageListener` SPI that allows third-party code — and built-in subsystem integrations — to observe the full lifecycle of each JSON-RPC message dispatched by the MCP handler: before dispatch, after successful dispatch, on error, and when a connection is closed. The SPI decouples observability and monitoring concerns from the core handler, so they can evolve independently and be activated without changing application code.
+
+The design follows the same capability-gated pattern used elsewhere in WildFly: observability is opt-in by infrastructure rather than by code change. Developers write their MCP tools, prompts, and resources as before, and operators enable the OpenTelemetry subsystem to gain telemetry automatically.
+
+The first consumer of this SPI is a built-in OpenTelemetry integration, described in the Implementation Plan section below.
+
+=== User Stories
+
+As a WildFly application developer, I want a documented `MCPMessageListener` SPI so that I can plug in custom monitoring hooks (audit logs, custom metrics, integration with non-OTel systems) without patching the core MCP handler.
+
+As a WildFly platform operator, I want MCP message handling to automatically emit OpenTelemetry traces and metrics when the OpenTelemetry subsystem is enabled, so that I can monitor MCP server behavior through my existing observability stack (Grafana, Jaeger, Prometheus, etc.) without modifying application code.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://github.com/wildfly-extras/wildfly-ai-feature-pack/issues/306[wildfly-ai-feature-pack#306] - Add OpenTelemetry instrumentation for MCP message handling
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly-extras/wildfly-ai-feature-pack
+
+=== Other Interested Projects
+
+* https://github.com/wildfly/wildfly[WildFly] - provides the `org.wildfly.extension.opentelemetry` capability consumed by this feature
+* https://github.com/open-telemetry/semantic-conventions-genai[OpenTelemetry GenAI Semantic Conventions] - defines the MCP spans, metrics, and attributes implemented by this feature
+
+=== Relevant Installation Types
+
+* Traditional standalone server (provisioned by Galleon)
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+=== Must
+
+* Introduce a `MCPMessageListener` SPI with lifecycle callbacks (`onBeforeMessage`, `onAfterMessage`, `onError`, `onConnectionClosed`) and a typed attribute bag (`MCPMessageContext`) for passing per-request state between callbacks. All methods must have empty default implementations so that custom listeners only override the events they care about.
+
+* Introduce `MCPMessageContext`, a context object carrying the JSON-RPC method name, connection identity, request ID, connection status, start timestamp, elapsed duration, error code and message, W3C trace propagation headers, tool/prompt name, MCP protocol version, client address and port, HTTP network protocol version, and resource URI. The context must expose a type-safe attribute store (`setAttribute` / `getAttribute`) keyed by `MCPContextKey` instances to allow listeners to stash per-request objects (e.g., a tracing span) between `onBeforeMessage` and the completion callback.
+
+* The `MCPMessageHandler` must invoke all registered `MCPMessageListener` implementations in order before and after dispatching each message, and on error. Listener exceptions must be caught and logged without disrupting message handling.
+
+=== Non-Requirements
+
+* There is no requirement to provide configuration attributes for controlling which methods are traced or which metrics are collected. All MCP methods are instrumented uniformly when the OpenTelemetry subsystem is present and the `org.wildfly.extension.opentelemetry` capability is available.
+
+* There is no requirement to support OpenTelemetry SDK configuration through the MCP subsystem itself; operators configure the exporter, sampler, and other SDK settings through the WildFly OpenTelemetry subsystem.
+
+* The `MCPMessageListener` SPI does not need to support asynchronous (non-blocking) callbacks in this iteration.
+
+=== Future Work
+
+* Add Galleon layer configuration so that the MCP-with-OpenTelemetry combination can be provisioned in a single step without manually composing the `mcp` and `opentelemetry` layers.
+
+* Consider exposing the listener list through the management model so that operators can inspect registered listeners via the CLI.
+
+* Record the opt-in `gen_ai.tool.call.arguments` and `gen_ai.tool.call.result` attributes behind a configuration flag, once a scrubbing or redaction mechanism is in place to handle sensitive data.
+
+== Backwards Compatibility
+
+This feature adds new classes and wires a new listener into the `MCPMessageHandler`. Existing MCP deployments are unaffected because the `OpenTelemetryMCPMessageListener` is only instantiated when the WildFly OpenTelemetry subsystem capability is present. No existing management API resources, attributes, or operations are changed.
+
+=== Default Configuration
+
+The default MCP subsystem configuration is unchanged. The OpenTelemetry integration activates transparently when the operator provisions the `opentelemetry` Galleon layer or manually adds the OpenTelemetry subsystem.
+
+=== Importing Existing Configuration
+
+No change to existing configuration. The feature adds no new management resources.
+
+=== Deployments
+
+Existing MCP deployments continue to behave identically. Deployments do not need to declare any dependency on `io.opentelemetry.api`; the subsystem provides the OpenTelemetry API to the listener internally.
+
+=== Interoperability
+
+The W3C trace context propagation support enables end-to-end distributed tracing from AI agents that inject `traceparent` headers into MCP JSON-RPC `params._meta` objects, allowing traces to span across agent, MCP server, and any downstream services the MCP tools invoke.
+
+== Implementation Plan
+
+The implementation is structured in three layers delivered together.
+
+. *SPI* — `MCPMessageListener` interface and `MCPMessageContext` value object are added to the `org.wildfly.extension.mcp.api` package, which is the public API surface of the subsystem.
+
+. *Framework wiring* — `MCPMessageHandler` is updated to hold a `List<MCPMessageListener>`, build it at construction time by checking for the OpenTelemetry capability, and call the listener lifecycle methods around each message dispatch.
+
+. *Built-in OpenTelemetry implementation* — `OpenTelemetryMCPMessageListener` is added to the `org.wildfly.extension.mcp.server` package. It is registered in `MCPMessageHandler` only when the `org.wildfly.extension.opentelemetry` subsystem capability is present; when that capability is absent the listener list is empty and no OpenTelemetry class is loaded. The `OpenTelemetry` instance is obtained lazily from the deployment's CDI container on first message, using the deployment classloader so the correct CDI context is resolved. After a failed initialization attempt the listener logs a warning and skips all subsequent retries to avoid repeated CDI lookup overhead.
++
+When active, the listener produces signals conforming to the https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/mcp.md[OpenTelemetry GenAI MCP semantic conventions]:
++
+* A `SERVER`-kind span per JSON-RPC message. The span name follows the pattern `{mcp.method.name}` for methods without a natural target (e.g. `tools/list`, `resources/list`, `resources/subscribe`, `resources/unsubscribe`) or `{mcp.method.name} {target}` when a target is available: the tool name for `tools/call`, the prompt name for `prompts/get`, and the resolved resource URI for `resources/read` (including resource template reads where the URI template has been expanded with the caller's parameters). Span attributes include `mcp.method.name`, `mcp.session.id`, `mcp.protocol.version`, `mcp.resource.uri`, `jsonrpc.request.id`, `jsonrpc.protocol.version`, `rpc.response.status_code`, `gen_ai.operation.name`, `gen_ai.tool.name`, `gen_ai.prompt.name`, `client.address`, `client.port`, `network.transport`, `network.protocol.name`, `network.protocol.version`, and `error.type`. The `mcp.resource.uri` attribute is set on all resource method spans; for resource template reads it reflects the resolved URI, not the URI template pattern. The opt-in attributes `gen_ai.tool.call.arguments` and `gen_ai.tool.call.result` are not recorded by default, as they may contain sensitive data.
+* Trace context propagation: incoming context is extracted from the headers present in the JSON-RPC `params._meta` object (per SEP-414) using the `TextMapPropagator` registered in the WildFly OpenTelemetry subsystem — no propagation format is hardcoded. With the default WildFly configuration this is the W3C Trace Context propagator, which handles `traceparent` and `tracestate`; operators who add additional propagators (e.g. W3C Baggage, B3) to the SDK configuration will have those extracted automatically as well. When a valid remote parent is found, the span is started as a child of the propagated context and a link to the ambient HTTP server span is recorded.
+* `mcp.server.operation.duration` (`DoubleHistogram`, seconds) — per-request server-side latency with the recommended bucket boundaries `[0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120, 300]`.
+* `mcp.server.session.duration` (`DoubleHistogram`, seconds) — per-session lifetime recorded when a connection is closed; only emitted when the session was properly initialized via `notifications/initialized`.
+* `mcp.server.request.count` (`LongCounter`) and `mcp.server.error.count` (`LongCounter`) as supplementary counters for request throughput and error rate monitoring. These are not part of the current semantic conventions specification.
++
+The MCP subsystem module descriptor is updated to declare an optional dependency on `io.opentelemetry.api`, and the injection module descriptor is updated to include `io.opentelemetry.api` as a dependency.
++
+Because the OpenTelemetry extension is not included in `wildfly-ee-galleon-pack`, provisioning a server with this integration requires the `wildfly-galleon-pack` instead.
+
+== Admin Clients
+
+This feature introduces no new management API resources, attributes, or operations. JBoss CLI and the Admin Console are unaffected.
+
+== Security Considerations
+
+The `MCPMessageContext` carries connection identity and client address information that may be sensitive in multi-tenant deployments. This context object is passed only to registered `MCPMessageListener` implementations inside the server; it is not exposed through any management API or serialized to clients. The `mcp.session.id` and `client.address` attributes are recorded in telemetry data, so operators should apply appropriate access controls to their OpenTelemetry backend (Tempo, Jaeger, or any OTLP-compatible collector).
+
+No new management API resources are introduced, so no additional RBAC configuration is required.
+
+[[test_plan]]
+== Test Plan
+
+This feature is at the `experimental` stability level. The following tests are added:
+
+* *Unit tests* for `MCPMessageListenerTestCase` — verify that the listener lifecycle methods are called in the correct order, that exceptions thrown by a listener do not interrupt message handling, and that attribute storage on `MCPMessageContext` is type-safe and correctly isolated between messages.
+
+* *Unit tests* for `OpenTelemetryMCPMessageListenerTest` — use an in-memory `OpenTelemetry` SDK instance to verify that spans are created with correct attributes, that metrics counters and histograms are updated on success and error, that W3C trace context is correctly propagated from `params._meta`, and that session duration is recorded on connection close.
+
+* *Integration tests* (`MCPOpenTelemetryIntegrationTestCase`) — deploy a test MCP application to a WildFly instance provisioned with the `opentelemetry` Galleon layer. An LGTM (Grafana/Tempo/Prometheus) stack is started via a Testcontainers initializer. The test sends MCP JSON-RPC messages (tool call, prompt get, resource read), waits for the OTLP exporter flush interval, and queries the Grafana datasource proxy to verify that traces appear in Tempo and that metric series appear in Prometheus. The test is skipped when Docker or the LGTM stack is unavailable.
+
+* *Unit tests* for `ConnectionManagerTestCase` — verify that `onConnectionClosed` is called for every connection removal path (explicit close, idle timeout, server shutdown), ensuring that the session duration histogram has no memory leak.
+
+== Community Documentation
+
+Documentation for this feature will be added as part of the PR to the wildfly-ai-feature-pack repository. It will cover:
+
+* How to enable MCP OpenTelemetry integration by adding the `opentelemetry` Galleon layer alongside the `mcp` layer.
+* A description of the emitted spans and their attributes.
+* A description of the emitted metrics (`mcp.server.request.count`, `mcp.server.error.count`, `mcp.server.operation.duration`, `mcp.server.session.duration`) and their labels.
+* How to implement a custom `MCPMessageListener` and register it in the subsystem.
+
+== Release Note Content
+
+WildFly AI feature-pack now automatically integrates with the WildFly OpenTelemetry subsystem to instrument MCP server message handling. When the OpenTelemetry subsystem is present, every JSON-RPC message dispatched through an MCP server produces a distributed trace span and updates request count, error count, and latency metrics. A new `MCPMessageListener` SPI is also available for custom observability hooks. No application code changes are required.
