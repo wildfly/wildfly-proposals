@@ -1,0 +1,232 @@
+---
+categories:
+- observability
+stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/844
+feature-team:
+ developer: jasondlee
+ sme:
+  - rhusar
+ outside-perspective:
+  - TBD
+promotes:
+promoted-by:
+---
+
+= Support fine-grained/individual meter filtering
+:author:            Jason Lee
+:email:             jasondlee@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently, a large number of system meters are automatically registered with the metrics system(s).
+This includes a variety of JMX beans and JVM statistics, as well as various subsystem properties.
+All of these are then published to an aggregation system of some type. In large deployments, this
+creates challenges for Operations, as the data for all the meters from a potentially large number
+of servers can cause memory capacity issues for the aggregation system. Often, many of these meters
+are of no interest to the system administrator(s), but they have to be managed, as there is no way to
+_not_ publish them.
+
+This RFE will provide a way for system administrators to filter which meters are actually published,
+enabling finer-grained control over the data produced and the memory required downstream to monitor
+them. Support for both Micrometer and OpenTelemetry is planned.
+
+=== User Stories
+
+* As a system administrator, I need to be able to configure filters to manage which meters
+are to be included/excluded in the reported metrics data.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://redhat.atlassian.net/browse/WFLY-22046[WFLY-22046]
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly[WildFly]
+
+=== Other Interested Projects
+
+* OpenShift
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain footnote:[For push-based exports only. i.e., Prometheus is not supported.]
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+* The administrator must be able to list 0 or more meters to exclude from publishing
+** If no filter applies to a given meter, then it is allowed to publish.
+** If a meter _is_ matched to a filter, then it is not allowed to publish.
+* The user should be able to filter by
+** Meter id
+** Meter type
+** Meter tags
+* The filter definition should support regular expressions to give the user flexibility in defining
+  the match.
+* The filter should apply to all meters, including
+** JMX beans
+** System meters
+** WildFly subsystem meters
+** User-defined/application meters
+* The solution will consider both Micrometer and OpenTelemetry Metrics to ensure that the
+  configurations of the two subsystems are as alike as possible, reducing complexity for users
+** Micrometer has an explicit `MeterFilter`
+** OpenTelemetry offers https://github.com/open-telemetry/opentelemetry-java/issues/5393#issuecomment-1516263005[views]
+
+=== Planned Filter Details
+
+The `wildfly-micrometer` and the `wildfly-opentelemetry` subsystems will be modified to
+support a list of meter filter definitions, which can be either positive ("accept") or negative ("deny").
+To avoid polluting this document with too many internal API details, the proposed filter definition
+will be shown here as XML. Note, though, that the actual WildFly management model structure need not
+reflect this structure identically.
+
+[code,xml]
+----
+<subsystem xmlns="urn:wildfly:micrometer:community:2.1">
+  <otlp-registry endpoint="http://localhost:4318/v1/metrics" step="1"/>
+  <filters>
+    <filter outcome="accept" field="meter-name" condition="startsWith" value="my_application" />
+    <filter outcome="accept" field="meter-name" condition="startsWith" value="jvm" negate="true" />
+    <filter outcome="reject" field="tag-name" condition="equals" value="someValue" />
+  </filters>
+</subsystem>
+----
+
+Most attributes on these two elements (excepting only `value`) will be constrained and their
+values validated. Those fields and their values will be as follows:
+
+|===
+|Field|Legal values|Default value|Notes
+
+|`outcome`
+a|
+* `accept`
+* `reject`|`reject`|The most common action will be to reject, so the system will default to that
+
+
+|`field`
+a|
+* `meter-name`
+* `tag-name`
+* `tag-value`||
+
+|`condition`
+a|
+* `starts-with`
+* `ends-with`
+* `contains`
+* `equals`||
+
+|`negate`
+a|
+* `true`
+* `false`|`false`|Invert the check defined (e.g., "starts with"->"does not start with")
+
+|`value`|`*`||The value to filter for
+|===
+
+The current design is for meter filtering only, so there is no need to specify the signal type to filter. If and when support for other signals is defined, the model/schema can be updated to add those, with existing configurations migrated to specify that pre-existing filters target meters.
+
+[NOTE]
+====
+As we think through this design, we should strive to strike a balance between ease of use and functionality for the user, while trying to avoid an unbound proliferation of child resources to cover every conceivable filter type. Ideally -- perhaps -- we should be able to provide a simple management model (and XML schema) that provides the flexibility we're after without inundating the user with scores of types to remember and manage.
+
+It may turn out, however, that this flexibility makes for an awkward model/schema that hinders more than helps. We should be sensitive to this as the design matures and be prepared to pivot.
+====
+
+If an "accept" filter and a "reject" filter overlap, the "accept" filter will win, since the inclusion of the meter was explicitly configured.
+
+=== Nice-to-have requirements
+
+* Support for a `system-metrics` boolean option to disable the registration of system
+  metrics altogether
+* Some applications might bundle libraries that configure unwanted meters, so per-deployment
+  configuration of application-specific filters would be helpful. They could be configured by,
+  for example:
+** A WildFly-specific XML deployment file
+** WildFly-specific MicroProfile Config properties
+
+=== Non-Requirements
+
+* Legacy metrics systems (i.e., WildFly/"base" Metrics) are out of scope.
+* Filtering of telemetry signals other than meters (i.e., spans, span events, logs, etc).
+* Transforming a meter (for example, see https://docs.micrometer.io/micrometer/reference/concepts/meter-filters.html#_transforming_metrics[here]) is not in scope, so the following actions are not supported:
+** Renaming a meter (id) or a tag
+** Adding tags to every meter
+** Dropping certain tags
+** Replacing tag values
+** Limiting the number of tags on a meter
+* A unified configuration for both Micrometer and OpenTelemetry, where the common configuration data (protocol, endpoints, export frequencies, filters, etc) are configured in a single place -- while interesting -- is not in scope.
+** That means, for the time being, any filters configured for Micrometer will need to be configured separately for OpenTelemetry, if/when filter support is added there. Note that this does not preclude the use of shared implementation code where possible.
+** This repetition will have to be addressed in future enhancements (e.g. https://redhat.atlassian.net/browse/WFLY-18290).
+
+=== Future Work
+
+* Any nice-to-have feature not included in the initial implementation should be considered
+  and issued filed for its implementation, or the feature should be rejected and discarded.
+
+== Backwards Compatibility
+
+There are no compatibility issues expected, as filtering will be opt-in.
+
+=== Default Configuration
+
+No existing configurations or default values will be modified as part of this effort.
+
+=== Importing Existing Configuration
+
+There are no migration concerns expected.
+
+=== Deployments
+
+Existing deployments should see no change in behavior. Filtering will be opt-in, so only deployments
+on systems where the feature is configured will see any behavioral change.
+
+=== Interoperability
+
+No.
+
+== Implementation Plan
+
+* It is expected that all planned features should be implementable in a single change.
+
+== Admin Clients
+
+* There are currently no plans to implement support in HAL for configuring meter filters.
+
+== Security Considerations
+
+There are no security impacts expected.
+
+[[test_plan]]
+== Test Plan
+
+The existing test suite in `testsuite/integration/expansion` will be modified to add tests to verify and
+validate filtering support. Tests should include coverage for:
+
+* JMX-based meters
+* System meters
+* WildFly subsystem meters
+* User-defined meters
+
+== Community Documentation
+
+The documentation in `src/main/asciidoc/_admin-guide/subsystem-configuration/` will be
+updated to show the changes to the affected subsystem(s). Changes will include a
+description of the feature, as well as examples of how to configure it.
+
+== Release Note Content
+
+The Micrometer and OpenTelemetry subsystems have been updated to allow administrators to
+define meter filters, giving fine-grained control over what meters are published.
