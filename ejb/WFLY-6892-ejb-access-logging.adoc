@@ -1,0 +1,239 @@
+---
+categories:
+  - ejb
+stability-level: default
+issue:
+feature-team:
+  developer: tadamski
+  sme:
+    -
+  outside-perspective:
+    -
+promotes: []
+promoted-by: []
+follows-up-on: []
+followed-up-by: []
+---
+
+= EJB Access Logging
+:author:            Tomasz Adamski
+:email:             tomasz.adamski@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WildFly can record every HTTP request through Undertow's `access-log` but has no equivalent
+mechanism for EJB invocations.  Administrators who need to know which client invoked which bean,
+under which security identity, and with what outcome must either instrument application code or
+mine server logs — neither approach survives an application upgrade, and neither is independent
+of application changes.  The gap was reported in 2019 (https://issues.redhat.com/browse/WFLY-6892[WFLY-6892]) and two implementations were produced at the time by Cheng Fang and Tommaso Borgato; those implementations were not merged, but the field-vocabulary verification, capture-point proofs, and test suite they produced are the foundation of this proposal.
+
+This proposal adds a single management resource, `/subsystem=ejb3/service=access-log`, that
+emits one line-delimited JSON record per EJB invocation to a file, the logging subsystem, or
+the console.  The infrastructure is `org.wildfly.event.logger`, the same library that backs
+Undertow's `console-access-log`.  Enabling the feature requires no application changes and no
+server restart; the minimal configuration is one XML element or one CLI command.
+
+One limitation is worth naming explicitly.  Over the EJB-over-HTTP transport, every invocation
+is already visible in Undertow's access log as an HTTP POST.  The EJB access log adds structured,
+named fields, the EJB-resolved security identity, exception class names, and business-method
+duration isolated from network time — but an administrator running EJB-over-HTTP exclusively will
+see two log lines per call.  The feature's unique value is strongest on Remoting, local in-VM,
+timer, and asynchronous invocations, none of which are visible to any HTTP log.  A second
+limitation: behind a reverse proxy, `remote-address` reflects the proxy address unless
+`proxy-address-forwarding` is enabled in the Undertow subsystem.
+
+=== User Stories
+
+As a server administrator I want a per-invocation record of who called which EJB, from where,
+and with what outcome so that I can audit access and diagnose failures without modifying
+application code.
+
+As a security officer I want invocation records to be written to a file outside the logging
+subsystem's handler chain so that logging-subsystem reconfiguration cannot inadvertently suppress
+the records.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-6892[WFLY-6892] — original feature request and current implementation tracker.
+  Cheng Fang and Tommaso Borgato produced implementations in 2019 against this issue.  Their
+  code and tests are carried forward in the branch; the present proposal changes the management
+  model to address the reviewer objections raised at the time but keeps the capture point and
+  field vocabulary they established.
+* A wildfly-core issue (to be filed) will track the `LoggerEventWriter`, `FileEventWriter`, and
+  `AsyncEventLogger` improvements that are prerequisites for the ejb3 PR.
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly[wildfly] — `ejb3` subsystem: new `AccessLogResourceDefinition`,
+  `AccessLogService`, and view interceptor.
+* https://github.com/wildfly/wildfly-core[wildfly-core] — `org.wildfly.event.logger`: `LoggerEventWriter`,
+  `FileEventWriter`, bounded-queue `AsyncEventLogger` with drain-on-stop.
+
+=== Other Interested Projects
+
+The wildfly-core changes also fix an unbounded-queue defect and a reschedule-gap defect in
+`AsyncEventLogger` that affect `console-access-log` today.
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+* Adding `/subsystem=ejb3/service=access-log` starts access logging without a server reload.
+  Removing it stops logging without a reload.
+* The default destination is a file at `standalone/log/ejb-access.log`, rotating daily, matching
+  the zero-configuration behaviour of Undertow's `access-log`.
+* Two additional destinations are supported: `logging` (records are emitted to the
+  `org.jboss.as.ejb3.access-log` logger category) and `console` (records go to standard output
+  via `StdoutEventWriter`, bypassing `System.out`).
+* Records are line-delimited JSON objects.  Each record begins with `"eventSource":"ejb-access"`.
+* The logged fields are configurable via an `attributes` list with 21 tokens; the default set
+  includes timestamp, bean identity, security identity, network addresses, protocol, outcome, and
+  duration.
+* Arbitrary key-value pairs can be merged into every record via a `metadata` properties attribute,
+  useful for environment tags or log-aggregation version fields.
+* Two read-only runtime metrics are exposed: `events-logged` (records submitted to the writer)
+  and `events-dropped` (records discarded when the async queue is full).  `events-dropped` is
+  never zero-suppressed so an operator can distinguish "no drops yet" from "drops not counted".
+  Both counters persist across service restarts and reset only when the resource is removed and
+  re-added.
+* Attributes that control the writer (`destination`, `path`, `relative-to`, `rotate-suffix`,
+  `worker`, `queue-length`, `attributes`) are `RESTART_RESOURCE_SERVICES`: the access-log
+  service restarts without touching deployments.  `include-local`, `include-node-name`, and
+  `metadata` are `RESTART_NONE` and take effect immediately.
+* A view interceptor is installed unconditionally at `EJBComponentDescription` position `0x280`
+  so that enabling and disabling the feature does not require redeployment.  When the resource is
+  absent the interceptor proceeds immediately; the measured overhead is approximately 8.5 ns per
+  local invocation at the median, against a design bound of 20 ns, and sits within run-to-run
+  variation.
+* The interceptor does not take an MSC dependency on the access-log service.  Interceptors are
+  installed when a deployment is processed, whereas the access-log resource is added and removed
+  afterwards on a running server, so a direct dependency would make every EJB deployment wait on
+  a service that is absent by default, and `:remove` would stop every component that depends on
+  it.  Instead a holder service is installed unconditionally with the subsystem and never
+  removed; deployments depend on that, and the access-log service publishes itself into the
+  holder on start and clears it on stop.  Only the holder's contents change at runtime, so
+  enabling and disabling the feature disturbs no deployment.  This mirrors
+  `LoggingInterceptor`, which obtains its runtime-mutable enablement flag from a
+  permanently-installed service in the same way.
+* MDB message-delivery invocations (`InvocationType.MESSAGE_DELIVERY`) are not logged because
+  they carry no client address, no protocol, and no security identity that identifies a caller.
+* Schema version is `urn:jboss:domain:ejb3:12.0`.  Domain transformation rejects the new
+  resource for model versions predating this schema, surfacing an error in the managed domain
+  rather than silently discarding the configuration.
+
+=== Non-Requirements
+
+* An invocation correlation ID is not provided in v1.  Four candidates were investigated and all
+  fail as correlation keys: Remoting's wire ID is a recycled 16-bit per-channel multiplexing
+  slot; the EJB-over-HTTP cancellation handle is set only for `Future`-returning methods and
+  discarded when the call completes; a server-minted UUID is unique but invisible to the client;
+  ambient trace context is not propagated through EJB today.  Correlation tracking is deferred
+  to a separate ticket, expected to use W3C trace context propagation, which requires no wire
+  format change.
+* IIOP (CORBA) invocations are not captured in the first drop.  The capture point
+  (`EjbCorbaServant`) exists but peer-address obtainability on the CORBA path is unverified.
+* Per-field JSON key renaming is not provided.  The `console-access-log` model exposes ~35
+  object-type attributes with settable key names; for 21 flat fields a validated string list is
+  the appropriate weight.
+
+=== Future Work
+
+Correlation ID tracking via W3C trace context propagation is the primary follow-up work.  Both
+transports carry an attachment map that already accepts unknown keys, so adding a propagated
+trace ID requires no wire-format change and no schema revision.  IIOP capture is the second
+planned follow-up once peer-address obtainability on the CORBA path is verified.
+
+== Backwards Compatibility
+
+This feature introduces a new management resource that is absent from any existing configuration.
+No existing behaviour changes.
+
+=== Default Configuration
+
+The default WildFly configuration does not include `service=access-log`.  No existing attribute
+values or Galleon layer outputs change.
+
+=== Importing Existing Configuration
+
+Existing configurations are unaffected: a configuration that contains no `service=access-log`
+element continues to function as before and no migration is required.
+
+=== Deployments
+
+Deployments require no changes.  The view interceptor is always installed but exits immediately
+when logging is disabled, adding no behavioural change to existing deployments.
+
+=== Interoperability
+
+The `destination=logging` path calls a `java.util.logging.Logger` and has no capability
+dependency on the logging subsystem.  If the logging subsystem is absent, `destination=file`
+and `destination=console` are unaffected; `destination=logging` degrades to JVM-level logging.
+
+== Admin Clients
+
+The new resource follows standard management-model conventions and is fully accessible from
+JBoss CLI with no new command syntax.  HAL can display and edit the resource through its generic
+management-model view; no dedicated HAL integration is required for this feature to be
+functional.
+
+== Security Considerations
+
+An EJB access log records the resolved security identity name and client network addresses for
+every invocation.  Under data-protection regulations in some jurisdictions, these are personal
+data; the file inherits the permissions of the server's log directory (`jboss.server.log.dir`),
+and administrators should review those permissions before enabling the feature in regulated
+environments.
+
+Because the async queue is bounded, this log is explicitly not a guaranteed-complete audit
+trail.  The `events-dropped` metric is present so that an operator can tell when records have
+been discarded; a zero value means no drops have been observed, not that the queue can never
+overflow.  Administrators with audit-completeness requirements should monitor `events-dropped`
+and increase `queue-length` if it is non-zero.
+
+For management RBAC purposes the `service=access-log` resource follows standard conventions:
+reads are available to any authenticated management user; writes are limited to Maintainer or
+higher.
+
+[[test_plan]]
+== Test Plan
+
+Subsystem unit tests cover XML parse and marshal round-trips for all attribute combinations,
+model persistence, and transformer rejection of the new resource when applied to model versions
+predating schema `ejb3:12.0`.
+
+Integration tests cover all three destinations (`file`, `logging`, `console`), runtime add and
+remove without reload, confirmation that no reload is required after attribute changes with
+`RESTART_NONE` semantics, queue-overflow behaviour and the `events-dropped` counter, and
+`events-logged` counter semantics.  Tests from the original 2019 implementation (Tommaso
+Borgato) have been revived and extended to cover the revised resource model and the additional
+destinations introduced in this proposal.
+
+Transformer rejection tests confirm that the domain controller raises an error rather than
+silently discarding the resource when a secondary host controller runs an older model version.
+
+== Community Documentation
+
+Documentation for this feature will be included in the WildFly Administrator Guide as part of
+the PR to wildfly main.  The administrator guide section covers enabling and disabling the
+feature, all three destinations, the field vocabulary, the `metadata` properties attribute, the
+`events-dropped` metric and its operational meaning, and the proxy-address-forwarding caveat.
+
+== Release Note Content
+
+WildFly now supports EJB access logging.  Adding `/subsystem=ejb3/service=access-log` writes one
+JSON record per EJB invocation — including the caller's security identity, network addresses,
+bean and method name, outcome, and duration — to a rotating log file, the logging subsystem, or
+the console, with no application changes and no server restart required.  This fills the
+long-standing observability gap for Remoting, local, timer, and asynchronous invocations that
+are invisible to Undertow's HTTP access log.
