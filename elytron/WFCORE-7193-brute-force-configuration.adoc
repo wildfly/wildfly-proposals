@@ -1,0 +1,142 @@
+---
+categories:
+- elytron
+- security
+stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/853
+feature-team:
+ developer:
+  - darranl
+ sme:
+  - "TODO: SME GitHub id"
+ outside-perspective:
+  - "TODO: outside-perspective GitHub id"
+promotes: []
+promoted-by: []
+# This is follow-on management configuration for WFCORE-7192, not a promotion.
+follows-up-on:
+- elytron/WFCORE-7192-brute-force-mitigation.adoc
+followed-up-by: []
+---
+= [WFCORE-7193] Brute Force Protection Configuration
+:author:            Darran Lofthouse
+:email:             darran.lofthouse@jboss.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WildFly's Elytron subsystem applies brute force protection to supported security realms. The protection is enabled by default and may currently be adjusted only with realm-specific system properties. This makes the configuration difficult to discover and validate, cannot be inspected through the management model, and requires a JVM restart to change.
+
+This proposal adds community-stability management-model and XML configuration for the existing protection. Administrators will be able to configure it on each supported realm, with validation and clear metadata, while existing system-property configuration remains effective when the management configuration is absent.
+
+=== User Stories
+
+As a WildFly administrator, I want to inspect and configure brute force protection for a realm through the CLI or management API, so that the configuration is discoverable, validated, and managed with the rest of the realm configuration.
+
+As an administrator with an existing system-property configuration, I want it to continue to work without changing my server configuration, so that adopting a release containing this feature does not alter my existing behaviour.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFCORE-7193[WFCORE-7193]
+* https://issues.redhat.com/browse/WFCORE-7192[WFCORE-7192] introduced the brute force mitigation that this proposal makes configurable through the management model.
+* https://github.com/wildfly/wildfly-proposals/issues/853[WildFly Feature Planning issue #853]
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly-core[WildFly Core], specifically the Elytron subsystem.
+* https://github.com/wildfly-security/wildfly-elytron[WildFly Elytron], whose `BruteForceRealmWrapper` supplies the existing runtime behaviour and defaults.
+
+=== Other Interested Projects
+
+Projects and tools that manage WildFly's Elytron configuration, including the WildFly administration console, may wish to expose the new management metadata. No client-specific integration is required for the initial feature.
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+The Elytron subsystem shall provide an optional `brute-force-protection` OBJECT attribute, at `community` stability, on `properties-realm`, `filesystem-realm`, `ldap-realm`, `jdbc-realm`, `jaas-realm`, `caching-realm`, `distributed-realm`, `failover-realm`, `custom-realm`, and `custom-modifiable-realm` resources.
+
+The attribute shall provide `enabled`, `max-failed-attempts`, `lockout-interval`, `session-timeout`, and `max-cached-sessions` fields. `lockout-interval` and `session-timeout` are expressed in minutes. All fields are optional; the numeric fields accept `-1` or a non-negative value. A value of `-1` or `0` delegates to the WildFly Elytron library default: 10 failed attempts, a 15-minute lockout interval, a 30-minute failure-session timeout, and 25,000 cached sessions.
+
+The configuration shall be represented in the Elytron community 19.0 XML schema as an optional `brute-force-protection` child element whose fields are XML attributes. For example:
+
+[source,xml]
+----
+<properties-realm name="ApplicationRealm">
+    <users-properties path="users.properties"/>
+    <groups-properties path="groups.properties"/>
+    <brute-force-protection enabled="true" max-failed-attempts="5"
+        lockout-interval="10" session-timeout="30" max-cached-sessions="1000"/>
+</properties-realm>
+----
+
+When the management attribute is absent, the existing realm-specific system properties shall continue to configure the wrapper. When the attribute is present, explicitly supplied numeric fields take precedence; omitted numeric fields may use the corresponding system-property value and otherwise delegate to the library default. If `enabled` is omitted from a present management attribute, it defaults to `true`; when the whole attribute is absent, the existing `enabled` system property controls this value. Changes require the affected realm services to restart.
+
+The management metadata shall provide descriptions, range validation, expression support, and minute measurement units for the time fields. The feature shall follow WildFly's normal management RBAC behaviour; it stores no credentials, makes no new sensitive capability reference, and adds no runtime operation.
+
+=== Non-Requirements
+
+This proposal does not change the brute-force mitigation algorithm, its Elytron library defaults, or the set of authentication mechanisms protected by the wrapper. It does not remove or deprecate the existing system properties.
+
+The feature does not persist failed-attempt state across server restarts, replicate it across cluster nodes, expose runtime cache statistics, or add operations to clear failed authentication state. Those are possible future enhancements.
+
+=== Future Work
+
+Future work may expose runtime information about protection state and add management operations to clear an identity's failed-attempt state or a realm's cache. If operational demand warrants it, a later proposal may also consider monitoring notifications and clustered or persistent state.
+
+== Backwards Compatibility
+
+Existing configurations remain valid because the new management attribute and XML element are optional. Existing system properties continue to configure a realm when the new attribute is not present. A configuration that adds the attribute intentionally takes precedence according to the field-level rules above.
+
+=== Default Configuration
+
+This work does not change the defaults introduced by WFCORE-7192 and does not change configuration generated by existing Galleon layers. If neither the management attribute nor a relevant system property is set, WildFly Elytron continues to use its existing defaults.
+
+=== Importing Existing Configuration
+
+Existing XML configuration imports unchanged because the new XML element is optional. Configurations using the new element require the Elytron `community:19.0` schema and are not accepted by earlier schemas.
+
+=== Deployments
+
+This feature does not change deployment behaviour. Application and management authentication continue to use the realm's existing brute-force protection behaviour; only its configuration becomes manageable through the model.
+
+=== Interoperability
+
+N/A. The configuration is local to each WildFly server and does not alter a protocol or on-the-wire format.
+
+== Implementation Plan
+
+WildFly Core will add the shared management attribute and attach it to the supported realm definitions, including the two custom-realm resources. It will update the existing realm-wrapper construction so the management model and legacy system properties are resolved with the stated precedence. The Elytron community schema, parser/marshaller, management descriptions, and subsystem parsing tests will be updated together.
+
+== Admin Clients
+
+The JBoss CLI can add, read, and write the new attribute using standard management-model operations. Existing CLI behaviour remains compatible because the attribute is additive and optional. The administration console must remain compatible with the resource definitions; a dedicated console view is not required for this feature. TODO: Create or link any follow-up HAL issue if richer UI support is desired.
+
+== Security Considerations
+
+The feature makes an existing security control easier to inspect and tune. Inappropriate values can weaken protection or cause legitimate identities to be locked out, so the management metadata and documentation must clearly describe the fields, defaults, units, and operational effect. The feature stores no secrets and does not introduce a new network endpoint, credential, or security-sensitive reference.
+
+[[test_plan]]
+== Test Plan
+
+Automated Elytron subsystem parsing tests will cover the new XML element for every supported realm type, literal and expression-based values for every expression-enabled field, management-model registration, marshalling, and schema validation. Tests will verify the management configuration takes precedence where a field is set and that system properties remain effective where the management attribute or an individual numeric field is absent.
+
+Integration coverage will exercise authentication failures and successful reset behaviour using representative HTTP and SASL authentication with configured realms. Manual exploratory testing will confirm that CLI descriptions, validation failures, units, defaults, and reload-required behaviour are clear. Existing system-property-only configurations will be exercised as the compatibility case. The test plan and its evidence require review and approval by a QE with relevant subject-matter expertise before the feature is considered ready for merge.
+
+== Community Documentation
+
+The WildFly Elytron Security guide will document the `brute-force-protection` attribute, its supported realm types, XML and CLI examples, field units and defaults, configuration precedence, and the continued availability of legacy system properties. TODO: Identify or create the documentation tracking issue and add it here.
+
+== Release Note Content
+
+WildFly now provides community-level management configuration for Elytron brute force protection on supported security realms. Administrators can configure protection through the management model or XML, including failed-attempt limits, lockout and session timeouts, and cache capacity. Existing realm-specific system properties remain supported when management configuration is not supplied.
