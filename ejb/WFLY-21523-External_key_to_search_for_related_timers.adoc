@@ -28,6 +28,7 @@ This proposal introduces an indexed `external_id` column to the underlying datab
 === User Stories
 
 * As a developer of a long-running process engine, I want to associate a specific EJB Timer with an external ID via a standard API extension, allowing me to efficiently query the timer without scanning the entire database.
+* As an operations or support engineer, I want to query the `jboss_ejb_timer` table directly via SQL and see a human-readable identifier (such as a process instance UUID or task ID) without deserializing binary data, so that I can efficiently monitor and debug timer state in production.
 
 == Issue Metadata
 
@@ -35,6 +36,7 @@ This proposal introduces an indexed `external_id` column to the underlying datab
 
 * https://issues.redhat.com/browse/WFLY-21523
 * https://redhat.atlassian.net/browse/JBPM-10072
+* https://issues.redhat.com/browse/EAP7-1770
 * https://issues.redhat.com/browse/RHPAM-4698
 
 === Affected Projects or Components
@@ -73,6 +75,12 @@ This feature is fully backward compatible.
 
 * **Database Schema:** The new `EXTERNAL_ID` column is nullable. The `DatabaseTimerPersistence` logic will dynamically detect if the column is missing on startup and automatically execute an `ALTER TABLE` to migrate existing tables.
 * **API Compatibility:** Existing EJB applications using standard `TimerConfig` objects will seamlessly default to a `NULL` external ID. The new capabilities are completely opt-in via casting to `ExtendedTimerConfig` and `ExtendedTimerService`.
+
+=== RHPAM / jBPM Integration Dependency
+
+NOTE: The WildFly EJB subsystem solely persists the `EXTERNAL_ID` value that the calling application provides via `ExtendedTimerConfig`. It has no knowledge of RHPAM process instance IDs or task IDs. For deployments of RHPAM on JBoss EAP (see EAP7-1770), the `EXTERNAL_ID` column will remain `NULL` until RHPAM itself is updated to adopt `ExtendedTimerConfig` and populate the field — tracked under https://redhat.atlassian.net/browse/JBPM-10072[JBPM-10072].
+
+Customers should not expect a non-null `EXTERNAL_ID` for RHPAM-created timers until both this WildFly change and the corresponding JBPM-10072 change are deployed together.
 
 === Default Configuration
 
