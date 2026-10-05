@@ -1,0 +1,157 @@
+---
+# Add any category for this proposal as a YAML list, e.g.
+# - core
+# - management
+# If missing, add it to _data/wildfly-categories and use its id
+categories:
+- management
+# Specify the stability level of the feature.
+# Values can be one of: experimental, preview, community, or default
+stability-level: default
+# Specify the Feature Development tracker issue for the feature.
+# This must be an issue tracked in https://github.com/orgs/wildfly/projects/7/views/1.
+# To create a Feature Development tracker issue, go to https://github.com/wildfly/wildfly-proposals/issues/new/choose
+# and select 'Feature Development'
+issue:
+- https://github.com/wildfly/wildfly-proposals/issues/750
+# Provide the GitHub ids of the feature team members, organized by role.
+# Provide a single id for the 'assignee' role. Use a YAML list for the 'sme' and
+# 'outside-perspective' roles, even if there is only one person in a role.
+feature-team:
+ developer: yborgess@redhat.com
+ sme:
+  - darran.lofthouse@redhat.com
+ outside-perspective:
+  - TBD
+# If this issue tracks the promotion of a previously completed feature to a higher stability level, provide the URL of
+# the original https://github.com/wildfly/wildfly-proposals/issues issue that was used to track the implementation of
+# that feature.
+promotes:
+- https://github.com/wildfly/wildfly-proposals/pull/595
+---
+
+= Promote management interface attributes for backlog, no-read-timeout, connection-high-water, connection-low-water from community to default stability level
+:author:            Yeray Borges
+:email:             yborgess@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+These four attributes where added to the management interfaces at community stability level by https://issues.redhat.com/browse/WFCORE-6830[WFCORE-6830] :
+
+* backlog
+* no-read-timeout
+* connection-high-water
+* connection-low-water
+
+At default stability level, these attributes are only available via system properties. The goal of this feature request is to track any work to promote the feature to default stability level and make these attributes available for configuration in the management model. System properties should remain in place but usage will be deprecated in favor of management attributes.
+
+=== User Stories
+
+As a user, I want to ble able to configure backlog, no-read-timeout, connection-high-water and connection-low-water using the JBoss CLI and the Web Console, and store them in the management model instead of using system properties.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFCORE-7317
+
+=== Affected Projects or Components
+
+* WildFly Core
+* HAL Web Console
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+* [x] Managed domain
+* [x] OpenShift s2i
+* [x] Bootable jar
+
+== Requirements
+
+Four new attributes will be promoted from `Community` stability level to `Default`.
+
+=== Changed requirements
+
+At default stability level, the configuration of these attributes is only possible via system properties. The main task on this promotion is to make these attributes available at the management model by:
+
+* Removing the stability level qualifier from the attribute definitions allowing them to be used at the default stability level.
+* Moving the XML schema definitions and parsing to an appropriate schema at the default stability level.
+* The community documentation can be simplified to remove references to the stability level
+`Community` once supported at all stability levels.
+
+When these attributes are configured at `Default` stability level via system properties, their corresponding values will overwrite any value configured in the management model. As stated in the https://github.com/wildfly/wildfly-proposals/pull/595[community proposal], the behaviour using these system properties at `Default` stability level will remain the same as how they currently behave at the `Community` stability level, and a message will be logged to inform the administrator that they should be configured using the new attribute definitions.
+
+=== Non-Requirements
+
+* N/A
+
+=== Future Work
+
+* Remove the ability to configure these values using System Properties.
+
+== Backwards Compatibility
+
+* N/A
+
+=== Default Configuration
+
+The new attributes will not be present in the default configuration, instead the default values will remain in use:
+
+* backlog = 50
+* connection-high-water = 100
+* connection-low-water = 75
+* no-request-timeout = 60000
+
+=== Importing Existing Configuration
+
+As the attributes are optional and defined with default values the changes here will not impact the ability to import
+and existing configuration.
+
+=== Deployments
+
+* N/A
+
+=== Interoperability
+
+* N/A
+
+== Admin Clients
+
+The JBoss CLI utilises low level management operations when updating the http-management-interface, these dynamically
+take into account the results of calling :read-resource-description so these new attributes will be automatically
+supported by the CLI when the server is running at the `Default` stability level or lower.
+
+The admin console does contain a screen dedicated to the management of the HTTP management interface available at
+http://localhost:9990/console/index.html#standalone-server[HTTP Management Interface]. This screen is dynamically rendered based on the attributes defined on the HTTP management interface resource, this means that when the server is running at a stability level that supports these new attributes the admin console will automatically support them - in other cases they will not be present in the view.
+
+No follow up tasks are required for either admin client.
+
+== Security Considerations
+
+Security constraints are already defined on the management interfaces, these new attributes do not require further constraints.
+
+[[test_plan]]
+== Test Plan
+
+This stability level is reserved and requires an approved test plan done by a professional Quality Engineer.
+
+== Community Documentation
+
+Since this is a promotion from `Community` stability level, we do not need to add additional documentation about this feature, however the documentation will be simplified by removing references to the stability levels since this feature will be always available.
+
+== Release Note Content
+
+The following HTTP management interface settings, which were previously configured using system properties, can now be set directly in the management model:
+
+* `backlog`
+* `connection-high-water`
+* `connection-low-water`
+* `no-request-timeout`
+
