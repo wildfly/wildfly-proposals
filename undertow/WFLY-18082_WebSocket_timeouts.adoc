@@ -1,0 +1,160 @@
+---
+# Add any category for this proposal as a YAML list, e.g.
+# - core
+# - management
+# If missing, add it to _data/wildfly-categories and use its id
+categories:
+ - undertow
+# Specify the stability level of the feature.
+# Values can be one of: experimental, preview, community, or default
+stability-level: preview
+# Specify the Feature Development tracker issue for the feature.
+# This must be an issue tracked in https://github.com/orgs/wildfly/projects/7/views/1.
+# To create a Feature Development tracker issue, go to https://github.com/wildfly/wildfly-proposals/issues/new/choose
+# and select 'Feature Development'
+issue: https://github.com/wildfly/wildfly-proposals/issues/633[ISSUE-633]
+# Provide the GitHub ids of the feature team members, organized by role.
+# Provide a single id for the 'assignee' role. Use a YAML list for the 'sme' and
+# 'outside-perspective' roles, even if there is only one person in a role.
+feature-team:
+ developer: baranowb
+ sme:
+  - frainone
+  - ropalka
+ outside-perspective:
+  - ibourdak
+# If this issue tracks the promotion of a previously completed feature to a higher stability level, provide the URL of
+# the original https://github.com/wildfly/wildfly-proposals/issues issue that was used to track the implementation of
+# that feature.
+promotes:
+# During initial development of a feature, this field should be left blank. If after the feature is completed and its
+# stability level is promoted via a later issue, the developer promoting the issue should return to this document ("this"
+# being the original analysis document for the feature). The field should be updated to point to the
+# https://github.com/wildfly/wildfly-proposals/issues issue that promotes it.
+# For example,
+#              | Implementation Issue (A) | Promotion Issue (B)
+# promotes:    |                          | https://github.com/.../A
+# promoted-by: | https://github.com/.../B |
+promoted-by:
+---
+
+= Allow to specify WebSocket timeout per listener irrespective of listener general r/w timeouts
+:author:            Bartosz Baranowski
+:email:             bbaranow@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+
+== Overview
+
+By default web-sockets inherit R/W timeouts from regular sockets(listner elemenets in config). This is problematic, because lifecycle of websocket is usually different than regular server socket.
+
+
+=== User Stories
+
+
+* https://issues.redhat.com/browse/WFLY-18082[WFLY-18082]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/UNDERTOW-2333[UNDERTOW-2333]
+* https://issues.redhat.com/browse/JBEAP-28281[JBEAP-28281]
+* https://issues.redhat.com/browse/JBEAP-28280[JBEAP-28280]
+
+=== Affected Projects or Components
+
+Undertow integration
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+Add ability to specify timeout(r/w) values for websockets irrespective of general values specified for transport. Lisntener elements will have two additional attributes:
+ * websocket-write-timeout
+ * websocket-read-timeout
+
+As with regular timeout attributes those above are specified in miliseconds. If websocket-*-timeout is not specified, regular timeout value will be honored.
+
+=== Changed requirements
+
+
+
+=== Non-Requirements
+
+__<Use this section to explicitly discuss things that readers might think are required but which are not required.>__
+
+=== Future Work
+
+__<Use this section to discuss requirements that are not addressed by this proposal but which may be addressed in later proposals.>__
+
+== Backwards Compatibility
+
+__<Does this enhancement affect backwards compatibility with previously released versions of WildFly? Can the identified
+incompatibility be avoided?>__
+
+=== Default Configuration
+
+Shouldnt be any problem. web-socket-x-timeout should have no default value, so default/configured values for regular timeout will take precedence.
+NOTE: this WILL be a problem if users rely on old definition of listener that dont have default timeout.
+
+<subsystem xmlns="urn:jboss:domain:undertow:preview:15.0" ...>
+
+    <server name="default-server">
+       <http-listener name="default" socket-binding="http" redirect-socket="https" enable-http2="true" read-timeout="10000" websocket-read-timeout="500000" websocket-write-timeout="15000"/>
+       <https-listener name="https" socket-binding="https" ssl-context="applicationSSC" enable-http2="true" websocket-write-timeout="15000"/>
+    ....
+    </server>
+  ....
+</subsystem>
+
+=== Importing Existing Configuration
+
+Shouldnt be a problem. No default value and rest should be handled by transformer.
+
+=== Deployments
+
+No, it allows to adjust server behavior to old style.
+
+=== Interoperability
+
+No.
+
+== Implementation Plan
+
+Its done.
+
+== Admin Clients
+
+* CLI not affected
+* HAL TBD, potentially not.
+
+== Security Considerations
+
+Fine grained control between regular socket and web-socket channels.
+
+[[test_plan]]
+== Test Plan
+
+Set small timeout to sockets and 2x to websocket, start server events and check if regular timeout affects.
+Double this without setting websocket specific timeout
+
+== Community Documentation
+
+Yes. Small note detailing behavior and availability of two new options for websocket, similar to https://gitlab.cee.redhat.com/red-hat-jboss-enterprise-application-platform-documentation/eap8-documentation/-/merge_requests/713[DOC-MR-713].
+* web socket specific attributes to R/W timeouts are now part of listener definition
+  * websocket-read-timeout
+  * websocket-write-timeout
+* if those elements are not specified, regular R/W timeout attribute values are honored.
+
+== Release Note Content
+
+Listener config elements now support websocket specific R/W timeout attributes akin to existing previously read/write-timeout. Those specific attributes allow set distinct values for websockets.
