@@ -1,0 +1,127 @@
+---
+categories:
+ - ee
+stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/607
+feature-team:
+ developer: bstansberry
+ sme:
+  - jasondlee
+ outside-perspective:
+  - pedro-hos
+promotes: https://issues.redhat.com/browse/WFLY-19062
+promoted-by:
+---
+
+= Promote the mvc-krazo subsystem to community stability
+:author:            Brian Stansberry
+:email:             bstansbe@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+https://jakarta.ee/specifications/mvc/[Jakarta MVC] is a Jakarta specification project for
+providing support for the Model-View-Controller pattern in web applications. The specification
+has had three releases, and a fourth is in the process of being released. In WildFly 32 we introduced https://docs.wildfly.org/wildfly-proposals/ee/WFLY-19062-%5BPREVIEW%5D-Support_for_Jakarta_MVC_2.1.html[preview stability support for Jakarta MVC 2.1]. It has now had four releases of bake at preview level and should be promoted to community.
+
+As part of this we will move WildFly Preview to MVC 3.0, which is based on the EE 11 APIs.
+
+
+
+=== User Stories
+
+* I'm a web application developer who prefers using the Model-View-Controller programming model for my applications. I want an implementation of that paradigm that works well with CDI and with common view technologies. Jakarta MVC meets my needs but my employer will only allow me to use it in WildFly if it's at `community` stability.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-20583
+* https://issues.redhat.com/browse/WFLY-19970
+* https://issues.redhat.com/browse/WFLY-20570
+* https://issues.redhat.com/browse/WFLY-20590
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly
+* https://github.com/hal/console
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+* The subsystem resource will be available when the server is running at `community` stability.
+* The Jakarta MVC API module and the Eclipse Krazo implementation modules will be provisioned in a complete server installation or if the `mvc-krazo` layer is used, even if the provisioning configuration is limited to `community` stability packages.
+* Users will be able to package MVC components, particularly libraries that provide CDI beans implementing the MVC `ViewEngine` interface in war and ear deployments.
+* Updates to the subsystem should be testable in the main WildFly testsuite without requiring snapshot releases not from the WildFly build.
+* WildFly Preview will provide Jakarta MVC 3.0.
+
+=== Non-Requirements
+
+* Inclusion of the `mvc-krazo` subsystem in any standard OOTB configuration file.
+
+== Future Work
+
+If there is interest, at some point we could provide a quickstart.
+
+== Backwards Compatibility
+
+=== Default Configuration
+
+No incompatibility; the subsystem is not in any existing OOTB configuration, and it provides no attributes with default values.
+
+=== Importing Existing Configuration
+
+No incompatibility. Configurations using the previous `preview` stability XML schema will still work.
+
+=== Deployments
+
+For standard WildFly, no change in deployment behavior as the basic implementation is unchanged. For WildFly Preview there may be behavior changes due to the update to https://jakarta.ee/specifications/mvc/3.0/[Jakarta MVC 3.0], which includes behavioral changes.
+
+=== Interoperability
+
+No incompatibility.
+
+== Implementation Plan
+
+Move
+
+== Admin Clients
+
+HAL should expose the subsystem.
+
+== Security Considerations
+
+None
+
+== Implementation Plan
+
+* The source code for the extension/subsystem and related Galleon details will be moved to the main https://github.com/wildfly/wildfly repository.
+* The source code for the MVC TCK runner will be moved to the https://github.com/wildfly/wildfly-tck-runners repository.
+* The https://github.com/wildfly-extras/mvc-krazo-feature-pack repository will be archived.
+
+[[test_plan]]
+== Test Plan
+
+* Standard subsystem management API tests.
+* Ability to include libraries that provide CDI beans implementing MVC interfaces in ear/lib artifacts and in wars packaged in ears will be tested. (This work will actually be done as part of bug fixes for the https://issues.redhat.com/browse/WFLY-19970 and https://issues.redhat.com/browse/WFLY-20570 issues.)
+* Primary testing will be done by executing the Jakarta MVC TCK.
+** A job executing this TCK will be added to the WildFly https://ci.wildfly.org/project.html?projectId=WF_MainNightlyJobs&tab=projectOverview[nightly CI jobs].
+
+== Community Documentation
+
+https://docs.wildfly.org/36/Admin_Guide.html#Simple_configuration_subsystems will be updated to note the subsystem is at `community` stability.
+
+== Release Note Content
+
+You can use https://jakarta.ee/specifications/mvc/[Jakarta MVC] in your applications. This feature is provided at the `community` stability level. Previously this had been supported at `preview` stability. The promotion to `community` stability means this feature is now available out of the box in standard WildFly.
