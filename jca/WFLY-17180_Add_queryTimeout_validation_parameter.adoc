@@ -1,0 +1,120 @@
+---
+categories:
+ - jca
+stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/669
+feature-team:
+ developer: Tomasz Adamski
+ sme:
+  -
+ outside-perspective: yborgessf
+---
+= [Community] WFLY-17180 Add datasource validation timeout parameter
+:author:            Tomasz Adamski
+:email:             tadamski@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          connector, validation
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.redhat.com/browse/
+
+== Overview
+
+Validation queries run without any explicit timeout. If the validation query blocks (as it will with most drivers when a connection is invalid/stale), this can block the entire pool in certain cases (e.g. background-validation locks the pool during validation). Even with validate-on-match, the failure to enforce a short timeout can significantly impact time to get a connection if one or more failed connections are found in the pool.
+
+Setting a driver level query timeout is not a suitable workaround because this impacts normal queries that may be expected to run for significant periods. The timeout for normal queries needs to be different from what is tolerated for validation queries (which should respond nearly instantaneously or else the connection is likely broken).
+
+
+== Implementation Plan
+
+=== Proposed solution
+
+A `validation-timeout-seconds` element is added to the `timeout` section of the datasources subsystem. It applies to both regular datasources and XA datasources.
+
+XML:
+
+[source,xml]
+----
+<datasource ...>
+    <timeout>
+        <validation-timeout-seconds>2</validation-timeout-seconds>
+    </timeout>
+</datasource>
+----
+
+CLI:
+
+[source]
+----
+/subsystem=datasources/data-source=ExampleDS:write-attribute(name=validation-timeout-seconds, value=2)
+----
+
+The value is expressed in seconds and defaults to 0 (no timeout). When set, the timeout is passed to the `ValidConnectionChecker.setTimeout(int)` method introduced in IronJacamar (JBJCA-1402).
+
+=== Changes
+
+* *IronJacamar (JBJCA-1402)*: `ValidConnectionChecker` interface gains a default `setTimeout(int)` method. `TimeOut` API and `TimeOutImpl` are extended with `validationTimeoutSeconds`. Built-in checkers (`CheckValidConnectionSQL`, `JDBC4ValidConnectionChecker`, `MySQLReplicationValidConnectionChecker`) apply the timeout; `OracleLegacyValidConnectionChecker` silently ignores it (Oracle's `pingDatabase` does not support a timeout parameter).
+* *WildFly Connector*: New `VALIDATION_TIMEOUT_SECONDS` attribute added to both `DATASOURCE_ATTRIBUTE` and `XA_DATASOURCE_ATTRIBUTE`. Datasources subsystem namespace bumped to `8.0`, model version bumped to `8.0.0`. A version-specific parser (`parseTimeOutSettings_8_0`) handles the new element for namespace 8.0; older namespace parsers reject it. Transformer chain extended with an `8.0 -> 7.2` step that discards undefined `validation-timeout-seconds` and rejects defined values.
+
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}/WFLY-17180[WFLY-17180]
+
+=== Related Issues:
+
+* {issue-base-url}/JBJCA-1402[JBJCA-1402]
+
+=== Dev Contacts:
+
+* mailto:{email}[{author}]
+
+=== Testing by:
+
+* Engineering
+
+=== Affected Projects or Components:
+
+* IronJacamar, WildFly Connector
+
+== Hard Requirements
+
+* Users must be able to configure a timeout specific to validation queries, independent of the general query timeout.
+* The timeout must be configurable via both subsystem XML and CLI.
+* The timeout must apply to all `ValidConnectionChecker` implementations that support it.
+* The attribute must be available for both regular datasources and XA datasources.
+* Domain transformation must reject the attribute when transforming to older model versions that do not support it.
+
+== Nice-To-Have Requirements
+
+* None
+
+== Non-Requirements
+
+* None
+
+=== Test Plan
+
+==== Subsystem parsing tests
+
+`DatasourcesSubsystemTestCase` verifies that the updated XML fixtures (namespace 8.0) with `validation-timeout-seconds` are correctly parsed and marshalled. Both full and expression-based XML variants are covered.
+
+==== Transformer rejection tests
+
+`DatasourcesTransformerTestCase` verifies that `validation-timeout-seconds`, when defined, is rejected during transformation to EAP 7.4 (model version 6.0.0). The rejection is tested for both regular datasource and XA datasource paths. The 8.0 -> 7.2 transformation is exercised transitively through the chain.
+
+==== Integration test
+
+`DatasourceCustomModulesTestCase` (in `testsuite/integration/basic`) creates a datasource with `validation-timeout-seconds=5` and a custom `TestValidConnectionChecker`. The test asserts that the configured timeout value is propagated to the checker via `setTimeout(int)`.
+
+==== Manual verification
+
+* Configure `validation-timeout-seconds` on a datasource via CLI and verify it appears in the model and persisted XML.
+* Verify that a datasource with a slow/hanging validation query times out after the configured number of seconds.
+
+=== Community docs
+
+* The new attribute will be documented in wildscribe (automatic from management API metadata).
