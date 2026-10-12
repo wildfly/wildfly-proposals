@@ -1,0 +1,198 @@
+---
+categories:
+- mcp
+- ai
+stability-level: experimental
+issue: https://github.com/wildfly/wildfly-proposals/issues/865
+feature-team:
+ developer: ehsavoie
+ sme:
+  - ehsavoie
+ outside-perspective: []
+promotes: []
+promoted-by: []
+follows-up-on: [mcp/mcp_opentelemetry_integration.adoc]
+followed-up-by: []
+---
+
+= MCP 2026-07-28 Protocol Support
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The Model Context Protocol (MCP) is the standardized JSON-RPC protocol through which AI agents discover and invoke enterprise tools, prompts, and resources exposed by WildFly applications via the WildFly AI Feature Pack. The MCP specification released on 2026-07-28 introduces a set of significant new capabilities: stateless request handling without a session handshake, a pre-initialization `server/discover` endpoint, multi-round tool results (MRTR) that let tools pause execution to gather additional client input, HTTP-header-based parameter routing via `Mcp-Param-*` headers, structured resource subscriptions, and cache-control metadata on list and discover responses.
+
+This proposal upgrades the WildFly MCP subsystem to support the 2026-07-28 protocol version alongside the existing 2025-03-26 and 2025-11-25 versions on a single HTTP endpoint. The server negotiates the highest mutually supported version at `initialize` time and adjusts its response structure accordingly. No breaking changes are introduced for deployments that do not opt into the new features.
+
+=== User Stories
+
+* As an AI agent developer targeting MCP 2026-07-28, I want the WildFly MCP server to negotiate and speak the new protocol so that I can use stateless requests, `server/discover`, MRTR, and subscription features without running a separate server.
+* As a WildFly tool author, I want to annotate tool parameters with `@McpParamHeader` so that intermediaries such as API gateways can route or authorize calls by inspecting `Mcp-Param-*` HTTP headers without parsing the JSON-RPC body.
+* As a security-conscious operator, I want to configure `request-state-secret` and `allowed-origins` in the WildFly management model so that multi-round tool state tokens are HMAC-protected and DNS-rebinding attacks are blocked.
+
+== Issue Metadata
+
+* WildFly AI Feature Pack MCP subsystem (`wildfly-mcp`)
+* java-mcp-annotations PR #73 (`@McpParamHeader` as supplemental annotation)
+* SEP-2322 (Multi-Round Tool Results specification)
+
+=== Related Issues
+
+* https://redhat.atlassian.net/browse/EAP7-2345[Provide Support for JBoss EAP MCP Server and Tools for applications]
+* https://github.com/wildfly/wildfly-ai-feature-pack/issues/285[Implement the Server features of MCP 2026-07-28 specification]
+* https://github.com/wildfly/wildfly-proposals/issues/838[OpenTelemetry Integration for MCP Message Handling]
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly-extras/wildfly-ai-feature-pack[wildfly-ai-feature-pack] — MCP subsystem extension, API module, and integration testsuite.
+
+=== Other Interested Projects
+
+* Any WildFly AI Feature Pack consumer that builds MCP servers or interacts with MCP clients speaking the 2026-07-28 protocol.
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+=== Protocol Negotiation
+
+The server MUST advertise and negotiate the three protocol versions `2025-03-26`, `2025-11-25`, and `2026-07-28` on a single HTTP endpoint. During `initialize`, the server selects the highest version that the client supports. All subsequent responses for that session MUST conform to the negotiated version. For `2026-07-28` clients, every successful result MUST carry `"resultType": "complete"` (handled transparently by `VersionAwareResponder`). Protocol-version mismatches on follow-up requests to an established session MUST be rejected with a `400` error.
+
+=== Stateless Request Handling
+
+Clients using the 2026-07-28 transport MAY omit the `initialize` handshake by sending requests with the `MCP-Protocol-Version: 2026-07-28` header. The server MUST handle such requests using a synthetic `StatelessConnection` that mimics an already-initialized session, including client-capability metadata extracted from the `MCP-Client-Capabilities` header. Stateless requests are fully functional for tools, prompts, and resources.
+
+=== Server Discovery Endpoint
+
+The server MUST respond to `server/discover` JSON-RPC requests — both on initialized sessions and in stateless mode — with a JSON object containing `supportedVersions`, `capabilities`, `serverInfo`, and `extensions`. This endpoint allows clients to inspect what the server supports before committing to a protocol version.
+
+=== Multi-Round Tool Results (MRTR)
+
+Tool methods MAY return `InputRequiredResult` to signal that they need additional input from the client. The server serializes this as a `"resultType": "input_required"` response containing `inputRequests` (elicitation or sampling requests keyed by string) and an opaque `requestState` token. On the follow-up `tools/call`, the server MUST deserialize `inputResponses` and `requestState`, validate the token's HMAC-SHA256 signature and TTL, then re-invoke the tool with an `InputResponses` parameter populated with the client's answers. The `requestState` token MUST be rejected when its HMAC is invalid or the TTL has expired.
+
+=== Request State Security
+
+The server MUST require a `request-state-secret` management attribute (marked `SensitiveTargetAccessConstraintDefinition.CREDENTIAL`) when MRTR is used. Tokens are Base64-encoded JSON objects signed with HMAC-SHA256 using that secret. The comparison MUST be constant-time. If no secret is configured, any inbound `requestState` is rejected by default. Acceptance of unsigned tokens may be enabled for development via the system property `org.wildfly.extension.mcp.allow-unsigned-request-state=true` but is not permitted in production.
+
+=== HTTP Header Parameter Routing (`@McpParamHeader`)
+
+The `@McpParamHeader` annotation MUST be usable as a supplement to `@ToolArg` on tool method parameters. When present, the generated JSON Schema for the tool's input MUST include the `x-mcp-header` keyword on the corresponding property. During request processing, the server MUST publish the argument value in the `Mcp-Param-<name>` HTTP response header, enabling intermediary inspection without JSON-RPC body parsing. The `value()` of the annotation gives the header name; it must be ASCII, non-empty, and unique (case-insensitively) within a single tool. Annotated parameters must map to `string`, `integer`, or `boolean` JSON Schema types.
+
+=== Resource Subscriptions
+
+The server MUST handle `subscriptions/listen` (2026-07-28 only), replacing the subscription set for the connection atomically. An empty list clears all subscriptions. `notifications/message` (logging) MUST NOT be delivered on subscription streams.
+
+=== Client Capability Introspection
+
+Tool methods MAY declare a `ClientCapabilities` parameter. The framework resolves this automatically (it does not appear in the tool's input schema). `ClientCapabilities.requireCapability(String)` MUST throw `MissingCapabilityException` when the named capability was not declared by the client, causing the server to return an error.
+
+=== DNS Rebinding Protection
+
+All MCP HTTP transports (Streamable HTTP and SSE) MUST validate the `Host` and `Origin` headers against a configurable allow-list. The `allowed-origins` management attribute configures additional accepted hostnames. Localhost (`localhost`, `127.0.0.1`, `[::1]`) MUST always be accepted. Requests whose `Host` or `Origin` does not match are rejected with `403 Forbidden`.
+
+=== Cache Control Metadata
+
+List responses (`tools/list`, `resources/list`, `prompts/list`) and `server/discover` responses MUST include cache-control metadata when `cache-ttl` is configured. The `cache-scope` attribute controls whether the `Cache-Control` header advertises `public` or `private` caching. Defaults are one hour TTL and `public` scope.
+
+=== Management Model Changes
+
+The following new attributes are added to the MCP endpoint resource at the `experimental` stability level, in schema version `urn:jboss:domain:mcp:experimental:2.0`:
+
+* `request-state-secret` (String, optional, CREDENTIAL-sensitive) — HMAC-SHA256 secret for `requestState` tokens.
+* `allowed-origins` (String list, optional) — Extra hostnames accepted by DNS-rebinding validation.
+* `cache-ttl` (Duration, default 1 hour) — Default cache TTL for list and discover responses.
+* `cache-scope` (Enum `PUBLIC`/`PRIVATE`, default `PUBLIC`) — Default cache scope.
+* `request-timeout` (Duration, default 5 minutes) — Maximum time to wait for a single tool/prompt/resource call before returning a timeout error.
+
+=== Non-Requirements
+
+* The 2026-07-28 upgrade does NOT break existing 2025-03-26 or 2025-11-25 clients; those continue to work without configuration changes.
+* MRTR is opt-in at the tool level; tools that do not return `InputRequiredResult` are unaffected.
+* `@McpParamHeader` does not replace `@ToolArg`; it is additive.
+* *Sampling* (`sampling/createMessage`) will NOT be implemented, even for the 2025-11-25 protocol version. The 2026-07-28 specification deprecates sampling (SEP-2577) in favour of the MRTR flow and it is expected to be removed in a future revision.
+* *Logging* (`logging/setLevel`, `notifications/message`) will NOT be implemented, even for the 2025-11-25 protocol version. The 2026-07-28 specification deprecates protocol-level logging (SEP-2577); applications should use standard WildFly / JBoss Logging infrastructure instead.
+* The proposal does not cover WildFly core security (Elytron, Undertow TLS), third-party AI provider API security, or network-level protections such as rate limiting.
+
+=== Future Work
+
+* Promotion of the MCP subsystem from `experimental` to `preview` stability level once the 2026-07-28 specification stabilizes.
+* Quickstart demonstrating MRTR with a real elicitation workflow.
+
+== Backwards Compatibility
+
+The changes are additive. The protocol negotiation logic selects the version that both parties support, so existing clients speaking 2025-03-26 or 2025-11-25 are unaffected. The new management attributes are all optional and have safe defaults (no `request-state-secret` means MRTR is disabled; no `allowed-origins` means only localhost is accepted by the rebinding check, which matches the previous behavior).
+
+=== Default Configuration
+
+No default configuration changes for existing deployments. The new attributes are absent from the default configuration and each has a documented default that preserves prior behavior.
+
+=== Importing Existing Configuration
+
+Existing configurations do not need modification. The schema namespace advances from `wildfly-mcp:experimental:1.x` to `urn:jboss:domain:mcp:experimental:2.0`; migration tooling should handle this namespace upgrade transparently.
+
+=== Deployments
+
+Deployments that do not use `InputRequiredResult`, `@McpParamHeader`, `ClientCapabilities`, or `subscriptions/listen` are entirely unaffected. Deployments that adopt MRTR must configure `request-state-secret`; without it the feature is disabled and clients receive an `INVALID_PARAMS` error if they attempt to send `requestState` tokens.
+
+=== Interoperability
+
+The implementation is validated against the official MCP specification conformance testsuite. All applicable conformance tests must pass; tests for the deprecated `sampling` and `logging` methods are excluded. Interoperability with the reference MCP TypeScript SDK has been verified manually for the core flows.
+
+== Implementation Plan
+
+The implementation is delivered in two commits:
+
+1. *Core 2026-07-28 support* — `ProtocolVersion` enum, `StatelessConnection`, `VersionAwareResponder`, `SubscriptionManager`, `RequestStateCodec`, `server/discover` handling, MRTR API (`InputRequiredResult`, `InputResponses`), DNS-rebinding validation, management model additions (schema 2.0), and the full unit and integration test suite.
+
+2. *`@McpParamHeader` refactoring* — Remove `required()` and `description()` from `@McpParamHeader` (those now come exclusively from `@ToolArg`), aligning with java-mcp-annotations PR #73 and eliminating schema duplication.
+
+== Admin Clients
+
+All new attributes (`request-state-secret`, `allowed-origins`, `cache-ttl`, `cache-scope`, `request-timeout`) are exposed as standard management model attributes and are fully accessible through the JBoss CLI and the Admin Console (HAL). The `request-state-secret` attribute is marked as security-sensitive (`CREDENTIAL`) and will be masked in HAL's attribute display. No additional follow-up work in the admin clients is required.
+
+== Security Considerations
+
+This proposal materially expands the MCP server's attack surface by introducing stateless request handling (no prior session required) and MRTR (clients echoing opaque tokens). The following controls address the key threat classes:
+
+* *`requestState` forgery* — HMAC-SHA256 with a server-side secret (`request-state-secret`) and constant-time comparison. Unsigned tokens are rejected by default.
+* *DNS rebinding* — `Host` and `Origin` validation against a configurable allow-list on every request across both transports.
+* *Session prediction* — Session IDs generated via `SecureRandom`-backed `UUID.randomUUID()`.
+* *Injection / deserialization* — Typed Jackson deserialization into declared concrete types; no polymorphic typing; no XML parsing.
+* *Credential exposure* — `request-state-secret` is declared with `SensitiveTargetAccessConstraintDefinition.CREDENTIAL`; it is masked in management reads and requires `Maintainer` or higher to write.
+
+The system property `org.wildfly.extension.mcp.allow-unsigned-request-state=true` enables acceptance of unsigned `requestState` tokens for development purposes. This property MUST NOT be set in production environments.
+
+For management RBAC purposes, all new management attributes follow typical RBAC behavior (any authenticated management user can read; `Maintainer` or higher to write) except `request-state-secret`, which is security-sensitive for access, reads, and writes.
+
+A full threat model covering assets, trust boundaries, entry points, attacker model, and vulnerability classes is published at `doc/threat-model.md` in the wildfly-ai-feature-pack repository.
+
+[[test_plan]]
+== Test Plan
+
+This feature ships at the *experimental* stability level.
+
+* *Unit tests* — `ProtocolVersionTestCase`, `RequestStateCodecTestCase`, `VersionAwareResponderTestCase`, `StatelessConnectionTestCase`, `SubscriptionManagerTestCase`, `McpHeaderToolTestCase`, `StreamableHttpValidationTestCase`, `ServerDiscoverTestCase`, `InputResponsesTestCase`, `CacheMetadataTestCase`, and `RequestMetadataTestCase` cover the new components in isolation.
+* *Integration tests* — `MCPDualVersionIntegrationTestCase` verifies that 2025-11-25 and 2026-07-28 clients can coexist on a single endpoint. `MCPServerDiscoverIntegrationTestCase` validates the `server/discover` response structure. `McpParamHeaderIntegrationTestCase` covers `@McpParamHeader` end-to-end including required-header enforcement and header-precedence rules. `ElicitationIntegrationTestCase` tests MRTR with elicitation. `MCPListChangedNotificationTestCase` verifies that `subscriptions/listen` correctly gates `notifications/list_changed` delivery.
+* *Conformance tests* — A dedicated `testsuite/mcp-conformance` module runs the official MCP specification conformance suite against a provisioned WildFly server. All conformance tests for the 2026-07-28 protocol version pass.
+
+== Community Documentation
+
+Documentation will be provided as part of the pull request to the wildfly-ai-feature-pack main branch, covering:
+
+* Updated `docs/content/mcp.md` — protocol negotiation, stateless mode, `server/discover`.
+* Updated `docs/content/mcp-tools.md` — `@McpParamHeader`, `ClientCapabilities`, `InputRequiredResult`, and `InputResponses` developer guide.
+* `doc/mcp-tool-development.md` — Advanced API guide for MRTR, header injection, and capability-aware tools.
+* `doc/threat-model.md` — Full security threat model for the MCP subsystem.
+
+== Release Note Content
+
+WildFly AI Feature Pack now supports the MCP 2026-07-28 protocol specification alongside the existing 2025-03-26 and 2025-11-25 versions on a single endpoint. New capabilities include stateless request handling, a `server/discover` pre-initialization endpoint, multi-round tool results (MRTR) with HMAC-secured state tokens, HTTP-header parameter routing via `@McpParamHeader`, structured resource subscriptions, and cache-control metadata on list responses. All new features are at the `experimental` stability level and are fully backwards-compatible with existing MCP clients.
