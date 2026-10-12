@@ -10,8 +10,10 @@ feature-team:
   - ehsavoie
  outside-perspective:
   -
-promotes:
-promoted-by:
+promotes: []
+promoted-by: []
+follows-up-on: []
+followed-up-by: [mcp/mcp_2026_07_28_protocol_support.adoc]
 ---
 
 = OpenTelemetry Integration for MCP Message Handling
