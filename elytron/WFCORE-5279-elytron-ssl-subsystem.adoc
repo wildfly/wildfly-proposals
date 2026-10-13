@@ -1,0 +1,284 @@
+= [WFCORE-5279] Split Elytron SSL into its own subsystem
+:author-mmazanek:   Martin Mazanek
+:email-mmazanek:    mmazanek@redhat.com
+:author:            Cameron Rodriguez
+:email:             carodrig@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+From work done on bootable JAR layers and other modular installations, it is apparent that TLS requirements for a server
+can be distinct from the general authentication requirements, and also that the Elytron subsystem takes a number of
+resources to define a working TLS configuration.
+
+This RFE proposes to provide a new subsystem dedicated to simplifying TLS configuration. The Elytron subsystem
+features will be maintained to provide advanced configurations. However, the majority of configurations which do not
+require a security domain or other authentication requirements can likely be satisfied with this simplified model.
+
+Within this document, the proposed subsystem is referred to as _Elytron TLS_ (``elytron-tls``).
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE[WFCORE-5279]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/ELY[ELY-2084]
+* https://issues.redhat.com/browse/EAP7-1564[EAP7-1564]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}] _(active)_
+* mailto:{email-mmazanek}[{author-mmazanek}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* TBD
+//* [ ] Engineering
+
+//* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly Elytron
+* WildFly Core
+* WildFly (Community Documentation)
+* Undertow + Elytron Web
+
+//=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+The subsystem is being developed in the ``wildfly-security-incubator`` org as
+https://github.com/wildfly-security-incubator/elytron-tls[elytron-tls], a standalone project.
+
+=== Hard Requirements
+
+In order to reduce the required configuration, dependencies, and system resources, Elytron TLS targets
+one major collection of use-cases: authentication of a server (and optionally client) using HTTPS. By limiting the
+scope to HTTP over TLS, we can remove most of the alternative authentication and authorization tools available in
+Elytron, including security domains, principal transformers, and HTTP authentication mechanisms. This
+reduces the subsystem size, and therefore that of Galleon layers, bootable JARs and OpenShift deployments.
+
+To achieve these goals, the Elytron TLS subsystem would include all dependencies it needs, and not require the
+entirety of the main Elytron subsystem to be installed. For scenarios where other authentication tools are needed,
+the full Elytron subsystem could be used instead.
+
+The new subsystem will use the same capabilities as Elytron proper. The intent is that, exempting simplified commands
+only in Elytron TLS or additional features left in the main Elytron subsystem, management CLI commands and XML configurations
+will be compatible with each other. For example:
+
+* A server SSL context, referencing a key-manager can be created in Elytron with the following CLI command:
++
+[source]
+----
+/subsystem=elytron/server-ssl-context=httpsSSC:add(key-manager=httpsKM,protocols=["TLSv1.2"])
+----
+
+* The same operation could be executed in Elytron TLS as follows:
++
+[source]
+----
+/subsystem=elytron-tls/server-ssl-context=httpsSSC:add(key-manager=httpsKM,protocols=["TLSv1.2"])
+----
+
+The Elytron TLS and Elytron proper subsystems should work regardless of if one or both are installed on the server. 
+
+==== WildFly Elytron
+
+TLS code in Elytron is currently dependent on security domains, and therefore the rest of the subsystem.
+To minimize dependencies in Elytron TLS, the code will be split into 2 modules:
+
+* ``ssl-base`` (working title), composed of domain-agnostic Elytron components, as well as refactored classes
+to create a TLS context without the need for a security domain. This will provide capabilities for Elytron TLS.
+* ``ssl-domain``, including the current domain-dependent Elytron classes. This will be used by Elytron proper,
+in addition to ``ssl-base`` to enable configurations that require a security domain.
+
+A Maven artifact for ``ssl-base`` will also need to be created and uploaded to repositories. The work that will be done
+is similar to the separation discussed in https://issues.redhat.com/browse/ELY-2506[ELY-2506].
+
+==== WildFly Core
+
+Many of the definitions and other classes (ex. https://github.com/wildfly/wildfly-core/blob/main/elytron/src/main/java/org/wildfly/extension/elytron/_private/WildFlyAcmeClient.java[WildFlyAcmeClient.java])
+required by Elytron TLS are already present in WildFly Core, within `wildfly-elytron-integration` module. However,
+these classes are package-private, and therefore not accessible to the new subsystem. Furthermore, only
+a subset of the classes are needed (for example, decoders). To resolve this, two changes are proposed:
+
+* Move the required definitions to a common module, similar to the split above in Elytron.
+* Modify the existing classes to be public, and provide a small set of public methods to supply definitions. The
+implementation would mirror that of the https://github.com/wildfly/wildfly-core/blob/main/controller/src/main/java/org/jboss/as/controller/security/CredentialReference.java[CredentialReference class].
+
+==== Galleon layers
+
+In order to make the most out of the proposed subsystem, appropriate Galleon layers for replacing the 
+full Elytron subsystem will be added. The point of this is to reduce the memory overhead of simple deployments
+as much as possible.
+
+==== Covered use-case scenarios
+
+* Standard one-way TLS (truststore and certificates for client side, key store and key pairs for server side)
+* Mutual TLS (key store and trust store on both sides)
+* Basic configuration - specify TLS version, cipher suites, etc.
+* KeyStore-, truststore-, and credential store-related configuration
+* FIPS
+* Ability to add providers
+* Integration with Certificate Authorities
+    ** Quick certificate setup with Let's Encrypt
+
+A more complete list is being developed, feel free to comment any other possible use-cases.
+
+=== Nice-to-Have Requirements
+
+* If both Elytron and Elytron TLS are installed on the server, consider if a TLS context in one be able to reference
+resources in the other via the shared capability (ex. via ``org.wildfly.security.trust-manager``)
+* An ``elytron-tls-tool`` script to interactively create a TLS context from the CLI, similar to ``add-user``
+
+==== Undertow + Elytron Web
+
+Currently, https://github.com/wildfly/wildfly/blob/main/undertow/pom.xml#L113-L121[Undertow depends on Elytron Web]
+in order to access the Elytron authentication code, which in turn depends on https://github.com/wildfly-security/elytron-web/blob/1.x/pom.xml#L264-L317[most Elytron modules]. In order to reduce dependencies, it should be considered whether a simpler version of the Undertow components can be provided, or if unneeded parts can be removed via transitive dependencies.
+
+Changes may be somewhat intensive, due to tight dependencies on security domains within Undertow. This would be investigated after an initial alpha release.
+
+=== Non-Requirements
+
+* Terminology in Elytron is split between "SSL" and "TLS"; it would be nice to simplify with one term going forward,
+and maintaining the other for compatibility.
+    ** Would affect Elytron, Elytron TLS, WildFly Core, and direct references in documentation
+* Consider backporting usability improvements to Elytron
+
+=== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+
+The Undertow subsystem uses reference to an SSLContext resource provided with the 'org.wildfly.security.ssl-context' capability.
+This makes implementation of a TLS subsystem straight-forward - we need to create an SSLContext resource
+with the same capability and we can wire it in by referencing its name. The initial working implementation of
+this concept is present in https://github.com/wildfly-security-incubator/elytron-tls/pull/3[this fork of Elytron TLS],
+and will be expanded to other features implemented in the Elytron subsystem.
+
+[NOTE]
+.*Current implementation status*
+====
+The current implementation (as of 2023-02-02) is missing a few features, which have not yet been
+added to the subsystem's XML schema and/or relevant class files are missing:
+
+* All permission mappers, direct security domain components, and SASL features removed
+* Jakarta Authentication (JASPI) and Authorization (JACC) currently aren't included, as authorization is
+limited to TLS
+* Some core elements that _will be added_ are not present yet:
+    ** Filtering and LDAP key stores
+    ** Server SNI context support
+    ** Support for custom components (ex.`custom-security-event-logger` and `custom-credential-security-factory`)
+* Object equivalents for some reference attributes need to be removed
+    ** An earlier version of this RFE proposed storing some elements (like key stores) as either object or reference
+    attributes, depending on command syntax used. This has been improved, and the updated concept is described below.
+====
+
+Unlike Elytron, the configuration should be as simple as possible - ideally one CLI command to create the SSL context.
+The context is assembled with some basic blocks - TrustManager and KeyManager related factory functions,
+which lead into KeyStore and credential store builders, etc. Currently, the schema of the Elytron TLS subsystem follows that of
+an Elytron subsystem, however the attributes for creating TLS contexts (ex. `key-store`, `trust-manager`) are
+defined in the XML as both reference and direct object attributes. The plan is for this to be simplified to use references,
+allowing for cross compatibility with Elytron.
+
+However, the CLI and shell tool scripts can use "objects" to provide more flexibility, like object attributes. Below,
+Elytron TLS could create a server SSL context from scratch, referencing a single key pair and encompassing
+all commands into a single one:
+
+[source,shell]
+----
+/subsystem=elytron-tls/server-ssl-context=appSSC:add(key-manager={key-store={path=tlsServer.keystore,relative-to=jboss.server.config.dir,credential-reference={clear-text=serverKeySecret}},credential-reference={clear-text=serverKeySecret}},cipher-suite-names=TLS_AES_128_GCM_SHA256)
+----
+
+While effective, this command is rather lengthy, so the subsystem would ideally offer simpler attributes
+as alternatives. One potential command abstracts away the key-manager, using a new object similar
+to ``org.wildfly.security.key-store``, but that also forms the key manager:
+
+[source,shell]
+----
+/subsystem=elytron-tls/server-ssl-context=appSSC:add(key-store={path=tlsServer.keystore,relative-to=jboss.server.config.dir,credential-reference={clear-text=serverKeySecret}},cipher-suite-names=TLS_AES_128_GCM_SHA256)
+----
+
+Effectively, suppliers would be created for key stores and managers, similar to https://github.com/wildfly/wildfly-core/blob/main/controller/src/main/java/org/jboss/as/controller/security/CredentialReference.java[CredentialReference],
+and would be used for manipulating an SSLContext. When the configuration is stored, it would match that of the main Elytron subsystem.
+
+==== Other Tasks
+
+* For Elytron, WildFly Core, and Elytron Web, code needs to be split between required TLS components, and those
+that enable Elytron's security domains and other components not needed in a basic TLS configuration. Work 
+on Elytron is already underway in https://github.com/wildfly-security/wildfly-elytron/pull/1729[ELY-2084].
+* The subsystem needs to be upgraded to use Elytron 2.x and WildFly 27 components.
+* Creating the `elytron-tls-tool` for interactive configuration. Integration of an `elytron-tls-tool` with other subsystems
+(Remoting, Undertow) for single-tool configuration would also be a helpful option.
+* A migration tool for existing users to reduce their dependencies would also be a useful option to include.
+* Updated Galleon layers need to be created with appropriate default values, and potentially one including Undertow
+(https://github.com/cam-rod/elytron-tls/tree/WFCORE-5279-undertow-ex[some early work was done here]).
+* Terminology changes _(i.e. consistent usage of either `TLS` or `SSL` throughout Elytron proper and Elytron TLS)_ have
+not been discussed yet, and remain a lower priority.
+
+== Test Plan
+
+Elytron TLS heavily derives from Elytron proper, so many of the existing standalone and integration test cases
+in WildFly Core can be migrated over, with slight modifications in subsystem name (see the Elytron TLS branch).
+The main focus of these test is to ensure that the new subsystem properly fulfills the capabilities provided
+by Elytron. Additional tests would cover the new commands and attributes introduced by the subsystem, to ensure
+they execute the same functionality.
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in
+wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
+
+Documentation could be included with existing Elytron docs, indicating the subsystem as an option for
+configs not requiring advanced features of Elytron. The focus of such docs should be on how to use the simplified
+commands, and then mention that previously described TLS commands in Elytron will also work in Elytron TLS. It might also make
+sense to present all TLS commands from the context of Elytron TLS, and then specify that they also work in Elytron.
+
+Also included should be instructions explaining what modifications need to be made to move an existing Elytron SSLContext
+configuration to Elytron TLS.
+
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
+
+=== Simplified TLS configurations
+
+WildFly ## also introduces new functionality to make TLS configurations simpler and smaller. The Elytron TLS
+subsystem enables a server or client TLS configuration to be created in a single command, removing the need
+to manually setup key stores and managers. Elytron TLS is designed for smaller deployments where Elytron
+authentication capabilities are not needed, and existing configurations can be migrated to the new
+subsystem. The Elytron subsystem will continue to support TLS configurations, including cases where authentication
+is performed at the same time.
+ 
