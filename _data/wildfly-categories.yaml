@@ -21,6 +21,9 @@ categories:
   - name: Embedded
     id: embedded
     description: Embedding WildFly in another process
+  - name: gRPC
+    id: grpc
+    description: gRPC is a Remote Procedure Call (RPC) framework
   - name: IIOP
     id: iiop
     description: Internet InterORB Protocol and CORBA
