@@ -24,7 +24,27 @@ layout: base
       <a href="{{ page.issue }}">{{ page.issue }}</a>
     </div>
     {% endunless %}
+    {% assign relationships = "promotes,promoted-by,follows-up-on,followed-up-by" | split: "," %}
+    {% for relationship in relationships %}
+    {% assign proposals = page[relationship] %}
+    {% unless proposals == nil or proposals == empty %}
+    <div style="padding-bottom: 2em;">
+      {% case relationship %}
+      {% when "promotes" %}Promotes
+      {% when "promoted-by" %}Promoted by
+      {% when "follows-up-on" %}Follows up on
+      {% when "followed-up-by" %}Followed up by
+      {% endcase %}
+      <ul>
+      {% for proposal in proposals %}
+        {% assign proposal_path = proposal | remove_first: "./" %}
+        {% assign proposal_page = site.pages | where: "path", proposal_path | first %}
+        <li><a href="{{ proposal_path | replace: '.adoc', '.html' | relative_url }}">{% if proposal_page %}{{ proposal_page.title }}{% else %}{{ proposal_path }}{% endif %}</a></li>
+      {% endfor %}
+      </ul>
+    </div>
+    {% endunless %}
+    {% endfor %}
     {{ content }}
   </div>
 </div>
-

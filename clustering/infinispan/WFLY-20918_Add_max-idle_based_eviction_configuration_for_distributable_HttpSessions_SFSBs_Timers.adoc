@@ -10,8 +10,9 @@ feature-team:
   - pferraro
  outside-perspective:
   - jasondlee
-promotes:
-promoted-by: https://github.com/wildfly/wildfly-proposals/issues/813
+promotes: []
+promoted-by:
+  - clustering/infinispan/WFLY-21526_Promote_idle_time-based_eviction_to_default_stability.adoc
 ---
 
 = WFLY-20918 Add idle time-based eviction configuration for distributable HttpSessions, SFSBs, Timers

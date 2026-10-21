@@ -37,6 +37,7 @@ When a developer intends to begin work on a feature they should do the following
 * [[planning_issue]]File an issue with the https://github.com/orgs/wildfly/projects/7[WildFly Feature Planning project, window=_blank]. To do this create an issue using the https://github.com/wildfly/wildfly-proposals/issues/new?assignees=&labels=feature&projects=wildfly%2F7&template=feature-development.yaml[Feature Development issue template, window=_blank]. This issue is important because:
 ** It is what allows effective coordination of overall feature development for a WildFly release from a single, publicly visible, point.
 ** It allows users to see an overall roadmap for WildFly features.
+* Self assign the issue to yourself.
 * Draft a minimal feature analysis, based on the current https://github.com/wildfly/wildfly-proposals/blob/main/design-doc-template.adoc[design-doc-template, window=_blank]. This should include the expected stability level, links to the issues above, and enough Overview and User Story information to give people interested in being part of the feature team a sense of what would be involved.
 * Submit an analysis PR to the https://github.com/wildfly/wildfly-proposals[`wildfly-proposals` repository, window=_blank].
 * Send an email to the mailto:wildfly-dev@lists.jboss.org[`wildfly-dev@lists.jboss.org`] mail list telling people about the upcoming work and asking for volunteers to participate in the feature team. (If you don't have a `wildfly-dev` list subscription, visit the https://lists.jboss.org/admin/lists/wildfly-dev.lists.jboss.org/[list subscription page, window=_blank] to create one.)
@@ -44,6 +45,10 @@ When a developer intends to begin work on a feature they should do the following
 NOTE: All of the above are required, including new issues and analysis documents, even if the work being done is a promotion of an existing feature from one stability level to another.
 
 When the above tasks are complete, change the `Status` field of the WildFly Feature Planning project Issue to `Planning`.
+
+NOTE: If the issue is not already associated with a project manually associate it with the `WildFly Feature Planning` project.
+
+Once the issue is correctly associated with the project it will be visible on the https://github.com/orgs/wildfly/projects/7/views/1[WildFly Feature Planning] dashboard.  A number of the fields to be updated throughout this process can also be modified directly from this dashboard.
 
 === Planning
 
@@ -53,15 +58,15 @@ NOTE: The target WildFly release is just a planning target and is not a commitme
 
 Update the feature analysis document with the planned stability level (if it has changed) and the GitHub ids of the feature team members.
 
-If there is an available value that matches the target WildFly release, set the `Development Window` field in the <<planning_issue,WildFly Feature Planning project issue>> to that value.
+To set the WildFly release that is being targetted in the <<planning_issue,WildFly Feature Planning project issue>> you may first need to use the drop down in the `WildFly Feature Planning` project to show additional fields, from here you can set the `WildFly Release` and if it has not been set automatically set the target stability level.
 
-NOTE: The expectation is there will always be `Development Window` values available for the next two WildFly releases. If teams expect to target a later release than that and there's no value available, that's ok; just don't set it.
+NOTE: The expectation is there will always be `WildFly Release` values available for the next two WildFly releases. If teams expect to target a later release than that and there's no value available, that's ok; just don't set it.
 
-NOTE: If the feature team has discussed the target release but are uncertain and don't want to set a `Development Window` value until further work has been done, that's ok; just don't set it.
+NOTE: If the feature team has discussed the target release but are uncertain and don't want to set a `WildFly Release` value until further work has been done, that's ok; just don't set it.
 
 When the above tasks are complete, change the `Status` field of the WildFly Feature Planning project Issue to `In Progress`.
 
-NOTE: Changes to the `Development Window` field of a WildFly Feature Planning project issue should always reflect the consensus of the feature team.
+NOTE: Changes to the `WildFly Release` field of a WildFly Feature Planning project issue should always reflect the consensus of the feature team.
 
 === In Progress
 
@@ -69,7 +74,7 @@ The main work on the feature happens in this stage. The feature team works to me
 
 Feature teams are encouraged to engage in widely visible public discussion of their work, perhaps via a thread in `wildfly-dev@lists.jboss.org` or perhap via a thread in the https://wildfly.zulipchat.com/#narrow/stream/174184-wildfly-developers[Zulip `wildfly-developers` channel, window=_blank].
 
-If, during the course development, the feature team changes their estimate of the target WildFly release when the feature will be completed, they should update the `Development Window` field in the <<planning_issue,WildFly Feature Planning project issue>>.
+If, during the course development, the feature team changes their estimate of the target WildFly release when the feature will be completed, they should update the `WildFly Release` field in the <<planning_issue,WildFly Feature Planning project issue>>.
 
 When the team has confirmed that all development work on the feature is complete and all <<requirements,requirement>> are met, change the `Status` field of the <<planning_issue,WildFly Feature Planning project issue>> to `Ready for Merge`.
 

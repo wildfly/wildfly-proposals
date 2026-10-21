@@ -18,8 +18,9 @@ feature-team:
  outside-perspective:
   - thofman
 
-promotes: https://github.com/wildfly/wildfly-proposals/pull/444
-promoted-by: https://github.com/wildfly/wildfly-proposals/pull/780
+promotes:
+  - undertow/WFLY-14255_Make_resuseXForwarded_and_rewriteHost_configurable.adoc
+promoted-by: []
 ---
 
 = Promote reuse-x-forwarded-header and rewrite-host header to DEFAULT stability

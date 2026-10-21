@@ -9,8 +9,9 @@ feature-team:
   - scottmarlow
  outside-perspective:
   - ehsavoie
-promotes: https://github.com/wildfly/wildfly-proposals/issues/608
-promoted-by:
+promotes:
+  - ee/WFLY-19776_Jakarta_Data_in_standard_WildFly.adoc
+promoted-by: []
 ---
 
 = Jakarta Data support at 'community' stability

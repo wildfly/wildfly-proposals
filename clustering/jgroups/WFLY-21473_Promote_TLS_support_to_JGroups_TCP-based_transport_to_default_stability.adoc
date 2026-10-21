@@ -11,8 +11,9 @@ feature-team:
   - mkopecky
  outside-perspective:
   - rchettri
-promotes: https://github.com/wildfly/wildfly-proposals/pull/552
-promoted-by:
+promotes:
+  - clustering/jgroups/WFLY-15836_Add_TLS_support_to_JGroups_TCP-based_transports.adoc
+promoted-by: []
 ---
 = WFLY-21473 Promote TLS support to JGroups TCP transport to default stability
 :author:            Radoslav Husar

@@ -18,8 +18,8 @@ feature-team:
   - honza-kasik
  outside-perspective:
   - jasondlee
-promotes:
-promoted-by: https://github.com/wildfly/wildfly-proposals/pull/822
+promotes: []
+promoted-by: []
 ---
 
 = HashiCorp Vault Integration — Credential Store and Expression Resolver

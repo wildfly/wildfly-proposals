@@ -10,8 +10,8 @@ feature-team:
   - jamezp
  outside-perspective:
   - marekkopecky
-promotes: https://issues.redhat.com/browse/WFLY-19866
-promoted-by: https://github.com/wildfly/wildfly-proposals/issues/640
+promotes: []
+promoted-by: []
 ---
 = Promote MicroProfile REST Client 4.0 from Preview to Default Stability Level
 :author:            James R. Perkins

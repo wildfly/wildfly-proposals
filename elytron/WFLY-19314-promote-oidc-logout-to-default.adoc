@@ -11,8 +11,9 @@ feature-team:
   - TODO
  outside-perspective:
   - TODO
-promotes: https://github.com/wildfly/wildfly-proposals/issues/676
-promoted-by:
+promotes:
+  - elytron/WFLY-19314-oidc-logout-support.adoc
+promoted-by: []
 ---
 = Promote OIDC Logout Support to Default Stability
 :author:            Diana Krepinska

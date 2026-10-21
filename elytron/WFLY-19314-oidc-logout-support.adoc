@@ -4,6 +4,8 @@ categories:
   - security
 stability-level: preview
 issue: https://github.com/wildfly/wildfly-proposals/issues/676
+promoted-by:
+  - elytron/WFLY-19314-promote-oidc-logout-to-default.adoc
 feature-team:
  developer: rsearls
  sme:

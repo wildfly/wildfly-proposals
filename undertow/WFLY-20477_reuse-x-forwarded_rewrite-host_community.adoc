@@ -9,8 +9,9 @@ feature-team:
   - fl4via
  outside-perspective:
   - jamezp
-promotes: https://issues.redhat.com/browse/WFLY-14255
-promoted-by:
+promotes:
+  - undertow/WFLY-14255_Make_resuseXForwarded_and_rewriteHost_configurable.adoc
+promoted-by: []
 ---
 = Promote the undertow subsystem's reverse proxy HTTP header configurability to community stability
 :author:            Brian Stansberry
