@@ -58,7 +58,7 @@ The https://github.com/wildfly-security-incubator/wildfly-vault-feature-pack[Wil
 === Relevant Installation Types
 
 * Traditional standalone server (unzipped or provisioned by Galleon)
-* Managed domain
+* Managed domain: https://docs.wildfly.org/41/WildFly_Elytron_Security.html#domain-mode[Using Elytron Credential Stores in Domain Mode]
 * OpenShift Source-to-Image (S2I)
 * Bootable JAR
 
@@ -99,7 +99,7 @@ Requirements copied from community stability proposal:
 *** Default: `secret`
 *** Used when alias does not include `@mount-path` prefix
 *** Allows credential store to be configured for different default mount paths
-* The feature-pack must be integrated with GLOW and be discoverable.
+* The extension and subsystem must be integrated with GLOW and be discoverable.
 
 === Expression resolver
 
@@ -121,8 +121,9 @@ The new alias format follows this structure:
 
 Where:
 
-* `engine=TYPE` - Optional engine type specification (e.g., `KVv1`, `KVv2`, `database`, `pki`)
+* `engine=TYPE` - Optional engine type specification (e.g., `KVv1`, `KVv2`)
 ** If omitted, uses the credential store's `default-engine-type` configuration (default: `KVv2`)
+** Engine types (`database`, `pki`) are currently not supported.
 * `@mount-path` - Optional custom mount path
 ** If omitted, uses the credential store's `default-mount-path` configuration (default: `secret`)
 * `#` - Secret path marker (optional when no prefix is present, required when `engine=` or `@` is used)
@@ -228,6 +229,7 @@ NOTE: Legacy aliases that contain `@` (e.g. `user@host`) will be incorrectly cla
 
 * No dedicated feature-pack, instead the layer is moved under the wildfly-ee feature-pack
 * Localisation will be achieved by having dedicated product branches where the translated texts will be added
+* Authentication methods other than `token` and `certificate` are not currently supported.
 
 === Non-Requirements
 
