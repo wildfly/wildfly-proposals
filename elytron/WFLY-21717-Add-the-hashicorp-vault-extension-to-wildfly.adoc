@@ -8,6 +8,7 @@ issue: https://github.com/wildfly/wildfly-proposals/issues/821
 feature-team:
  developer:
  - skyllarr
+ - luck3y
  sme:
   - darranl
  outside-perspective:
@@ -268,7 +269,7 @@ NOTE: Legacy aliases that contain `@` (e.g. `user@host`) will be incorrectly cla
 
 === Interoperability
 
-* HashiCorp Vault can be used as an external secrets storage that WildFly accesses
+* HashiCorp Vault can be used as an external secrets storage that WildFly accesses this release was developed and tested using the HashiCorp Vault series 1.x and 2.x releases.
 
 == Implementation Plan
 
