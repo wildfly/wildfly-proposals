@@ -1,0 +1,215 @@
+---
+categories:
+# Add any category for this proposal
+# if missing, add it to _data/widfly-categories and use its id
+---
+= [Preview] OCSP Stapling Support
+:author:            Prarthona Paul
+:email:             prpaul@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+Online Certificate Status Protocol (OCSP) is one of the methods of checking whether or not a certificate is valid or not. It is a protocol for determining the status of a certificate and is described in http://www.ietf.org/rfc/rfc2560.txt[RFC 2560]. 
+There are two methods of checking the revocation status of certificates: Certificate Revocation List(s), and through OCSP, Currently WildFly server allows for both CRLs and traditional OCSP. However, it does not have support for OCSP stapling. 
+
+Traditional OCSP relies on the client to communicate with the OCSP server upon receiving a certificate to query the revocation status of the certificate. While this is still a valid approach, it impacts performance and privacy due to the direct client queries. OCSP stapling helps with this, as the server takes the responsibility of querying the CA's OCSP responder and "staples" the response to the certificate when sharing it during a TLS handshake. This feature implements the stapling support for OCSP for TLS handshakes. 
+
+Benefits of OCSP stapling includes improved performance due to lower delays during OCSP SSL negotiation as there is no need for a separate network connection to a CA's responder. Additionally, the ability to cache the responses can also improve performance. Lastly, since OCSP stapling requires WildFly to directly send revocation requests to the Certificate Authority, this addressed any privacy concerns with the traditional approach.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFCORE-6802[WFCORE-6802]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-19269[WFLY-19269]
+* https://issues.redhat.com/browse/ELY-434[ELY-434]
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [x] Preview
+
+* [ ] Community
+
+* [ ] default
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+* Existing OCSP support for WildFly's Elytron subsystem would be extended to allow for OCSP stapling. A new optional element, called `ocsp-stapling`, would be added to `elytron/server-ssl-context` to allow for stapling support. Additionally, this element would have the following attributes: 
+** `response-timeout` which would be of type int (positive numbers only) and would indicate the maximum amount of time in milliseconds the server will use to obtain OCSP responses, whether from the cache or by contacting an OCSP responder. Default value for this would be 5000 ms. This is an optional attribute. 
+** `cache-size` which would be of type int and would be the size of the cache in terms of number of items. Default size for the cache is 256 objects. This is an optional attribute. 
+** `cache-lifetime` which controls the maximum lifetime of a cached response in seconds. The default value is 3600 s or 1 hour. This is an optional attribute. 
+** `responder-uri` which is the responder to contact in case the certificate used by the server does not have the `Authority Info Access` (AIA) extension. This does not override the AIA extension value unless `responderOverride` is set to true. The default value for this is undefined. This is an optional attribute on its own but is required if `responder-override` is defined. 
+** `responder-override` which determines whether or not the Authority information from the AIA extension value would be overridden by the value of the `responderURI`. The default value for this is false. This is an optional attribute on its own but is required if `responder-uri` is defined. 
+** `ignore-extensions` which determines whether the forwarding of OCSP extensions specified in the `status_request` or `status_request_v2` TLS extensions is disabled or not. The default value for this is false. This is an optional attribute. 
+
+* Overall, `ocsp-stapling` is an optional element is undefined by default. 
+
+These default values are based on the default value specified by the protocol. For more information, please refer to https://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/ocsp.html#ocsp-stapling-configuration-properties[OCSP Stapling Configuration Properties].
+
+Current Subsystem Configuration: 
+```
+<server-ssl-contexts>
+    <server-ssl-context name="applicationSSC" key-manager="applicationKM"/>
+</server-ssl-contexts>
+```
+
+Proposed Subsystem Configuration: 
+```
+<server-ssl-contexts>
+    <server-ssl-context name="applicationSSC" key-manager="applicationKM"/>
+    <ocsp-stapling response-timeout=5000 cache-size=256 cache-lifetime=3600
+    responder-uri="responderURI" responder-override=true ignore-extensions=false/>
+</server-ssl-contexts>
+```
+
+* This feature would send a request to the responder (or the CA) to check the revocation status of the certificate before presenting it to the client during a TLS handshake.
+
+** This response is sent to the client by stapling the response from the Certificate Authority using the `Certificate Status Request` extension response defined in https://datatracker.ietf.org/doc/html/rfc6961[RFC 6961]. 
+
+** The response is also cached for future uses within the lifetime of the cached item. 
+
+** Once a cached response expires, a new request will be sent to the CA for that certificate once needed and that will replace the old response. 
+
+** The cache is a Least Recently Used (LRU) cache, which means if the cache is full and more items need to be cached, then the item that is used the least recently is deleted from the cache and is replaced with the new item. 
+
+* The Elytron Client Configurations would be updated to allow clients to accept OCSP stapled responses from servers. A new attribute, `accept-ocsp-stapling` would be added under `ssl-context` to indicate if the user would like the client to accept OCSP stapled responses from servers. This is an optional, boolean type element which would be false by default. 
+
+** For client side settings, `PKIXBuilderParameters` should be instantiated, `checkRevocation` Property can be kept at default and the `PKIXRevocationChecker` should be instantiated and added to the `PKIXBuilderParameters` object. Additionally, `jdk.tls.client.enableStatusRequestExtension` and `com.sun.net.ssl.checkRevocation` should be set to `true` during client SSL-context set up.
+
+** Elytron Client Configuration schema would need to be bumped to version 1.8. 
+
+Current client configuration WildFly Client Config: 
+```
+<ssl-context name="ssl-crl-context">
+    <trust-store key-store-name="ca"/>
+    <trust-manager algorithm="PKIX" maximum-cert-path=4 soft-fail="true" only-leaf-cert="true"/>
+    <certificate-revocation-list path="crl.pem"/>
+    <ocsp responder="responderUri" responder-certificate="certalias" responder-keystore="responder-store"/>
+</ssl-context>
+```
+
+Proposed client configuration for WildFly Client Config: 
+```
+<ssl-context name="ssl-crl-context">
+    <trust-store key-store-name="ca"/>
+    <trust-manager algorithm="PKIX" maximum-cert-path=4 soft-fail="true" only-leaf-cert="true"/>
+    <certificate-revocation-list path="crl.pem"/>
+    <ocsp responder="responderUri" responder-certificate="certalias" responder-keystore="responder-store"/>
+    <attributes>
+        <attribute name="accept-ocsp-stapling" value=true/>
+    <attributes>
+</ssl-context>
+```
+
+* Lastly, the same functionality would be added to the `client-ssl-context` resource on the WildFly-Elytron subsystem. The new `accept-ocsp-stapling` attribute would accept boolean values and would indicate whether or not clients whose SSLContext is defined on the CLI will accept OCSP stapled responses fom the model or not. This is also an optional attribute with its default value being `false`. 
+
+=== Nice-to-Have Requirements
+// Requirements in this section do not have to be met to merge the proposed functionality.
+// Note: Nice-to-have requirements that don't end up being implemented as part of
+// the work covered by this proposal should be moved to the 'Future Work' section.
+
+=== Non-Requirements
+// Use this section to explicitly discuss things that readers might think are required
+// but which are not required.
+
+=== Future Work
+// Use this section to discuss requirements that are not addressed by this proposal
+// but which may be addressed in later proposals.
+
+== Backwards Compatibility
+
+// Does this enhancement affect backwards compatibility with previously released
+// versions of WildFly?
+// Can the identified incompatibility be avoided?
+* For backwards compatibility, if the `ocsp-stapling` attribute is not defined, traditional OCSP or CRL revocation would be performed during TLS.
+
+=== Default Configuration
+* If the OCSP-stapling attribute is not defined, then its children resources will also remain undefined. 
+* If the OCSP-stapling attribute is defined, then all its children resources will have their default values as defined in the `Hard Requirements` section.
+=== Importing Existing Configuration
+
+=== Deployments
+
+=== Interoperability
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+
+== Security Considerations
+
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+
+* This feature would improve the privacy of revocation checking as the CA would be receiving queries directly from the server, as opposed to the client. 
+* The performance would also be improved due to reduced latencies during the TLS handshake due to reduced round trips and saved resources. 
+** Additional performance improvements can be achieved through caching.
+
+== Test Plan
+
+* Tests for OCSP stapling would be implemented using a mock OCSP provider inside the Elytron TestSuite.
+* Additional integration tests may be added to the WildFly Core testsuite.
+* Client configuration tests may be added to check for parsing. 
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
+
+* Documentation will be added in the "Configure OCSP certificate revocation" section in the WildFly documentation to indicate that OCSP stapling can be used by defining the `ocsp-stapling` attribute. The documentation should mention the limitations around communications with the Certificate Authority's OCSP responder. 
+
+* The `<authentication-client /> - WildFly Elytron` section of the WildFly Client Configuration Guide would also be updated with information on how to enable OCSP stapling for the Elytron Client.  
+
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
