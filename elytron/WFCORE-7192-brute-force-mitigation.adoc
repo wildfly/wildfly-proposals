@@ -11,6 +11,8 @@ feature-team:
   - OndrejKotek
  outside-perspective:
   - dfennessy
+followed-up-by:
+- elytron/WFCORE-7193-brute-force-configuration.adoc
 ---
 = [WFCORE-7192] Brute Force Mitigation
 :author:            Darran Lofthouse
