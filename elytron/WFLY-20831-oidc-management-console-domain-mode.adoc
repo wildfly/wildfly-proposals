@@ -1,0 +1,289 @@
+---
+categories:
+  - elytron
+  - security
+stability-level: preview
+issue: https://github.com/wildfly/wildfly-proposals/issues/869
+follows-up-on:
+  - elytron/WFLY-15260_oidc_management_console.adoc
+feature-team:
+ developer: Tarun-Kumar-Arcot
+ sme:
+  -
+ outside-perspective:
+  -
+---
+= [Preview] WFLY-20831 Securing the management console with OIDC in domain mode
+:author:            Tarun Kumar Arcot
+:email:             reachout2tarun@gmail.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Since WFLY-15260 it has been possible to secure the WildFly management console with OpenID Connect
+(OIDC) by configuring a `secure-deployment` and a `secure-server` resource in the
+`elytron-oidc-client` subsystem. An administrator browsing to the console is redirected to an OIDC
+provider such as Red Hat build of Keycloak, authenticates there, and is redirected back to the
+console. That work deliberately scoped itself to standalone mode, and its analysis document lists
+domain mode as a non-requirement.
+
+The restriction is a structural one rather than a gap in the OIDC implementation. In a managed
+domain the management console and the HTTP management interface that backs it are served by the
+host controller, not by a managed server, and the `elytron-oidc-client` subsystem could only be
+configured in a server profile. There was therefore no place to put the OIDC configuration that the
+host controller's HTTP management interface would read. Administrators of a managed domain are
+consequently left with username and password authentication against a local properties file, which
+is precisely the kind of credential management that an organisation adopting a central identity
+provider is trying to eliminate.
+
+This proposal lifts that restriction by making the `elytron-oidc-client` subsystem host capable, so
+that it can be configured under `/host=<host-name>/subsystem=elytron-oidc-client` and used to secure
+the management console of a managed domain in the same way it already secures the console of a
+standalone server. The feature is proposed at `preview` stability so that it can be exercised by
+the community before the domain mode management API it introduces is committed to all users.
+
+=== User Stories
+
+As an administrator of a WildFly managed domain, I want to secure the management console with my
+organisation's OIDC provider, so that my colleagues authenticate with their existing corporate
+accounts and I do not have to maintain a separate properties file of management users on the
+primary host controller.
+
+As a security officer in an organisation that has mandated single sign-on and multi-factor
+authentication for all administrative interfaces, I want the domain management console to delegate
+authentication to our identity provider, so that the domain console is subject to the same
+authentication policy, auditing, and account lifecycle as every other administrative tool we run.
+
+As an administrator currently running a standalone server secured with OIDC, I want to move to a
+managed domain without losing OIDC authentication for the console, so that the choice between
+standalone and domain operating modes is not constrained by my authentication requirements.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-20831[WFLY-20831]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-15260[WFLY-15260] - securing the management console with
+OIDC in standalone mode, which this feature extends to domain mode.
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+TBD
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [x] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly[WildFly] - the `elytron-oidc-client` subsystem.
+
+=== Other Interested Projects
+
+* https://github.com/hal/console[HAL] - the management console is served by HAL. No HAL change is
+required for this proposal, as described in the Admin Clients section, but the HAL team is an
+interested party in any future promotion of this feature.
+
+=== Relevant Installation Types
+
+* Managed domain
+
+== Requirements
+
+=== Hard Requirements
+
+The `elytron-oidc-client` extension will be registered as host capable, so that the subsystem may be
+added to the configuration of a host controller at `/host=<host-name>/subsystem=elytron-oidc-client`
+in addition to its existing use in a server profile. Because the feature is proposed at `preview`
+stability, the subsystem will only be host capable when the process is running at `preview`
+stability or lower. At `community` and `default` stability the subsystem will remain configurable
+only in a server profile, exactly as it is today.
+
+When a `secure-deployment` resource is added to the subsystem of a host controller, it will provide
+an `org.wildfly.security.http-authentication-factory` capability named after the resource. An
+administrator secures the console by referencing that capability from the existing
+`http-authentication-factory` attribute of the host controller's HTTP management interface. Reusing
+the existing attribute means no new management API is added to the host controller's management
+interface resource, and the configuration an administrator writes is the same shape as any other
+Elytron-secured management interface.
+
+The `HttpAuthenticationFactory` will be assembled when its service starts rather than when the
+resource is added, so that child resources of the `secure-deployment`, such as `credential`, which
+are necessarily added after the parent resource itself, are included in the OIDC configuration.
+
+Adding or modifying the OIDC configuration of a running host controller will put the host controller
+into `reload-required` state, consistent with the behaviour of other changes to the configuration of
+a management interface.
+
+The resources this feature introduces on a host controller hold the configuration of an
+authentication mechanism, including a client secret, and must therefore be treated as
+security-sensitive for access, reads, and writes, consistent with the existing treatment of these
+resources in a server profile.
+
+=== Non-Requirements
+
+Securing intra-domain communication with OIDC is not a requirement. Communication between a
+secondary host controller and the primary host controller, and between a managed server and its
+host controller, is authenticated using SASL over the remoting-based management channel. This
+feature changes only the `http-authentication-factory` of the HTTP management interface and so does
+not affect that traffic. Verifying that these existing communication paths continue to work
+unchanged is part of the test plan, but extending OIDC to cover them is out of scope.
+
+Securing the management CLI with OIDC in domain mode is not a requirement. The CLI authenticates
+over the management channel using SASL, and bearer token authentication for the CLI is a separate
+concern from the console.
+
+A `secure-server` resource configured in a server profile of a managed domain is not a supported
+configuration. Such a resource exists to publish OIDC configuration for a console served by that
+process, and a managed server does not serve the management console. Rather than failing to start,
+a managed server will ignore such a resource and log a warning, so that an existing standalone
+profile reused in a domain does not prevent the server from booting.
+
+No new Galleon layer is introduced for this feature. The subsystem is already provisioned by the
+existing `elytron-oidc-client` layer.
+
+=== Future Work
+
+Promotion of this feature from `preview` to `community` stability is the expected next step, and is
+the commitment implied by introducing the feature at `preview`. The feature team will agree a rough
+plan for this with the leaders of the security technology area during development. The work that a
+promotion is expected to require is:
+
+* A formal test plan produced with a Quality Engineer, including the manual exploratory checks and
+the domain mode transformation testing that the `community` stability level calls for.
+* Verification of the feature by a Quality Engineer with subject matter expertise in Elytron.
+* Confirmation, after a release at `preview` stability, that the management API described above is
+the right shape, in particular the decision to express the integration through the existing
+`http-authentication-factory` attribute of the HTTP management interface rather than through a new
+attribute or resource.
+
+Integration of the feature into HAL, so that an administrator can configure domain mode OIDC from
+the console itself rather than from the CLI, is possible future work but is not a precondition of
+promotion. It is described further in the Admin Clients section.
+
+Support for OIDC authentication of the management CLI in domain mode, and any extension of OIDC to
+intra-domain communication, are larger pieces of work that would each warrant their own analysis.
+
+== Backwards Compatibility
+
+This feature is additive and introduces no backwards compatibility concerns. A host controller that
+does not configure the `elytron-oidc-client` subsystem behaves exactly as it does today. The feature
+is gated at `preview` stability, so at the `community` stability level at which standard WildFly
+runs, nothing changes at all.
+
+=== Default Configuration
+
+No changes to the default configuration. The subsystem is not present in the default host controller
+configuration, and no default value of any existing attribute changes. No Galleon layer output
+changes.
+
+=== Importing Existing Configuration
+
+An existing `host.xml` continues to run unchanged. Because the subsystem is newly permitted in a
+host controller configuration rather than changed within a server profile, no existing configuration
+becomes invalid and no migration tooling change is required.
+
+=== Deployments
+
+No impact. The behaviour of deployments is unchanged. A host controller does not host deployments,
+and the virtual security domain machinery that the subsystem installs for deployments will continue
+to be installed only on a server.
+
+=== Interoperability
+
+No impact on interoperability. The feature uses the standard OpenID Connect authorization code flow
+already implemented by WildFly Elytron and introduces no new protocol or wire format.
+
+== Admin Clients
+
+The JBoss CLI requires no changes. The feature is configured entirely through standard management
+operations on resources that the CLI handles generically, and the configuration is written to
+`host.xml` through the subsystem's existing persistent resource XML description.
+
+HAL requires no changes for this feature. HAL is the application being secured rather than a tool
+for configuring the feature, and the redirect to the OIDC provider is driven by the HTTP management
+interface, which HAL already handles. Existing HAL functionality must not break; verifying that a
+domain console secured this way remains usable, including that RBAC roles derived from the OIDC
+token are applied, is part of the test plan. Adding a HAL view for configuring the subsystem on a
+host controller is possible future work and would be tracked by a HAL issue raised at that time.
+Higher-level admin client integration is encouraged but not required at `preview` stability.
+
+== Security Considerations
+
+This is a security feature, and it changes how administrators authenticate to a managed domain, so
+it warrants care.
+
+The feature delegates authentication of the domain management console to an external OIDC provider.
+An administrator who enables it is placing trust in that provider for administrative access to the
+entire domain, which is a broader grant than the equivalent standalone mode configuration, where
+the blast radius is a single server. This is inherent to the feature rather than a defect, but it
+is a reason to introduce the feature at `preview` stability and to document the consideration
+clearly.
+
+The `secure-deployment` resource holds a client secret. On a host controller it must carry the same
+`CREDENTIAL` sensitivity classification it already carries in a server profile, so that reading it
+requires an appropriately privileged management user. More generally, the resources introduced
+configure the security of the management interface itself and must be marked security-sensitive for
+access, reads, and writes.
+
+The feature does not weaken any existing authentication path. Intra-domain SASL authentication
+between host controllers and between a server and its host controller is untouched, as described in
+the Non-Requirements section. Confirming this is an explicit part of the test plan rather than an
+assumption.
+
+[[test_plan]]
+== Test Plan
+
+Testing is at the `preview` stability level and will be performed by Engineering. All tests will run
+at `preview` stability using the existing stability server setup tasks in the WildFly testsuite, and
+will be skipped rather than failed when the testsuite runs at a stability level that does not enable
+the feature.
+
+Subsystem tests will be added to the `elytron-oidc-client` subsystem test suite to verify that the
+subsystem parses, marshals, and builds the expected management model when configured on a host
+controller, and that the `org.wildfly.security.http-authentication-factory` capability is registered
+for a `secure-deployment` on a host controller and is not registered on a server.
+
+Integration tests will be added to the WildFly testsuite running a real managed domain against a
+test OIDC provider. These will verify that an administrator is redirected to the provider, can
+authenticate, and is returned to a working management console; that an unauthenticated request is
+rejected; and that RBAC roles derived from the token are applied to the authenticated management
+user.
+
+A dedicated integration test will verify that intra-domain communication is unaffected, by
+confirming that a secondary host controller registers with an OIDC-secured primary host controller
+and that managed servers start and are manageable.
+
+A negative test will confirm that a `secure-server` resource in a server profile of a managed domain
+causes the expected warning and does not prevent the server from starting.
+
+== Community Documentation
+
+The existing `Elytron_OIDC_Client` documentation in the WildFly documentation already has a section
+describing how to secure the management console with OIDC in standalone mode. A new section will be
+added covering domain mode, including a worked example of the required `host.xml` configuration and
+the CLI commands to produce it. The section will state that the feature is at `preview` stability
+and therefore requires WildFly Preview or a server started with `--stability=preview`, and will note
+that intra-domain communication is unaffected. The documentation will be part of the implementation
+pull request.
+
+== Release Note Content
+
+It is now possible to secure the WildFly management console with OpenID Connect in domain mode. The
+`elytron-oidc-client` subsystem can now be configured on a host controller, allowing administrators
+of a managed domain to authenticate to the management console through an OIDC provider such as Red
+Hat build of Keycloak, as was already possible in standalone mode. This feature is available at the
+`preview` stability level.

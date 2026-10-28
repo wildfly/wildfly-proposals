@@ -1,6 +1,10 @@
 ---
 categories:
   - elytron
+stability-level: default
+issue: https://issues.redhat.com/browse/WFLY-15260
+followed-up-by:
+  - elytron/WFLY-20831-oidc-management-console-domain-mode.adoc
 ---
 = Securing the management console with OIDC
 :author:            Farah Juma
