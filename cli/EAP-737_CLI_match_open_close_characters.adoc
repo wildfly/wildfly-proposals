@@ -1,0 +1,74 @@
+= WFCORE-2663 Match open/close characters on CLI commands
+:author:            Ingo Weiss
+:email:             ingo@redhat.com
+:toc:               left
+:icons:             font
+:keywords:          comma,separated,tags
+:idprefix:
+:idseparator:       -
+:issue-base-url:    https://issues.jboss.org/browse/
+
+== Overview
+
+When using the CLI to configure WildFly, sometimes commands with multiple options and parameters require the use of `( )`, `[ ]` and `{ }`. This becomes hard to read once there are line breaks for the same command. Matching the opening and closing characters of these pairs help legibility
+
+In a context where we have a nesting of complex objects as operation parameters, it is difficult to match `(`, `{` and `[` with their closing counterparts. In particular at the end of the command, it is needed to quickly identify missing closing characters.
+
+We are proposing here to highlight the matching pairs when the cursor is on the closing or opening character and, within this context, highlight any open pairs, helping users quickly identify potential issues.
+
+==== Examples:
+
+_Italic_ denotes cursor position. *Bold* denotes matching bracket.
+[Examples]
+====
+
+`( { [ *(* ] } _)_` => The 4th character is the opening one.
+
+`( *(* _)_` => The 2nd character is the opening one.
+
+`( *(* _)_ )` => The 2nd character is the opening one.
+====
+
+== Issue Metadata
+
+=== Issue:
+
+* {issue-base-url}WFCORE-2663[WFCORE-2663]
+
+=== Related issues:
+
+* {issue-base-url}EAP-737[EAP-737]
+
+=== Dev Contacts:
+
+* mailto:ingo@redhat.com[Ingo Weiss]
+* mailto:jdenise@redhat.com[Jean-François Denise]
+
+=== QE Contacts:
+
+* mailto:tterem@redhat.com[Tomas Terem]
+
+=== Affected Projects or Components:
+
+* WildFly Core CLI
+
+== Requirements
+
+=== Hard requirements
+
+* When moving the cursor onto an opening character (`[`, `{`, `(`), the closing character (`]`, `}`, `)`) should be highlighted in green. If there are unmatched characters between the matched pair, then these characters will be highlighted in red;
+* When moving the cursor onto a closing character (`]`, `}`, `)`), the opening character (`[`, `{`, `(`) should be highlighted in green. If there are unmatched characters between the matched pair, then these characters will be highlighted in red;
+* The user-typed content must not be affected by the highlighting (e.g.: when executing an operation that would contain colored character);
+* Allow colors to be disabled without affecting highlight;
+* Allow users to enable/disable the feature.
+
+== Test Plan
+
+Tests should include:
+
+* Highlighting when color is enabled and when color is disabled;
+* Highlighting when the command has multiple lines, ending with `\`.
+
+== Community Documentation
+
+Should be part of the release notes. Additional documentation shouldn't be needed as the feature is quite self-explanatory apart from the `jboss-cli-xml` configuration option to enable or disable this feature.
