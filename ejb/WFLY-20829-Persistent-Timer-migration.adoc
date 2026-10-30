@@ -1,0 +1,161 @@
+---
+categories:
+ - clustering
+ - ejb
+stability-level: experimental
+issue: https://github.com/wildfly/wildfly-proposals/issues/754
+feature-team:
+ developer: pferraro
+ sme:
+  - tadamski
+ outside-perspective:
+  - TBD
+promotes:
+promoted-by:
+---
+= Persistent Timer Migration
+:author:            Paul Ferraro
+:email:             paul.ferraro@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WildFly contains several implementations of the Jakarta Enterprise Bean TimerService for persisting timers:
+
+* File-based storage
+* Database-based storage
+* Infinispan-based storage (where persistence includes distributed heap, file-based, database-based, etc.)
+
+An application can configure the TimerService of a given Jakarta Enterprise bean any one of these mechansims.
+However, once deployed, there is no mechanism to migrate active persistent timers from one storage mechanism to another.
+
+=== User Stories
+
+A user with an single server EJB deployment containing persistent timers configured with the legacy file-based timer store wants to migrate their application to use the Infinispan TimerService, either because they have too many timers to keep in memory, or perhaps would like to scale their application via multiple servers.
+A user with an clustered EJB deployment containing persistent timers configured with the legacy database-based timer store wants to migrate their application to use the Infinispan TimerService, either because they have too many timers to keep in memory, or because the existing implementation requires cumbersome manual partitioning in order to scale beyond a few cluster members.
+
+== Issue Metadata
+
+=== Related Issues
+
+https://issues.redhat.com/browse/WFLY-20829
+
+=== Affected Projects or Components
+
+* EJB
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+* Support migration of persistent Timers from a legacy data store (file or database) to Infinispan
+** On deployment of EJB, requires management attribute to specify source data store
+** On demand, via runtime operation of TimerService deployment resource
+* A distributed application relying on database persistence of timers should be able to migrate without requiring service outage
+** Timer migration must not affect other cluster members
+** Migration must be atomic.
+*** Timer state must be preserved
+*** If a timer is in-use, its migration must be deferred
+**** Report the number of timers whose migrated was deferred (via operation result or log message)
+**** These will be migrated by restart of other cluster members (or by a subsequent migrate operation)
+**** Migration is only complete when last cluster member using legacy data store is restarted, and can be verified by migrate operation returning zero.
+
+=== Changed requirements
+
+N/A
+
+=== Non-Requirements
+
+* Migration of persistent timers from Infinispan to a legacy data store.
+** File-based timer persistence is logically equivalent to the Infinispan-based TimerService configured with a local-cache and persistent file-store.
+** Database-based timer persistence is logically equivalent to the Infinispan-based TimerService configured with an invalidation-cache and persistent jdbc-store.
+* Migration of persistent timers from one legacy data store to another.
+
+=== Future Work
+
+N/A
+
+== Backwards Compatibility
+
+N/A
+
+=== Default Configuration
+
+N/A
+
+=== Importing Existing Configuration
+
+N/A
+
+=== Deployments
+
+N/A
+
+=== Interoperability
+
+N/A 
+
+== Implementation Plan
+
+* Given that this is a "one-time" configuration, rather than introduce a new attribute, just reuse what we already have
+** Remove mutual exclusivity of the persistent-timer-management and default-data-store attributes of the timer-service resource (and timer-service deployment descriptor namespace)
+** When both attributes are defined, use the default-data-store as the migration source.
+
+== Admin Clients
+
+None
+
+== Security Considerations
+
+None
+
+[[test_plan]]
+== Test Plan
+
+* Requires an integration test for each legacy timer store
+** The same test should run using the following scenarios:
+*** Auto migrate on deploy
+*** Manual migrate operation
+** For a non-distributed application using file-based persistence:
+*** Deploy an application on a server using file-based timer persistence
+*** Creating a persistent timer for each timer type:
+**** Auto calendar-based timer (auto-created on deploy)
+**** Manual calendar-based timer
+**** Manual interval timer
+**** Manual single-action timer
+*** Redeploy application reconfigured with Infinispan timer management
+**** If manual migration scenario, execute migrate runtime operation
+*** Verify no timers were lost during migration
+*** Verify no timeouts were missed due to migration
+** For a distributed application using file-based persistence:
+*** Deploy an application on 2 servers using a shared database for timer persistence.
+*** Create a persistent timer for each timer type:
+**** Auto calendar-based timer (auto-created once per cluster on deploy)
+**** Manual calendar-based timer
+**** Manual interval timer
+**** Manual single-action timer
+*** Redeploy application on first server reconfigured with Infinispan timer management
+**** If manual migration scenario, execute migrate operation
+*** Redeploy application on second server reconfigured with Infinispan timer management
+**** If manual migration scenario, execute migrate runtime operation
+*** Verify no timers were lost during migration
+*** Verify no timeouts were missed due to migration
+
+== Community Documentation
+
+Update EJB subsystem documentation to indicate which combinations of attributes are used to configure auto-migratio and how to manually initiate timer migration via runtime operation.
+
+== Release Note Content
+
+* Added support for migrating persistent Jakarta Enterprise Bean timers from a legacy timer store to Infinispan.
+
