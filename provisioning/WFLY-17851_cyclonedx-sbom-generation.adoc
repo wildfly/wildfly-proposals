@@ -1,0 +1,889 @@
+---
+categories:
+  - security
+  - provisioning
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/WFLY-17851
+feature-team:
+ developer: jfdenise
+ sme:
+  - bstansberry
+ outside-perspective:
+  -
+promotes:
+promoted-by:
+---
+
+= WFLY-17851, CycloneDX SBOM Generation for WildFly Provisioned Installations
+:author:            Jean-François Denise
+:email:             jdenise@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Supply chain security has become a critical concern for software deployments.
+A Software Bill of Materials (SBOM) provides a machine-readable inventory of
+all components included in a software distribution, enabling security scanners
+to identify known vulnerabilities (CVEs) against a precise set of artifacts.
+
+WildFly is provisioned using Galleon, which resolves and assembles a set of
+Maven artifacts into a runnable server distribution. Because the full set of
+provisioned artifacts is known at provisioning time, Galleon is the natural
+place to generate an accurate SBOM. This proposal introduces automatic
+https://cyclonedx.org/[CycloneDX] SBOM generation as part of WildFly's
+Galleon-based provisioning.
+
+=== User Stories
+
+* As a WildFly developer using the WildFly Maven Plugin, I want an SBOM
+  included in my provisioned server or Bootable JAR so that security and
+  compliance requirements are satisfied from the moment the build completes.
+* As a DevOps engineer, I want the SBOM to be generated automatically
+  during provisioning so that it is always present and up to date without
+  requiring a separate, error-prone step.
+
+== Issue Metadata
+
+=== Related Issues
+
+* None.
+
+=== Affected Projects or Components
+
+* WildFly Galleon Plugins: https://github.com/wildfly/galleon-plugins
+  (primary implementation)
+* WildFly Maven Plugin: https://github.com/wildfly/wildfly-maven-plugin
+* WildFly Plugin Tools: https://github.com/wildfly/wildfly-plugin-tools
+* WildFly Glow: https://github.com/wildfly/wildfly-glow
+* Prospero: https://github.com/wildfly/prospero
+
+=== Other Interested Projects
+
+None.
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+=== SBOM Format and Location
+
+At the time of this proposal, the generated SBOM conforms to the
+https://github.com/CycloneDX/cyclonedx-core-java/blob/master/src/main/resources/bom-1.7.schema.json[CycloneDX 1.7 JSON schema].
+The version of the spec in use can evolve in future version of WildFly.
+The file is not pretty-printed by default and is compressed into a `.gz`
+archive by default. Its location within the installation depends on the
+installation type:
+
+* Server installations (bare-metal and OpenShift images):
+  `$JBOSS_HOME/sbom.cdx.json.gz`
+* Bootable JAR installations: `META-INF/sbom/sbom.cdx.json.gz` inside the JAR.
+  NOTE, this file contains the aggregated SBOM covering both the server and the application content (see
+  the Bootable JAR — Aggregated SBOM section).
+
+==== Document Identity
+
+The top-level fields identify the SBOM document itself:
+
+`bomFormat` and `specVersion`::
+Fixed values `CycloneDX` and `1.7`.
+
+`serialNumber`::
+A globally unique `urn:uuid:` identifier for this SBOM document
+(e.g., `urn:uuid:ebd652a7-7fae-36a9-bde4-965be85dfd81`). This value is
+stable for a given provisioning run.
+
+`version`::
+The document revision number, starting at `1`. This increments if the SBOM
+is regenerated and supersedes a prior version with the same `serialNumber`.
+
+==== Metadata
+
+The `metadata` section records the context in which the SBOM was produced:
+
+`metadata.timestamp`::
+The ISO 8601 UTC timestamp of when the SBOM was generated
+(e.g., `2026-10-30T14:03:49Z`). Together with `serialNumber`, this allows
+auditors to determine exactly when the inventory was captured.
+
+`metadata.tools`::
+Lists the software used to generate the SBOM. The entry identifies the
+WildFly Galleon Plugins artifact with its Maven coordinates and version
+(e.g., `org.wildfly.galleon-plugins:wildfly-galleon-plugins:8.2.3.Final`).
+
+`metadata.component`::
+Identifies the provisioned WildFly distribution. For a community WildFly
+installation, this component is derived from the installed product module
+manifest. The following fields are populated:
+
+`type`::
+Set to `application`, which reflects that WildFly is itself a deployable,
+runnable program. This applies to the server-only SBOM. In the case of 
+Bootable JAR, the server is a separate `framework` component (see the
+Bootable JAR — Aggregated SBOM section).
+
+`name`::
+The human-readable name of the distribution (e.g., `WildFly`), derived from
+the `JBoss-Product-Release-Name` entry in the product module manifest.
+
+`version`::
+The exact release version (e.g., `43.0.0.Final`), derived from
+`JBoss-Product-Release-Version`.
+
+`publisher`::
+The organization that produced the distribution (e.g., `WildFly`), derived
+from `Implementation-Vendor`.
+
+`purl`::
+A Package URL following the `pkg:generic/<name>@<version>` convention
+(e.g., `pkg:generic/wildfly@43.0.0.beta1-snapshot`). The name is lowercased
+with spaces replaced by `-`; the version is similarly normalized. This purl
+serves as the distribution's identity; it is not used for CVE matching (see
+the note below).
+
+`bom-ref`::
+Set to the same value as `purl`. Acts as a unique key within the BOM
+document, allowing this component to be referenced in the `dependencies`
+section of the SBOM.
+
+No CPE is set for community WildFly builds. CPE is a product-level
+identifier assigned by vendors and registered with the National Vulnerability
+Database (NVD); it is not applicable
+to community releases. A CPE can be injected if needed via the
+`jboss-cyclonedx-product-cpe` Galleon option.
+
+NOTE: The root component's `pkg:generic` purl is an identity marker, not a
+CVE lookup key. CVE matching operates entirely at the level of individual
+provisioned components, which carry `pkg:maven` purls that the Open Source
+Vulnerabilities database (OSV) and GitHub Advisory index directly. When a CPE is also present, it provides an
+additional product-level matching vector against NVD: its findings are
+attributed to the named product (e.g.,
+JBoss EAP) and contextualize the Maven-level findings within that product
+identity. The two mechanisms are complementary, not alternatives.
+
+Each provisioned artifact is recorded as a component with its Maven group,
+artifact ID, and version; a `pkg:maven` purl (with classifier and type
+qualifiers where applicable); and a SHA-256 hash. The `pkg:maven` purl is
+the primary machine-readable identity used by security scanners to match
+each component against CVE databases such as OSV and GitHub Advisory. During a full provisioning
+run, an `evidence.occurrences` list captures every path within the
+distribution where the artifact appears, enabling a scanner to correlate a
+file on disk with its recorded component. The following is an example of a
+regular component entry:
+
+[source,json]
+----
+{
+  "type": "library",
+  "bom-ref": "pkg:maven/com.fasterxml/classmate@1.7.1",
+  "group": "com.fasterxml",
+  "name": "classmate",
+  "version": "1.7.1",
+  "hashes": [
+    {
+      "alg": "SHA-256",
+      "content": "cc3299e5df4fc24180e69477c890d07d38db79dd2decc0ef20e74a986897c0a1"
+    }
+  ],
+  "licenses": [
+    {
+      "license": {
+        "id": "Apache-2.0",
+        "url": "https://www.apache.org/licenses/LICENSE-2.0"
+      }
+    }
+  ],
+  "purl": "pkg:maven/com.fasterxml/classmate@1.7.1",
+  "evidence": {
+    "occurrences": [
+      {
+        "location": "modules/system/layers/base/com/fasterxml/classmate/main/classmate-1.7.1.jar"
+      }
+    ]
+  }
+}
+----
+
+=== Dependency Graph
+
+The `dependencies` section expresses dependency relationships between
+components using their `bom-ref` values. The section has two distinct
+sub-graphs: one for the server's provisioned artifacts and one for the
+npm packages bundled inside the HAL Management Console.
+
+The server sub-graph contains a single entry: the root distribution
+component listing all top-level provisioned components as direct
+`dependsOn` references. Sub-components nested inside shaded JARs are
+not given separate dependency entries; their relationship to the parent
+is expressed through component nesting rather than the dependency graph.
+
+NOTE: The JBoss Modules inter-module dependency graph is not captured.
+WildFly uses JBoss Modules as its classloading system, where module-to-module
+dependencies are declared in `module.xml` descriptors and resolved at runtime.
+Expressing this graph in the SBOM would require resolving it statically at
+provisioning time, which is not covered by this proposal and is tracked as
+Future Work.
+
+[source,json]
+----
+{
+  "ref": "pkg:generic/wildfly@43.0.0.beta1-snapshot",
+  "dependsOn": [
+    "pkg:generic/wildfly-elytron-tool@43.0.0.Beta1-SNAPSHOT",
+    "pkg:maven/com.fasterxml.jackson.core/jackson-annotations@2.21",
+    "pkg:maven/com.fasterxml.jackson.core/jackson-core@2.21.8",
+    "..."
+  ]
+}
+----
+
+=== Special Detection Features
+
+The SBOM generator enriches the produced output beyond simple artifact
+enumeration with the following detection capabilities:
+
+* **Embedded SBOM merging**: If a resolved JAR contains its own `.cdx.json`
+  or `.cdx.xml` SBOM, that embedded SBOM is fully merged into the output.
+  The embedded SBOM's components become nested sub-components of the JAR's
+  component entry, and its dependency graph entries are merged into the main
+  `dependencies` section. The embedded SBOM's `metadata.component.bom-ref`
+  becomes the root reference for those dependency entries, preserving the
+  internal structure of the embedded graph.
++
+The HAL Management Console is the primary example of this mechanism.
+`hal-console@3.7.22.Final` (identified by its `resources` classifier) ships
+an embedded `npm-bom.cdx.json` that describes its npm dependencies.
+When the Galleon plugin processes this JAR, it merges the npm SBOM: the
+npm components appear as sub-components of `hal-console`, and the npm
+dependency graph — rooted at `hal`, the `bom-ref` of the embedded SBOM's
+`metadata.component` — is merged into the main `dependencies` section.
++
+[source,json]
+----
+{
+  "type": "library",
+  "bom-ref": "pkg:maven/org.jboss.hal/hal-console@3.7.22.Final?classifier=resources",
+  "group": "org.jboss.hal",
+  "name": "hal-console",
+  "version": "3.7.22.Final",
+  "hashes": [{ "alg": "SHA-256", "content": "45510767292859c3..." }],
+  "licenses": [{ "license": { "id": "Apache-2.0" } }],
+  "purl": "pkg:maven/org.jboss.hal/hal-console@3.7.22.Final?classifier=resources",
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "hal|abort-controller@3.0.0",
+      "author": "Toru Nagashima",
+      "name": "abort-controller",
+      "version": "3.0.0",
+      "description": "An implementation of WHATWG AbortController interface.",
+      "licenses": [{ "license": { "id": "MIT", "acknowledgement": "declared" } }],
+      "purl": "pkg:npm/abort-controller@3.0.0",
+      "properties": [
+        { "name": "cdx:npm:package:path", "value": "node_modules/abort-controller" }
+      ],
+      "externalReferences": [
+        { "type": "vcs", "url": "git+https://github.com/mysticatea/abort-controller.git" },
+        { "type": "website", "url": "https://github.com/mysticatea/abort-controller#readme" }
+      ]
+    },
+    "..."
+  ]
+}
+----
++
+The embedded SBOM's dependency graph is also merged. It is rooted at `hal`,
+the `bom-ref` of the embedded SBOM's `metadata.component`, and expresses
+the full inter-package dependency graph of the npm bundle down to leaf
+packages:
++
+[source,json]
+----
+{ "ref": "hal",
+  "dependsOn": ["hal|bootstrap@3.4.1", "hal|d3@5.16.0", "..."] },
+
+{ "ref": "hal|bootstrap-select@1.13.18",
+  "dependsOn": ["hal|bootstrap@3.4.1", "hal|jquery@3.6.4"] },
+
+{ "ref": "hal|@pkgjs/parseargs@0.11.0",
+  "dependsOn": [] }
+----
+* **Shaded JAR detection**: When a JAR embeds dependencies from other
+  artifacts, those embedded dependencies are recorded as nested `components`
+  entries under the parent. This applies to two cases. The first is a
+  fully assembled JAR with no single Maven identity, which receives a
+  `pkg:generic` purl. The second is a regular `pkg:maven` artifact that
+  additionally shades one or more dependencies into itself. In both cases,
+  dependencies that exist solely inside the shaded JAR are not emitted as
+  separate top-level components.
++
+NOTE: Assembled JARs that receive a `pkg:generic` purl (such as
+`wildfly-elytron-tool`) are not matched for CVEs by security scanners, since
+vulnerability databases do not index `pkg:generic` purls. Their security
+coverage comes from their nested `pkg:maven` shaded dependencies, which are
+indexed and scanned individually.
++
+Example of a `pkg:generic` assembled JAR:
++
+[source,json]
+----
+{
+  "type": "library",
+  "bom-ref": "pkg:generic/wildfly-elytron-tool@43.0.0.Beta1-SNAPSHOT",
+  "name": "wildfly-elytron-tool",
+  "version": "43.0.0.Beta1-SNAPSHOT",
+  "purl": "pkg:generic/wildfly-elytron-tool@43.0.0.Beta1-SNAPSHOT",
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:maven/org.jboss.logging/jboss-logging@3.6.3.Final",
+      "group": "org.jboss.logging",
+      "name": "jboss-logging",
+      "version": "3.6.3.Final",
+      "purl": "pkg:maven/org.jboss.logging/jboss-logging@3.6.3.Final"
+    }
+  ],
+  "evidence": {
+    "occurrences": [{ "location": "bin/wildfly-elytron-tool.jar" }]
+  }
+}
+----
++
+Example of a `pkg:maven` artifact that also shades a dependency:
++
+[source,json]
+----
+{
+  "type": "library",
+  "bom-ref": "pkg:maven/io.netty/netty-common@4.1.139.Final",
+  "group": "io.netty",
+  "name": "netty-common",
+  "version": "4.1.139.Final",
+  "hashes": [{ "alg": "SHA-256", "content": "50372d86e27b4b..." }],
+  "purl": "pkg:maven/io.netty/netty-common@4.1.139.Final",
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "pkg:maven/org.jctools/jctools-core@4.0.5",
+      "group": "org.jctools",
+      "name": "jctools-core",
+      "version": "4.0.5",
+      "purl": "pkg:maven/org.jctools/jctools-core@4.0.5"
+    }
+  ],
+  "evidence": {
+    "occurrences": [{ "location": "modules/system/layers/base/io/netty/main/netty-common-4.1.139.Final.jar" }]
+  }
+}
+----
+
+=== Feature-Pack Coverage
+
+The generated SBOM covers all components contributed by every feature-pack
+present in the provisioning configuration. When a user provisions WildFly
+with additional feature-packs — such as the datasources, cloud, or MyFaces
+feature-packs — every artifact those feature-packs install into the
+distribution is recorded in the SBOM. The resulting file therefore represents
+the complete component inventory of the actual provisioned installation,
+regardless of how many WildFly feature-packs were combined to produce it.
+
+=== Installation Identity
+
+By default, the `metadata.component` of the generated SBOM identifies the
+provisioned distribution as WildFly at the provisioned release version, using
+a purl of the form `pkg:generic/wildfly@<version>`. This is correct for a
+standalone WildFly installation, but an organization that uses WildFly as the
+middleware platform for their own applications may want to express a distinct,
+stable identity for that platform.
+
+Two Galleon options allow the `name` and `purl` of `metadata.component` to be
+overridden:
+
+[source,xml]
+----
+<galleon-options>
+  <jboss-cyclonedx-component-name>Acme Corp Middleware</jboss-cyclonedx-component-name>
+  <jboss-cyclonedx-component-purl>pkg:generic/acme-middleware@1.0</jboss-cyclonedx-component-purl>
+</galleon-options>
+----
+
+This matters in a deployment model where multiple applications run on the
+same WildFly installation. With a custom purl, the server installation has
+a stable, organization-specific identity that application SBOMs can
+reference as their platform, regardless of the underlying WildFly release.
+The purl can be kept stable across WildFly upgrades, allowing the
+organization to express continuity of their middleware platform
+independently of the WildFly version underneath.
+
+=== SBOM Generation Behavior
+
+SBOM generation is enabled by default. When provisioning a WildFly server,
+the SBOM is produced automatically without any additional user configuration.
+
+If SBOM generation fails, the failure is logged as a warning and provisioning
+continues without a complete SBOM. Users in environments where a complete SBOM is a hard requirement
+can change this behavior so that any generation failure aborts provisioning
+entirely.
+
+=== Galleon Options
+
+The following Galleon options control SBOM generation. They may be passed via
+the WildFly Maven Plugin's `<galleon-options>` block or as Java system
+properties in contexts such as Prospero:
+
+[cols="1,1,3",options="header"]
+|===
+| Option | Default | Description
+| `jboss-cyclonedx` | `true`
+| Enables or disables SBOM generation.
+| `jboss-cyclonedx-fail-on-error` | `false`
+| When `true`, an SBOM generation failure aborts provisioning.
+| `jboss-cyclonedx-only` | `false`
+| Generates the SBOM without provisioning the server; no file-location
+  evidence is produced since no files are installed.
+| `jboss-cyclonedx-format` | `json`
+| Output format: `json` or `xml`.
+| `jboss-cyclonedx-schema-version` | `1.7`
+| CycloneDX schema version. Older version (minimum version is 1.6).
+| `jboss-cyclonedx-licenses` | `off`
+| License collection mode: `off`, `licenses.xml` (reads feature-pack
+  summaries), or `pom` (resolves from Maven POMs).
+| `jboss-cyclonedx-compress` | `true`
+| When `true`, compresses the output into a `.gz` archive.
+| `jboss-cyclonedx-pretty-print` | `false`
+| Indents output for human readability; note that this nearly doubles the
+  file size.
+| `jboss-cyclonedx-output` | installation root
+| Relative path within the installation for the output file.
+| `jboss-cyclonedx-product-cpe` | none
+| Overrides the main component CPE in the generated SBOM.
+| `jboss-cyclonedx-component-name` | none
+| Overrides the `name` field of `metadata.component`. Use to give the
+  installation a meaningful identity within an organization's middleware
+  landscape. In a Bootable JAR aggregated SBOM, it applies to the server
+  component instead, `metadata.component` being the Bootable JAR.
+| `jboss-cyclonedx-component-purl` | none
+| Overrides the `purl` and `bom-ref` of `metadata.component`. Use to assign
+  a stable, organization-specific identity that application SBOMs can
+  reference as their platform. In a Bootable JAR aggregated SBOM, it applies
+  to the server component instead, `metadata.component` being the Bootable
+  JAR.
+|===
+
+Example configuration using the WildFly Maven Plugin:
+
+[source,xml]
+----
+<galleon-options>
+  <!-- Disable compression -->
+  <jboss-cyclonedx-compress>false</jboss-cyclonedx-compress>
+  <!-- Abort provisioning if SBOM generation fails -->
+  <jboss-cyclonedx-fail-on-error>true</jboss-cyclonedx-fail-on-error>
+</galleon-options>
+----
+
+=== Bootable JAR — Aggregated SBOM
+
+A Bootable JAR packages both the WildFly runtime and a user application into a
+single self-contained artifact. Because server and application are frozen
+together at build time, a single aggregated SBOM is the natural and correct
+representation of the artifact's content: it is guaranteed to remain accurate
+for the lifetime of the JAR.
+
+NOTE: A Bootable JAR can contain multiple deployments, what is described in this chapter 
+applies to multiple deployments too.
+
+The server SBOM produced during provisioning is combined with the application SBOM to
+produce a single aggregated SBOM. This aggregated SBOM replaces the
+server-only SBOM at `META-INF/sbom/sbom.cdx.json.gz` inside the JAR and is
+also written to the `target/` directory as a standalone build artifact.
+
+The WildFly Maven Plugin obtains the application SBOM embedded in the deployment.
+The JAR, WAR or EAR contains an SBOM at `META-INF/sbom/*.cdx.json|xml`. 
+The plugin reads it directly from the archive.
+
+If no embedded SBOM, aggregation is skipped.
+
+The tool that generates the aggregated SBOM is WildFly Plugin Tools, whichever
+product drives it (WildFly Maven Plugin, WildFly Glow). It is added to `metadata.tools`
+next to the WildFly Galleon Plugins, with its Maven coordinates.
+
+In the aggregated SBOM, the Bootable JAR itself is the subject of the SBOM.
+It becomes `metadata.component`, and both the server and the user
+application are represented as components of that JAR. The server is no
+longer the root of the document.
+
+* `metadata.component` — the Bootable JAR (type: `application`, purl
+  `pkg:maven/<groupId>/<artifactId>@<version>`).
+* `components`
+** The user application (type: `application` purl
+  `pkg:maven/<groupId>/<artifactId>@<version>?type=<extension>`) — with its bundled
+   `WEB-INF/lib` dependencies nested as sub-components if an embedded SBOM was found.
+** The server product (type: `framework`, e.g.
+   `pkg:generic/wildfly@43.0.0.final`) — a product-identity component that
+   keeps the name, version, publisher of the WildFly server. It is marked `scope: excluded` because it
+   is an identity marker, not an additional artifact in the JAR. The dependencies graph expresses the dependency
+   of the Bootable JAR on the WildFly server.
+** All server-provisioned artifacts (unchanged from the server SBOM)
+* `dependencies` - Expresses the Bootable JAR dependency on the application and the server.
+
+NOTE: Representing the server as its own `framework` component, separate
+from the user application, allows the content that belongs to the server to
+be cleanly distinguished from the content that belongs to the user
+application. This is particularly meaningful when a CPE identifies the
+server: the CPE is attached to the server component, so product-level
+vulnerabilities are attributed to the server and are not confused with
+findings on the user application.
+
+[source,json]
+----
+{
+  "metadata": {
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "group": "org.wildfly.galleon-plugins",
+          "name": "wildfly-galleon-plugins",
+          "version": "8.2.3.Final",
+          "purl": "pkg:maven/org.wildfly.galleon-plugins/wildfly-galleon-plugins@8.2.3.Final"
+        },
+        {
+          "type": "application",
+          "group": "org.wildfly.plugins",
+          "name": "wildfly-plugin-tools",
+          "version": "2.1.2.Final",
+          "purl": "pkg:maven/org.wildfly.plugins/wildfly-plugin-tools@2.1.2.Final"
+        }
+      ]
+    },
+    "component": {
+      "type": "application",
+      "bom-ref": "pkg:maven/com.acme/server-bootable@1.0",
+      "group": "com.acme",
+      "name": "server-bootable",
+      "version": "1.0",
+      "purl": "pkg:maven/com.acme/server-bootable@1.0"
+    }
+  },
+  "components": [
+    {
+      "type": "application",
+      "bom-ref": "pkg:maven/com.acme/my-app@1.0?type=war",
+      "group": "com.acme",
+      "name": "my-app",
+      "version": "1.0",
+      "purl": "pkg:maven/com.acme/my-app@1.0?type=war",
+      "components": [
+        { "type": "library",
+          "bom-ref": "pkg:maven/com.opencsv/opencsv@5.9",
+          "purl": "pkg:maven/com.opencsv/opencsv@5.9",
+          "name": "opencsv",
+          "group": "com.opencsv",
+          "version": "5.9"
+        }
+      ]
+    },
+    {
+      "type": "framework",
+      "bom-ref": "pkg:generic/wildfly@43.0.0.final",
+      "name": "WildFly",
+      "version": "43.0.0.Final",
+      "purl": "pkg:generic/wildfly@43.0.0.final",
+      "scope": "excluded"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:maven/io.undertow/undertow-core@2.3.18.Final",
+      "purl": "pkg:maven/io.undertow/undertow-core@2.3.18.Final",
+      "group": "io.undertow",
+      "name": "undertow-core",
+      "version": "2.3.18.Final"
+    },
+    {
+      "type": "library",
+      "bom-ref": "pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.21.8",
+      "purl": "pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.21.8",
+      "group": "com.fasterxml.jackson.core",
+      "name": "jackson-databind",
+      "version": "2.21.8"
+    },
+    {
+      "type": "library",
+      "group": "org.wildfly.core",
+      "name": "wildfly-jar-boot",
+      "version": "33.0.0.Final",
+      "purl": "pkg:maven/org.wildfly.core/wildfly-jar-boot@33.0.0.Final",
+      "bom-ref": "pkg:maven/org.wildfly.core/wildfly-jar-boot@33.0.0.Final"
+    }
+  ],
+  "dependencies": [
+    { "ref": "pkg:maven/com.acme/server-bootable@1.0",
+      "dependsOn": [
+        "pkg:generic/wildfly@43.0.0.final",
+        "pkg:maven/com.acme/my-app@1.0?type=war"
+      ]
+    },
+    { "ref": "pkg:generic/wildfly@43.0.0.final",
+      "provides": [
+        "pkg:maven/io.undertow/undertow-core@2.3.18.Final",
+        "pkg:maven/com.fasterxml.jackson.core/jackson-databind@2.21.8",
+        "pkg:maven/org.wildfly.core/wildfly-jar-boot@33.0.0.Final"
+      ]
+    }
+  ]
+}
+----
+
+If the user has set a custom name and purl via the `jboss-cyclonedx-component-name`
+and `jboss-cyclonedx-component-purl` Galleon options, the server component
+reflects those values. `metadata.component` continues to identify the
+Bootable JAR.
+
+For Bootable JAR, `evidence.occurrences` locations are recorded with a
+`wildfly.zip` prefix. The Bootable JAR embeds a `wildfly.zip` archive that
+contains all JBoss Modules artifacts. Each component's location is therefore
+expressed as `wildfly.zip!<path>`, using the standard zip entry separator, for example:
+
+[source,json]
+----
+{
+  "evidence": {
+    "occurrences": [
+      {
+        "location": "wildfly.zip!modules/system/layers/base/com/fasterxml/classmate/main/classmate-1.7.1.jar"
+      }
+    ]
+  }
+}
+----
+
+The aggregated SBOM is produced by the WildFly Maven Plugin. It can be disabled
+via a plugin option `<aggregate-sboms>false</aggregate-sboms>` for cases where only the server SBOM is required.
+
+==== WildFly Glow
+
+https://github.com/wildfly/wildfly-glow[WildFly Glow] can also build a Bootable JAR
+(`wildfly-glow scan <deployment> -p=BOOTABLE_JAR`). It relies on the same
+WildFly Plugin Tools packaging code as the WildFly Maven Plugin, and produces the same
+aggregated SBOM.
+
+Glow differs from the WildFly Maven Plugin on one point: it is not driven by a Maven
+project. It works from deployment files and a server version, and has no Maven
+coordinates (`groupId`, `artifactId`, `version`) for the Bootable JAR it builds, nor for the
+deployments it packages.
+They are therefore described with
+https://github.com/package-url/purl-spec/blob/main/PURL-TYPES.rst#generic[generic purls]
+instead of Maven purls.
+
+* `metadata.component` — the Bootable JAR (type: `application`, purl
+  `pkg:generic/<name>.jar@<version>`).
+** `<name>` is the Bootable JAR file name prefix: the names of the scanned
+   deployments (without extension) concatenated, or `hollow` when there is no deployment,
+   followed by `-<variant>` when a server variant is selected. The `.jar` extension is
+   part of the purl name.
+** `<version>` is the WildFly server version.
+* `metadata.tools` — `wildfly-galleon-plugins` (from the server SBOM) and
+  `wildfly-plugin-tools`, as for the WildFly Maven Plugin.
+* `components`
+** Each scanned deployment (type: `application`, purl `pkg:generic/<file name>`, e.g.
+   `pkg:generic/kitchensink.war`). A generic purl has no version because the deployment
+   has none, the SHA-256 hash of the file identifies its content. If the deployment embeds an
+   SBOM at `META-INF/sbom/*.cdx.json|xml`, its components are nested under the deployment
+   component, as done by the WildFly Maven Plugin. Otherwise the deployment is described
+   without sub-components.
+** The server product (type: `framework`, `scope: excluded`) and all the server-provisioned
+   artifacts, as for the WildFly Maven Plugin. `evidence.occurrences` locations are prefixed with
+   `wildfly.zip!`.
+* `dependencies` — the Bootable JAR depends on the server and on each deployment.
+
+The aggregation is always enabled in Glow, there is no option to disable it. The SBOM
+is embedded in the JAR at `META-INF/sbom/sbom.cdx.json.gz` and a copy
+(`sbom.cdx.json`) is written next to the Bootable JAR, in the Glow output directory.
+
+[source,json]
+----
+{
+  "metadata": {
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "group": "org.wildfly.galleon-plugins",
+          "name": "wildfly-galleon-plugins",
+          "version": "8.2.3.Final",
+          "purl": "pkg:maven/org.wildfly.galleon-plugins/wildfly-galleon-plugins@8.2.3.Final"
+        },
+        {
+          "type": "application",
+          "group": "org.wildfly.plugins",
+          "name": "wildfly-plugin-tools",
+          "version": "2.1.2.Final",
+          "purl": "pkg:maven/org.wildfly.plugins/wildfly-plugin-tools@2.1.2.Final"
+        }
+      ]
+    },
+    "component": {
+      "type": "application",
+      "bom-ref": "pkg:generic/kitchensink.jar@43.0.0.Final",
+      "name": "kitchensink.jar",
+      "version": "43.0.0.Final",
+      "purl": "pkg:generic/kitchensink.jar@43.0.0.Final"
+    }
+  },
+  "components": [
+    {
+      "type": "application",
+      "bom-ref": "pkg:generic/kitchensink.war",
+      "name": "kitchensink.war",
+      "purl": "pkg:generic/kitchensink.war",
+      "hashes": [
+        { "alg": "SHA-256", "content": "b64edb793c1d45cf56eed843cf36a346c28c7c86f61a3d702e4cafa4400bee0d" }
+      ],
+      "components": [
+        { "type": "library",
+          "bom-ref": "pkg:maven/com.opencsv/opencsv@5.9",
+          "purl": "pkg:maven/com.opencsv/opencsv@5.9",
+          "name": "opencsv",
+          "group": "com.opencsv",
+          "version": "5.9"
+        }
+      ]
+    },
+    {
+      "type": "framework",
+      "bom-ref": "pkg:generic/wildfly@43.0.0.final",
+      "name": "WildFly",
+      "version": "43.0.0.Final",
+      "purl": "pkg:generic/wildfly@43.0.0.final",
+      "scope": "excluded"
+    }
+  ],
+  "dependencies": [
+    { "ref": "pkg:generic/kitchensink.jar@43.0.0.Final",
+      "dependsOn": [
+        "pkg:generic/wildfly@43.0.0.final",
+        "pkg:generic/kitchensink.war"
+      ]
+    }
+  ]
+}
+----
+
+NOTE: The sample is shortened, the server-provisioned artifacts are not listed. The
+`opencsv` sub-component is only present when the deployment embeds an SBOM.
+
+=== Application SBOM — Standalone Server Deployments
+
+WildFly does not generate or modify SBOMs at runtime. Deploying or
+undeploying an application has no effect on any SBOM. For security scanning
+of deployed applications, the recommended approach is to embed an SBOM at
+`META-INF/sbom/application.cdx.json` inside the WAR or EAR at build time.
+Security tooling can then consume both the server SBOM and the application
+SBOM independently.
+
+=== Non-Requirements
+
+* For server installations, WAR, EAR, and other user deployments are outside
+  the scope of the generated `sbom.cdx.json.gz`. That file describes the
+  WildFly server installation only. For Bootable JAR, the aggregated SBOM
+  describes the Bootable JAR as a whole, covering both the server and the
+  application content (see Bootable JAR — Aggregated SBOM).
+* License information is not included by default. The
+  `jboss-cyclonedx-licenses` option is available but defaults to `off`.
+* The RFC 9472 runtime endpoint `/.well-known/sbom` is not implemented.
+  The SBOM is a static file produced at provisioning time.
+
+=== Future Work
+
+* **Dependency graph**: The CycloneDX format supports expressing the full
+  dependency graph between components. Whether this graph is computable in the
+  JBoss Modules classloading model — where dependencies are resolved at
+  runtime — requires further investigation.
+
+== Backwards Compatibility
+
+This feature introduces no backwards-incompatible changes. The
+`sbom.cdx.json.gz` file is a new artifact added to the installation and does
+not affect existing configuration, deployments, or server runtime behavior.
+
+=== Default Configuration
+
+No existing configuration attributes are changed. No existing Galleon layers
+are modified.
+
+=== Importing Existing Configuration
+
+This feature has no impact on the ability to run WildFly with an existing
+configuration. The WildFly server migration tool is not affected.
+
+=== Deployments
+
+This feature has no impact on the behavior of deployments.
+
+=== Interoperability
+
+This feature has no impact on interoperability with other systems.
+
+== Implementation Plan
+
+The server SBOM implementation resides in the WildFly Galleon Plugins
+repository. The SBOM generator is invoked as a post-provisioning step within
+the existing Galleon provisioning lifecycle and requires no changes to the
+server runtime itself.
+
+The Bootable JAR aggregated SBOM is implemented in WildFly Plugin Tools, and
+used by the WildFly Maven Plugin and WildFly Glow.
+
+== Admin Clients
+
+This feature has no impact on JBoss CLI or the HAL Admin Console.
+
+== Security Considerations
+
+The generated `sbom.cdx.json.gz` is a read-only inventory file placed inside
+the installation directory. It does not affect the server's security posture,
+RBAC configuration, or credential management. Its presence does expose the
+full component inventory of the installation to anyone with read access to
+the filesystem; operators in environments where this is a concern should apply
+appropriate filesystem permissions to the installation directory, as they
+would for other sensitive server files.
+
+[[test_plan]]
+== Test Plan
+
+
+* Verify that provisioning a WildFly server via the
+  WildFly Maven Plugin produces `sbom.cdx.json.gz` at the correct location
+  for both server and Bootable JAR installation types.
+* Verify that setting `jboss-cycloned-XXX` options have the expected behavior.
+
+=== Validation with Open Source Scanners
+
+The generated SBOM has been checked with the following open source
+vulnerability scanners and SBOM analysis platforms:
+
+* https://github.com/aquasecurity/trivy[Trivy]
+* https://github.com/anchore/grype[Grype]
+* https://github.com/google/osv-scanner[OSV-Scanner]
+* https://github.com/DependencyTrack/dependency-track[Dependency-Track]
+
+== Community Documentation
+
+Documentation for this feature will be published at
+https://docs.wildfly.org/galleon-plugins/ and https://docs.wildfly.org/42/Installation_Guide.html
+
+== Release Note Content
+
+WildFly generates a CycloneDX SBOM (`sbom.cdx.json.gz`) automatically
+during Galleon-based provisioning, providing a machine-readable inventory of
+all server components for security scanners. For Bootable JAR, the SBOM is an
+aggregated document describing the Bootable JAR, covering both the WildFly
+runtime and the packaged application.
