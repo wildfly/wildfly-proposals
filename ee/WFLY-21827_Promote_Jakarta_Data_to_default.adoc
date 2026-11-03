@@ -1,0 +1,164 @@
+---
+categories:
+ - ee
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/872
+# Provide the GitHub ids of the feature team members, organized by role.
+# Provide a single id for the 'assignee' role. Use a YAML list for the 'sme' and
+# 'outside-perspective' roles, even if there is only one person in a role.
+feature-team:
+ developer: bstansberry
+ sme:
+  - mnovak
+ outside-perspective:
+  -
+promotes:
+  - ee/WFLY-21080-promote-jakarta-data-to-community.adoc
+promoted-by: []
+follows-up-on: []
+followed-up-by: []
+---
+
+= Promote Jakarta Data to `default` stability
+:author:            Brian Stansberry
+:email:             bstansbe@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+
+== Overview
+
+In WildFly 34 we link:https://issues.redhat.com/browse/WFLY-19397[introduced] `preview` stability support for link:https://jakarta.ee/specifications/data/1.0/jakarta-data-1.0[Jakarta Data] into WildFly Preview. In WildFly 35 we https://github.com/wildfly/wildfly-proposals/issues/608[incorporated] the same `preview` stability support in standard WildFly. In WildFly 40 we https://github.com/wildfly/wildfly-proposals/issues/702[promoted] Jakarta Data support to `community` stability. Now it's time to bring it to `default` stability.
+
+=== User Stories
+
+
+
+I'm an application developer and I'd like to be less concerned with the mechanics of manipulating persistent data. I'd like to define my entities and then write an interface that describes the CRUD and data access operations I need. I code against that interface and let WildFly take care of generating the interface implementation that deals with the DB.  I'm fine with having less flexibility with the portions of my app that work this way, including limitations like:
+
+* A simpler query language.
+* No lazy loading  -- or only explicit lazy loading by using Hibernate ORM native APIs.
+* More limited support for dynamic queries than is available with alternatives like the Criteria API.
+* And so on.
+I recognize that for portions of my application where these limitations are unacceptable I can still use standard Jakarta Persistence or native Hibernate ORM APIs.
+
+I'm an application developer and am familiar with the Repository pattern from use of Spring Data. I'd like to use that pattern in WildFly in non-Spring applications.
+
+I'm an application developer who's used Deltaspike Data, which uses a repository pattern. But it doesn't support EE > 8, so I'm looking for a similar technology to run on the latest WildFly releases.
+
+I'm responsible for server provisioning, configuration and administration and I would like to be able to allow Jakarta Data support in WildFly servers without making it possible to enable `community` stability features.
+
+== Issue Metadata
+
+=== Related Issues
+
+https://redhat.atlassian.net/browse/WFLY-21827
+https://redhat.atlassian.net/browse/WFLY-21081
+
+=== Affected Projects or Components
+
+https://github.com/wildfly/wildfly
+https://github.com/wildfly/quickstart
+
+=== Other Interested Projects
+
+https://github.com/hibernate/hibernate-orm
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+* The JBoss Modules modules required for the `jakarta-data` subsystem and the Jakarta Data API will be made available through the `wildfly-ee` feature pack.
+** These modules will be shared with the `wildfly-preview` feature pack. (This is the norm for `wildfly-ee` modules).
+* The `jakarta-data` Galleon layer will be made available through the `wildfly-ee` feature pack.
+** This layer will be shared with the `wildfly-preview` feature pack. (This is the norm for `wildfly-ee` layers).
+* Provisioning the JBoss Modules modules and the `jakarta-data` Galleon layer will be possible even if the provisioning tooling is configured to limit provisioning to `default` stability features or packages.
+* Use of the `jakarta-data` subsystem will be supported at runtime even if the server is configured to only allow features at `default` stability.
+* The Jakarta Data API artifact will be part of the standard WildFly user boms.
+* The Jakarta Data API artifact will be part of the WildFly Preview user boms.
+* Jakarta TCK testing of standard WildFly for the EE 11 Platform and the Web Profile will include execution of the standalone Jakarta Data TCK and any Jakarta Data tests in the platform TCK.
+** Passing those TCK will be a release criteria for .Final WildFly releases.
+* When our OOTB configuration files are provisioned, the `jakarta-data` subsystem will be present in the  `standalone.xml`, `standalone-full.xml`, `standalone-ha.xml` and `standalone-full-ha.xml`, `standalone-microprofile.xml` and `standalone-microprofile-ha.xml` configuration files, and also in any `domain.xml` profiles whose intended feature set aligns with one of those standalone variants.
+* There will be a Quickstart demonstrating the use of Jakarta Data.
+* Management via HAL. If the `jakarta-data` subsystem is in the configuration:
+** It will be listed in the 'Configuration -> Subsystems' view.
+** It will be accessible via the generic model browser.
+
+=== Changed requirements
+
+Provisioning Jakarta Data and using it at runtime must be allowed when the provisioning tooling or the runtime are restricted to only allowing  `default` stability.
+
+Having a Quickstart is a new requirement.
+
+Any documentation  stating Jakarta Data is limited to `community` stability must be removed or revised.
+
+HAL requirements moved from Future Work to Requirements.
+
+=== Non-Requirements
+
+None
+
+=== Future Work
+
+* Support for other Jakarta Data providers, e.g. Jakarta NoSQL implementations, if general support for those implementations is added to WildFly.
+
+
+== Backwards Compatibility
+
+=== Default Configuration
+
+For installations that limit provisioning to `default` stability items, the default configuration will include the `jakarta-data` subsystem. This is not an incompatible change for standalone servers. For domain mode users running a mixed-domain, the subsystem will need to be removed from any `domain.xml` profiles that are used by servers running older WildFly versions.
+
+=== Importing Existing Configuration
+
+An existing configuration that has the `jakarta-data` subsytem in it will be using a `community` stability xml namespace. Before booting a server at `default` stability, that namespace will need to be updated to the new `default` stability namespace introduced as part of this feature.
+
+=== Deployments
+
+No incompatible changes.
+
+=== Interoperability
+
+No interoperability impact.
+
+== Admin Clients
+
+No impact on the CLI. Low level operations related to this subsystem will work the same as any others. No existing high level commands will be impacted. No new high level commands are needed.
+
+HAL requirements are listed in the Requirements section.
+
+== Security Considerations
+
+Under the covers this is just another way of interacting with a database via Hibernate ORM, so it doesn't introduce anything fundamentally new.
+
+For the `jakarta-data` subsystem resource, typical management RBAC behavior is appropriate, with no requirement for using any RBAC sensitivity classifications.
+
+[[test_plan]]
+== Test Plan
+
+* Standard subsystem tests.
+* Primary runtime behavior tests will be via the Jakarta Data TCK.
+* Smoke test that demonstrates behavior in an ear with multiple wars
+** Repository packaged in the ear lib and in each war. (Different ones.)
+** @ApplicationScoped bean in the ear lib and in each war that interacts with the equivalently packaged Repository.
+** Jakarta REST resources in each war are able to use the Repository packaged in their war as well as the one packaged in ear/lib.
+** This test also tests for correct handling of other usage subtleties where users have reported issues since the initial introduction of Jakarta Data support in WildFly Preview 34.
+* Basic test in the quickstart.
+
+== Community Documentation
+
+* Addition of basic content in the Admin Guide 'Subsystem Configurations' section, consistent with other subsystems that expose no configuration attributes.
+* Addition of a section in the Developer Guide, providing content along the lines of the link:https://www.wildfly.org/news/2024/10/10/jakarta-data/[Introducing Jakarta Data in WildFly Preview] blog post.
+* Listing of the `jakarta-data` layer in the Galleon layers documentation table.
+* Any documentation notes stating Jakarta Data is limited to `community` stability will be removed or revised.
+
+== Release Note Content
+
+WildFly's link:https://jakarta.ee/specifications/data/1.0/jakarta-data-1.0[Jakarta Data] support is now available at the `default` stability level. This means it can now be enabled in a standard WildFly server even if the `--stability-level=default` flag is in the server launch command.

@@ -11,7 +11,8 @@ feature-team:
   - ehsavoie
 promotes:
   - ee/WFLY-19776_Jakarta_Data_in_standard_WildFly.adoc
-promoted-by: []
+promoted-by:
+  - ee/WFLY-21827_Promote_Jakarta_Data_to_default.adoc
 ---
 
 = Jakarta Data support at 'community' stability
@@ -105,7 +106,7 @@ For installations that support EE 11, the default configuration will include the
 
 === Importing Existing Configuration
 
-An existing configuration that has the `jakarta-data` subsytem in it will be using a `preview` stability xml namespace. Before booting a server at `preview` stability, that namespace will need to be updated to the new `community` stability namespace introduced as part of this feature.
+An existing configuration that has the `jakarta-data` subsytem in it will be using a `preview` stability xml namespace. Before booting a server at `community` stability, that namespace will need to be updated to the new `community` stability namespace introduced as part of this feature.
 
 === Deployments
 
