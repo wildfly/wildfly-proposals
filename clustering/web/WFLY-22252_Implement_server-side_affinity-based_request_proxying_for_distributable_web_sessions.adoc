@@ -1,0 +1,297 @@
+---
+categories:
+  - clustering
+  - undertow
+stability-level: experimental
+issue: TBD
+feature-team:
+ developer: rhusar
+ sme:
+  - pferraro
+ outside-perspective:
+  - TBD
+promotes:
+promoted-by:
+---
+
+= WFLY-22252 Improving server-side state management for dynamic clusters via server-side reverse proxies
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WildFly's distributed state management distributes and coordinates access to user state via the _primary owner_ of a given session,
+as determined by a consistent hash of its identifier.
+This means that a given request is best handled by a specific cluster member,
+and thus works most efficiently for the following use cases:
+
+* When requests to the WildFly cluster are proxied by a load balancer that supports session affinity,
+determines failover targets deterministically,
+and honours session affinity changes made by the server, e.g. mod_cluster, HAProxy, etc.
+* When cluster topology is relatively stable or relatively small.
+** Distributed caches (which scale well to large clusters) require state transfer when cluster topology changes.
+** Invalidation caches (which have no state transfer costs), paired with a shared persistent store,
+require costly cluster-wide invalidation messages per request.
+
+The increasing popularity of PaaS deployments means that WildFly is increasingly being used in environments
+with load balancing with minimal features for which it was not originally designed, specifically:
+
+* Clusters proxied by load balancers with limited or no session affinity support and/or unpredictable failover target selection.
+* Clusters with aggressive auto-scaling.
+
+Many load balancers with session affinity support have poor failover handling,
+where failover targets for a given session are determined by the balancer algorithm,
+causing requests for the same session to "spray" across the cluster,
+resulting in slow response times, or worse, request failures (due to lock timeouts).
+The situation is even worse for load balancers without session affinity,
+whether for lack of functionality or for TLS termination reasons:
+the same behaviour occurs, but for every request, not just failover requests.
+
+This feature adds the ability for WildFly (itself) to proxy requests to a specific cluster member,
+either because the load balancer failed to direct the request appropriately,
+or because a cluster topology change invalidated its previous affinity.
+Upon receiving a request for a foreign session,
+rather than pulling state from the owning server onto the server handling the request,
+and suffering the costs required to maintain consistency,
+we instead redirect requests to the server on which the state is located/owned,
+paying the cost of proxying the request.
+Since request processing is centralised on the primary owner,
+we can remove the need for state transfer by using a single-owner distributed cache with a shared persistent store.
+
+In effect, each server becomes capable of correcting a misrouted request immediately,
+rather than relying on the load balancer to eventually learn the correct route.
+This makes correct data locality the common case rather than something the cluster converges toward over successive requests,
+and makes WildFly's distributable web session management usable in environments where the routing capabilities of the load balancer are outside of our control.
+
+=== How It Works
+
+To implement this, we need two things:
+
+. Update the routing registry (managed by the `distributable-web` subsystem) to include the address/port of the HTTP listener associated with the Undertow server.
+. Insert an `HttpHandler` to the front of the application handler chain with the following logic:
+
+[source]
+----
+If the request is associated with a session:
+    Until handled:
+        Determine the primary owner of the session
+        If the primary owner is local:
+            Proceed with next handler in chain
+        Otherwise:
+            If request originated from peer member:
+                Respond with service unavailable
+            Otherwise:
+                Lookup listener of the primary owner
+                Proxy request to the primary owner
+Otherwise:
+    Proceed with next handler in chain
+----
+
+The mechanism is most valuable when the deployment is configured for strict locality
+– a distributed cache with a single owner using a shared persistence store (a data grid) with state transfer disabled –
+because in that configuration the primary owner of a session is precisely the member that can serve it without a remote read,
+and centralising request processing on that member removes the need for state transfer altogether.
+
+=== User Stories
+
+As a WildFly administrator running a cluster in a PaaS environment whose load balancer has limited or no session affinity support,
+I want requests for an existing session to be served by the member that owns the session,
+so that my application does not suffer slow responses or lock-timeout failures when requests for the same session are sprayed across the cluster.
+
+As a WildFly administrator running a cluster with aggressive auto-scaling,
+I want a request whose affinity was invalidated by a topology change to be proxied to the new primary owner,
+so that the cluster remains responsive while the load balancer's routing information is stale.
+
+As a WildFly administrator deploying a locality-optimized topology (single-owner distributed cache with a shared store),
+I want the server to proactively route requests to the data owner,
+so that the benefit of that topology is realized without paying state transfer or cluster-wide invalidation costs.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://redhat.atlassian.net/browse/WFLY-6944[WFLY-6944] RANKED routing strategy (related reactive routing mechanism)
+* https://redhat.atlassian.net/browse/WFLY-5550[WFLY-5550] Distributable web subsystem
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly[wildfly/wildfly] – Undertow integration (the proxying handler) and the `clustering/web` and `clustering/server` modules (affinity SPI)
+* https://github.com/wildfly-clustering/wildfly-clustering[wildfly-clustering/wildfly-clustering] – session manager / affinity SPI, if the SPI change lands there
+* https://github.com/undertow-io/undertow[undertow-io/undertow] – possible enhancement of the reusable proxy handler/`ProxyClient` abstraction
+
+=== Other Interested Projects
+
+mod_cluster, Undertow load balancer.
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* Provide an Undertow handler, installed at the front of the application handler chain,
+that, for a request associated with a distributable web session,
+determines the primary owner of the session
+and, when that owner is not the receiving server, proxies the request to the owner.
+* Generalize the existing load-balancer proxy handling
+so that the same `ProxyClient`/proxy-handler machinery used when WildFly acts as a load balancer can be driven by a known, single target member rather than by load-balancing logic.
+The current code always determines the target via balancing;
+the generalized form must accept a deterministic target derived from session ownership.
+* Extend the session manager / affinity SPI so that it can expose the member that currently owns a session for _reading_
+– i.e. the member from which the session can be read locally now –
+distinct from the affinity value used to influence where the _next_ write should be directed.
+Today `org.wildfly.extension.undertow.session.SessionAffinityProvider#getAffinity(String)` and the `PrimaryOwnerRouteLocatorProvider` resolve affinity from the consistent hash for the purpose of encoding a route into the `JSESSIONID`;
+proxying requires resolving the current (read) owner.
+The SPI must make this read-side ownership available.
+* Resolve the owning member to a concrete, reachable proxy target.
+Today the web routing registry is a `CacheContainerRegistry<String, Void>` that records only each member's route _identifier_ (the `jvmRoute` / `instance-id` string that the load balancer matches on, mapped via `SessionAffinityRegistryGroupMemberMapper`);
+it does not carry an address the server can connect to.
+To proxy, the registry entry must be extended to also capture the owning member's server name and the address/port of the HTTP(S) listener associated with its Undertow server (scheme, host, and port).
+The handler will read this entry to obtain the URL to which it proxies,
+and the registry entry's value type will change from `Void` accordingly.
+* The advertised endpoint address must be resolved through the listener's socket-binding `client-mappings` rather than from the raw bind address.
+Otherwise we assume a default, flat network topology
+and the address may be unreachable from the proxying member under NAT, cloud, container, or multi-homed networking.
+This is an established pattern in WildFly:
+the JGroups transport already derives its `external-address`/`external-port` from the socket-binding `client-mappings` (`AbstractTransportResourceDefinitionRegistrar`),
+and the distributable-EJB subsystem advertises per-member reachable addresses to remote clients via its `ClientMappingsRegistryProvider`.
+This feature should follow the same approach rather than reinvent it.
+Note the known limitation observed in the JGroups integration:
+a client mapping cannot generally be selected based on the source address, so the first mapping is used;
+the same caveat applies here.
+* Prevent proxying loops.
+A request that arrives already proxied from a peer cluster member must never be proxied again:
+if the receiving member determines that it is not the primary owner of the session,
+it must respond with service unavailable rather than forwarding the request onward.
+The mechanism used to detect that a request originated from a peer member must not be forgeable in a way that lets a client suppress or force proxying.
+* When the request has no associated session, when the deployment is not distributable, or when the owning member cannot be resolved,
+the handler must fall through to the next handler in the chain and service the request locally (i.e. preserve current behavior).
+* The handler must be opt-in and must not be installed for deployments or configurations where it is not wanted.
+
+=== Nice-to-Have Requirements
+
+* Cooperate with, rather than duplicate, the existing route auto-correction
+so that the encoded `JSESSIONID` route remains consistent with the member that actually served the request.
+* Re-evaluate ownership rather than fail when the topology changes mid-request,
+i.e. the "until handled" retry in the handler logic above, so that a rebalance concurrent with a request does not surface as an error.
+
+=== Non-Requirements
+
+* This proposal does not change the wire protocol or the format of the route encoded in the `JSESSIONID`.
+* This proposal does not replace the load balancer or the existing reactive route auto-correction; it complements them.
+* This proposal does not, in its initial form, automatically alter Infinispan state-transfer behavior based on the persistence configuration (see Future Work).
+* This proposal does not introduce a new eviction, replication, or persistence mechanism.
+
+=== Future Work
+
+* *Automatic state-transfer disablement for locality-optimized topologies.*
+The optimal configuration for this feature is a distributed cache with a single owner backed by a _shared_, non-local persistence store with state transfer disabled.
+A natural follow-up is to have WildFly automatically disable state transfer (`fetch-in-memory-state`) when the cache store is shared and non-local and persistence is synchronous (i.e. not write-behind),
+so that the locality-optimized topology is the effortless default rather than something an administrator must assemble by hand.
+This must be done without exposing configuration we do not want users to set,
+and must account for the case where state transfer is still desirable despite synchronous shared persistence.
+This is deferred to a separate proposal.
+* Extending the mechanism to other distributable state (for example, remote EJB invocations) where an equivalent locality gap exists.
+* Surfacing metrics for the proportion of requests proxied versus served locally.
+
+== Backwards Compatibility
+
+The feature is additive and opt-in.
+When it is not enabled, behavior is identical to current releases:
+the load balancer routes, and the server reactively auto-corrects the encoded route.
+No existing API, configuration attribute, or wire format is removed or changed in an incompatible way.
+The session manager / affinity SPI is extended rather than redefined;
+the existing `getAffinity` contract that drives route encoding is preserved.
+
+=== Default Configuration
+
+The default configuration does not change.
+The handler is not installed unless explicitly enabled, and no existing Galleon layer output is altered.
+
+=== Importing Existing Configuration
+
+Existing configurations continue to run unchanged.
+Because the feature introduces only new, optional configuration, no changes to the WildFly server migration tool are required.
+
+=== Deployments
+
+The feature is transparent to application code.
+A proxied request is serviced on the owning member exactly as it would have been had the load balancer routed it there directly,
+so applications observe no behavioral difference beyond improved data locality.
+
+=== Interoperability
+
+Proxying occurs between WildFly cluster members using the existing Undertow proxy infrastructure and the listener addresses published in the routing registry.
+The feature does not change how external clients or load balancers interact with the cluster.
+
+== Implementation Plan
+
+The work can be delivered incrementally:
+
+. Extend the routing registry entry to capture, per member, the server name and the address/port of the HTTP(S) listener associated with the Undertow server, in addition to the existing route identifier,
+so that the primary owner can be resolved to a reachable proxy target.
+. Extend the affinity SPI to expose the current (read-side) primary owner for a session,
+in addition to the existing route affinity used for `JSESSIONID` encoding.
+. Generalize the load-balancer proxy handler so it can be constructed with a deterministic, single-target `ProxyClient` driven by a supplied target member rather than by balancing logic.
+. Implement the `HttpHandler`, installed at the front of the application handler chain, implementing the logic described in <<how-it-works>>:
+resolve the primary owner via the extended SPI, map it to a proxy target via the `Registry`,
+and either proceed locally, proxy to the owner, or – for a request that already originated from a peer member – respond with service unavailable.
+. Wire up opt-in configuration to install the handler for the relevant deployments.
+
+== Admin Clients
+
+Any configuration introduced to enable the handler will be expressed in the management model and therefore usable from the CLI without additional work.
+HAL exposes management-model attributes automatically;
+this will be verified by manual testing, and follow-up issues will be filed against HAL if dedicated UI work proves worthwhile.
+
+== Security Considerations
+
+The handler proxies requests between cluster members using the listener addresses published in the clustered `Registry`.
+It introduces no new credential, socket, or trust configuration beyond what the cluster transport and the existing proxy handling already establish,
+so it inherits their security posture.
+No application session data is exposed to any party that could not already receive it via normal load-balanced routing;
+proxying merely changes which trusted cluster member services a request.
+Configuration to enable the feature is protected by the existing management RBAC policies.
+Care will be taken that the mechanism used to detect that a request originated from a peer member cannot be forged by a client
+to suppress or force proxying in a way that affects other sessions.
+
+== Test Plan
+
+This feature targets the `experimental` stability level, so no formal test plan is required.
+Basic unit and integration tests will be added during development, including:
+
+* Unit tests for the extended affinity SPI,
+verifying that the resolved primary owner corresponds to the member holding the session locally, and that resolution returns absent for non-affinity / non-distributable cases.
+* Unit tests for the generalized proxy handler verifying that, given a target member, it proxies to the correct registry-resolved address,
+that it falls through to local handling when no owner can be resolved,
+and that a request already proxied from a peer member is answered with service unavailable rather than proxied again.
+* A smoke-level integration test in the clustering testsuite that deploys a distributable application across a cluster,
+deliberately sends a request for a session to a non-owning member, and asserts that the request is served by the primary owner.
+
+More comprehensive integration and failover testing will be added if and when the feature is promoted to a higher stability level.
+
+== Community Documentation
+
+The distributable-web documentation will be updated to describe the affinity-based proxying handler:
+what it does, how to enable it, the topology for which it is intended (single-owner distributed cache with a shared persistence store and state transfer disabled), and its relationship to load-balancer routing and to RANKED routing.
+The recommended locality-optimized cache configuration will be documented as guidance even though automatic state-transfer disablement is deferred to future work.
+
+== Release Note Content
+
+WildFly can now proxy a web request to the cluster member that owns the session's data.
+WildFly's distributable web session management coordinates access to a session via its primary owner,
+which works best behind a load balancer with deterministic session affinity and failover.
+In environments where that is not available – notably PaaS deployments whose load balancers have limited or no session affinity support, or clusters with aggressive auto-scaling –
+requests for the same session can be sprayed across the cluster, causing slow responses or lock-timeout failures.
+An opt-in Undertow handler now transparently proxies such a request to the primary owner of the session instead of servicing it locally against remote state.
+Because request processing is centralised on the owner,
+this also makes it possible to run a single-owner distributed cache with a shared persistent store and no state transfer.
