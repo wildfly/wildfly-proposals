@@ -1,0 +1,167 @@
+---
+categories:
+  - clustering
+  - undertow
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/874
+feature-team:
+ developer: ropalka
+ sme:
+  - TBD
+ outside-perspective:
+  - TBD
+---
+
+= AJP Deprecation, Secret Enforcement and Migration Path to HTTPS
+:author:            Richard Opalka
+:email:             ropalka@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+With the AJP listener deprecation, its removal from default HA profiles in WildFly 41.0.0.Final plus Undertow moving towards
+removal of the underlying AJP implementation, we should proactively communicate this change to our users and customers.
+
+Documentation across Undertow, WildFly, and EAP will be updated to explain
+the rationale for deprecating AJP support and to provide guidance on migrating to HTTPS.
+
+This will ensure consistent messaging across projects and give users
+adequate time and information to prepare for the eventual removal of AJP support.
+
+=== User Stories
+
+As a user who currently relies on AJP, I want to understand why AJP is being deprecated and how to migrate to HTTPS
+so that I can prepare my environment and transition to a supported configuration before AJP support is removed.
+During the transition period, I want guidance on securing AJP with shared secrets to mitigate known security vulnerabilities.
+
+== Issue Metadata
+
+=== Issue
+
+* https://redhat.atlassian.net/browse/EAP7-2388[EAP7-2388] 
+
+=== Related Issues
+
+* TBD
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly[wildfly/wildfly]
+* https://github.com/undertow-io/undertow[undertow-io/undertow]
+
+=== Other Interested Projects
+
+* https://github.com/hal/console[hal/console]
+* https://github.com/wildfly/wildfly-server-migration[wildfly/wildfly-server-migration]
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+* All Undertow, WildFly, and EAP documentation will be updated.
+* The Undertow API will deprecate all AJP-related classes and introduce new options for configuring AJP secret and its enforcement.
+* The WildFly Undertow Subsystem will introduce new AJP listener configuration attributes for AJP secret and its enforcement.
+
+=== Non-Requirements
+
+N/A
+
+=== Future Work
+
+* Supported migration paths from AJP to HTTPS will be defined and documented.
+* JBoss CLI, HAL console and Migration Tool will address any issues arising from the removal of AJP from the default configurations.
+   When an AJP listener configuration is detected, they should emit a warning indicating that AJP is deprecated
+   and that HTTPS is the recommended alternative. Additionally, if users choose to continue using AJP,
+   these tools should provide options for configuring an AJP shared secret and AJP secret enforcement.
+
+== Backwards Compatibility
+
+This deprecation is fully backward compatible until AJP support is removed in a future release.
+Users who choose to continue using AJP must configure a shared secret and enable secret enforcement.
+
+=== Default Configuration
+
+Existing configurations running at the default stability level will continue to work as before
+once shared secret and secret enforcement are configured.
+
+=== Interoperability
+
+This proposal has no short-term impact on interoperability because AJP will remain available during the deprecation period.
+In the long term, interoperability will be affected as users will need to migrate to HTTPS before AJP support is removed.
+
+== Implementation Plan
+
+Undertow will:
+
+* Introduce the new REQUIRE_AJP_SECRET and AJP_SECRET Undertow options.
+  These options will supersede the io.undertow.ajp.REQUIRE_AJP_SECRET
+  and io.undertow.ajp.AJP_SECRET system properties.
+* Deprecate AJP-related API classes for removal in a future release.
+
+WildFly Undertow Subsystem will:
+
+* Extend the AJP listener configuration model to introduce new 'shared-secret' and 'require-secret' attributes.
+  These attributes will be mapped internally to REQUIRE_AJP_SECRET and AJP_SECRET Undertow options.
+
+== Admin Clients
+
+JBoss CLI and the HAL console will be updated to display warnings about the deprecation of AJP in favour of HTTPS.
+For users who choose to continue using the deprecated AJP protocol, both tools
+will provide configuration options for an AJP shared secret and secret enforcement.
+
+== Security Considerations
+
+From a security and maintainability perspective, deprecating the AJP protocol represents a significant improvement for users and customers.
+AJP has not evolved to meet modern security and interoperability requirements and continues to present several challenges:
+
+* Security Limitations
+  - Assumes communication occurs over a trusted network
+  - Lacks built-in authentication mechanisms
+  - Lacks transport-layer encryption
+  - Has been associated with multiple security vulnerabilities and CVEs
+* Lack of support for modern protocols:
+  - Cannot support technologies such as WebSockets, HTTP/2 and HTTP/3   
+* Protocol stagnation:
+  - Minimal evolution and development since 2001
+
+[[test_plan]]
+== Test Plan
+
+WildFly and QE test suites have already been updated to reflect the deprecation
+of the AJP listener and its removal from the default HA configurations.
+
+These test suites also currently configure the io.undertow.ajp.REQUIRE_AJP_SECRET
+and io.undertow.ajp.AJP_SECRET system properties to comply with AJP shared-secret enforcement requirements.
+
+Following the introduction of dedicated AJP listener attributes in Undertow subsystem, the test suites
+will need to be updated to use those attributes directly rather than configuring the corresponding system properties.
+
+Longer term, any tests using AJP should either be retired or migrated to use HTTPS, reflecting the planned removal of AJP support.
+
+== Community Documentation
+
+Undertow, WildFly and EAP documentation updates will be made to explain:
+
+* The deprecation and planned removal of AJP support.
+* The rationale behind the decision.
+* The impact on existing deployments.
+* The recommended migration path from AJP to HTTPS.
+* The requirement to configure an AJP secret for deployments that continue to use AJP.
+
+== Release Note Content
+
+As part of the ongoing deprecation of AJP support default HA configurations
+no longer include an AJP listener, and users are encouraged to migrate to HTTPS
+ahead of the planned removal of AJP support.
+
+To mitigate security risks, users who continue to rely on AJP prior to its removal
+must configure the AJP shared secret and enable secret enforcement through the
+appropriate configuration options and listener attributes.
