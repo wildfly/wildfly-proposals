@@ -1,0 +1,246 @@
+---
+categories:
+ - batch
+stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/868
+feature-team:
+ developer: theashiot
+ sme:
+  - jamezp
+ outside-perspective:
+  - TBD
+---
+
+= Provide a way to detect abnormal job executions after a server crash and give users a way to deal with these executions in bulk/automatic ways
+
+:author:            Ashwin Mehendale
+:email:             amehenda@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+A batch job execution that stops making progress has no supported way back to a usable state. A batch job can stop making progress in the following cases (not-exhastive):
+
+* Server crash.
+* Server shutdown without specifying a timeout.
+* Server reload.
+* A step block indefinitely on a remote call.
+
+This document propose two runtime-only management operations to the `batch-jberet` subsystem's deployment-scoped job resource. One to find potentially unresponsive job executions, and another to transition job executions to a terminal state.
+
+Operation to find unresponsive/long running jobs::
++
+[source,terminal,subs="+quotes",options="nowrap"]
+----
+/deployment=batch-app.war/subsystem=batch-jberet/job=_<JOB_NAME>_:list-executions-not-updated-for-time(unit=_<MINUTES_OR_HOURS>_, value=_<NUMBER>_, start=_<INDEX>_, length=_<NUMBER>_)
+----
++
+Where:
+
+* `unit` specifies either minutes or hours; defaults to minutes. 
+* `value` specifies the the time duration in the configured unit; required.
+* `start` the index of the job-execution to start looking or job executions from; defaults to 0. 
+* `length` specifies the maximum number of results to return.
++
+.Example
+[source,terminal,options="nowrap"]
+----
+/deployment=batch-app.war/subsystem=batch-jberet/job=exampleBatchJob:list-executions-not-updated-for-time(unit="minutes", value=10, start=0, length=10)
+{
+    "outcome" => "success",
+    "result" => {
+        "execution-ids" => [123L, 456L, 789L],
+        "total-count" => 150L,
+        "start" => 0,
+        "count" => 3
+    }
+}
+----
+
+Operation to transition jobs:: 
++
+[source,terminal,subs="+quotes",options="nowrap"]
+----
+/deployment=_<DEPLYMENT_NAME>_/subsystem=batch-jberet/job=_<JOB_NAME>_:transition-job-executions(state=_<STATE>_, execution-ids=[_<EXECUTION_ID_1>_,...,_<EXECUTION_ID_N>_])
+----
++
+Where:
+
+* `state` specifies the state to which the job executions should be tran sitioned. It can only be one of: {FAILED,STOPPED,ABANDONDED}, defaulting to FAILED.
+* `execution-ids` specifies an array of execution ids that need to be transitioned.
++
+.Example
+[source,terminal,options="nowrap"]
+----
+/deployment=batch-app.war/subsystem=batch-jberet/job=exampleBatchJob\
+:fail-job-executions(execution-ids=[123, 456, 789, 999])
+{
+    "outcome" => "success",
+    "result" => {
+        "failed-count" => 3,
+        "failed-execution-ids" => [123L, 456L, 789L],
+        "skipped-count" => 1,
+        "skipped-executions" => [{
+            "execution-id" => 999L,
+            "reason" => "Execution in COMPLETED state"
+        }]
+    }
+} 
+----
++
+Note that if you try to transition a job execution that is already in a terminal state, it'll be skipped and the reason the skip will be printed in the output. Also, the operation does not transition any job executions that are found in the cache as the presence of a job execution in the cache is an indiaction of liveness.
+
+=== User Stories
+
+* As a system administrator, I want to find potentially unresponsive job executions, so that I can move them to the FAILED status.
+* As a system administrator, I want to transition potentially unresponsive job executions to the FAILED status, so that I can restart them.
+* As a developer, I want to create batchlet that can transition the jobs suspected to have crashed (based on configurable value of time elapsed since the last checkpoint) to the FAILED status, so that I can restart them.
+
+== Issue Metadata
+
+=== Related Issues
+
+__<List the issues related to this feature>__
+
+=== Affected Projects or Components
+
+* https://github.com/jberet/jsr352[]
+* https://github.com/wildfly/wildfly[]
+
+=== Other Interested Projects
+NA
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+Two runtime-only operations are registered on the deployment-scoped `job` resource:
+
+* In the `list-executions-not-updated-for-time` the cut-off must be computed from the calling JVM's clock, since that is the clock  with which JBeret writes the column.
+
+* The `transition-job-executions` operation transitions
+partition executions, then step executions, then the job execution to `FAILED` with an exit status of `FAILED_BY_ADMIN`, leaving anything already in `COMPLETED`, `FAILED`, `STOPPED` or
+`ABANDONED` untouched. Additionally:
+
+** All job accepted executions must be failed in one transaction, driven from the JDBC layer on a single connection.
+
+** Job executions that are absent, out of scope, in the wrong state, or detectably running in the local JVM are skipped without aborting the operation.
+
+
+=== Changed requirements
+
+NA
+
+=== Non-Requirements
+
+This enhancement is not about making conclusive determination about whether job executions have crashed. Rather, this enhancement provides users a way to make their own determination based on the time elapsed since the last database update made by a job execution.
+
+=== Future Work
+
+A futher enhancement that should be considered in the future is to automatically determine whether a job has crashed.
+
+== Backwards Compatibility
+
+Both proposed operations are runtime-only operations on existing deployment resources,
+and the JBeret-side additions are new interfaces, new value types and `default` interface methods.
+Therefore, not backwards compatibility concerns apart from the one mentioned under "Depolyments".
+
+=== Default Configuration
+
+No current configuration attribute changes its default value, and no Galleon layer produces different configuration.
+
+=== Importing Existing Configuration
+
+An existing configuration runs unchanged, and no change to the WildFly server migration tool is needed.
+
+=== Deployments
+
+A deployment whose `permissions.xml` grants
+the five existing permission names (`start`, `stop`, `restart`, `abandon`, `read`) explicitly, rather than granting `pass:[*]`, will see `JobSecurityException` when it
+or a management client attempts `fail-job-execution` against it.
+Adding `fail` to the grant resolves it.
+Deployments granting `pass:[*]`, and deployments that do not configure `BatchPermission` at all, are
+unaffected.
+
+=== Interoperability
+
+No impact.
+
+== Implementation Plan
+
+JBeret core:: 
+
+** Creation of `ExtendedJobOperator` interface that extends `jakarta.batch.operations.JobOperator`.
+** Implement the interface with existing `AbstractJobOperator`.
+** Create three `default` `JobRepository` methods with the
+`JdbcRepository` and `AbstractPersistentRepository` overrides.
+** The new SQL statements, and the new message and logger ids.
+
+WildFly integration::
+
+The following updates will be done in WildFly:
++
+** JBeret verstion bump.
+** Updating the `WildFlyJobOperator`
+** Creating the two operation definitions and handlers on `BatchJobResourceDefinition`.
+** Updates to `LocalDescriptions` keys.
+
+== Admin Clients
+
+Chnages will be required to HAL to display these operations.
+
+== Security Considerations
+
+
+No additional security considerations.
+
+
+[[test_plan]]
+== Test Plan
+
+* Unit tests
+
+JBeret::
+
+Tests to verify the Operator logic against a mock repository to cover the following:
++
+** Argument validation and message ids.
+** Mixed-outcome batches with each distinct skip reason.
+
+WildFly::
+
+Test the step handlers with a stub operator to cover the following:
++
+** Parameter defaults
+** Validator rejection of out-of-range input
+
+* Integration tests
++
+The following tests are planned in WildFly's `testsuite/integration/basic` module:
+
+** Test the full listing-and-failing path.
+** Refusal to update executions in a terminal state [COMPLETED,ABANDONED,FAILED].
+** Atomicity under a deliberately injected mid-database write failure.
+** JBeret job execution cache coherence after a transition to the FAILED state.
+
+== Community Documentation
+
+A new section in the batch subsystem admin guide documents the stale-execution workflow end to end: 
+
+* How to identify potentially stuck executions with `list-executions-not-updated-for-time`. 
+* how to choose a time period relative to the job's checkpoint interval.
+* How to fail and then restart job executions.
+
+Caveat about job execution potentially being alive on another node will be added.
+
+== Release Note Content
+
+As an administrator, you can now list the jobs that are in the `STARTED` or the `STOPPING` state but whose last-updated time has not moved within a given window indicating that they might be stuck. You can then transition the job executions that you determine are stuck to the `FAILED` state. Transitioning job executions to the `FAILED` state provides you with the opportunity to restart the jobs.
