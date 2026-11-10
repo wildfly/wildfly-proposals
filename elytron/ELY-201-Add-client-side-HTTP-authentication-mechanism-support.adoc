@@ -1,0 +1,171 @@
+= ELY-201 Add client side HTTP authentication mechanism support. 
+:author:            Keshav Kumar
+:email:             your.email@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Wildfly Elytron already provide client and server side SASL mechanism for server side HTTP authentication mechanism.This will include a client side framework for HTTP authentication mechanisms and implement a set of client side HTTP authentication mechanisms.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/ELY-201
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-666
+* https://issues.redhat.com/browse/WFLY-17938
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+Having a client which can read the elytron configurations and add authorization header with BASIC,BEARER or DIGEST based on challenge it received.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Backwards Compatibility
+
+// Does this enhancement affect backwards compatibility with previously released
+// versions of WildFly?
+// Can the identified incompatibility be avoided?
+
+=== Default Configuration
+
+=== Importing Existing Configuration
+
+=== Deployments
+
+=== Interoperability
+
+//== Implementation Plan
+
+HttpClient provides a connect() method which is used to send a request and a response will be received.
+connect() method require  parameters :-
+
+I) URI – URI which user wants to connect.
+2) RequestMethod
+3) Body – request body to be attached with uri in case of post,put request method.
+4) Headers
+Working Module : http/client
+
+We will create a class called ElytronHttpClient which contains method connect().
+
+We will create an object of HttpClient in the constructor of ElytronHttpClient.
+
+[source,xml]
+----
+public ElytronHttpClient(){
+   client = HttpClient.newHttpClient();
+}
+----
+
+connect() method requires a parameter uri which is of type String,In this method we first get an instance of HttpRequest using buildRequest() method and using HttpClient object we will send the request by send() method which return HttpResponse.
+
+public HttpResponse<String> connect(String uri,String method, String body, Map<String, String> headers)
+
+
+-> In case of Basic Authentication mechanism,we require username and password to authenticate the user for the given uri.For that we will add user credential to the wildfly-config.xml as following :-
+
+[source,xml]
+----
+<set-user-name name="quickstartUser"/>
+<credentials>
+   <clear-password password="quickstartPwd1!"/>
+</credentials>
+----
+
+We will use different type of authentication mechanism 
+Basic,bearer,certificate,digest,external
+
+Based on the mechanism type we will call different methods to get authorization value which will be added to the header for authentication.
+Like for basic type authentication mechanism we will create a class which contains evaluateMechanism() method :  
+
+[source,xml]
+----
+public static HttpRequest evaluateMechanism(URI uri) {
+    HttpRequest request = HttpRequest
+            .newBuilder()
+            .uri(uri)
+            .header(ElytronHttpClientConstants.AUTHORIZATION, basicAuth(userName, password))
+            .build();
+    return request;
+}
+----
+
+Similar to this we will have different classes for different authentication mechanism like digest,bearer,etc.
+
+Now after sending the request we will get a response which is of type HttpResponse.we will determine using the status if the authentication success or failed.If status code is 200 then we will know that authentication is successful.
+
+If the authentication failure then headers will contain : 
+www-authenticate=[Basic realm="RealmUsersRoles"] for basic authentication.similar for the other authentication mechanism type like digest,bearer,etc.
+
+
+== Security Considerations
+
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+
+== Test Plan
+
+To test the above functionality we can add the tests as follows : 
+Inside tests/base/src/test/java/org/wildfly/security/http/client/ we will create a test class named as ElytronHttpClientTest where we will get an instance of HttpRequest from ElytronHttpClient#evaluateMechanism() method of different authentication mechanism and then we will create an object of TestingHttpServerRequest using request header which we will pass to the evaluateRequest() method of BasicAuthenticationMechanism which is used to evaluate our header values of request method.
+
+[source,xml]
+----
+TestingHttpServerRequest testingHttpServerRequest = new TestingHttpServerRequest(new String[]{request.headers().allValues("Authorization").get(0)});
+----
+
+The actual communication flow and connect method have be tested with arquillian in wildfly where we will call the connect method with required parameter and test it.
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
