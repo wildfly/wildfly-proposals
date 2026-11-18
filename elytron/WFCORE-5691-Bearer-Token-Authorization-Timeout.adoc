@@ -101,7 +101,7 @@ This feature does not change which tokens are accepted or how they are validated
 
 === Future Work
 
-The intention is to promote these attributes from `preview` to `community` stability, or directly to `default`, in a later release once they have been available at `preview` and feedback has been collected. Promotion will require confirming that the documentation is complete and agreeing whether a runtime test that exercises the timeouts is needed. The developer is expected to follow up on the promotion.
+The intention is to promote these attributes from `preview` to `community` stability, or directly to `default`, in a later release once they have been available at `preview` and feedback has been collected. Promotion will require confirming that the documentation is complete and that the tests described in the <<test_plan,Test Plan>> are in place. The developer is expected to follow up on the promotion.
 
 == Backwards Compatibility
 
@@ -139,10 +139,14 @@ The following tests are planned:
 .Tests in WildFly Core
 * A subsystem parsing and marshalling test using the <<target_versions,`preview` 19.0>> schema that sets `connection-timeout` and `read-timeout` on both the `jwt` and `oauth2-introspection` validators, including the use of expressions.
 * Validation of the <<target_versions,`preview` 19.0>> Elytron subsystem schema XSD.
-* A runtime test that configures a `token-realm` against a remote endpoint that does not respond within the configured timeout and verifies that the token is not validated. // TODO: Decide whether this test is worthwhile, as timeout tests are slow and add to the testsuite run time.
+
 
 .Tests in WildFly
 * The WildFly testsuite will be updated if required to verify the attributes can be set in the default Elytron configuration.
+* A runtime test for the `oauth2-introspection` validator using a mock HTTP server. The server is slow to respond to the introspection request, the `read-timeout` is set to a shorter time than the server takes to respond, and the test verifies that the token is not validated once the timeout expires.
+* A runtime test for the `jwt` validator using a mock HTTP server that uses TLS. The server is slow to respond to the request for the JWKS referenced by the `jku` header of the token, the `read-timeout` is set to a shorter time than the server takes to respond, and the test verifies that the token is not validated once the timeout expires.
+* The runtime tests will use short timeouts and delays so that they add as little as possible to the run time of the testsuite.
+* It is not possible to reliably simulate a connection timeout, so the `connection-timeout` attribute is covered by the parsing and marshalling test but is not exercised by a runtime test.
 
 == Community Documentation
 
