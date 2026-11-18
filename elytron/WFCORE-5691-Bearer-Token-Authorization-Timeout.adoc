@@ -157,4 +157,3 @@ Documentation for `connection-timeout` and `read-timeout` will be added to https
 == Release Note Content
 
 You can now configure the `connection-timeout` and `read-timeout` attributes, in milliseconds, on the `jwt` and `oauth2-introspection` validators of an Elytron `token-realm`. These control how long the server waits to connect to, and to read from, the server providing the public keys or the token introspection endpoint. These attributes are available at the `preview` stability level.
-stability level.
