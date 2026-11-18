@@ -2,7 +2,7 @@
 categories:
   - ejb
 stability-level: community
-issue: https://github.com/wildfly/wildfly-proposals/issues/21523
+issue: https://github.com/wildfly/wildfly-proposals/issues/816
 feature-team:
   developer: tadamski
   sme:
