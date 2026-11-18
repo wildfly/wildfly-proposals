@@ -98,8 +98,8 @@ Port `:9555` is no longer opened.
 === HTTP/2 Prerequisite
 
 For cleartext gRPC (h2c), the Undertow `http-listener` must have `enable-http2="true"`.
-The Galleon layer does **not** configure this automatically; operators must set it explicitly.
-For production use, it is recommended to use the HTTPS listener instead.
+The standard WildFly Undertow provisioning enables HTTP/2 on its default HTTP listener; operators using a custom
+listener configuration must enable it themselves. For production use, the HTTPS listener is recommended.
 
 === Undertow Integration
 
@@ -144,23 +144,19 @@ subsystem. No subsystem-level security attribute is needed.
 
 Two cooperating components bridge the identity from the Undertow request thread to the gRPC executor thread:
 
-1. **Inner handler chain wrapper** (`GrpcServletInstallProcessor`): Installed at the front of the WAR's inner handler
-   chain, this wrapper runs on the Undertow request thread inside the scope of `ElytronRunAsHandler`. It reads the
-   authenticated `SecurityIdentity` from `SecurityDomain.getCurrent()` and stores it in
-   `GrpcSecurity.AUTHENTICATED_IDENTITY_BY_REMOTE_ADDR` (a `ConcurrentHashMap` keyed by the client's remote
-   `InetSocketAddress`). A connection-close listener removes the entry when the TCP connection ends, ensuring
-   correctness under HTTP/2 multiplexing where multiple streams share the same connection and remote address.
-   For mTLS deployments, the wrapper falls back to explicit client certificate authentication via
-   `ServerAuthenticationContext.setAuthenticationPrincipal()` using the X.509 certificate from the TLS session.
+1. **Servlet identity filter** (`GrpcElytronIdentityFilter`): Installed by `GrpcServletInstallProcessor` for
+   `/grpc-dispatch/*`, this filter runs on the Undertow request thread inside the WAR's Elytron handler scope. It
+   reads the authenticated `SecurityIdentity` from `SecurityDomain.getCurrent()`, registers it under an unguessable
+   one-time token, and adds that token as internal gRPC metadata to the wrapped servlet request. The token is removed
+   on asynchronous completion, timeout, or failure. Because the token is request-scoped, rather than keyed by a TCP
+   connection, HTTP/2 streams sharing a connection remain isolated.
 
 2. **`ElytronSecurityIdentityInterceptor`**: A built-in gRPC `ServerInterceptor` prepended to every service's
-   interceptor chain. It reads the identity from the map (or falls back to `SecurityDomain.getCurrent()`), sets
-   `GrpcSecurity.SECURITY_IDENTITY_KEY` on the gRPC `Context`, and wraps all listener callbacks with
+   interceptor chain. It claims the one-time token, then wraps all listener callbacks with
    `SecurityIdentity.runAs()` so that `SecurityDomain.getCurrent().getCurrentSecurityIdentity()` returns the identity
-   on gRPC executor threads. This enables:
-   * Service code to read the caller identity via `GrpcSecurity.SECURITY_IDENTITY_KEY.get()`
-   * Elytron thread-local identity via `SecurityDomain.getCurrent()`
-   * CDI `@RolesAllowed` interceptors to work transparently
+   on gRPC executor threads. This enables Elytron-aware CDI interceptors (including `@RolesAllowed`) and EJBs to see
+   the caller identity. The handoff is internal: no gRPC `Context` key or other subsystem identity API is exposed to
+   service implementations or application interceptors.
 
 === `@RolesAllowed` on CDI Beans
 
@@ -169,10 +165,11 @@ CDI-enabled gRPC deployments. It:
 
 * Registers `GrpcRolesAllowedInterceptor` so CDI discovers it from the subsystem module
 * Adds `@GrpcSecuredBinding` to any CDI bean class whose methods carry `@RolesAllowed`
-* Vetoes WildFly's exchange-based `SecurityContext` bean and registers `GrpcElytronSecurityContext` instead, so that
-  role checks read from `SecurityDomain.getCurrent()` (populated by `runAs()` wrapping on gRPC executor threads)
+* Has its `ProcessAnnotatedType` observer limited with `@WithAnnotations(RolesAllowed.class)`, while retaining
+  method-level annotation support
 
-Application code only needs `@RolesAllowed` on CDI beans — no extra annotation or configuration is required.
+The extension and interceptor remain internal to the subsystem module. Application code only needs `@RolesAllowed`
+on CDI beans — no extra annotation or configuration is required.
 
 === Standard gRPC Streaming
 
@@ -195,6 +192,9 @@ rewriting paths for them), and releases all CDI `CreationalContext` instances.
 === Future Work
 
 Promote stability from `preview` to `community` once the code and the management model is stabilized.
+
+Create a shared `elytron-cdi` module/project for CDI authorization integration, so the gRPC feature pack consumes a
+general Elytron/CDI solution rather than owning the `@RolesAllowed` support itself.
 
 == Backwards Compatibility
 
@@ -246,13 +246,12 @@ https://grpc.github.io/grpc/core/md_doc__p_r_o_t_o_c_o_l-_h_t_t_p2.html[gRPC HTT
    `application/grpc` requests and rewrites the path to route through the owning WAR's handler chain.
 5. Add `GrpcDeploymentService` MSC service that instantiates gRPC services (via CDI or reflection), registers them
    with the `MutableHandlerRegistry`, and manages lifecycle (clean unregistration on stop).
-6. Add an inner handler chain wrapper in `GrpcServletInstallProcessor` that captures the Elytron `SecurityIdentity`
-   from the Undertow request thread and stores it in `GrpcSecurity.AUTHENTICATED_IDENTITY_BY_REMOTE_ADDR` for the
-   gRPC interceptor to read. Includes mTLS fallback via `ServerAuthenticationContext.setAuthenticationPrincipal()`.
-7. Add `ElytronSecurityIdentityInterceptor` that reads the identity from the map, sets it on the gRPC `Context`, and
-   wraps listener callbacks with `SecurityIdentity.runAs()`.
-8. Add `GrpcSecurityCdiExtension` portable extension enabling `@RolesAllowed` on CDI beans, with
-   `GrpcElytronSecurityContext` replacing WildFly's exchange-based `SecurityContext`.
+6. Add `GrpcElytronIdentityFilter` in the servlet installation. It captures the Elytron `SecurityIdentity` from the
+   Undertow request thread, passes an unguessable one-time token to the embedded servlet as internal metadata, and
+   discards the token on asynchronous completion, timeout, or failure.
+7. Add `ElytronSecurityIdentityInterceptor` that claims the one-time token and wraps listener callbacks with
+   `SecurityIdentity.runAs()`.
+8. Add the internal `GrpcSecurityCdiExtension` portable extension enabling `@RolesAllowed` on CDI beans.
 9. Add `server-name` and `virtual-host` to the management model; version the XML schema to 2.0.
 10. Update the Galleon layer (remove `:9555` binding, module changes).
 11. Update documentation and examples.
@@ -267,23 +266,21 @@ The two required attributes (`server-name`, `virtual-host`) and the retained opt
 TLS is delegated entirely to the Undertow HTTPS listener; there is no separate TLS configuration surface in the
 `grpc` subsystem.
 
-The `grpc` Galleon layer does **not** enable cleartext HTTP/2 by default.
-Operators who require cleartext gRPC (h2c) must explicitly set `enable-http2="true"` on the Undertow `http-listener`.
-For production deployments, configuring an Undertow HTTPS listener is strongly recommended.
+The standard WildFly Undertow provisioning enables cleartext HTTP/2 on its default HTTP listener. Operators using a
+custom HTTP listener for gRPC must set `enable-http2="true"`; for production deployments, configuring an Undertow
+HTTPS listener is strongly recommended.
 
 Security is configured per-WAR using WildFly's standard Undertow security model (`jboss-web.xml` +
 `application-security-domain`). The Elytron `SecurityIdentity` is propagated from the Undertow handler chain to the
-gRPC executor thread via a two-component bridge: an inner handler chain wrapper captures the identity on the request
-thread, and the built-in `ElytronSecurityIdentityInterceptor` makes it available to service code via both the gRPC
-`Context.Key` and Elytron's thread-local (through `SecurityIdentity.runAs()` wrapping).
+gRPC executor thread via a two-component bridge: a servlet filter transfers the identity with a request-scoped,
+one-time internal token, and the built-in `ElytronSecurityIdentityInterceptor` restores it as Elytron's thread-local
+context through `SecurityIdentity.runAs()` wrapping. The bridge exposes no application-facing gRPC identity API.
 
-`@RolesAllowed` is supported on CDI beans injected into gRPC services via the `GrpcSecurityCdiExtension` portable
-extension, which transparently adds interceptor bindings and provides a gRPC-compatible `SecurityContext` implementation.
+`@RolesAllowed` is supported on CDI beans injected into gRPC services via the internal `GrpcSecurityCdiExtension`
+portable extension, which transparently adds interceptor bindings.
 
-For mutual TLS, the inner handler chain wrapper authenticates the client certificate's `X500Principal` directly via
-`ServerAuthenticationContext.setAuthenticationPrincipal()`. The `CLIENT_CERT` HTTP authentication mechanism is
-intentionally not used because Elytron's filesystem-realm cannot verify `X509PeerCertificateChainEvidence`, which
-would cause a 403 Forbidden before the request reaches the `GrpcServlet`.
+For mutual TLS, Undertow's `CLIENT_CERT` HTTP authentication mechanism maps the certificate principal to the Elytron
+security domain; the servlet filter then transfers the resulting identity using the same one-time-token flow.
 
 [[test_plan]]
 == Test Plan
@@ -301,9 +298,9 @@ Integration tests (Arquillian) verify:
 * Standard HTTP/REST traffic on `:8080` is unaffected by the gRPC handler installation.
 * TLS gRPC on `:8443` when TLS is configured on the Undertow `https-listener`.
 * Mutual TLS (two-way TLS) with client certificate authentication and identity propagation.
-* Elytron `SecurityIdentity` propagation: authenticated user identity is accessible via
-  `GrpcSecurity.SECURITY_IDENTITY_KEY` and `SecurityDomain.getCurrent()`.
-* Unauthenticated calls return anonymous identity when security domain is configured.
+* Elytron `SecurityIdentity` propagation: authenticated user identity is available through
+  `SecurityDomain.getCurrent()` to CDI interceptors and EJBs invoked from gRPC service methods.
+* Unauthenticated calls cannot access CDI operations protected by `@RolesAllowed`.
 * `@RolesAllowed` enforcement on CDI beans: authorized users pass, unauthorized users receive `PERMISSION_DENIED`.
 * mTLS without Elytron configuration returns anonymous identity (negative test).
 
@@ -314,8 +311,8 @@ HTTP/2 on the Undertow `http-listener`, update the XML namespace to `urn:wildfly
 and `virtual-host` to the subsystem resource, and remove the `:9555` socket binding. The examples are updated to
 demonstrate the Servlet-based approach.
 
-A `doc/security.md` document describes the security architecture, including per-WAR configuration, identity
-propagation flow, `@RolesAllowed` setup, and mutual TLS configuration.
+A `doc/security.md` document describes the security architecture, including per-WAR configuration, the one-time
+identity-token flow, `@RolesAllowed` setup, and mutual TLS configuration.
 
 == Release Note Content
 
