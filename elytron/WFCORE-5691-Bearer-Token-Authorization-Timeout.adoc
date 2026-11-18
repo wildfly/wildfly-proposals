@@ -6,9 +6,9 @@ issue: https://github.com/wildfly/wildfly-proposals/issues/611
 feature-team:
   developer: darranl
   sme:
-    -
+    - rawojeda
   outside-perspective:
-    -
+    - jasondlee
 ---
 
 = Bearer token timeout configurability for the Elytron token-realm
