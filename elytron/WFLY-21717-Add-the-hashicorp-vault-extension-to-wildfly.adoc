@@ -29,7 +29,7 @@ promoted-by: []
 
 == Overview
 
-The https://github.com/wildfly-security-incubator/wildfly-vault-feature-pack[WildFly Vault feature-pack] (HashiCorp Vault integration) delivers a Galleon feature-pack and a `hashicorp-vault` subsystem that lets administrators define Vault-backed credential stores, manage aliases, and resolve `+$\{HC_VAULT::...\}+` expressions against those stores. The feature-pack is currently in community stability levels.
+The https://github.com/wildfly-security/wildfly-vault-feature-pack[WildFly Vault feature-pack] (HashiCorp Vault integration) delivers a Galleon feature-pack and a `hashicorp-vault` subsystem that lets administrators define Vault-backed credential stores, manage aliases, and resolve `+$\{HC_VAULT::...\}+` expressions against those stores. The feature-pack is currently in community stability levels.
 
 === User Stories
 
@@ -49,8 +49,8 @@ The https://github.com/wildfly-security-incubator/wildfly-vault-feature-pack[Wil
 
 === Affected Projects or Components
 
-- https://github.com/wildfly-security-incubator/wildfly-vault-feature-pack[wildfly-vault-feature-pack] (feature-pack impl, tests)
-- https://github.com/wildfly-security-incubator/wildfly-elytron-hashicorp-vault[wildfly-elytron-hashicorp-vault] (core elytron integration)
+- https://github.com/wildfly-security/wildfly-vault-feature-pack[wildfly-vault-feature-pack] (feature-pack impl, tests)
+- https://github.com/wildfly-security/wildfly-elytron-hashicorp-vault[wildfly-elytron-hashicorp-vault] (core elytron integration)
 - https://github.com/wildfly/wildfly[wildfly] (documentation)
 - https://github.com/wildfly/wildfly-galleon-feature-packs[wildfly-galleon-feature-packs]
 
@@ -157,6 +157,23 @@ The key path supports two modes:
 ?config/db.host       → Traverse: data["config"]["db.host"]
 ----
 
+4. **Literal `/` or `%` in a key name** - The key path is split on unencoded `/` first, then each segment is URL-decoded once:
++
+----
+?database/host        → Nested: data["database"]["host"]
+?database%2Fhost      → Literal key named "database/host"
+?database%252Fhost    → Literal key named "database%2Fhost"
+----
++
+Other characters in key names should be encoded as `%2B` (`+`), `%20` (space), `%3F` (`?`), `%23` (`#`) and `%25` (`%`).
+
+Values, objects and writes:
+
+* The value at the end of the key path is returned as text (strings as is; numbers, booleans and arrays as their JSON text)
+* A key path that ends at a JSON object resolves to nothing, and `read-aliases` lists leaf values only (including nested ones, using their full encoded key path), never objects. Every listed alias can be passed back to retrieve the same value
+* A JSON `null` value is treated as absent
+* `add-alias` changes only the value at the key path (missing intermediate objects are created); sibling keys are preserved. `remove-alias` deletes only that value, and the secret is deleted only when it becomes empty
+
 ==== Examples
 
 Simple format (most common):
@@ -185,11 +202,16 @@ engine=KVv2@company/prod#division/team?app.config/db.settings/password
 
 ==== URL Encoding Requirements
 
-Users must URL-encode special characters in paths:
+Users must URL-encode special characters in mount paths and secret paths:
 
 * **If paths contain `#`**, encode it as `%23`
 * **If paths contain `?`**, encode it as `%3F` (extremely rare)
+* **If paths contain `%`**, encode it as `%25` (a `%` followed by two hex digits is read as an escape sequence)
+* **If paths contain `+`**, encode it as `%2B` (an unencoded `+` is decoded as a space)
 * Spaces and other special characters should be URL-encoded as needed (e.g., space as `%20`)
+* In mount and secret paths `/` is always a separator, and `%2F` is decoded to `/`, so `a%2Fb` is the same path as `a/b`
+
+Each segment is split on the delimiters first and URL-decoded exactly once afterwards, so there is no double decoding.
 
 Examples with URL encoding:
 ----
@@ -204,22 +226,44 @@ The legacy format `secret-path.key` (using dot as delimiter) can be supported vi
 
 **Format Detection:**
 
-* If the alias contains `?`, `#`, `@`, or starts with `engine=`, it uses the new format
-* Otherwise, if `support-legacy-alias-format=true`, it uses the legacy format (split on the last dot)
-* If `support-legacy-alias-format=false`, legacy format is rejected with an error
+* An alias starting with `#`, or with a complete new-format header (`@mount#secret?key` or `engine=TYPE[@mount]#secret?key`), always uses the new format, regardless of the `support-legacy-alias-format` setting
+* Otherwise, if `support-legacy-alias-format=true` and the alias contains a dot, it uses the legacy format. Legacy takes precedence: markers such as `?`, `#` or `@` inside the legacy key do not switch it to the new format (for example `secret/app.a?b` is legacy key `a?b`)
+* Otherwise the alias is parsed as new format, where `?` separates the secret path from the key path. With `support-legacy-alias-format=false` the same alias `secret/app.a?b` is new-format key `b` at path `secret/app.a`
+* No data-dependent fallback is performed between the two interpretations
+* Disabling `support-legacy-alias-format` is not a migration validator: an ambiguous alias may remain syntactically valid while addressing a different secret, so aliases must be converted to explicit new-format aliases before the switch is changed
 
-NOTE: Legacy aliases that contain `@` (e.g. `user@host`) will be incorrectly classified as new-format aliases because `@` is a new-format delimiter. This is a known limitation. Since the legacy format is only supported at Community stability and is intended for removal in a future release, users with such aliases should migrate to the new format.
+**Legacy alias semantics (same as 1.0.1.Final):**
+
+* The path includes the mount: `secret/myapp.database_password` means mount `secret`, secret `myapp`, key `database_password`. A path without a slash uses the configured `default-mount-path`
+* The alias is split on the last dot (trailing dots are discarded); dots in the secret path are allowed
+* The key is a literal top-level JSON field: `/`, `%xx`, `+`, `?`, `#` and `@` are part of the key name and there is no nested traversal
+* The path follows HTTP path semantics: `%20` is a space, `%2520` is the literal text `%20`, `+` stays a plus, and a raw `?` or `#` in the path starts a query (preserved, e.g. KV v2 version selection) or fragment (ignored)
+
+**Recommended migration spelling:** use the fully qualified form `@mount#secret-path?key-path`, which has the same meaning with legacy support on or off. Unprefixed new-format aliases that contain a dot (e.g. `myapp/db?db.host`) are treated as legacy while legacy support is enabled, so at Community stability they should be written with a leading `#` (e.g. `#myapp/db?db.host`).
+
+Legacy alias to new alias examples:
+
+[cols="1,1"]
+|===
+|Legacy |New
+
+|`secret/myapp/db.password` |`@secret#myapp/db?password`
+|`custom/app.key` |`@custom#app?key`
+|`secret/app.database/host` |`@secret#app?database%2Fhost`
+|`secret/app.a+b` |`@secret#app?a%2Bb`
+|`secret/app%20name.key` |`@secret#app%20name?key`
+|===
 
 **When legacy format is enabled and detected:**
 
 * A deprecation warning is logged indicating that users should migrate to the new format
-* The warning includes the equivalent new format syntax for easy migration
+* The warning includes the equivalent new format syntax for easy migration, where one exists (no new-format equivalent exists for legacy HTTP queries, so the warning explains that legacy support must stay enabled)
 
 **When legacy format is disabled and detected:**
 
 * An error is thrown rejecting the alias
 * The error message includes the equivalent new format syntax to help users migrate
-* Example: "Legacy alias format 'myapp/db.password' is not supported. Use new format: 'myapp/db?password'"
+* Example: "Legacy alias format 'secret/myapp/db.password' is not supported. Use new format: '@secret#myapp/db?password'"
 
 **Default behavior by stability level:**
 
@@ -243,11 +287,15 @@ NOTE: Legacy aliases that contain `@` (e.g. `user@host`) will be incorrectly cla
 * Expose `default-engine-type` and `default-mount-path` configuration options in the hashicorp-vault subsystem
 ** These are implemented in the credential store in this iteration to prepare for future subsystem enhancements
 ** Future work will add subsystem-level attributes that can be configured via management operations
-* See opened issues here https://github.com/orgs/wildfly-security-incubator/projects/1/views/1
+* See opened issues here https://github.com/orgs/wildfly-security/projects/1/views/1
 
 == Backwards Compatibility
 
 * Existing configurations that were created at community stability should continue to work
+* Legacy aliases that worked with the 1.0.1.Final release of the HashiCorp Vault credential store select the same credential (same mount, secret path and literal key) when `support-legacy-alias-format=true`. Example "@app.a#b?c" would be picked up as a new alias instead of an old alias due to the rules specified in the `Format detection` section above (`#` is checked first.)
+* Legacy aliases that depend on an HTTP query in the secret path (for example `secret/app?version=1.password` to pin a KV v2 version) have no equivalent in the new format; these should be migrated or the server run at the community stability level until migration can be performed.
+* Legacy aliases that resolve to a whole top-level JSON object (returned as JSON text) keep that behavior only in legacy format; new-format aliases require a leaf value, so such secrets need a separate schema change before migrating
+* Aliases written for the 1.1.0.CR1 - CR3 release candidates (which decoded legacy keys and could prefix the default mount twice) are not a compatibility target and must be converted to explicit new-format aliases
 * The legacy alias format (`secret-path.key`) support is controlled by the `support-legacy-alias-format` configuration parameter:
 ** **At community stability or lower:** Defaults to `true` - legacy format is supported with deprecation warnings
 ** **At default stability:** Defaults to `false` - only the new format is accepted
@@ -299,7 +347,7 @@ NOTE: Legacy aliases that contain `@` (e.g. `user@host`) will be incorrectly cla
 == Test Plan
 
 * QE approval
-* Automated tests in **wildfly-vault-feature-pack** (subsystem + integration) and in wildfly repository (microprofile TCK testsuite used as a template).
+* Automated tests in **wildfly-vault-feature-pack** (subsystem + integration, executed against a server started at both `default` and `community` stability) and in wildfly repository (microprofile TCK testsuite used as a template).
 * Manual tests against HC Vault running locally.
 
 == Community Documentation
