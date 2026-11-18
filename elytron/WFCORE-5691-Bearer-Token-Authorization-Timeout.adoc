@@ -52,6 +52,28 @@ As an administrator whose key server or authorization server is slow but reliabl
 * https://github.com/wildfly-security/wildfly-elytron[wildfly-elytron]
 * https://github.com/wildfly/wildfly[wildfly]
 
+[[target_versions]]
+=== Target Versions
+
+[cols="1,1"]
+|===
+|Component |Version
+
+|WildFly
+|43
+
+|WildFly Core
+|35
+
+|Elytron subsystem management model
+|21.0.0
+
+|Elytron subsystem schema
+|`preview` 19.0
+|===
+
+The management model version and the schema version are numbered independently. The management model describes the resources and attributes of the Elytron subsystem, whichever schema is used to configure them. The `preview` 19.0 schema is the XML schema in which this feature can be configured.
+
 === Other Interested Projects
 
 N/A
@@ -71,7 +93,7 @@ The `connection-timeout` attribute defines how long the server waits when establ
 
 When the `jwt` validator times out while retrieving a JWKS, a warning is logged and no public key is available for the token, so the token is not validated. When the `oauth2-introspection` validator times out, the introspection request fails and the token is not validated.
 
-The new attributes are added in a new `preview` version of the Elytron subsystem schema, `wildfly-elytron_preview_19_0.xsd`, which is only available when the server is started with the `preview` stability level or below. Because the attributes are defined with `preview` stability, the server will not allow them to be configured when running at the `default` or `community` stability levels.
+The new attributes are added in a new `preview` version of the Elytron subsystem schema, <<target_versions,`preview` 19.0>> (`wildfly-elytron_preview_19_0.xsd`), which is only available when the server is started with the `preview` stability level or below. Because the attributes are defined with `preview` stability, the server will not allow them to be configured when running at the `default` or `community` stability levels.
 
 === Non-Requirements
 
@@ -99,7 +121,7 @@ N/A
 
 === Interoperability
 
-The new attributes are only available at the `preview` stability level and the Elytron subsystem model version is increased to 21.0.0 for WildFly 43. As is the case for other features at the `preview` stability level, no transformer is provided for the new attributes, so they must not be configured on a managed domain that includes hosts running WildFly 42 or earlier.
+The new attributes are only available at the `preview` stability level and the Elytron subsystem model version is increased to <<target_versions,21.0.0>> for WildFly 43. As is the case for other features at the `preview` stability level, no transformer is provided for the new attributes, so they must not be configured on a managed domain that includes hosts running WildFly 42 or earlier.
 
 == Admin Clients
 
@@ -115,8 +137,8 @@ The new attributes do not add any new sensitive information or authentication me
 The following tests are planned:
 
 .Tests in WildFly Core
-* A subsystem parsing and marshalling test using the `preview` 19.0 schema that sets `connection-timeout` and `read-timeout` on both the `jwt` and `oauth2-introspection` validators, including the use of expressions.
-* Validation of the `preview` 19.0 Elytron subsystem schema XSD.
+* A subsystem parsing and marshalling test using the <<target_versions,`preview` 19.0>> schema that sets `connection-timeout` and `read-timeout` on both the `jwt` and `oauth2-introspection` validators, including the use of expressions.
+* Validation of the <<target_versions,`preview` 19.0>> Elytron subsystem schema XSD.
 * A runtime test that configures a `token-realm` against a remote endpoint that does not respond within the configured timeout and verifies that the token is not validated. // TODO: Decide whether this test is worthwhile, as timeout tests are slow and add to the testsuite run time.
 
 .Tests in WildFly
@@ -129,3 +151,4 @@ Documentation for `connection-timeout` and `read-timeout` will be added to https
 == Release Note Content
 
 You can now configure the `connection-timeout` and `read-timeout` attributes, in milliseconds, on the `jwt` and `oauth2-introspection` validators of an Elytron `token-realm`. These control how long the server waits to connect to, and to read from, the server providing the public keys or the token introspection endpoint. These attributes are available at the `preview` stability level.
+stability level.
