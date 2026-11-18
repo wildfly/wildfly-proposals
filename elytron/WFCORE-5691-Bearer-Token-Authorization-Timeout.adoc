@@ -43,6 +43,7 @@ As an administrator whose key server or authorization server is slow but reliabl
 === Related Issues
 
 * https://redhat.atlassian.net/browse/WFCORE-5691[WFCORE-5691]
+* https://redhat.atlassian.net/browse/WFLY-19452[WFLY-19452] (documentation in the WildFly Bearer Token Authorization guide)
 * https://redhat.atlassian.net/browse/WFLY-22472[WFLY-22472] (runtime test coverage in the WildFly testsuite)
 * https://redhat.atlassian.net/browse/EAP7-1856[EAP7-1856]
 * https://redhat.atlassian.net/browse/ELY-2189[ELY-2189]
