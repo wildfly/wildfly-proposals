@@ -1,0 +1,159 @@
+---
+categories:
+  - elytron
+stability-level: preview
+issue: https://github.com/wildfly/wildfly-proposals/issues/611
+feature-team:
+  developer: darranl
+  sme:
+    - rawojeda
+  outside-perspective:
+    - jasondlee
+---
+
+= Bearer token timeout configurability for the Elytron token-realm
+
+:author:            Darran Lofthouse
+:email:             darran.lofthouse@redhat.com
+:author2:           Rebecca Searls
+:email2:            rsearls@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+When a `token-realm` validates a bearer token it may need to make an HTTP request to a remote server. A `token-realm` configured with a `jwt` validator may fetch the JSON Web Key Set (JWKS) containing the public key used to verify the token signature when the token refers to it using `kid` and `jku` headers. A `token-realm` configured with an `oauth2-introspection` validator sends each token to the introspection endpoint of the authorization server. Currently the administrator has no way to control how long the server waits for these remote servers to respond.
+
+This feature adds two optional attributes, `connection-timeout` and `read-timeout`, to both the `jwt` and the `oauth2-introspection` attributes of the `token-realm` resource. The `connection-timeout` attribute defines the time in milliseconds the server will wait when establishing a connection to the remote server. The `read-timeout` attribute defines the time in milliseconds the server will wait for data once the connection has been established. If either time expires the request is abandoned.
+
+This proposal was originally written by Rebecca Searls, and Darran Lofthouse is continuing that work.
+
+=== User Stories
+
+As an administrator using a `token-realm` with a `jwt` validator that retrieves public keys from a remote JWKS URL, I want to limit how long the server waits for that URL to respond, so that an unreachable or slow key server fails authentication quickly instead of delaying requests.
+
+As an administrator using a `token-realm` with an `oauth2-introspection` validator, I want to limit how long the server waits for the introspection endpoint, so that an unreachable or slow authorization server does not hold requests for an excessive amount of time.
+
+As an administrator whose key server or authorization server is slow but reliable, I want to extend the timeouts, so that tokens can still be validated.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://redhat.atlassian.net/browse/WFCORE-5691[WFCORE-5691]
+* https://redhat.atlassian.net/browse/WFLY-19452[WFLY-19452] (documentation in the WildFly Bearer Token Authorization guide)
+* https://redhat.atlassian.net/browse/WFLY-22472[WFLY-22472] (runtime test coverage in the WildFly testsuite)
+* https://redhat.atlassian.net/browse/EAP7-1856[EAP7-1856]
+* https://redhat.atlassian.net/browse/ELY-2189[ELY-2189]
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly-core[wildfly-core]
+* https://github.com/wildfly-security/wildfly-elytron[wildfly-elytron]
+* https://github.com/wildfly/wildfly[wildfly]
+
+[[target_versions]]
+=== Target Versions
+
+[cols="1,1"]
+|===
+|Component |Version
+
+|WildFly
+|43
+
+|WildFly Core
+|35
+
+|Elytron subsystem management model
+|21.0.0
+
+|Elytron subsystem schema
+|`preview` 19.0
+|===
+
+The management model version and the schema version are numbered independently. The management model describes the resources and attributes of the Elytron subsystem, whichever schema is used to configure them. The `preview` 19.0 schema is the XML schema in which this feature can be configured.
+
+=== Other Interested Projects
+
+N/A
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+* [x] Managed domain
+* [x] OpenShift Source-to-Image (S2I)
+* [x] Bootable jar
+
+== Requirements
+
+Two new optional attributes, `connection-timeout` and `read-timeout`, will be added to each of the `jwt` and `oauth2-introspection` attributes of the `token-realm` resource in the Elytron subsystem. Both attributes are of type `int`, their value is in milliseconds, and they support expressions. Only zero or positive values are allowed, and a value of zero means that the server will wait indefinitely.
+
+The `connection-timeout` attribute defines how long the server waits when establishing a connection to the remote server. The `read-timeout` attribute defines how long the server waits when reading the response from the remote server once the connection has been established. For the `jwt` validator the attributes only take effect when a `client-ssl-context` is configured, as this is a prerequisite for Elytron to fetch keys from a `jku` URL, and when the token being validated contains both a `kid` and a `jku` header and the `jku` value is one of the allowed `jku` values. Elytron caches the keys it has fetched from each `jku` URL and checks this cache before deciding whether a connection is needed, so the attributes only apply when a fetch is actually required.
+
+When the `jwt` validator times out while retrieving a JWKS, a warning is logged and no public key is available for the token, so the token is not validated. When the `oauth2-introspection` validator times out, the introspection request fails and the token is not validated.
+
+The new attributes are added in a new `preview` version of the Elytron subsystem schema, <<target_versions,`preview` 19.0>> (`wildfly-elytron_preview_19_0.xsd`), which is only available when the server is started with the `preview` stability level or below. Because the attributes are defined with `preview` stability, the server will not allow them to be configured when running at the `default` or `community` stability levels.
+
+=== Non-Requirements
+
+This feature does not change which tokens are accepted or how they are validated, and it does not add timeouts to any other component of the Elytron subsystem.
+
+=== Future Work
+
+The intention is to promote these attributes from `preview` to `community` stability, or directly to `default`, in a later release once they have been available at `preview` and feedback has been collected. Promotion will require confirming that the documentation is complete and that the tests described in the <<test_plan,Test Plan>> are in place. The developer is expected to follow up on the promotion.
+
+== Backwards Compatibility
+
+For existing configurations the behaviour does not change, because neither attribute has a default in the management model and the attributes are not present unless the administrator sets them. When an attribute is not set the default of Elytron is used. For the `jwt` validator this is 2000 milliseconds for both timeouts, which is the value hard coded in Elytron since 2021. For the `oauth2-introspection` validator Elytron does not apply a timeout by default, which is equivalent to setting a value of zero.
+
+=== Default Configuration
+
+The new attributes will not be present in the default configuration.
+
+=== Importing Existing Configuration
+
+The new attributes are optional, so existing configuration remains valid and can be imported without change.
+
+=== Deployments
+
+N/A
+
+=== Interoperability
+
+The new attributes are only available at the `preview` stability level and the Elytron subsystem model version is increased to <<target_versions,21.0.0>> for WildFly 43. As is the case for other features at the `preview` stability level, no transformer is provided for the new attributes, so they must not be configured on a managed domain that includes hosts running WildFly 42 or earlier.
+
+== Admin Clients
+
+The attributes are available through the management model and so can be set using the management CLI, the HAL management console and the management API. No changes to the management clients are required, although the HAL management console will only display the attributes when the server is running at the `preview` stability level or below.
+
+== Security Considerations
+
+The new attributes do not add any new sensitive information or authentication mechanism. A value that is too short may cause tokens to be rejected when the remote server is slow, and a value of zero allows a slow or unresponsive remote server to hold the thread that is validating the token for an unlimited time. Administrators should choose values that are appropriate for the remote server being used.
+
+[[test_plan]]
+== Test Plan
+
+The following tests are planned:
+
+.Tests in WildFly Core
+* A subsystem parsing and marshalling test using the <<target_versions,`preview` 19.0>> schema that sets `connection-timeout` and `read-timeout` on both the `jwt` and `oauth2-introspection` validators, including the use of expressions.
+* Validation of the <<target_versions,`preview` 19.0>> Elytron subsystem schema XSD.
+
+
+.Tests in WildFly
+* The WildFly testsuite will be updated if required to verify the attributes can be set in the default Elytron configuration.
+* A runtime test for the `oauth2-introspection` validator using a mock HTTP server. The server is slow to respond to the introspection request, the `read-timeout` is set to a shorter time than the server takes to respond, and the test verifies that the token is not validated once the timeout expires.
+* A runtime test for the `jwt` validator using a mock HTTP server that uses TLS. The server is slow to respond to the request for the JWKS referenced by the `jku` header of the token, the `read-timeout` is set to a shorter time than the server takes to respond, and the test verifies that the token is not validated once the timeout expires.
+* The runtime tests will use short timeouts and delays so that they add as little as possible to the run time of the testsuite.
+* It is not possible to reliably simulate a connection timeout, so the `connection-timeout` attribute is covered by the parsing and marshalling test but is not exercised by a runtime test.
+
+== Community Documentation
+
+Documentation for `connection-timeout` and `read-timeout` will be added to https://github.com/wildfly/wildfly/blob/main/docs/src/main/asciidoc/_elytron/Bearer_Token_Authorization.adoc[Bearer Token Authorization]. The documentation will explain that the attributes are available on both the `jwt` and `oauth2-introspection` validators, the units and meaning of the values, and the default behaviour for each validator.
+
+== Release Note Content
+
+You can now configure the `connection-timeout` and `read-timeout` attributes, in milliseconds, on the `jwt` and `oauth2-introspection` validators of an Elytron `token-realm`. These control how long the server waits to connect to, and to read from, the server providing the public keys or the token introspection endpoint. These attributes are available at the `preview` stability level.
