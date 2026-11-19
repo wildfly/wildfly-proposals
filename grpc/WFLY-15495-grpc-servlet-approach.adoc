@@ -6,7 +6,8 @@ issue: https://issues.redhat.com/browse/WFLY-15495
 feature-team:
  developer: jmesnil
  sme:
-  -
+  - darranl
+  - fl4via
  outside-perspective:
   -
 promotes: []
@@ -57,6 +58,10 @@ integration via a custom Undertow-to-Netty bridge
 * https://github.com/wildfly-extras/wildfly-grpc-feature-pack[wildfly-grpc-feature-pack]
 
 === Other Interested Projects
+
+* https://github.com/wildfly-extras/a2a-jakarta[A2A Java SDK for Jakarta Servers]
+** This project consumes the gRPC feature pack to provide the gRPC transport for A2A. This proposal
+simplifies its code with regards to CDI integration (and identity propagation)
 
 === Relevant Installation Types
 
