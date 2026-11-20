@@ -313,7 +313,9 @@ Legacy alias to new alias examples:
 
 == Implementation Plan
 
-. Update the **wildfly-vault-feature-pack** so subsystem extensions, XML schemas, and Galleon feature-pack metadata use **default** stability.
+The `wildfly-vault-feature-pack` name below refers to the source repository that maintains the shared subsystem implementation, Galleon metadata and tests. WildFly delivers these through its EE and Preview feature-packs, so administrators do not need to provision a separate Vault feature-pack.
+
+. Update the **wildfly-vault-feature-pack** repository so subsystem extensions, XML schemas, and Galleon feature-pack metadata use **default** stability.
 . Integrate its shared implementation and Galleon metadata into the WildFly EE and Preview feature-packs, including modules in the distributions and exposing the `hashicorp-vault` layer and GLOW add-on.
 . Use `client-ssl-context` for TLS configuration and namespace `urn:wildfly:hashicorp-vault:2.0` for XML, with a migration error for the removed `authentication-context` attribute.
 . Implement the new alias format with support for:
