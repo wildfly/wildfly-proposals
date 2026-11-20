@@ -18,7 +18,7 @@ promotes:
 promoted-by: []
 ---
 
-= Promote WildFly Vault feature-pack and hashicorp-vault layer/subsystem to default stability
+= Integrate the hashicorp-vault layer and subsystem into WildFly at default stability
 :author:            Diana Krepinska
 :email:             dvilkola@ibm.com
 :toc:               left
@@ -29,7 +29,7 @@ promoted-by: []
 
 == Overview
 
-The https://github.com/wildfly-security/wildfly-vault-feature-pack[WildFly Vault feature-pack] (HashiCorp Vault integration) delivers a Galleon feature-pack and a `hashicorp-vault` subsystem that lets administrators define Vault-backed credential stores, manage aliases, and resolve `+$\{HC_VAULT::...\}+` expressions against those stores. The feature-pack is currently in community stability levels.
+The `hashicorp-vault` subsystem lets administrators define Vault-backed credential stores, manage aliases, and resolve `+$\{HC_VAULT::...\}+` expressions against those stores. This proposal promotes the integration from community to default stability and delivers its Galleon layer and modules through WildFly's EE and Preview feature-packs. The https://github.com/wildfly-security/wildfly-vault-feature-pack[WildFly Vault feature-pack project] continues to provide the shared implementation and tests.
 
 === User Stories
 
@@ -49,9 +49,9 @@ The https://github.com/wildfly-security/wildfly-vault-feature-pack[WildFly Vault
 
 === Affected Projects or Components
 
-- https://github.com/wildfly-security/wildfly-vault-feature-pack[wildfly-vault-feature-pack] (feature-pack impl, tests)
+- https://github.com/wildfly-security/wildfly-vault-feature-pack[wildfly-vault-feature-pack] (shared subsystem implementation, Galleon metadata and tests)
 - https://github.com/wildfly-security/wildfly-elytron-hashicorp-vault[wildfly-elytron-hashicorp-vault] (core elytron integration)
-- https://github.com/wildfly/wildfly[wildfly] (documentation)
+- https://github.com/wildfly/wildfly[wildfly] (EE and Preview feature-pack integration, tests and documentation)
 - https://github.com/wildfly/wildfly-galleon-feature-packs[wildfly-galleon-feature-packs]
 
 === Other Interested Projects
@@ -59,27 +59,25 @@ The https://github.com/wildfly-security/wildfly-vault-feature-pack[WildFly Vault
 === Relevant Installation Types
 
 * Traditional standalone server (unzipped or provisioned by Galleon)
-* Managed domain: https://docs.wildfly.org/41/WildFly_Elytron_Security.html#domain-mode[Using Elytron Credential Stores in Domain Mode]
+* Managed domain: https://docs.wildfly.org/42/WildFly_Elytron_Security.html#domain-mode[Using Elytron Credential Stores in Domain Mode]
 * OpenShift Source-to-Image (S2I)
 * Bootable JAR
 
 == Requirements
 
-The functional requirements are unchanged from the community-level feature; only the **stability** and **delivery method** change.
+This proposal promotes the community-level integration to **default stability** and changes its **delivery method**. It also specifies the enhanced alias format, legacy alias compatibility, runtime expression resolution and the TLS configuration migration described below.
 
-There are more options as to where this feature-pack and a layer could be located. We can either maintain it as a separate feature-pack, or add the layer under the wildfly-ee feature-pack or elsewhere.
+A separate feature-pack was considered to accommodate future external secret stores and independent library updates. However, WildFly would still need to update its manifest to consume those releases, so this would not remove the dependency on the server release schedule.
 
-Argument to keep it as a separate feature-pack was based on the fact that it might later contain more external secret storages than just HashiCorp Vault, which will probably require more 3rd party libraries to be used. This might lead to having to release updates at various times. But note that this would NOT help with the application server's schedule, as the FP would need to be updated in the manifest which forces to keep the schedule anyway.
+Given the additional cost of maintaining a separate feature-pack for WildFly delivery, the `hashicorp-vault` layer will be included within the `wildfly-ee` feature-pack and the WildFly Preview feature-pack. The retired legacy EE feature-pack is outside the scope of this integration. Administrators will not need to provision a separate Vault feature-pack.
 
-Given the additional cost of maintaining separate feature-pack, and no good reason identified to keep it separate, the `hashicorp-vault` layer will be included within the `wildfly-ee` feature-pack.
+The `hashicorp-vault` modules will be included in the standard and Preview server ZIPs, but the extension and subsystem will not be enabled in their default standalone or domain configurations. Administrators can enable them using management operations. Selecting the `hashicorp-vault` layer during Galleon provisioning enables the extension and an empty subsystem; it does not configure Vault credential stores, server addresses or tokens.
 
-The `hashicorp-vault` modules will be included in the default server ZIP, but the layer/subsystem will not be included in the default server configuration. So it will be possible to use the management operations to add hashicorp vault extension by referencing this module, but it won't be part of the default configuration.
-
-Requirements copied from community stability proposal:
+The requirements below include the retained community-level functionality and the changes for this integration.
 
 === Credential store
 
-* The feature-pack must provide a new subsystem (eg. `hashicorp-vault` subsystem) with a `credential-store` resource type.
+* The extension must provide a `hashicorp-vault` subsystem with a `credential-store` resource type.
 * Credential store will be able to connect to a HashiCorp Vault server and authenticate with one of the following methods:
 
 ** token via credential-reference
@@ -87,26 +85,17 @@ Requirements copied from community stability proposal:
 * TLS for the connection to Vault must be configurable via the `client-ssl-context` attribute (referencing an Elytron `client-ssl-context`) so that server trust and client certificates can be used.
 * The credential store must implement the Elytron credential store SPI so that it is usable everywhere where elytron credential store resources are usable.
 * Credential store management operations must be supported as usual: add credential store, remove credential store, add-alias, remove-alias, read-aliases
-* The credential store must support the following configuration parameters:
-** `support-legacy-alias-format` (boolean) - Controls legacy alias format support:
-*** When `true`: Legacy format (`secret-path.key`) is supported with deprecation warnings
-*** When `false`: Only the new format is accepted; legacy format results in an error
-*** Default value is determined by server stability level (see Backwards Compatibility section)
-** `default-engine-type` (string) - Default Vault secret engine type when not specified in alias:
-*** Default: `KVv2`
-*** Used when alias does not include `engine=TYPE` prefix
-*** Allows credential store to be configured for different default engine types
-** `default-mount-path` (string) - Default Vault mount path when not specified in alias:
-*** Default: `secret`
-*** Used when alias does not include `@mount-path` prefix
-*** Allows credential store to be configured for different default mount paths
-* The extension and subsystem must be integrated with GLOW and be discoverable.
+* The credential store resource must expose `host-address`, `namespace`, `client-ssl-context` and `credential-reference` attributes.
+* Legacy alias support must be selected automatically from server stability: enabled with deprecation warnings at community stability or lower, and disabled at default stability. There is no per-store subsystem attribute to override this policy.
+* Aliases without an explicit engine or mount use `KVv2` and `secret`. An alias can override these using `engine=TYPE` and `@mount-path` prefixes. Configurable defaults remain future subsystem work.
+* GLOW must expose the `hashicorp-vault` add-on in the `security` family, allowing administrators to select the `hashicorp-vault` layer. Its metadata declares no dependency on another add-on; the layer depends on `elytron`, `management` and `core-tools`.
 
 === Expression resolver
 
 * An expression resolver must support expressions that resolve to secrets stored in a configured Vault credential store.
-* Expression format can for example be `${HC_VAULT::store-name:alias}`. Resolution occurs at RUNTIME.
-* All attributes in management model that support expression resolution can use these Vault expressions.
+* The expression format is `${HC_VAULT::store-name:alias}`. Resolution occurs at RUNTIME and is not supported in the MODEL stage.
+* Expression-capable attributes whose expressions are resolved at runtime can use these Vault expressions.
+* The referenced store can be initialized on demand during runtime resolution, before its service starts. This also permits Vault-backed credential references in boot-time consumers such as Elytron key stores. Dependency cycles in which a store needs its own credentials to initialize must be rejected.
 
 === Alias Format
 
@@ -123,10 +112,10 @@ The new alias format follows this structure:
 Where:
 
 * `engine=TYPE` - Optional engine type specification (e.g., `KVv1`, `KVv2`)
-** If omitted, uses the credential store's `default-engine-type` configuration (default: `KVv2`)
+** If omitted, uses `KVv2`
 ** Engine types (`database`, `pki`) are currently not supported.
 * `@mount-path` - Optional custom mount path
-** If omitted, uses the credential store's `default-mount-path` configuration (default: `secret`)
+** If omitted, uses `secret`
 * `#` - Secret path marker (optional when no prefix is present, required when `engine=` or `@` is used)
 * `secret-path` - Path to the secret in Vault (required)
 * `?` - Key path delimiter (required)
@@ -222,19 +211,19 @@ test%23path?key                         # # in path
 
 ==== Legacy Format Support
 
-The legacy format `secret-path.key` (using dot as delimiter) can be supported via the `support-legacy-alias-format` configuration parameter on the credential store resource.
+The legacy format `secret-path.key` (using dot as delimiter) is supported with deprecation warnings at community stability or lower. At default stability it is disabled. The subsystem selects this behavior automatically from server stability.
 
 **Format Detection:**
 
-* An alias starting with `#`, or with a complete new-format header (`@mount#secret?key` or `engine=TYPE[@mount]#secret?key`), always uses the new format, regardless of the `support-legacy-alias-format` setting
-* Otherwise, if `support-legacy-alias-format=true` and the alias contains a dot, it uses the legacy format. Legacy takes precedence: markers such as `?`, `#` or `@` inside the legacy key do not switch it to the new format (for example `secret/app.a?b` is legacy key `a?b`)
-* Otherwise the alias is parsed as new format, where `?` separates the secret path from the key path. With `support-legacy-alias-format=false` the same alias `secret/app.a?b` is new-format key `b` at path `secret/app.a`
+* An alias starting with `#`, or with a complete new-format header (`@mount#secret?key` or `engine=TYPE[@mount]#secret?key`), always uses the new format, regardless of server stability
+* Otherwise, when legacy support is enabled and the alias contains a dot, it uses the legacy format. Legacy takes precedence: markers such as `?`, `#` or `@` inside the legacy key do not switch it to the new format (for example `secret/app.a?b` is legacy key `a?b`)
+* Otherwise the alias is parsed as new format, where `?` separates the secret path from the key path. At default stability the same alias `secret/app.a?b` is new-format key `b` at path `secret/app.a`
 * No data-dependent fallback is performed between the two interpretations
-* Disabling `support-legacy-alias-format` is not a migration validator: an ambiguous alias may remain syntactically valid while addressing a different secret, so aliases must be converted to explicit new-format aliases before the switch is changed
+* An ambiguous alias may be syntactically valid at both community and default stability while addressing a different secret. Use explicit new-format aliases and verify that they select the intended mount, secret path and key
 
 **Legacy alias semantics (same as 1.0.1.Final):**
 
-* The path includes the mount: `secret/myapp.database_password` means mount `secret`, secret `myapp`, key `database_password`. A path without a slash uses the configured `default-mount-path`
+* The path includes the mount: `secret/myapp.database_password` means mount `secret`, secret `myapp`, key `database_password`. A path without a slash uses the default mount `secret`
 * The alias is split on the last dot (trailing dots are discarded); dots in the secret path are allowed
 * The key is a literal top-level JSON field: `/`, `%xx`, `+`, `?`, `#` and `@` are part of the key name and there is no nested traversal
 * The path follows HTTP path semantics: `%20` is a space, `%2520` is the literal text `%20`, `+` stays a plus, and a raw `?` or `#` in the path starts a query (preserved, e.g. KV v2 version selection) or fragment (ignored)
@@ -265,19 +254,20 @@ Legacy alias to new alias examples:
 * The error message includes the equivalent new format syntax to help users migrate
 * Example: "Legacy alias format 'secret/myapp/db.password' is not supported. Use new format: '@secret#myapp/db?password'"
 
-**Default behavior by stability level:**
+**Behavior by stability level:**
 
-* **Community stability or lower:** `support-legacy-alias-format` defaults to `true` (enabled with warnings)
-* **Default stability:** `support-legacy-alias-format` defaults to `false` (disabled, new format required)
+* **Community stability or lower:** Legacy format is enabled with deprecation warnings
+* **Default stability:** Legacy format is disabled; the new format is required
 
 === Changed requirements
 
-* No dedicated feature-pack, instead the layer is moved under the wildfly-ee feature-pack
+* WildFly delivers the layer through its EE and Preview feature-packs; a separate Vault feature-pack is not required
 * Localisation will be achieved by having dedicated product branches where the translated texts will be added
-* Authentication methods other than `token` and `certificate` are not currently supported.
+* TLS configuration uses `client-ssl-context`; existing `authentication-context` configurations require migration as described below
 
 === Non-Requirements
 
+- Authentication methods other than `token` and `certificate` are outside the scope of this proposal
 - quickstart is not required
 - client side impl. is not required, upstream feature request was created: https://redhat.atlassian.net/browse/WFCORE-7603
 - HAL feature request: https://redhat.atlassian.net/browse/EAP7-2375
@@ -285,31 +275,33 @@ Legacy alias to new alias examples:
 === Future Work
 
 * Expose `default-engine-type` and `default-mount-path` configuration options in the hashicorp-vault subsystem
-** These are implemented in the credential store in this iteration to prepare for future subsystem enhancements
-** Future work will add subsystem-level attributes that can be configured via management operations
+** These are initialization properties in the credential store library, not attributes of the subsystem's credential-store resource
+** Future work will expose configurable defaults through management operations; this integration uses `KVv2` and `secret` when aliases omit them
 * See opened issues here https://github.com/orgs/wildfly-security/projects/1/views/1
 
 == Backwards Compatibility
 
-* Existing configurations that were created at community stability should continue to work
-* Legacy aliases that worked with the 1.0.1.Final release of the HashiCorp Vault credential store select the same credential (same mount, secret path and literal key) when `support-legacy-alias-format=true`. Example "@app.a#b?c" would be picked up as a new alias instead of an old alias due to the rules specified in the `Format detection` section above (`#` is checked first.)
+* Removing `authentication-context` is a breaking configuration change. Existing XML configurations containing it are rejected during parsing and cannot be loaded unchanged, including at community stability. Users must migrate their TLS configuration before starting the upgraded server; no automatic conversion is performed
+* Older subsystem namespaces remain registered, but this does not preserve support for `authentication-context`. Legacy alias compatibility is separate from XML configuration compatibility
+* At community stability or lower, legacy aliases that worked with the 1.0.1.Final release of the HashiCorp Vault credential store select the same credential (same mount, secret path and literal key), except for aliases that match a reserved new-format prefix. For example, `@app.a#b?c` is parsed as a new alias because it has a complete new-format header, as described under Format Detection above
 * Legacy aliases that depend on an HTTP query in the secret path (for example `secret/app?version=1.password` to pin a KV v2 version) have no equivalent in the new format; these should be migrated or the server run at the community stability level until migration can be performed.
 * Legacy aliases that resolve to a whole top-level JSON object (returned as JSON text) keep that behavior only in legacy format; new-format aliases require a leaf value, so such secrets need a separate schema change before migrating
 * Aliases written for the 1.1.0.CR1 - CR3 release candidates (which decoded legacy keys and could prefix the default mount twice) are not a compatibility target and must be converted to explicit new-format aliases
-* The legacy alias format (`secret-path.key`) support is controlled by the `support-legacy-alias-format` configuration parameter:
-** **At community stability or lower:** Defaults to `true` - legacy format is supported with deprecation warnings
-** **At default stability:** Defaults to `false` - only the new format is accepted
-* Users can explicitly set `support-legacy-alias-format=true` at default stability if they need a migration period
-* When legacy format is enabled and detected, a deprecation warning is logged with the equivalent new format syntax for easy migration
-* This approach provides a clear migration path: users at community stability can test and migrate at their own pace, while default stability enforces the new format by default
+* Legacy support is determined by server stability, with no per-store subsystem override: enabled at community stability or lower, and disabled at default stability
+* When legacy format is enabled and detected, a deprecation warning includes the equivalent new format syntax where one exists; legacy HTTP queries require continued legacy support until migration is possible
+* Users can adopt and test explicit new-format aliases while continuing to run at community stability
 
 === Default configuration
 
-* none
+* Modules are bundled with the standard and Preview distributions. The extension and subsystem are not enabled in their default configurations, and no Vault credential stores are created
 
 === Importing existing configuration
 
-* none
+* Replace the removed `authentication-context` attribute with `client-ssl-context`, referencing an Elytron client SSL context configured with the required trust manager and optional key manager
+* For XML configurations using `client-ssl-context`, use the `urn:wildfly:hashicorp-vault:2.0` namespace. Older subsystem namespaces reject `authentication-context` with a migration error
+* Retain a copy of the original configuration for rollback. Older feature-pack versions that support only the 1.0 namespace cannot load the migrated 2.0 configuration
+* Configurations created for default stability must use new-format aliases. When migrating alias references, use explicit new-format aliases and observe the compatibility exceptions above
+* Changing an existing server configuration from a lower stability level to default stability is not supported. Other subsystems may already use schemas unavailable at default stability; converting Vault aliases does not make that server configuration compatible
 
 === Deployments
 
@@ -317,26 +309,27 @@ Legacy alias to new alias examples:
 
 === Interoperability
 
-* HashiCorp Vault can be used as an external secrets storage that WildFly accesses this release was developed and tested using the HashiCorp Vault series 1.x and 2.x releases.
+* This integration was developed and tested against releases from the HashiCorp Vault 1.x and 2.x series.
 
 == Implementation Plan
 
 . Update the **wildfly-vault-feature-pack** so subsystem extensions, XML schemas, and Galleon feature-pack metadata use **default** stability.
+. Integrate its shared implementation and Galleon metadata into the WildFly EE and Preview feature-packs, including modules in the distributions and exposing the `hashicorp-vault` layer and GLOW add-on.
+. Use `client-ssl-context` for TLS configuration and namespace `urn:wildfly:hashicorp-vault:2.0` for XML, with a migration error for the removed `authentication-context` attribute.
 . Implement the new alias format with support for:
 .. Engine type specification
 .. Custom mount paths
 .. Enhanced key path resolution with JSON traversal
 .. URL encoding/decoding
 .. Legacy format detection with deprecation warnings
-. Implement credential store configuration parameters:
-.. `support-legacy-alias-format` - with stability-level-based defaults
-.. `default-engine-type` - configurable default engine (default: `KVv2`)
-.. `default-mount-path` - configurable default mount path (default: `secret`)
-. Update **WildFly / Elytron documentation** and **release notes** to remove preview stability mentions, document wildfly-ee feature-pack, document the new alias format, explain the migration path from legacy format, and document the new configuration parameters
+. Select legacy alias support from server stability and use the library defaults `KVv2` and `secret` when aliases omit the engine and mount. Keep configurable defaults as future subsystem work.
+. Support runtime expression resolution and boot-time credential references through on-demand store initialization, with dependency-cycle detection.
+. Add automated coverage in the library, feature-pack and WildFly testsuites as described in the Test Plan.
+. Update the **WildFly Elytron documentation** and **release notes** for default stability, integrated delivery, provisioning, supported resource attributes, TLS/XML migration, alias compatibility and runtime expression limits.
 
 == Admin Clients
 
-* `jboss-cli` and the management API continue to administer `subsystem=hashicorp-vault` if the layer was provisioned
+* `jboss-cli` and the management API administer `subsystem=hashicorp-vault` after it is enabled through layer provisioning or management operations
 * HAL/console can add credential stores
 
 == Security Considerations
@@ -346,14 +339,16 @@ Legacy alias to new alias examples:
 [[test_plan]]
 == Test Plan
 
-* QE approval
-* Automated tests in **wildfly-vault-feature-pack** (subsystem + integration, executed against a server started at both `default` and `community` stability) and in wildfly repository (microprofile TCK testsuite used as a template).
-* Manual tests against HC Vault running locally.
+* Automated library tests in **wildfly-elytron-hashicorp-vault** cover alias parsing, encoding, JSON traversal and updates, and compatibility with legacy aliases from 1.0.1.Final.
+* Automated subsystem and integration tests in **wildfly-vault-feature-pack** cover configuration, authentication, TLS, credential operations, expression resolution and lifecycle behavior, including alias behavior at `default` and `community` stability.
+* The WildFly `testsuite/integration/hashicorp-vault` module imports the published integration tests and runs them against managed standard and Preview servers, and against a packaged bootable JAR. A bootable-specific test verifies that the running server was launched from that JAR.
+* The WildFly domain smoke test configures the subsystem in a domain profile, exercises managed-server credential operations, verifies the corresponding Vault values, restarts the managed server and checks access again, then removes the test configuration.
 
 == Community Documentation
 
-* Update WildFly documentation so the feature is described at **default** stability and document wildfly-ee feature-pack.
+* Update the **HashiCorp Vault Integration** chapter of the WildFly Elytron Security guide for **default** stability and delivery through the WildFly EE and Preview feature-packs.
+* Document layer provisioning and manual enablement, supported credential-store attributes, token and certificate authentication, TLS/XML migration, alias syntax and migration, runtime expression restrictions, and domain-mode configuration and runtime operation addresses.
 
 == Release Note Content
 
-WildFly now supports the `hashicorp-vault` layer at **default stability**, allowing Galleon provisioning of the `hashicorp-vault` layer and configuration of Vault-backed credential stores and encrypted expressions.
+WildFly now includes the `hashicorp-vault` layer at **default stability** in its EE and Preview feature-packs, allowing configuration of Vault-backed credential stores and expressions that resolve secrets from Vault. Enable the subsystem through Galleon layer provisioning or management operations. Existing users should review the TLS configuration and legacy alias migration guidance.
