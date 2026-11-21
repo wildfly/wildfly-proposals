@@ -10,7 +10,7 @@ issue: https://issues.redhat.com/browse/WFLY-22192
 feature-team:
  developer: tadamski
  sme:
-  -
+  - rachmatowicz
  outside-perspective:
   -
 promotes:
