@@ -1,0 +1,102 @@
+---
+categories:
+  - ejb
+  - transactions
+stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/886
+feature-team:
+ developer: tadamski
+ sme:
+  -
+ outside-perspective:
+  -
+---
+
+= Limitations of transaction propagation over EJB remoting
+:author:   		 Tomasz Adamski
+:email:    		 tomasz.adamski@ibm.com
+:toc:      		 left
+:icons:    		 font
+:idprefix:
+:idseparator:  	 -
+
+== Overview
+
+When a Jakarta Enterprise Beans client calls a remote bean while a transaction is active, WildFly propagates the transaction to the remote server through the EJB remoting protocol, using WildFly Transaction Client (WFTC). The remote server joins the transaction as a subordinate, and the caller completes it with XA two-phase commit. This is not documented anywhere in the community documentation. The documentation does not describe how the transaction travels, what controls whether it travels, or what happens when something fails. It also does not say how this mechanism differs from propagation with JTS over IIOP, which users sometimes choose because it solves some problems by design.
+
+This proposal records the limitations of propagation over EJB remoting, so that users can design their applications within them, and defines the documentation that will describe them. It does not change any code.
+
+== User Stories
+
+* As a developer of an application that calls remote beans from a transaction, I want to know when my transaction is propagated and how to stop it, so that the remote call does not unexpectedly take part in my transaction.
+* As an administrator who runs several servers that call each other, I want to know what is needed to recover an interrupted distributed transaction, so that I can configure node names, addresses and authentication correctly.
+* As an architect choosing between remoting and JTS for distributed transactions, I want to know what each can and cannot do, so that I choose the right one.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://github.com/wildfly/wildfly-proposals/issues/886[WildFly feature planning issue 886]
+* https://issues.redhat.com/browse/WFLY-22482[WFLY-22482]
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly[wildfly] (documentation only, `docs/` directory)
+* https://github.com/wildfly/wildfly-transaction-client[wildfly-transaction-client] (read only; behaviour is described, not changed)
+* https://github.com/wildfly/jboss-ejb-client[jboss-ejb-client] (read only)
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* Bootable jar
+
+== Requirements
+
+The community documentation must state the following, each backed by the behaviour of the current code and tests.
+
+Propagation is automatic. By default the client policy is `SUPPORTS`: if a transaction is active, it is propagated and the remote work is enlisted in it. The only control found is the `@ClientTransaction` annotation, placed on a view interface or a method, with the policies `MANDATORY`, `SUPPORTS`, `NOT_SUPPORTED` and `NEVER`. `NOT_SUPPORTED` stops propagation. A method annotation overrides a class annotation. Annotation scanning can be disabled with a system property, in which case all views use `SUPPORTS`. Client-asynchronous calls default to `NOT_SUPPORTED`.
+
+A transaction is bound to one remote location. Once a transaction has a location, its remote calls go to that location and are not load balanced. A transaction started on the client through a remote `UserTransaction` cannot be joined to a second location. No resources can be enlisted and no synchronizations can be registered on such a remote transaction.
+
+The remote server cannot complete the transaction. The imported transaction is driven by the caller, which sends prepare, commit or rollback. The remote application cannot commit or roll back an imported transaction. Recovery is driven by the caller as well: it stores the remote location and its own node name, and asks the remote server for its in-doubt transactions. Recovery therefore requires a stable node identifier, a stable remote address, and an authentication configuration usable during recovery. The remote server keeps an imported transaction in memory for the transaction timeout plus a stale transaction time, which defaults to 600 seconds.
+
+Remaining time is propagated, as an estimate based on the clocks of both sides. Nested transactions are not supported (to be confirmed by the Subject Matter Expert: this follows from the Jakarta Transactions API having no nesting, and has not been tested).
+
+The documentation must also compare this with JTS: with JTS a subordinate can ask the coordinator for the outcome, and JTS supports nested transactions. The text should state that JTS remains the option for interoperability with IIOP clients and should not recommend it for other cases.
+
+The documentation covers both remoting and HTTP on bare metal, because WFTC uses the same transaction logic over both transports. Any difference specific to HTTP must be confirmed by a Subject Matter Expert before it is written down.
+
+=== Non-Requirements
+
+* No code change, new attribute or new feature. In particular this proposal does not add bottom-up recovery, nested transactions or asynchronous completion.
+* No description of OpenShift, Kubernetes or load balancer behaviour beyond a link to the existing page on running Jakarta Enterprise Beans on Kubernetes.
+* No instructions for configuring JTS beyond a link to the existing IIOP page.
+
+== Future Work
+
+Features that JTS provides and WFTC does not (subordinate-initiated recovery, nested transactions) may be proposed separately if users need them. Routing and recovery behind a load balancer on cloud platforms is tracked separately.
+
+== Backwards Compatibility, Default Configuration, Importing Existing Configuration, Deployments, Admin Clients
+
+Not affected. This is documentation only.
+
+== Interoperability
+
+The documentation describes interoperability between remoting and JTS (IIOP) propagation. It changes nothing.
+
+== Security Considerations
+
+None from this change. The documentation mentions the authentication context that recovery connections use, and refers to the existing security configuration documentation.
+
+== Test Plan
+
+Community level. No new tests are added. Each statement in the documentation is checked against the current code of WFTC and jboss-ejb-client, and where possible against an existing test. The statements are also reviewed by a Subject Matter Expert from the WFTC and Narayana teams. The evidence for each statement is kept in the feature working notes. The Default stability level, which requires approval by a professional Quality Engineer, does not apply, because nothing new is delivered at that level.
+
+== Community Documentation
+
+A new page in the developer guide for Jakarta Enterprise Beans (`_developer-guide/ejb3/`) will describe the behaviour above. Short "see also" links will be added to the IIOP guide, to the Jakarta Enterprise Beans on Kubernetes page and to the transactions subsystem page of the administration guide. The documentation is part of the feature PR to `wildfly`.
+
+== Release Note Content
+
+WildFly now documents how a transaction is propagated over EJB remoting and HTTP, how to control it with `@ClientTransaction`, and the limitations of this propagation compared with JTS.
