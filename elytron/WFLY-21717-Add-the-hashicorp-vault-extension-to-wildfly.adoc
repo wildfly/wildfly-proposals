@@ -78,6 +78,7 @@ The requirements below include the retained community-level functionality and th
 === Credential store
 
 * The extension must provide a `hashicorp-vault` subsystem with a `credential-store` resource type.
+* The credential store must support the HashiCorp Vault Key/Value (KV) secrets engine, versions 1 (`KVv1`) and 2 (`KVv2`). Only these engine types are supported; other secrets engines, such as `database` and `pki`, are outside the scope of this integration.
 * Credential store will be able to connect to a HashiCorp Vault server and authenticate with one of the following methods:
 
 ** token via credential-reference
@@ -111,9 +112,9 @@ The new alias format follows this structure:
 
 Where:
 
-* `engine=TYPE` - Optional engine type specification (e.g., `KVv1`, `KVv2`)
+* `engine=TYPE` - Optional engine type specification; supported values are `KVv1` and `KVv2`
 ** If omitted, uses `KVv2`
-** Engine types (`database`, `pki`) are currently not supported.
+** Other engine types, including `database` and `pki`, are not supported.
 * `@mount-path` - Optional custom mount path
 ** If omitted, uses `secret`
 * `#` - Secret path marker (optional when no prefix is present, required when `engine=` or `@` is used)
