@@ -19,7 +19,8 @@ feature-team:
  outside-perspective:
   - jasondlee
 promotes: []
-promoted-by: []
+promoted-by:
+  - elytron/WFLY-21717-Add-the-hashicorp-vault-extension-to-wildfly.adoc
 ---
 
 = HashiCorp Vault Integration — Credential Store and Expression Resolver
