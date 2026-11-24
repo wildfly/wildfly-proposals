@@ -8,7 +8,7 @@ feature-team:
   sme:
     - bstansberry
   outside-perspective:
-    -
+    - vsalbaba
 ---
 
 = Support use of virtual threads in the Jakarta Concurrency 3.1 implementation
@@ -67,9 +67,9 @@ This feature enhances WildFly's Jakarta Concurrency 3.1 implementation to suppor
 
 * The `virtual` attribute must default to `false`, to not only match the default value on deployment descriptors and resource definition annotations, but also to maintain backwards compatibility.
 
-* When `virtual=true` is configured on a managed thread factory, the factory must create virtual threads instead of platform threads (when the underlying Jakarta Concurrency implementation supports virtual threads, and when running on Java SE 21 or later).
+* When `virtual=true` is configured on a managed thread factory, the factory must create virtual threads instead of platform threads (when the underlying Jakarta Concurrency implementation supports Jakarta Concurrency 3.1, and when running on Java SE 21 or later).
 
-* When `virtual=true` is configured on a managed executor service or managed scheduled executor service, the service must use virtual threads for task execution (when the underlying Jakarta Concurrency implementation supports virtual threads, and when running on Java SE 21 or later).
+* When `virtual=true` is configured on a managed executor service or managed scheduled executor service, the service must use virtual threads for task execution (when the underlying Jakarta Concurrency implementation supports Jakarta Concurrency 3.1, and when running on Java SE 21 or later).
 
 * The `@ManagedExecutorDefinition`, `@ManagedScheduledExecutorDefinition`, and `@ManagedThreadFactoryDefinition` resource definition annotations must support the `virtual` attribute.
 
@@ -78,6 +78,12 @@ This feature enhances WildFly's Jakarta Concurrency 3.1 implementation to suppor
 * Domain transformation support must be provided to allow newer domain controllers with virtual thread support to manage older host controllers without this feature.
 
 * The implementation must work with both Jakarta Concurrency 3.0 (impl-30) and 3.1 (impl-31) implementations, though virtual thread support is only functional in the 3.1 implementation, and fully pass related TCKs.
+
+* When deploying an application, if use of virtual threads is requested when creating a thread factory or executor service:
+** If the Jakarta Concurrency implementation support Jakarta Concurrency 3.0, a WARN will be logged stating virtual threads are not available due to the Jakarta Concurrency version and platform threads will be used.
+** Else if the server is running on a Java SE version less than 21, a WARN will be logged stating virtual threads are not available due to the Jakarta Concurrency version and platform threads will be used.
+** Else if the server is running on a Java SE version less than 25, a WARN will be logged noting the risk of thread pinning, but virtual threads will be used.
+** Else if the creating of the virtual-thread-supporting thread factory or executor service fails, an ERROR will be logged and the factory or executor will use platform threads.
 
 === Nice-to-have Requirements
 
@@ -91,7 +97,7 @@ This feature enhances WildFly's Jakarta Concurrency 3.1 implementation to suppor
 
 * This feature does not automatically migrate existing managed executor configurations to use virtual threads. Administrators must explicitly configure `virtual=true` to opt-in.
 
-* Minimizing thread pinning is not in the scope of this feature, this is due to other server internals/components, which Jakarta Concurrency virtual threads may invoke, will only properly support virtual threads in other subtasks of WFLY-19564.
+* Other than logging a WARN if the server is not running Java SE 25 or later, minimizing thread pinning is not in the scope of this feature. This is due to other server internals/components that Jakarta Concurrency virtual threads may invoke may not attempt to avoid thread pinning, but instead will rely on Java SE 25's improved resistance to thread pinning. (See the subtasks of WFLY-19564 for examples of components that experienced thread pinning on earlier Java SE versions.)
 
 === Future Work
 
@@ -125,7 +131,7 @@ Domain mode transformers are included to ensure interoperability between:
 * Domain controllers with EE subsystem 7.0 (with virtual thread support)
 * Host controllers with EE subsystem 6.0 (without virtual thread support)
 
-The transformers remove the `virtual` attribute when communicating with older host controllers if it is set to false. Otherwise the transformer rejects the attribute.
+The transformers remove the `virtual` attribute when communicating with older host controllers if it is set to false. Otherwise, the transformer rejects the attribute.
 
 == Implementation Plan
 
@@ -144,7 +150,7 @@ The implementation is delivered as a single enhancement with the following compo
 
 === JBoss CLI
 
-The JBoss CLI will support the new `virtual` attribute for all concurrency resources. Example commands:
+The JBoss CLI will support the new `virtual` attribute for all concurrency resources. Example operations:
 
 [source]
 ----
@@ -160,7 +166,7 @@ The JBoss CLI will support the new `virtual` attribute for all concurrency resou
 
 === HAL Management Console
 
-The HAL console does not need an update, it will automatically expose the new `virtual` boolean attribute in the UI for:
+The HAL console does not need an update; it will automatically expose the new `virtual` boolean attribute in the UI for:
 * Managed Thread Factory configuration forms
 * Managed Executor Service configuration forms
 * Managed Scheduled Executor Service configuration forms
