@@ -1,0 +1,155 @@
+---
+categories:
+  - elytron
+stability-level: preview
+issue: https://github.com/wildfly/wildfly-proposals/issues/889
+feature-team:
+  developer: sohamsakhare76-ai
+  sme:
+    - rawojeda
+  outside-perspective: []
+promotes: []
+promoted-by: []
+follows-up-on: []
+followed-up-by: []
+---
+
+= Configurable Allowed JKU Values for JWT Validation
+:author: Soham Sakhare
+:email: sohamsakhare76@gmail.com
+:toc: left
+:icons: font
+:idprefix:
+:idseparator: -
+
+== Overview
+
+WildFly Elytron supports JWT validation using JSON Web Keys obtained through a JWK Set URL (JKU). The JKU value in a JWT header identifies the location from which the signing keys may be retrieved. Administrators need a way to explicitly control which JKU values are accepted by a JWT validator.
+
+This feature introduces an optional `allowed-jku-values` attribute to the JWT validator configuration of an Elytron token realm. It allows administrators to configure the JKU values permitted during token validation. The implementation uses the existing JKU allowlisting functionality in Elytron rather than introducing a separate key-retrieval mechanism.
+
+Previously, accepted values could be configured using the system property `wildfly.elytron.jwt.allowed.jku.values.<realm-name>`. This feature makes the configuration available through the Elytron management model while retaining the existing system-property mechanism as a fallback when the new attribute is not configured.
+
+=== User Stories
+
+As a WildFly administrator, I want to configure the JKU values accepted by a JWT validator so that tokens referencing unapproved key-source locations are rejected.
+
+As an administrator upgrading an existing WildFly configuration, I want the existing system-property configuration to continue working when the new management attribute is not configured.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFCORE-6793[WFCORE-6793]
+* https://github.com/wildfly/wildfly-proposals/issues/889[Feature development issue #889]
+* https://github.com/wildfly/wildfly-core/pull/7012[Implementation PR #7012]
+* WFCORE-3966 — Existing JKU support.
+* WFCORE-6787 — Existing system-property-based JKU restriction.
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly-core[WildFly Core] — Elytron subsystem and token-realm management configuration.
+* https://github.com/wildfly-security/wildfly-elytron[WildFly Elytron] — Existing JWT validation functionality.
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+
+== Requirements
+
+The Elytron token realm JWT validator must expose an optional `allowed-jku-values` attribute. The attribute is a list of strings, supports management expressions, and requires at least one value when configured.
+
+The attribute is part of the JWT configuration object of a token realm:
+
+[source]
+----
+/subsystem=elytron/token-realm=<realm-name>
+----
+
+Administrators must be able to configure the accepted JKU values through the Elytron subsystem management model and XML configuration.
+
+When configured, the values must be passed to the existing Elytron JWT validator allowlisting functionality. Incoming JKU values are checked against the configured allowed values. The feature does not introduce wildcard or regular-expression configuration.
+
+When the attribute is not configured, the existing system-property fallback must remain available. Explicit subsystem configuration takes precedence over the system property.
+
+If neither configuration mechanism provides allowed values, the existing default behavior must remain unchanged.
+
+The attribute will be introduced at Preview stability and exposed only through the Preview subsystem schema.
+
+Configurations containing this attribute must be rejected when transformed to older subsystem model versions that do not support it, rather than silently losing the configuration.
+
+=== Non-Requirements
+
+This feature does not introduce a new JWT validation mechanism or a new JWK retrieval implementation.
+
+It does not change the JWT format or introduce a new key-management protocol.
+
+=== Future Work
+
+The feature is initially proposed at Preview stability. Before promotion to Community stability or higher, the feature team should evaluate feedback from Preview users, review the implementation and documentation requirements, and agree on a plan for promotion.
+
+== Backwards Compatibility
+
+The new attribute is optional. Existing configurations that do not define it must continue to use the existing system-property fallback.
+
+The new configuration must not silently disappear when transforming a model containing the attribute to an older model version that does not support it. Such transformations must reject the unsupported configuration.
+
+=== Default Configuration
+
+The new attribute will not be present in the default configuration. Existing default configuration behavior will remain unchanged.
+
+=== Importing Existing Configuration
+
+Existing configurations that do not use the new attribute should remain valid. No migration of existing configurations is required.
+
+=== Deployments
+
+No deployment behavior changes are intended. The feature affects JWT validation configuration in the Elytron subsystem.
+
+=== Interoperability
+
+No new external protocol is introduced. The feature uses the existing Elytron JWT validation and JKU retrieval functionality.
+
+== Implementation Plan
+
+The implementation is being developed in WildFly Core through PR #7012.
+
+The implementation adds the management model attribute, integrates it with the existing JWT validator configuration, updates the Preview subsystem schema, preserves the system-property fallback, and adds tests for configuration precedence, validation behavior, stability metadata and model transformation.
+
+== Admin Clients
+
+The new attribute will be available through the Elytron subsystem management model and XML configuration. Administrators will be able to configure it through the existing management interfaces, including the CLI.
+
+Additional Admin Console / HAL support can be evaluated separately if required.
+
+== Security Considerations
+
+The feature provides administrators with explicit control over the JKU values accepted during JWT validation. Restricting accepted JKU values helps prevent tokens from directing the validator to unapproved key-source locations.
+
+The implementation relies on the existing Elytron JWT validation and key-retrieval security behavior. The allowlist is an additional restriction on accepted JKU values; it should not be considered a replacement for appropriate TLS configuration and endpoint security.
+
+The precise matching semantics and security implications should be confirmed as part of the design review.
+
+== Test Plan
+
+The following tests are required:
+
+* A JWT referencing an allowed JKU value is accepted.
+* A JWT referencing a JKU value that is not allowed is rejected.
+* Explicit subsystem configuration takes precedence over the system-property fallback.
+* When the new attribute is absent, the existing system-property fallback continues to work.
+* The attribute is exposed with Preview stability metadata.
+* Transformations to older model versions reject configurations containing the unsupported attribute.
+
+The implementation includes unit and subsystem tests covering these behaviors.
+
+== Community Documentation
+
+The new attribute and its behavior will be documented in the Elytron subsystem management model descriptions and the relevant WildFly documentation.
+
+Documentation should explain the accepted JKU values, matching behavior, configuration precedence and the existing system-property fallback.
+
+== Release Note Content
+
+WildFly Elytron JWT validators can now be configured with an explicit list of allowed JKU values. This provides administrators with greater control over the key-source locations accepted during JWT validation while preserving the existing system-property fallback when the new configuration is not specified.
