@@ -1,0 +1,298 @@
+---
+categories:
+  - elytron
+  - security
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/892
+feature-team:
+ developer: darranl
+ sme:
+  -
+ outside-perspective:
+  -
+promotes: []
+promoted-by: []
+follows-up-on: []
+followed-up-by: []
+---
+
+= Add PQC support for TLS using the WildFly OpenSSL Integration
+:author:            Darran Lofthouse
+:email:             darran.lofthouse@jboss.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+NOTE: This is a first draft. Sections that depend on decisions or investigations that have not yet been made are marked
+and collected in <<open-questions,Open Questions and Areas for Investigation>>.
+
+== Overview
+
+Post-quantum cryptography (PQC) protects TLS connections against an attacker who records traffic today and decrypts it
+later using a quantum computer. In TLS 1.3 this affects two things. The first is key exchange, where hybrid groups such as
+`X25519MLKEM768` combine a classical elliptic curve exchange with the ML-KEM algorithm so that a connection remains
+protected if either algorithm is later broken. The second is authentication, where certificates signed with ML-DSA allow
+the identity of a peer to be verified without relying on RSA or elliptic curve signatures. Neither is selected through
+a TLS cipher suite; both are negotiated through the key exchange groups and signature algorithms that each peer offers.
+
+WildFly can delegate TLS to a native OpenSSL library using the WildFly OpenSSL integration, which is made available to
+Elytron as an alternative TLS provider. Support for these algorithms is therefore provided by the OpenSSL library in use
+(OpenSSL 3.5 and later) rather than by the JDK. This proposal covers the work needed so that WildFly OpenSSL can make
+use of those capabilities, can be configured to use them in a controlled way, and is tested to do so.
+
+Reviewing the current WildFly OpenSSL code shows several gaps that this work must address:
+
+* There is no way to configure the key exchange groups, or the signature algorithms, offered by an endpoint. Any hybrid
+  key exchange that happens today is purely a consequence of the defaults of the OpenSSL library that has been loaded.
+* Server certificates are loaded from the Java key manager only for the `RSA` and `DSA` key types. Keys of type `EC` are
+  not loaded at all, and the native certificate handling is organised around a small fixed set of key type slots, none of
+  which is intended for a post-quantum key type.
+* Peer certificates are handed back to Java as X.509 certificates and the trust decision is made by the configured Java
+  trust manager, so how certificates with post-quantum keys and signatures are parsed and verified needs to be understood.
+
+The pure Java TLS implementation provided by the JDK is a separate piece of work and is not covered here.
+
+=== User Stories
+
+* As an administrator using the OpenSSL TLS provider, I want connections between my server and capable peers to use a
+  hybrid post-quantum key exchange so that recorded traffic cannot be decrypted later.
+* As an administrator with a mixed population of clients, I want to enable post-quantum key exchange without breaking
+  clients that do not support it, and later change to a configuration that refuses to connect without it.
+* As an administrator, I want to be able to configure which key exchange groups my server and client contexts use, and to
+  be told clearly if the OpenSSL library installed on the machine cannot support what I have asked for.
+* As an administrator, I want my server to present an ML-DSA certificate, and optionally to present both a classical
+  certificate chain and an ML-DSA chain so that the right one is selected based on what each client supports.
+* As an application developer, I want outbound connections made with the OpenSSL provider to be able to accept a server
+  that presents an ML-DSA certificate.
+* As an administrator or tester, I want to be able to verify what was actually negotiated for a connection.
+
+== Issue Metadata
+
+=== Issue
+
+* https://redhat.atlassian.net/browse/WFCORE-7780[WFCORE-7780]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFCORE-4842[WFCORE-4842] - TLS 1.3 support when using the OpenSSL TLS provider.
+* https://issues.redhat.com/browse/WFLY-15274[WFLY-15274] - Support for OpenSSL 3.
+
+Further issues will be linked here as they are created, for example for the native library and test changes.
+
+=== Affected Projects or Components
+
+The set of affected projects is not yet confirmed; see the open questions.
+
+* https://github.com/wildfly-security/wildfly-openssl[wildfly-openssl]
+* https://github.com/wildfly-security/wildfly-openssl-natives[wildfly-openssl-natives]
+* https://github.com/wildfly/wildfly-core[wildfly-core] (Elytron subsystem)
+* https://github.com/wildfly-security/wildfly-elytron[wildfly-elytron] (SSL context creation and the authentication client)
+* https://github.com/wildfly-security/wildfly-security-testsuite[wildfly-security-testsuite] (configuration driven TLS
+  tests)
+* https://github.com/wildfly/wildfly[wildfly] (documentation)
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+The OpenSSL TLS provider is an optional provider that depends on a native library being available on the machine. The
+relevance of each installation type is to be confirmed.
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+The requirements below are proposed and still to be agreed.
+
+=== Hard Requirements
+
+* When the OpenSSL TLS provider is used, and the loaded OpenSSL library supports it, a TLS 1.3 connection between two
+  peers that both support a hybrid post-quantum group must be able to negotiate that group.
+* Connections with peers that do not support a post-quantum group must continue to work, falling back to a classical
+  group, unless the administrator has chosen a configuration that requires post-quantum key exchange.
+* An administrator must be able to configure the key exchange groups, and their order of preference, used by server and
+  client SSL contexts that use the OpenSSL provider. The form of this configuration is an open question.
+* Server certificates with `EC` keys must be supported when using the OpenSSL provider. This is a pre-requisite for the
+  following items and is useful in its own right.
+* A server using the OpenSSL provider must be able to use a certificate with an ML-DSA key.
+* A server using the OpenSSL provider must be able to hold both a classical certificate chain and an ML-DSA certificate
+  chain at the same time and use the one that matches the signature algorithms offered by the client.
+* A client using the OpenSSL provider must be able to accept a server certificate with an ML-DSA key and signature.
+* Where the requested configuration depends on capabilities of the OpenSSL library that are missing from the version
+  loaded, this must be detected and reported clearly, and must not result in a silent loss of the requested protection.
+* The above must be usable with Java 17, 21 and 25. Because TLS is performed by OpenSSL the JDK does not need to provide
+  any post-quantum algorithms for the handshake itself, but how keys and certificates are held in, and obtained from,
+  a Java key store on each of these JDKs must be considered.
+
+=== Nice-to-Have Requirements
+
+* Enabling post-quantum key exchange automatically whenever the OpenSSL provider is in use, so that no configuration is
+  needed to obtain the default behaviour. See the open questions regarding compatibility.
+* Exposing the group and signature algorithm that were negotiated for a connection through the `SSLSession`.
+
+=== Non-Requirements
+
+* FIPS mode is not covered.
+* A pure Java (JSSE) implementation of post-quantum TLS is not covered; that depends on the JDK.
+* This proposal does not change which TLS provider is used by default.
+* Cipher suites do not need to change. The TLS 1.3 cipher suites in use are independent of the key exchange and signature
+  algorithms.
+
+=== Future Work
+
+* Support for post-quantum TLS using the JDK once the necessary JDK capabilities are available in the JDKs supported by
+  WildFly.
+* Any equivalent support in an alternative native binding (for example one using the Java Foreign Function and Memory
+  API) should be able to reuse the configuration model introduced here.
+
+[[open-questions]]
+== Open Questions and Areas for Investigation
+
+These are the points that have not yet been decided or verified and that need to be resolved to complete the analysis.
+
+. *Feature team.* The feature will be delivered at default stability, so the team is expected to include people with
+  Quality Engineering and documentation expertise as well as the usual subject matter expert and outside perspective
+  roles. The members have not yet been identified.
+. *Configuration surface.* How are groups (and any signature algorithm preference) expressed? The Elytron
+  `server-ssl-context` and `client-ssl-context` resources and the authentication client configuration have not yet been
+  reviewed for existing settings that could carry this, and the way that Java 17, 21 and 25 differ in the TLS parameters
+  they expose is not yet known. The same question applies to whether the setting is shared with the pure Java provider
+  in future.
+. *Optional versus required post-quantum key exchange.* The model for allowing an administrator to first enable support
+  and later require it needs to be defined, including how failure is reported when a peer cannot comply.
+. *Default behaviour.* What happens today when a sufficiently recent OpenSSL is loaded needs to be measured, and whether
+  enabling hybrid groups by default is acceptable given the larger handshake messages that may affect intermediaries.
+. *Required OpenSSL versions.* The minimum version for hybrid key exchange and, separately, for ML-DSA in TLS needs to be
+  confirmed. The versions used in testing, including how to obtain a suitable version on the continuous integration
+  runners, need to be decided. Compatibility with the newest OpenSSL release also needs to be checked.
+. *Capability detection.* How WildFly OpenSSL can determine that the loaded OpenSSL supports the requested groups and
+  certificate types, and how a native function that is not present in an older OpenSSL is handled generally.
+. *Certificate loading.* The Java side currently re-encodes the private key under an algorithm specific PEM header before
+  passing it to native code, and the native side tracks certificates by a small fixed set of indices. Whether OpenSSL
+  provides a slot for each of the post-quantum certificate types, and what changes are needed to hold a classical and an
+  ML-DSA chain together, needs to be investigated in the native library.
+. *Key stores.* How ML-DSA keys and certificates are stored and retrieved through Elytron key stores, and what is required
+  of the JDK or a JCE provider on Java 17, 21 and 25 for that to work.
+. *Certificate trust.* Peer certificates are currently presented to the Java trust manager as X.509 certificates. How
+  ML-DSA certificates are parsed and verified there, for server certificates accepted by a client and for any client
+  certificates accepted by a server, needs to be investigated.
+. *Reporting what was negotiated.* Whether the negotiated group and signature algorithm can be made available from the
+  `SSLSession` or by other means, so that tests and administrators can confirm that post-quantum protection was applied.
+. *Native platforms.* Which native platforms are affected, as this builds on the other ongoing work in the native
+  library.
+
+== Backwards Compatibility
+
+The intent is that existing configurations continue to behave as they do today. The one area of risk is the default
+behaviour discussed in the open questions: where an OpenSSL library with post-quantum groups is already loaded, the
+larger key exchange messages are already a possibility, and changing the groups offered by default could affect
+interoperability with older peers or intermediaries. Whether any change of default is acceptable is not yet decided.
+
+Because the feature is targeted at default stability, any addition to the management model must be at default
+stability, and must be handled by domain transformers so that a domain containing servers of an earlier version continues
+to work. Whether any management model change is needed depends on the configuration surface chosen.
+
+=== Default Configuration
+
+To be determined, depending on the outcome of the open question on defaults. The aim is no change to the default
+configuration of any existing attribute or Galleon layer.
+
+=== Importing Existing Configuration
+
+No impact is expected. Any new attributes are expected to be optional.
+
+=== Deployments
+
+Not applicable.
+
+=== Interoperability
+
+Interoperability with peers that do not support post-quantum algorithms must be retained unless an administrator
+requires otherwise. Interoperability with other TLS implementations will be tested using the `openssl s_client` and
+`openssl s_server` tools as independent peers.
+
+== Implementation Plan
+
+The work is expected to be delivered in stages so that each is useful and testable on its own. The ordering is
+provisional.
+
+. Support server certificates with `EC` keys. This is needed in its own right, and the changes to how certificates and keys
+  are loaded should make that code independent of any specific key algorithm so that the following stages do not add
+  further special cases.
+. Add the ability to configure key exchange groups, including the native call and the capability checks, along with the
+  management and client configuration surface that is agreed.
+. Add support for ML-DSA certificates, including the dual chain case and client side acceptance of ML-DSA server
+  certificates, along with the key store and trust manager handling that is identified.
+. Add reporting of the negotiated parameters, if feasible.
+
+The work on the native library depends on other work in progress to improve its build and its interface to Java, and the
+ordering relative to that work will be coordinated.
+
+== Admin Clients
+
+Not yet determined; it depends on the configuration surface chosen. If new attributes are added to existing Elytron
+resources then the JBoss CLI will be able to manage them using the existing generic support.
+
+Admin clients such as the JBoss CLI are affected at a second level as well. They are not only configuring the feature,
+they also establish their own TLS connections to the server, for example to the management interfaces. How those
+connections are affected depends on the client side TLS configuration and the TLS implementation the client uses, and
+this must be considered when deciding whether the client side configuration surface is in scope.
+
+== Security Considerations
+
+The purpose of the feature is to improve security by protecting traffic against future decryption. Hybrid key exchange is
+used so that protection is never weaker than the classical exchange it extends. If post-quantum key exchange is optional
+then a peer, or an attacker in the path, can cause a connection to use a classical group, which is the reason for also
+offering a mode in which it is required.
+
+Any new configuration is part of the SSL context configuration, so access control for it is expected to follow the
+existing treatment of that configuration. This will be confirmed once the form of the configuration is known.
+
+The larger certificates and key exchange messages also raise the cost and the risk of failures in handshakes, which the
+testing is intended to expose.
+
+[[test_plan]]
+== Test Plan
+
+The testing approach is to define the TLS scenarios of interest once and run each across the permutations that matter,
+so that adding a new permutation, for example a key type or a group, is a small change. As the feature is targeted at
+default stability, the final test plan must be approved by a Quality Engineer with subject matter expertise, and the
+detail of the permutations is to be agreed with them.
+
+* *WildFly OpenSSL.* Parameterised tests that run the scenarios using TLS 1.2 and TLS 1.3 across the supported key types,
+  groups and certificate configurations, including the dual chain case, and cases where post-quantum is optional and
+  where it is required. Tests need to validate what was actually negotiated and not only that a connection succeeded.
+* *WildFly Security testsuite.* The same scenario approach using configuration driven tests: one-way TLS and client
+  certificate authentication with HTTPS offered by Undertow, outbound clients including those configured outside the
+  management model, and the other server services that use an `SSLContext`. This testsuite is the
+  https://github.com/wildfly-security/wildfly-security-testsuite[wildfly-security-testsuite] project.
+* *WildFly.* No permutation testing. Each place where the OpenSSL provider can be used by WildFly should have at least
+  one test that uses it. The list of such places is to be established.
+* *Independent peers.* The `openssl s_client` and `openssl s_server` tools are used as a peer for interoperability,
+  including forcing a classical group and restricting signature algorithms.
+
+Running these tests requires an OpenSSL library with the necessary support. How that is provided in continuous
+integration is an open question.
+
+== Community Documentation
+
+The OpenSSL section of the Elytron documentation will be updated to describe the post-quantum capabilities, the OpenSSL
+version required, the configuration, and how to verify what was negotiated.
+
+The documentation will include example configurations, each with a description of what it does and what it requires.
+These will call out the requirements on the certificates and keys in the key stores, because documentation about TLS
+rarely explains how the signature algorithm of a certificate affects what can be negotiated, and that is central to
+using post-quantum certificates and the dual chain case successfully.
+
+A "Getting started with PQC" guide will also be published on https://www.wildfly.org[wildfly.org] to help users adopt
+the feature.
+
+== Release Note Content
+
+The WildFly OpenSSL integration can now be used to take advantage of the post-quantum key exchange and certificate
+support provided by recent versions of OpenSSL, allowing connections to be protected against future decryption. Existing
+configurations are unaffected.
