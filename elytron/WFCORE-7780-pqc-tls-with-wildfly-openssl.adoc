@@ -27,6 +27,10 @@ followed-up-by: []
 NOTE: This is a first draft. Sections that depend on decisions or investigations that have not yet been made are marked
 and collected in <<open-questions,Open Questions and Areas for Investigation>>.
 
+NOTE: This document uses many cryptography acronyms, and the same thing is often named differently by TLS, OpenSSL and
+Java. See the <<glossary,Glossary>> for the terms, and <<reading-cipher-suites,Reading cipher suite names>> for how to
+interpret a cipher suite string.
+
 == Overview
 
 Post-quantum cryptography (PQC) protects TLS connections against an attacker who records traffic today and decrypts it
@@ -296,3 +300,360 @@ the feature.
 The WildFly OpenSSL integration can now be used to take advantage of the post-quantum key exchange and certificate
 support provided by recent versions of OpenSSL, allowing connections to be protected against future decryption. Existing
 configurations are unaffected.
+
+[[glossary]]
+== Glossary
+
+Cryptography and TLS documentation relies heavily on acronyms, and the same thing often has a different name in the TLS
+specification, in OpenSSL and in Java. This glossary expands the terms used in this document and calls out where the
+names differ. It will be extended as further terms are introduced.
+
+=== Terms and acronyms
+
+[cols="1,2,3,3",options="header"]
+|===
+| Term | Full name | Meaning | Name differences (OpenSSL / Java)
+
+| TLS
+| Transport Layer Security
+| The protocol that protects network connections. The successor to SSL.
+| Java and OpenSSL both still use "SSL" in many API names, for example `SSLContext`, `SSLEngine` and `SSL_CTX_*`, even
+  though only TLS is in practical use.
+
+| SSL
+| Secure Sockets Layer
+| The predecessor of TLS. No longer secure and not used.
+| See TLS.
+
+| JSSE
+| Java Secure Socket Extension
+| The JDK's built-in implementation of TLS (the pure Java TLS provider).
+| Not used for the handshake when the OpenSSL provider is selected.
+
+| JCA / JCE
+| Java Cryptography Architecture / Java Cryptography Extension
+| The JDK framework for cryptographic algorithms, with pluggable providers. Key stores, certificates, signatures and key
+  agreement are all obtained through it.
+| Algorithms are looked up by Java algorithm name, which is often not the standard or OpenSSL name (see the entries
+  below).
+
+| JNI
+| Java Native Interface
+| The mechanism WildFly OpenSSL uses to call the native OpenSSL library from Java.
+|
+
+| PQC
+| Post-Quantum Cryptography
+| Algorithms intended to remain secure against an attacker with a large quantum computer.
+|
+
+| Classical
+| (not an acronym)
+| Algorithms that are not post-quantum, such as RSA and elliptic curve cryptography.
+|
+
+| NIST
+| National Institute of Standards and Technology
+| The US body that standardised the post-quantum algorithms used here.
+|
+
+| KEX
+| Key Exchange
+| How the two peers agree on a shared secret used to encrypt the connection.
+| In TLS 1.3 the key exchange is negotiated through *groups*, not through the cipher suite.
+
+| KEM
+| Key Encapsulation Mechanism
+| The form of key exchange used by post-quantum algorithms: one peer generates a secret and sends it encrypted to the
+  other, instead of both peers combining values as in Diffie-Hellman.
+| Java has a `KEM` API (JDK 21 and later). Algorithm availability is separate and depends on the JDK and providers.
+
+| DH
+| Diffie-Hellman
+| A classical key exchange where each peer contributes a value and both derive the same secret.
+|
+
+| ECDH
+| Elliptic Curve Diffie-Hellman
+| Diffie-Hellman using an elliptic curve.
+| Java `KeyAgreement` algorithm name `ECDH`.
+
+| ECDHE
+| Elliptic Curve Diffie-Hellman Ephemeral
+| ECDH using a new key pair for every connection, so recorded traffic cannot be decrypted by a later key compromise
+  (forward secrecy). Appears in TLS 1.2 cipher suite names.
+| Not a distinct Java algorithm; Java uses `ECDH` for the operation.
+
+| X25519
+| (named for the curve Curve25519)
+| A widely used elliptic curve key exchange. Often the classical half of a hybrid group.
+| Java: `XDH` key algorithm with the parameter name `X25519`. In Java, TLS group names are lower case (`x25519`).
+
+| secp256r1, secp384r1
+| (curve names from the SEC 2 standard)
+| NIST elliptic curves P-256 and P-384.
+| The same curve is `P-256` / `NIST P-256` in standards, `prime256v1` and `secp256r1` in OpenSSL, `secp256r1` in Java
+  and `SecP256r1` inside hybrid group names such as `SecP256r1MLKEM768`.
+
+| Group
+| Named group (key exchange group)
+| The curve or algorithm used for key exchange in TLS 1.3. Each peer lists those it supports and they agree on one.
+| TLS: `supported_groups`. OpenSSL: "groups" (earlier "curves"; the `-groups` option and `SSL_set1_groups_list`). Java:
+  "named groups" (for example the `jdk.tls.namedGroups` system property). In TLS 1.2 these were called "elliptic curves".
+
+| Hybrid
+| Hybrid key exchange
+| A key exchange that runs a classical and a post-quantum exchange together and combines the results, so that the
+  connection stays protected if either is broken.
+| Hybrid groups have names that join the two parts, for example `X25519MLKEM768`. See <<reading-group-names>>.
+
+| ML-KEM
+| Module-Lattice-Based Key-Encapsulation Mechanism
+| The NIST post-quantum KEM, standardised in FIPS 203. Was previously known as CRYSTALS-Kyber, and some older material
+  and implementations still use the name Kyber. Comes in three sizes: ML-KEM-512, ML-KEM-768 and ML-KEM-1024.
+| TLS group names drop the hyphen: `MLKEM768`, `MLKEM1024`. OpenSSL algorithm name `ML-KEM-768`. Java `ML-KEM` /
+  `ML-KEM-768` (JDK 24 and later).
+
+| ML-DSA
+| Module-Lattice-Based Digital Signature Algorithm
+| The NIST post-quantum signature algorithm, standardised in FIPS 204. Was previously known as CRYSTALS-Dilithium. Comes
+  in ML-DSA-44, ML-DSA-65 and ML-DSA-87.
+| OpenSSL `ML-DSA-65`. Java `ML-DSA` / `ML-DSA-65` (JDK 24 and later). TLS signature scheme names drop the hyphens, for
+  example `mldsa65`.
+
+| FIPS
+| Federal Information Processing Standards
+| US government standards. FIPS 203 (ML-KEM) and FIPS 204 (ML-DSA) define the post-quantum algorithms. Separately, "FIPS
+  mode" means running only validated cryptographic modules, which is out of scope here.
+| Easy to confuse the two meanings: "FIPS 204" is a document, "FIPS mode" is an operating mode.
+
+| RSA
+| Rivest-Shamir-Adleman
+| A classical public key algorithm used for signatures (and formerly key exchange).
+| Key type `RSA` in Java and OpenSSL.
+
+| DSA
+| Digital Signature Algorithm
+| An older classical signature algorithm.
+|
+
+| EC
+| Elliptic Curve
+| The key type for keys based on elliptic curves. The type used when an EC certificate and key are held in a key store.
+| Java key algorithm `EC`. OpenSSL and the Apache mod_ssl heritage use "ECC" for the same thing (for example the
+  `SSL_AIDX_ECC` constant in WildFly OpenSSL).
+
+| ECC
+| Elliptic Curve Cryptography
+| The family of algorithms built on elliptic curves, including ECDH and ECDSA.
+| See EC.
+
+| ECDSA
+| Elliptic Curve Digital Signature Algorithm
+| The signature algorithm used with EC keys. The key type is `EC`; the signature algorithm is ECDSA.
+| Java signature names such as `SHA256withECDSA`. In TLS 1.3, `ecdsa_secp256r1_sha256`.
+
+| Signature algorithm
+| Signature scheme
+| The algorithm and hash used to sign and verify a certificate or handshake. Each peer lists those it accepts and this is
+  what decides which certificate chain a server can present.
+| TLS: `signature_algorithms`. OpenSSL: "sigalgs" (the `-sigalgs` option). Java: "signature schemes" (for example
+  `jdk.tls.client.SignatureSchemes`) and, for certificates, `SHA256withRSA` style names.
+
+| SHA
+| Secure Hash Algorithm
+| A family of hash functions. `SHA256` and `SHA384` are the 256 and 384 bit versions of SHA-2.
+| Java algorithm name `SHA-256`; names in signature algorithms and cipher suites are written `SHA256`.
+
+| HKDF
+| HMAC-based Key Derivation Function
+| How TLS 1.3 turns shared secrets into the keys actually used for encryption. The hash named in a TLS 1.3 cipher suite
+  is the one this uses.
+|
+
+| HMAC
+| Hash-based Message Authentication Code
+| A way to authenticate data using a hash and a secret key.
+|
+
+| AES
+| Advanced Encryption Standard
+| The symmetric cipher used to encrypt the data on a connection. `AES_128` and `AES_256` refer to the key size in bits.
+| OpenSSL cipher suite names write `AES128` / `AES256`; Java and the specification write `AES_128` / `AES_256`.
+
+| GCM
+| Galois/Counter Mode
+| A mode of operation for AES that both encrypts and authenticates the data.
+|
+
+| CBC
+| Cipher Block Chaining
+| An older mode of operation for AES that encrypts only; a separate HMAC is used to authenticate.
+|
+
+| AEAD
+| Authenticated Encryption with Associated Data
+| The class of cipher that encrypts and authenticates in one step, such as AES-GCM. All TLS 1.3 cipher suites are AEAD.
+|
+
+| X.509
+| (ITU-T standard number)
+| The standard format of public key certificates used in TLS.
+| Java `X509Certificate`, `CertificateFactory.getInstance("X.509")`, `X509TrustManager`, `X509KeyManager`.
+
+| CA
+| Certificate Authority
+| The party that signs a certificate to vouch for the identity in it.
+|
+
+| Certificate chain
+| (not an acronym)
+| A server certificate together with the certificates, up to a trusted CA, that vouch for it. The signature algorithms
+  used throughout the chain matter to what a peer can verify.
+|
+
+| PEM
+| Privacy-Enhanced Mail (format)
+| A text encoding of keys and certificates, in `-----BEGIN ...-----` blocks. The format passed to the native OpenSSL
+  library.
+| Headers such as `RSA PRIVATE KEY` name a specific algorithm; the generic `PRIVATE KEY` header is the PKCS#8 form.
+
+| DER
+| Distinguished Encoding Rules
+| The binary encoding underneath PEM and the form Java returns from `getEncoded()`.
+|
+
+| PKCS#8
+| Public-Key Cryptography Standard 8
+| The algorithm independent format for private keys. Java `PrivateKey.getEncoded()` returns this form, and its
+  `getFormat()` returns `PKCS#8`.
+|
+
+| PKCS#12
+| Public-Key Cryptography Standard 12
+| A key store file format. The default Java key store type.
+| Java key store type `PKCS12`.
+
+| JKS
+| Java KeyStore
+| An older Java specific key store format.
+| Java key store type `JKS`.
+
+| SNI
+| Server Name Indication
+| A TLS extension where the client states the host name it is connecting to.
+|
+
+| ALPN
+| Application-Layer Protocol Negotiation
+| A TLS extension used to agree the application protocol, for example HTTP/2.
+|
+
+| JPMS
+| Java Platform Module System
+| The Java module system.
+|
+
+| FFM
+| Foreign Function and Memory (API)
+| The Java API that is the alternative to JNI for calling native libraries.
+| Final in Java 22.
+|===
+
+[[reading-group-names]]
+=== Reading group names
+
+Hybrid group names are the two component names joined together, classical first (as written in OpenSSL):
+
+[cols="2,2,2,3",options="header"]
+|===
+| Group name | Classical part | Post-quantum part | Notes
+
+| `X25519MLKEM768`
+| X25519
+| ML-KEM-768
+| The most widely deployed hybrid group.
+
+| `SecP256r1MLKEM768`
+| secp256r1 (NIST P-256)
+| ML-KEM-768
+|
+
+| `SecP384r1MLKEM1024`
+| secp384r1 (NIST P-384)
+| ML-KEM-1024
+| The larger ML-KEM size is paired with the larger curve.
+
+| `MLKEM768`, `MLKEM1024`
+| none
+| ML-KEM-768 or ML-KEM-1024
+| Pure post-quantum key exchange without the classical part. Offered by OpenSSL but not a hybrid.
+|===
+
+The number is the ML-KEM parameter set, where a larger number is a higher security level and larger messages on the wire.
+
+NOTE: The order of the two parts inside the name does not always match the order in which the data is carried in the
+handshake, and the names an implementation uses can differ. Treat the name as an identifier and not as a description of
+the wire format.
+
+[[reading-cipher-suites]]
+=== Reading cipher suite names
+
+A cipher suite names the algorithms used to protect the data on a connection. How much the name says depends on the TLS
+version.
+
+*TLS 1.2 names* describe the key exchange, the authentication (the type of the server certificate), the encryption and
+the hash:
+
+[cols="2,2,2,3",options="header"]
+|===
+| Part | Example | OpenSSL form | Meaning
+
+| Protocol prefix
+| `TLS_`
+| (omitted)
+| Marks a TLS cipher suite name.
+
+| Key exchange
+| `ECDHE`
+| `ECDHE`
+| How the shared secret is agreed. Ephemeral elliptic curve Diffie-Hellman.
+
+| Authentication
+| `RSA` or `ECDSA`
+| `RSA` or `ECDSA`
+| The type of the server certificate key and of the signature that proves its identity. `ECDSA` needs an `EC`
+  certificate and `RSA` needs an `RSA` certificate.
+
+| `WITH`
+| `_WITH_`
+| (omitted)
+| Separates the key exchange and authentication from the data protection.
+
+| Encryption
+| `AES_256_GCM`
+| `AES256-GCM`
+| The cipher, key size and mode used to protect the data.
+
+| Hash
+| `SHA384`
+| `SHA384`
+| For GCM suites, the hash used when deriving keys. For CBC suites, the hash of the HMAC used to authenticate the data.
+|===
+
+So `TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384` (Java and the specification) is `ECDHE-ECDSA-AES256-GCM-SHA384` in OpenSSL:
+key exchange with ECDHE, an `EC` certificate signed with ECDSA, data protected with AES-256 in GCM mode, and SHA-384 for
+key derivation. WildFly OpenSSL translates between the Java and OpenSSL forms.
+
+*TLS 1.3 names* are shorter, for example `TLS_AES_256_GCM_SHA384`, because they say nothing about the key exchange or the
+authentication. Those are negotiated separately, through the groups and signature algorithms. A TLS 1.3 name contains only
+the encryption (`AES_256_GCM`) and the hash used by HKDF (`SHA384`).
+
+This is why post-quantum support does not involve cipher suites: `X25519MLKEM768` is a *group* and `ML-DSA-65` is a
+*signature algorithm*, and the same TLS 1.3 cipher suite is used with or without them. It also means that in TLS 1.2 the
+cipher suite constrains the type of certificate a server must hold, whereas in TLS 1.3 the signature algorithms the peers
+offer decide which certificate can be used. That difference is what the dual certificate chain requirement relies on.
+
+TLS 1.3 uses a different OpenSSL setting from TLS 1.2 and earlier for the list of cipher suites (`SSL_set_ciphersuites`
+compared with `SSL_set_cipher_list`), and WildFly OpenSSL separates the two lists by name.
+
