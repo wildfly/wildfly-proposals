@@ -1,0 +1,234 @@
+---
+categories:
+- security
+- elytron
+stability-level: preview
+issue: https://github.com/wildfly/wildfly-proposals/issues/609
+feature-team:
+ developer: rawojeda
+ sme:
+  - TODO
+ outside-perspective:
+  - TODO
+---
+
+= OCSP Stapling Support
+:author:            Raúl Ojeda Robles
+:email:             rrobles@redhat.com
+:author2:           Prarthona Paul
+:email2:            prpaul@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+Online Certificate Status Protocol (OCSP), described in https://www.rfc-editor.org/rfc/rfc6960[RFC 6960], is one of the two ways, together with Certificate Revocation Lists (CRLs), of checking whether a certificate has been revoked. WildFly already supports CRLs and traditional OCSP, in which the party validating a certificate contacts the Certificate Authority's (CA) OCSP responder itself. That adds a network round trip to the TLS handshake and tells the CA which peers a client connects to.
+
+With OCSP stapling, the TLS server obtains the OCSP response for its own certificate and sends ("staples") it to the client during the handshake, using the `status_request` extension of https://www.rfc-editor.org/rfc/rfc6066[RFC 6066] (and `status_request_v2` of https://www.rfc-editor.org/rfc/rfc6961[RFC 6961]). The client can then validate the certificate without contacting the responder.
+
+The JDK (SunJSSE) already implements both halves of stapling. This proposal does not add a stapling implementation to WildFly. It makes the two halves usable from WildFly:
+* *Server side:* the JDK produces stapled responses when it is enabled and tuned with JVM startup system properties. The WildFly documentation will describe these properties, which can be managed with the existing `system-property` resource.
+* *Client side:* the JDK consumes a stapled response only if the trust manager used for the handshake takes the connection into account. Elytron's `X509RevocationTrustManager` gains an opt-in switch for this, exposed through the Elytron `trust-manager` resource and the Elytron client configuration.
+
+This proposal was originally written by Prarthona Paul, and Raúl Ojeda Robles is continuing that work.
+
+=== User Stories
+
+* As an administrator of a WildFly server, I want the server to staple OCSP responses to its certificate, so that clients do not have to contact the CA's responder during the handshake.
+* As an administrator, I want WildFly's outbound TLS connections to accept the OCSP response stapled by the server I connect to, so that certificate revocation can be checked without contacting the CA's responder.
+* As a developer of a standalone Java application that uses the Elytron client configuration, I want to accept stapled OCSP responses in `wildfly-config.xml`, so that revocation checking can use the response sent by the server.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://redhat.atlassian.net/browse/WFLY-19269[WFLY-19269]
+* https://redhat.atlassian.net/browse/WFCORE-6802[WFCORE-6802]
+* https://redhat.atlassian.net/browse/ELY-434[ELY-434]
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly-security/wildfly-elytron[wildfly-elytron]
+* https://github.com/wildfly/wildfly-core[wildfly-core]
+* https://github.com/wildfly/wildfly[wildfly]
+
+[[target_versions]]
+=== Target Versions
+
+[cols="1,1"]
+|===
+|Component |Version
+
+|WildFly
+|43
+
+|WildFly Core
+|35
+
+|Elytron subsystem management model
+|21.0.0
+
+|Elytron subsystem schema
+|`preview` 19.0
+|===
+
+The management model version and the schema version are numbered independently. The management model describes the resources and attributes of the Elytron subsystem, whichever schema is used to configure them. The `preview` 19.0 schema is the XML schema in which this feature can be configured.
+
+=== Other Interested Projects
+
+N/A
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+* [x] Managed domain
+* [x] OpenShift Source-to-Image (S2I)
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+==== Server side: JVM startup properties
+
+* Server-side stapling is enabled and tuned only through the SunJSSE system properties below. Elytron and the `elytron` subsystem must not read, write or restore JVM system or security properties for this purpose, and no new `server-ssl-context` attribute or child element is added.
+* The properties will be documented, with their defaults, for administrators:
++
+[cols="3,1,4",options="header"]
+|===
+| System property | Default | Meaning
+| `jdk.tls.server.enableStatusRequestExtension` | `false` | Enable stapling on the server.
+| `jdk.tls.stapling.cacheSize` | `256` | Maximum number of cached responses.
+| `jdk.tls.stapling.cacheLifetime` | `3600` | Maximum lifetime of a cached response, in seconds.
+| `jdk.tls.stapling.responderURI` | unset | Responder to use when the certificate has no Authority Information Access (AIA) extension.
+| `jdk.tls.stapling.responderOverride` | `false` | Prefer `responderURI` over the AIA extension of the certificate.
+| `jdk.tls.stapling.ignoreExtensions` | `false` | Ignore OCSP request extensions sent by the client.
+| `jdk.tls.stapling.responseTimeout` | `5000` | Time allowed to obtain a response, in milliseconds.
+|===
+
+* In WildFly the properties are set either as JVM options or with the existing `system-property` resource, for example `/system-property=jdk.tls.server.enableStatusRequestExtension:add(value=true)`. In a managed domain the resource can be defined at the domain, server group, host or server level. The properties are process-wide and also affect SSL contexts created outside Elytron, and they should be set before the server starts and kept stable. Other JSSE providers may be configured differently.
+* The documentation will state that enabling stapling does not guarantee a stapled response. The response is obtained by the JDK contacting the OCSP responder named in the Authority Information Access (AIA) extension of the server certificate, or the one set with `jdk.tls.stapling.responderURI`. The server therefore needs a certificate with one of these and network access to that responder. The client must also request a stapled response.
+
+==== Client side: trust-manager attribute
+
+* A new optional boolean attribute `accept-ocsp-stapling` is added to the `trust-manager` resource of the `elytron` subsystem. It is available only at `preview` stability, defaults to `false`, supports expressions and requires a restart of the services that use the resource when it is changed.
+* When set to `true` the trust manager performs revocation checking even if no `ocsp`, `certificate-revocation-list` or `certificate-revocation-lists` is configured. With no further configuration, OCSP is tried first and CRLs are used as the fallback, and `soft-fail` keeps its default of `false`. Any `ocsp`, CRL, `soft-fail`, `only-leaf-cert` and `maximum-cert-path` configuration of the resource continues to apply. A certificate without a usable revocation source is therefore rejected unless `soft-fail` is `true`.
+* The trust manager uses a stapled response when the peer sends one, and otherwise falls back to the normal OCSP or CRL check. Accepting stapling is additive to revocation checking, not a replacement for it.
+* When set to `true`, the connection (socket or `SSLEngine`) is also passed to the underlying trust manager, so that endpoint identification and algorithm constraints configured on the connection are applied. When `false` the behavior is exactly the existing behavior.
+* The attribute is a property of the `trust-manager`, so it applies to every consumer of that resource. This includes `server-ssl-context` resources that use it to validate client certificates, not only `client-ssl-context` resources.
+* The attribute does not enable stapling on the server.
+
+[source]
+----
+/subsystem=elytron/trust-manager=clientTM:write-attribute(name=accept-ocsp-stapling,value=true)
+----
+
+==== Client side: Elytron client configuration and API
+
+* The Elytron client configuration schema is bumped to `urn:elytron:client:preview:1.8`. Only this preview namespace recognizes the new element.
+* `ssl-context` accepts an optional `accept-ocsp-stapling` element with the following optional attributes:
+** `accept-ocsp`, boolean, default `false`. An empty element therefore has no effect.
+** `soft-fail`, boolean, default `false`.
+** `responder-certificate` and `responder-keystore`, the OCSP responder certificate alias and the key store containing it. `responder-keystore` requires `responder-certificate`.
+* `accept-ocsp-stapling` requires a `trust-store` in the same `ssl-context`. A `trust-manager` without a `trust-store` is not enough, and a configuration without a `trust-store` is rejected.
+* `accept-ocsp-stapling` can be combined with `ocsp` and `certificate-revocation-list(s)`. In that case it only switches stapling on and it must not repeat `soft-fail`, `responder-certificate` or `responder-keystore`, which are configured on the other elements.
+* The corresponding programmatic switch is `X509RevocationTrustManager.Builder.setAcceptOCSPStapling(boolean)`, default `false`.
+
+[source,xml]
+----
+<authentication-client xmlns="urn:elytron:client:preview:1.8">
+    <key-stores>
+        <key-store name="trust" type="PKCS12">
+            <file name="trust.p12"/>
+            <key-store-clear-password password="secret"/>
+        </key-store>
+    </key-stores>
+    <ssl-contexts>
+        <ssl-context name="stapling">
+            <trust-store key-store-name="trust"/>
+            <accept-ocsp-stapling accept-ocsp="true"/>
+        </ssl-context>
+    </ssl-contexts>
+    <ssl-context-rules>
+        <rule use-ssl-context="stapling">
+            <match-host name="server.example.com"/>
+        </rule>
+    </ssl-context-rules>
+</authentication-client>
+----
+
+=== Non-Requirements
+
+* A dedicated `ocsp-stapling` element or attributes on `server-ssl-context`. Server-side stapling is controlled by JVM properties instead, because they are process-wide in the JDK and cannot be set per SSL context without Elytron changing JVM-wide state.
+* A separate `accept-ocsp-stapling` attribute on `client-ssl-context`. A `client-ssl-context` obtains the setting from the `trust-manager` it references.
+* Setting `jdk.tls.client.enableStatusRequestExtension` or `com.sun.net.ssl.checkRevocation`. Elytron does not change them. In current JDKs the client requests a stapled response by default, because `jdk.tls.client.enableStatusRequestExtension` defaults to `true` (it defaults to `false` in JDK 8u), and setting it explicitly to `false` disables the request.
+* Elytron or WildFly implementing their own response cache or responder client for stapling.
+
+=== Future Work
+
+The intention is to promote the `accept-ocsp-stapling` trust-manager attribute and the `accept-ocsp-stapling` client configuration element from `preview` to `community` stability, or directly to `default`, in a later release once they have been available at `preview` and feedback has been collected. Promotion will require confirming that the documentation is complete and that the tests described in the <<test_plan,Test Plan>> are in place. Promoting the client configuration element also requires a non-preview version of the Elytron client schema that includes it. The developer is expected to follow up on the promotion.
+
+== Backwards Compatibility
+
+Nothing changes unless `accept-ocsp-stapling` is enabled or the JDK system properties are set. The default of the new attribute and element is `false`, and with `false` the trust manager behaves as before.
+
+The attribute exists only at the preview stability level: it is registered at `preview` stability and appears only in the preview schema of the `elytron` subsystem, which is the only schema that accepts it. It is part of model version `21.0.0` of the subsystem. No management-model transformer is registered for the attribute.
+
+=== Default Configuration
+
+No default configuration changes and no Galleon layer changes.
+
+=== Importing Existing Configuration
+
+Existing configurations continue to work unchanged.
+
+=== Deployments
+
+N/A
+
+=== Interoperability
+
+The stapled response is a standard TLS extension. Interoperability with clients and servers that do not support it is handled by the TLS handshake: the server staples a response only when the client requests it, and a client that receives no stapled response falls back to the OCSP or CRL check when `accept-ocsp-stapling` is enabled.
+
+The new `trust-manager` attribute is only available at the `preview` stability level and the Elytron subsystem management model version is increased to <<target_versions,21.0.0>>. As is the case for other features at the `preview` stability level, no management-model transformer is provided for the new attribute, so it must not be configured in a managed domain that includes hosts running a previous release.
+
+== Admin Clients
+
+No changes to the Admin Console are required. The attribute is managed with the generic management operations.
+
+== Security Considerations
+
+* With stapling the CA is contacted by the server instead of by each client, which reduces handshake latency and keeps the clients' connection targets from the CA.
+* Enabling `accept-ocsp-stapling` turns on revocation checking in the trust manager with `soft-fail` defaulting to `false`. A peer certificate without a reachable or advertised revocation source is rejected. Administrators who want the opposite choice must set `soft-fail` explicitly.
+* On a trust manager shared with a `server-ssl-context` that validates client certificates, enabling the attribute also enables revocation checking of those client certificates and applies the connection's endpoint identification and algorithm constraints.
+* The server-side properties are process-wide. They affect all SunJSSE server contexts of the JVM, including ones not created by Elytron.
+* The new attribute does not introduce a credential or a reference to a security-relevant capability, and defines no additional access constraints.
+
+== Test Plan
+
+The following tests are planned:
+
+.Tests in WildFly Elytron
+* SSL tests with a generated CA and OCSP responder, in which the client can only validate the certificate by using the stapled response (the responder is unreachable from the client). The same setup fails when the client does not accept stapling, when the server does not staple, and when the stapled response is revoked.
+* A test of the fallback to a live OCSP check when no staple is sent.
+* Client configuration parsing tests for the `urn:elytron:client:preview:1.8` schema, including the invalid combinations described above.
+
+.Tests in WildFly Core
+* Subsystem tests that run the `trust-manager` resource with a signed good and a signed revoked stapled response, in the normal and the early (capability runtime API) construction paths. They cover the disabled and default cases not enabling revocation checking, and CRL reload retaining the setting.
+* A stability test that the attribute and the schema are not available at default stability, and a parsing test with the preview schema, including an expression value.
+
+.Tests in WildFly
+* One integration test, `OcspStaplingTestCase`, in `testsuite/integration/elytron`. It generates its own CA, OCSP responder and good and revoked server certificates with an Authority Information Access extension. The server is configured to staple by adding the `jdk.tls.server.enableStatusRequestExtension` system property with the `system-property` resource and reloading the server.
+* The test client uses an `X509RevocationTrustManager` with `setAcceptOCSPStapling(true)` and its responder address pointing to a closed port, so a successful handshake can only be explained by the stapled response. The good certificate is accepted and the revoked certificate is rejected.
+* The test needs the preview stability level and versions of WildFly Core and Elytron that include this feature, so it cannot pass in WildFly until those versions are used.
+
+== Community Documentation
+
+The "Configure OCSP certificate revocation" section of https://github.com/wildfly/wildfly/blob/main/docs/src/main/asciidoc/_elytron/Using_the_Elytron_Subsystem.adoc[Using the Elytron Subsystem] will be updated to describe the `accept-ocsp-stapling` attribute and its effect on revocation checking and shared trust managers. It will also explain how to enable and tune server-side stapling with the JDK system properties, including their process-wide scope and that they should be set before the server starts.
+
+The `<ssl-contexts />` section of https://github.com/wildfly/wildfly/blob/main/docs/src/main/asciidoc/_client-guide/authentication-client.adoc[`<authentication-client />` - WildFly Elytron] in the Client Configuration Guide will be updated to describe the `accept-ocsp-stapling` element of the preview 1.8 schema.
+
+== Release Note Content
+
+WildFly can now accept OCSP stapled responses at preview stability. The `accept-ocsp-stapling` attribute of an Elytron `trust-manager`, and the `accept-ocsp-stapling` element of an Elytron client configuration `ssl-context`, make the trust manager use the OCSP response stapled by the server when validating its certificate. The documentation also describes how to enable and tune server-side stapling with the JDK system properties.
