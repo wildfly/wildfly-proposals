@@ -1,0 +1,89 @@
+= DNS-SD and mDNS discovery
+:author:            David Lloyd
+:email:             david.lloyd@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+https://tools.ietf.org/html/rfc6763[RFC 6763] specifies a standard for DNS-based service
+discovery.  https://tools.ietf.org/html/rfc6762[RFC 6762] specifies a standard for
+multicast DNS.  Together these specifications describe a standard approach for
+configurationless setup of services which can be useful to various infrastructure environs.
+By supporting these standards, we can greatly simplify many common uses of EJB and similar
+technologies.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFCORE-3782[WFCORE-3782]
+
+=== Related Issues
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TBD
+
+=== Affected Projects or Components
+
+* Protocol clients
+** EJB client
+** Transaction client
+** Naming client
+
+=== Other Interested Projects
+
+* WildFly core (management protocol, domain host discovery)
+* Narayana (transaction discovery for distributed JTA recovery processes)
+* RestEasy/CXF (web service discovery)
+
+== Requirements
+
+=== Hard Requirements
+
+* Provide a DNS-based service resolver for wildfly-discovery which is broadly complaint with RFC 6763
+* Provide an mDNS-based service resolver for wildfly-discovery which is broadly complaint with RFC 6763 and 6762
+* Support RR TTL-based caching of answers as per specification
+* Provide a (m)DNS-based service registry for wildfly-discovery
+* Introduce WildFly discovery (or a dedicated discovery-dns) subsystem configuration to support all of the above
+* Introduce client configuration to support DNS and mDNS based service resolution
+* Support EJB discovery using the HTTP protocol and DNS/mDNS-based discovery
+
+=== Nice-to-Have Requirements
+
+* Allow users to opt in to disabling Remoting-based discovery for EJB
+
+=== Non-Requirements
+
+* DNSSec support is not required at this time, and could be introduced later.
+* Potential support for discovery by projects beyond EJB would be a separate enhancement.  This includes:
+** Distributed JTA transaction discovery
+** Web service (REST or SOAP) discovery
+
+== Implementation Plan
+
+* Introduce or locate an API for supporting the DNS protocol.
+* Add an implementation of DNS-SD to wildfly-discovery (possibly as a submodule), including client configuration.
+* Enhance the subsystem to include configurations for resolution and registration of services according to requirements.
+* Enhance the EJB subsystem to integrate with DNS-SD, introducing the option of disabling Remoting-based discovery.
+
+== Test Plan
+
+* Unit tests in (DNS library) for required functionality including:
+** the DNS resolver
+** the DNS server
+** mDNS request/response
+** general RFC compliance (with possible specific refinement of extension/limitation)
+* Unit tests of DNS-SD in wildfly-discovery including:
+** Service registration
+** Service resolution
+* Integration tests for EJB
+** Remoting and HTTP transport
+** Location by cluster affinity, node affinity, and app/module (no affinity)
