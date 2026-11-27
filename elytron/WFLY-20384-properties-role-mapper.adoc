@@ -1,0 +1,233 @@
+---
+categories:
+ - elytron
+stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/711[#711]
+feature-team:
+ developer: Pedro Hos
+ sme: 
+  - Diana Krepinska
+ outside-perspective:
+  - Gabriel Padilha Santos
+promotes:
+promoted-by:
+---
+
+= Restore the original behaviour of RoleMapping login module in the mapped role mapper
+:author:            Pedro Hos
+:email:             pesilva@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Some people migrating from previous versions of WildFly to the latest version are struggling with the migration of the RoleMapping login module. The equivalent of the RoleMapping login module is the mapped-role-mapper, which can achieve similar behavior.
+
+The main challenge comes from the fact that a properties file was previously used to map REALM roles to APPLICATION roles, and with mapped-role-mapper, this no longer seems possible. The proposal is to create a new role mapper based on a properties file to match REALM roles to APPLICATION roles.
+
+=== User Stories
+
+Some users need to map **REALM** roles to **APPLICATION** roles. The example https://github.com/gabrielpadilh4/custom-properties-mapped-role-mapper[custom-properties-mapped-role-mapper] was created to avoid this gap.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-20384[WFLY-20384]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/ELY-2892[ELY-2892]
+* https://issues.redhat.com/browse/WFCORE-7203[WFCORE-7203]
+* https://issues.redhat.com/browse/WFLY-20522[WFLY-20522]
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly-security/wildfly-elytron[Elytron]
+* https://github.com/wildfly/wildfly-core/[Wildfly Core - Elytron]
+* https://github.com/wildfly/wildfly[Wildfly Documentation]
+
+=== Other Interested Projects
+N/A
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+* [x] Managed domain
+* [x] OpenShift Source-to-Image (S2I)
+* [ ] Bootable jar
+
+== Requirements
+
+This RFE will add an attribute to add a new elytron subsystem role mapper configuration to map roles based on a properties file. The CLI command should have two paramenters: `path` and `relative-to`. For example:
+
+```
+/subsystem=elytron/properties-role-mapper=prm:add(path="my-role-properties.properties", relative-to="jboss.server.config.dir")
+```
+
+* The `path` paramenter is mandary, and represents the properties file;
+* The `relative-to` is not mandadoty, represents the relative directory where the file is present. Acepts environment variables, like: `jboss.server.config.dir`
+
+It's possible use the full path like `path="eap/stadanloe/configuration/my-role-properties.properties`, in this case the `relative-to` paramenter is not necessary, however, if `relative-to` is used, the `path` paramenter should be provided.
+
+The properties file should contain the the Realm role, followed by the Application mapped role, for example:
+
+```
+$ cat my-role-properties.properties
+
+EnterpriseRole=role-admin,role-123
+```
+
+Based on that file, the new `PropertiesMappedRoleMapper.java` will map the roles.
+
+=== Changed requirements
+Update the schema n order to add the new `properties-role-mapper` configuration.
+
+=== Non-Requirements
+N/A
+
+=== Future Work
+N/A
+
+== Backwards Compatibility
+
+The new role mapper properties role mapper has some diferences compared to the old https://docs.redhat.com/en/documentation/red_hat_jboss_enterprise_application_platform/7.4/html-single/login_module_reference/index#rolemapping_login_module[RoleMapping Login Module]:
+
+1. The new implementation doesn't have the `replaceRole` paramenter.
+2. The new implementation doesn't have the `rolesProperties` paramenter, which was replaced by `path` and `relativeTo`:
+
+```
+/subsystem=elytron/properties-role-mapper=prm:add(path="my-role-properties.properties", relative-to="jboss.server.config.dir")
+```
+
+* The `path` paramenter is mandary, and represents the properties file;
+* The `relative-to` is not mandadoty, represents the relative directory where the file is present. Acepts environment variables, like: `jboss.server.config.dir`
+
+The property file format stills the same: `original_role=role1,role2,role3`
+
+Finally, need to change the schema in order to add the new configuration:
+
+```
+[...]
+<xs:element name="properties-role-mapper" type="propertiesRoleMapperType" minOccurs="0" maxOccurs="unbounded" />
+
+[...]
+<xs:complexType name="propertiesRoleMapperType">
+        <xs:annotation>
+            <xs:documentation>
+                A RoleMapper definition for a RoleMapper that performs a mapping based on a property file.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:complexContent>
+            <xs:extension base="roleMapperType">
+                <xs:attribute name="path" type="xs:string" use="required">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Property file used to perform the role mapping
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="relative-to" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>
+                            Path from the file used to perform the role mapping
+                        </xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+[...]
+```
+
+=== Default Configuration
+
+This change will add a new role mapper paramenter, named `properties-role-mapper`
+
+=== Importing Existing Configuration
+
+N/A
+
+=== Deployments
+
+N/A
+
+=== Interoperability
+
+== Implementation Plan
+
+N/A
+
+== Admin Clients
+
+New Role Mapper added named `properties-role-mapper`, for example:
+
+```
+/subsystem=elytron/properties-role-mapper=prm:add(path="my-role-properties.properties", relative-to="jboss.server.config.dir")
+```
+
+where `relative-to` isn't mandatory, but if used, requires the `path` paramenter.
+
+== Security Considerations
+
+[[test_plan]]
+== Test Plan
+
+*** Manual tests: First, start Wildfly using standalone mode. Create a new file named "my-role-properties.properties" under Wildfly standalone configuration directory: "jboss.server.config.dir" with the following content:
+
+```
+EnterpriseRole=role-admin,role-123
+```
+
+Connect to the Wildfly CLI, configure a new Filesystem Realm, Roles and Properties Roles:
+
+```
+/subsystem=elytron/filesystem-realm=myFsRealm:add(path=my-fs-realm-users,relative-to=jboss.server.config.dir)
+
+/subsystem=elytron/filesystem-realm=myFsRealm:add-identity(identity=joe)
+
+/subsystem=elytron/filesystem-realm=myFsRealm:add-identity-attribute(identity=joe, name=Roles, value=["123-user","123-admin", "EnterpriseRole"])
+
+/subsystem=elytron/simple-role-decoder=from-roles-attribute:add(attribute=Roles)
+
+/subsystem=elytron/properties-role-mapper=prm:add(path="my-role-properties.properties", relative-to="jboss.server.config.dir")
+
+/subsystem=elytron/security-domain=mySD:add(realms=[{realm=myFsRealm,role-decoder=from-roles-attribute}],role-mapper=prm,default-realm=myFsRealm,permission-mapper=default-permission-mapper)
+```
+
+Check that when asked for roles of the identity from given security domain the properties will be used and resulted roles will be correctly mapped:
+
+```
+/subsystem=elytron/security-domain=mySD:read-identity(name=joe)
+{
+    "outcome" => "success",
+    "result" => {
+        "name" => "joe",
+        "attributes" => {"Roles" => [
+            "123-user",
+            "123-admin",
+            "EnterpriseRole"
+        ]},
+        "roles" => [
+            "123-admin",
+            "EnterpriseRole",
+            "123-user",
+            "role-123",
+            "role-admin"
+        ]
+    }
+}
+```
+
+*** Integration tests - New `PropertiesRoleMapperTest.java` test added on test suit and `RoleMappersTestCase.java` test case updated on Wildfly Core project. New `PropertiesMappedRoleMapperTest.java` class added on Elytron project
+
+== Community Documentation
+
+* Update Wildfly Elytron Subsystem documentation to include new `properties-role-mapper` configuration.  
+* New Elytron Blog Post
+
+== Release Note Content
+
+The Elytron Role Mapper now supports role mapping using a properties file. This enhancement provides a flexible and configurable way to map user roles to application-specific roles without modifying the code or requiring complex configuration changes.
