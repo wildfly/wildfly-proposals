@@ -1,0 +1,146 @@
+---
+# Add any category for this proposal as a YAML list, e.g.
+# - core
+# - management
+# If missing, add it to _data/wildfly-categories and use its id
+categories:
+  - messaging
+  - jca
+# Specify the stability level of the feature.
+# Values can be one of: experimental, preview, community, or default
+stability-level: default
+# Specify the Feature Development tracker issue for the feature.
+# This must be an issue tracked in https://github.com/orgs/wildfly/projects/7/views/1.
+# To create a Feature Development tracker issue, go to https://github.com/wildfly/wildfly-proposals/issues/new/choose
+# and select 'Feature Development'
+issue: https://github.com/wildfly/wildfly-proposals/issues/811
+# Provide the GitHub ids of the feature team members, organized by role.
+# Provide a single id for the 'assignee' role. Use a YAML list for the 'sme' and
+# 'outside-perspective' roles, even if there is only one person in a role.
+feature-team:
+ developer: ehsavoie
+ sme:
+  - mnovak
+ outside-perspective:
+  - mnovak
+# If this issue tracks the promotion of a previously completed feature to a higher stability level, provide the URL of
+# the original https://github.com/wildfly/wildfly-proposals/issues issue that was used to track the implementation of
+# that feature.
+promotes:
+# During initial development of a feature, this field should be left blank. If after the feature is completed and its
+# stability level is promoted via a later issue, the developer promoting the issue should return to this document ("this"
+# being the original analysis document for the feature). The field should be updated to point to the
+# https://github.com/wildfly/wildfly-proposals/issues issue that promotes it.
+# For example,
+#              | Implementation Issue (A) | Promotion Issue (B)
+# promotes:    |                          | https://github.com/.../A
+# promoted-by: | https://github.com/.../B |
+promoted-by:
+---
+
+= Allow a shared single connection in the Resource Adapter
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently there is a 1 to 1 session with connection and session for MDB's. This feature would allow the use of a single connection, so we could have only 1 connection per MDB instead of 1 connection per MDB instance.
+
+Currently the resource adapter creates a separate connection for each consumer. For example, when the activation specification for an MDB contains a maxSession attribute greater than 1, a connection is created for each MDB instance / thread.
+This enhancement would allow selectable enabling of shared connections, in which consumers of the same address could share a connection between multiple sessions.
+
+=== User Stories
+
+As an MDB developer, I want to configure my MDB to share a single JMS connection across all its sessions so that I can reduce the number of connections to the broker and optimize resource usage, especially when using a high maxSession count.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFLY-16047[WFLY-16047]
+* https://issues.redhat.com/browse/EAP7-1871[EAP7-1871]
+* https://issues.redhat.com/browse/ENTMQBR-5133[ENTMQBR-5133]
+* https://issues.apache.org/jira/browse/ARTEMIS-3539[ARTEMIS-3539]
+
+=== Affected Projects or Components
+
+* Apache Artemis
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+
+== Requirements
+
+Create and support a new *ActivationConfigProperty* called `singleConnection` to allow for connection sharing on a consumer. When `singleConnection` is set to `true`, all sessions created for an MDB activation will share a single JMS connection. When set to `false`, a dedicated connection is created per session (the current default behavior).
+
+=== Non-Requirements
+
+We don't define this behaviour at the management model level. Only the configuration of the activation of an MDB is affected.
+
+=== Future Work
+
+== Backwards Compatibility
+
+This change is fully backwards compatible. The default behavior (one connection per session) is preserved when the `singleConnection` property is not set or is set to `false`.
+
+=== Default Configuration
+
+No changes to the default configuration or Galleon layers.
+
+=== Importing Existing Configuration
+
+No impact on existing configurations. The new `singleConnection` activation config property is optional.
+
+=== Deployments
+
+No incompatible changes. Existing deployments continue to work as before. The `singleConnection` property is opt-in.
+
+=== Interoperability
+
+No impact on interoperability.
+
+== Implementation Plan
+
+This is already supported by AMQ/Artemis. The implementation exposes the existing Artemis resource adapter `singleConnection` property as an MDB activation config property.
+
+== Admin Clients
+
+No changes required to JBoss CLI or the Admin Console / HAL, as the `singleConnection` property is configured at the deployment level via `@ActivationConfigProperty` annotations, not through the management model.
+
+== Security Considerations
+
+No security impact. Connection sharing does not alter the authentication or authorization behavior of the JMS connection.
+
+[[test_plan]]
+== Test Plan
+
+The `singleConnection` activation configuration property for Message-Driven Beans (MDBs) in WildFly is tested at the default stability level. The test environment uses a queue `myQueue` (JNDI: `jms/queue/myQueue`) with `maxSession=15` for all test MDBs and annotation property replacement enabled in the EE subsystem. Awaitility is used for async verification.
+
+The following integration tests are provided:
+
+. *MDB Lifecycle with Single Connection* (`testMdbRedeploymentWithSingleConnection`): Deploys an MDB with `singleConnection=true`, verifies exactly 1 JMS connection and 15 sessions are created, sends a message and verifies processing, undeploys and verifies cleanup (0 connections, 0 sessions), then redeploys and verifies the connection and sessions are properly recreated.
+
+. *Multiple Connections Per Session* (`testSingleConnectionFalse`): Deploys an MDB with `singleConnection=false` and `maxSession=15`, verifies exactly 15 JMS connections and 15 sessions are created (one connection per session), and verifies message processing.
+
+. *Expression Support - Default Value* (`testExpressionSupportForSingleConnectionNotSet`): Deploys an MDB with `singleConnection="${mdb.single.connection:true}"` without setting the system property, verifies the expression resolves to the default value `true` resulting in 1 connection and 15 sessions.
+
+. *Expression Support - Explicit True* (`testExpressionSupportForSingleConnectionTrue`): Sets system property `mdb.single.connection=true`, deploys the MDB with expression-based configuration, verifies 1 connection and 15 sessions, then cleans up.
+
+. *Expression Support - Explicit False* (`testExpressionSupportForSingleConnectionFalse`): Sets system property `mdb.single.connection=false`, deploys the MDB with expression-based configuration, verifies 15 connections and 15 sessions (overriding the default), then cleans up.
+
+All tests verify that message processing works correctly regardless of the connection sharing configuration.
+
+== Community Documentation
+
+On the WildFly developer guide.
+
+== Release Note Content
+
+Added the `singleConnection` activation config property for MDBs to control whether multiple sessions share a single JMS connection (default: `true`) or create separate connections per session, allowing optimization for either resource efficiency or connection-level isolation.
