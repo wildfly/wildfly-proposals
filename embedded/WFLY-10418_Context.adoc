@@ -1,0 +1,143 @@
+= WildFly Context Management
+:author:            David Lloyd
+:email:             david.lloyd@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+The WildFly application server does not function well in embedded scenarios,
+nor in situations where there is no JBoss Modules present.
+Additionally, there are a large number of contexts and context-related bits of information which need to be
+frequently associated and dissociated.
+
+We currently support two kinds of contextual association:
+
+* Class loader association, using the current thread context class loader
+* Direct thread local association, using a thread local
+
+Class loader association does not work if you do not have a class loader per application module, nor does it solve
+problems where the granularity is finer than per-application module.  Thread local association of contexts fails
+when the cost of setting up possibly dozens of thread local variables per request becomes prohibitive.
+
+We need a better contextual association mechanism that meets the requirements below.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.jboss.org/browse/WFLY-10418[WFLY-10418]
+
+=== Related Issues
+
+=== Dev Contacts
+
+// * mailto:{email}[{author}]
+* TBD
+
+=== QE Contacts
+
+* TBD
+
+=== Affected Projects or Components
+
+* All WildFly components and projects
+
+=== Other Interested Projects
+
+== Requirements
+
+=== Hard Requirements
+
+* The context must be acquirable from a static programming context, i.e. it must not require the passing around of objects
+* It must be possible to capture and restore the context
+* Subsystems must be allowed to opt-in to using this context to represent subsystem-specific components
+* Variable granularity: the solution must accommodate:
+** Application server level context
+** Application level context
+** Application module level context
+** Component (EE) level context
+** Other future context types
+* Association complexity: the solution must be able to associate a new context (of any granularity) in a single step
+* Scoping: associations must be lexically scoped to prevent leakage
+* Memory, CPU efficiency: creating nested contexts should not entail the copying of large amounts of outer context data
+* Application server level context must include:
+** Bootstrap module loader to use for application server tasks (if any)
+** Server environment information
+** Access to global application server resources (such as model controller, MSC container, etc.) as is deemed reasonable
+* More specific contexts must include or reference their enclosing less-specific contexts
+
+=== Nice-to-Have Requirements
+
+* Contexts _should_ be immutable.  In addition to simplifying the programming model, this
+may also help to avoid leaks and other surprise behavior.
+
+=== Non-Requirements
+
+* It is not presently intended to use this solution for per-request context
+
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+== Test Plan
+
+The implementation would be covered by already-existing tests.
+
+== Proposed Design
+
+[id="design-option-1"]
+=== Design Option #1
+
+A single thread local is used to contain the current context.
+The context type is defined by a type hierarchy such that more specific types extend
+less specific types.
+More specific types internally contain a reference to the instance of their less-specific
+parent type.  More specific types implement the API of their less-specific parent type by
+delegating all methods of the less-specific parent type(s) to the parent instance.
+This means that, for example, an application module context is-an application server context
+as well, though internally there is delegation.
+
+A method is provided to acquire the current context of a given type.  The thread local
+is probed to acquire the current context, and a cast is attempted.  If the requested type
+is not satisfied by the current context, then a sentinel value (such as `null`) is returned.
+
+A method is provided to acquire the current context regardless of its type.
+
+Methods are provided to restore the current context for the duration of a nested operation
+using the standard `runAs` pattern.
+
+Contexts could be able (in special circumstances) to perform a special setup/teardown action on association.
+This would be necessary in order to (for example) set and restore the TCCL.  Widespread use of
+this feature could however be detrimental to performance, so such usage should be discouraged on
+that basis.
+
+Context instances would make use of a builder pattern for optimum extensibility and forward
+compatibility.
+
+.Example type hierarchy (option 1)
+[id="design-option-1-img"]
+image:https://www.lucidchart.com/publicSegments/view/3487eec8-6428-49f5-87ce-863dd67e3a61/image.png[title=UML]
+
+[id="design-option-2"]
+=== Design Option #2
+
+This option would be identical to <<design-option-1,option #1>> in all respects except
+that each context type is a separate, non-inherited type.  Instead, a single base type
+would be given which has a `widen` method which would return the context's own instance (`this`)
+if it matches, or would delegate to the parent context instance otherwise.
+
+The advantage is that method delegation happens only once when the requested type is acquired.
+The disadvantage is that it is not possible to narrow the context back down again, which
+might result in the context being acquired multiple times or in the creation of several redundant
+local variables.
+
+.Example type hierarchy (option 2)
+[id="design-option-2-img"]
+image:https://www.lucidchart.com/publicSegments/view/8e3cfd64-c032-437b-b7da-006e042c3eca/image.png[title=UML]
