@@ -1,0 +1,161 @@
+---
+categories:
+  - clustering
+  - cloud
+  - openshift
+---
+= WFLY-18796 Optimize cloud clustering configuration created by our tooling to be scalable
+:author:            Radoslav Husar
+:email:             rhusar@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Currently, our cloud tooling configures clustering in the cloud using a replicated cache mode which is suboptimal as it does not scale.
+Such cache mode does not scale and is not suited for applications in the cloud that are supposed to be scalable.
+In this mode Infinispan replicates all entries in the cache to all nodes in the cluster.
+It doesn't scale, as adding new nodes does not enlarge the cluster capacity.
+
+The cache mode that scales is the distributed cache.
+In order to use this cache mode efficiently the server needs to provide the ownership information to the load-balancer
+and the load-balancer needs to respect the routing information provided by the server.
+
+With the https://issues.redhat.com/browse/WFLY-16043[WFLY-16043] already implemented, the server now has the ability to provide the affinity within a cookie,
+with the fix for https://issues.redhat.com/browse/CLOUD-4173[CLOUD-4173] the server node now knows it's pod name which is used for routing.
+The server needs to be fixed to no longer attach the routing information where it's never parsed https://issues.redhat.com/browse/CLOUD-4174[CLOUD-4174].
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-18796[WFLY-18796 Optimize cloud clustering configuration created by our tooling to be scalable] (upstream tracker)
+* https://issues.redhat.com/browse/EAP7-2164[EAP7-2164 Optimize cloud clustering configuration created by our tooling to be scalable]
+
+=== Related Issues
+
+Incorporates
+
+* https://issues.redhat.com/browse/CLOUD-4211[CLOUD-4211 Cloud clustering profiles should configure a distributed cache instead of a replicated one]
+* https://issues.redhat.com/browse/CLOUD-4174[CLOUD-4174 Session affinity information is attached to the session ID but never used]
+* https://github.com/wildfly/wildfly-charts/issues/131[wildfly-charts#131 Helm Chart doesn't provision a load-balancer that supports affinity routing driven by the application server]
+* https://github.com/wildfly/wildfly-operator/issues/270[wildfly-operator#270 Configure a load balancer which supports cookie-based affinity]
+
+Blocked by and already resolved
+
+* https://issues.redhat.com/browse/WFLY-16043[WFLY-16043 Allow configuration of an arbitrary cookie to use for web request affinity]
+* https://issues.redhat.com/browse/CLOUD-4173[CLOUD-4173 The jboss.node.name property is incorrectly truncated]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* TBD
+
+NOTE: Great candidate here is Martin Simka.
+
+=== Testing By
+
+* [ ] Engineering
+
+* [x] QE
+
+=== Affected Projects or Components
+
+* Clustering
+* Cloud
+
+== Requirements
+
+The requirements are that our tooling provides:
+
+* a default server configuration that configures our Infinispan caches suitable for cloud deployments, i.e. using a distributed cache
+* an efficient load-balancer/Ingress configuration the that routes to WildFly pods effectively
+
+The required cache configuration is as follows:
+
+[source,cli,title=infinispan.cli]
+----
+/subsystem=infinispan/cache-container=web/distributed-cache=sessions:add
+/subsystem=infinispan/cache-container=web/distributed-cache=sessions/component=expiration:add(interval=0)
+/subsystem=infinispan/cache-container=web:write-attribute(name=default-cache,value=sessions)
+----
+
+The required configuration for undertow subsystem is as follows:
+
+[source,cli,title=undertow.cli]
+----
+/subsystem=undertow/servlet-container=default/setting=affinity-cookie:add(name=INGRESSCOOKIE)
+----
+
+The required default ingress configuration using a HAProxy ingress such that:
+
+[source,yaml]
+----
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: example-ingress
+  namespace: default
+  annotations:
+    haproxy-ingress.github.io/affinity: cookie
+    haproxy-ingress.github.io/backend-server-naming: pod
+    haproxy-ingress.github.io/session-cookie-dynamic: "false"
+    haproxy-ingress.github.io/session-cookie-keywords: preserve
+    haproxy-ingress.github.io/session-cookie-name: INGRESSCOOKIE
+    haproxy-ingress.github.io/session-cookie-preserve: "true"
+    haproxy-ingress.github.io/session-cookie-strategy: insert
+    haproxy-ingress.github.io/session-cookie-value-strategy: server-name
+spec:
+  ingressClassName: haproxy
+  tls:
+    - hosts:
+        - example.com
+  rules:
+    - host: example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: example-service
+                port:
+                  number: 8080
+----
+
+=== Nice-to-Have Requirements
+
+* Updates to the WildFly Operator.
+
+NOTE: The operator configures a bare-bone HTTP route. Users should just disable this using `disableHTTPRoute: false` and set up an Ingress manually.
+
+=== Non-Requirements
+
+* N/A
+
+== Implementation Plan
+
+No specific implementation plan required, separate PRs can be opened, tested and merged concurrently.
+
+== Test Plan
+
+TBD
+
+== Community Documentation
+
+Complete community documentation is already provided by https://issues.redhat.com/browse/WFLY-18748[WFLY-18748] including:
+
+* explanation of the routing mechanism
+* configuration changes required for existing applications
+* simple testing / debugging information (e.g. for quality engineering consumption)
+
+NOTE: Currently under review on GitHub - https://github.com/wildfly/wildfly/pull/17432 - will be updated with SCM path once merged.
+
+== Release Note Content
+
+The application server cloud images now configure a distributed Infinispan cache by default.
