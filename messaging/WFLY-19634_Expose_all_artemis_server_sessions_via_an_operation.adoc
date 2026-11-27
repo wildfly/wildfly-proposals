@@ -1,0 +1,128 @@
+---
+categories:
+  - messaging
+stability-level: community
+issue: https://github.com/wildfly/wildfly-proposals/issues/674
+feature-team:
+ developer: ehsavoie
+ sme: ehsavoie
+  -
+ outside-perspective:
+  -
+promotes:
+promoted-by:
+---
+= Expose all artemis server sessions via an operation
+:author:            Emmanuel Hugonnet
+:email:             ehugonne@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:          messaging,jms
+:idseparator:       -
+
+== Overview
+
+The goal of this feature is to expose an Apache Artemis server management operation that list all the sessions currently alive on the server in a JSON format.
+
+=== User Stories
+
+As a user I can list all the sessions currently alive on the embedded Apache Artemis server by connection.
+With this new operation I can list all the sessions currently alive on the embedded Apache Artemis server, not just per connection.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-19634[WFLY-19634]
+
+=== Related Issues
+
+=== Affected Projects or Components
+
+ * WildFly
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+Expose the management operation *listAllSessionsAsJSON* from Apache Artemis through WildFly management API as an operation.
+
+=== Non-Requirements
+
+This feature does not provide filtering or pagination capabilities for the session list. It returns all active sessions in a single JSON response.
+
+=== Future Work
+
+Future enhancements could include filtering capabilities to query sessions by connection ID, user, or other criteria, and pagination support for large numbers of sessions.
+
+== Backwards Compatibility
+
+This feature adds a new management operation and does not affect any existing functionality or configuration. It is fully backwards compatible.
+
+=== Default Configuration
+
+This feature does not change any default configuration values.
+
+=== Importing Existing Configuration
+
+This feature does not affect the ability to import existing configurations.
+
+=== Deployments
+
+This feature does not change the behavior of deployments.
+
+=== Interoperability
+
+This feature does not impact interoperability.
+
+== Implementation Plan
+
+Create a new operation `list-all-sessions-as-json` that takes no parameters and returns a String containing all the sessions in JSON format.
+
+== Admin Clients
+
+This feature will be fully compatible with both JBoss CLI and the Admin Console (HAL). The operation can be invoked via CLI, and HAL can display the operation in the messaging subsystem management interface.
+
+== Security Considerations
+
+This operation requires appropriate management permissions to execute, following WildFly's standard RBAC model. Only users with sufficient privileges to manage the messaging subsystem will be able to invoke this operation. The returned session information may contain sensitive details about active connections, so access should be restricted to administrators.
+
+[[test_plan]]
+== Test Plan
+
+=== Integration Tests
+
+Changes in WildFly management model will be covered in WF testsuite with new test:
+* `org.jboss.as.test.integration.messaging.mgmt.JMSServerManagementTestCase#testListAllSessions` - Creates 2 JMS sessions and verifies that 4 sessions are returned in the list (2 of them marked as JMS sessions).
+
+=== Manual Tests
+
+Manual testing will verify:
+* The operation description in the management model is clear and accurate
+* The returned JSON format is well-structured and parseable
+* The operation correctly handles scenarios with zero active sessions
+* Error messages are clear when the operation is invoked without proper permissions
+* The operation works correctly across all relevant installation types (standalone, domain, bootable jar)
+
+=== Miscellaneous Checks
+
+This feature has minimal performance impact as it is a read-only operation that queries existing in-memory session data. No significant changes to server memory footprint or disk usage are expected.
+
+=== Compatibility Tests
+
+Not applicable - this is a new feature that does not affect backwards compatibility.
+
+== Community Documentation
+
+Covered by operation description in management model.
+
+== Release Note Content
+
+WildFly now exposes a new management operation `list-all-sessions-as-json` on the embedded Apache Artemis server that returns all currently active sessions in JSON format. This complements the existing per-connection session listing capabilities, providing administrators with a comprehensive view of all sessions across all connections on the messaging server. 
