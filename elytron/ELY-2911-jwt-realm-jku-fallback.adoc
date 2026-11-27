@@ -1,0 +1,198 @@
+---
+categories:
+  - elytron
+stability-level: preview
+issue: https://github.com/wildfly/wildfly-proposals/issues/825
+feature-team:
+ developer: Matei-Gatin
+ sme: 
+ outside-perspective:
+promotes:
+promoted-by:
+---
+
+= JwtValidator: jku fallback URL for kid only tokens
+:author:            Matei Alexandru Gatin
+:email:             gatinmatei@yahoo.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+`JwtValidator` in Elytron currently has three ways to find the public key it needs to verify a JWT's signature:
+
+1. A single `defaultPublicKey` (the `public-key` attribute of `<jwt>` in XML), used when the token has no `kid` header.
+2. The `jku` header path: if the token carries a `jku` URL, `JwkManager` fetches the JWKS document from that URL and caches it. The cache refreshes on a TTL, so key rotation works here.
+3. A static `namedKeys` map (populated from the `<key kid="..." public-key="..."/>` child elements of `<jwt>` in XML), used when the token has a `kid` but no `jku`. This map is fixed at startup and never rotates.
+
+The problem is that most of the big OIDC providers (Auth0, Microsoft EntraID, Okta, Google) put `kid` in their tokens but never `jku` and they expect the client to already know the JWKS endpoint URL. So when WildFly is configured against one of these providers, operators today have two choices, and neither is great:
+
+* List every signing key in `namedKeys` and restart the server every time the IdP rotates keys, or
+* Use only `defaultPublicKey` and give up `kid` matching entirely.
+
+This feature adds a new attribute on `token-realm` called `jku-fallback-url`. When a token has a `kid` but no `jku`, and the `kid` isn't already in `namedKeys`, the validator treats the configured URL as if the token had included it in its `jku` header, and routes the lookup through the existing `JwkManager` cache. Operators get automatic key rotation without pinning keys.
+
+The fallback URL goes through the same checks as the token's `jku` header: it must be listed in `allowed-jku-values` (configured per realm via the `wildfly.elytron.jwt.allowed.jku.values.<realm-name>` JVM system property), must use HTTPS, and requires a configured SSL context on the realm. It reuses the existing security guards instead of introducing new ones.
+
+=== User Stories
+User Story 1 - admin using a commercial OIDC provider:
+
+I run a WildFly server that uses an Elytron `token-realm` to validate JWTs issued by a commercial OIDC provider (for example Auth0 or Microsoft EntraID). These providers always set kid on their tokens, but never
+set `jku`. I want to configure the IdP's JWKS URL once on the `token-realm`, so that when the IdP rotates its signing keys, the server fetches the new keys on the next validation automatically. I should not have to edit the configuration or restart the server.
+
+User Story 2 - admin using `namedKeys`:
+
+I already run a `token-realm` with specific signing keys configured in `namedKeys`. I want to turn on `jku-fallback-url` as a safety net, without changing the behavior of my existing configuration. If a token's `kid`
+matches one of my `namedKeys` entries, that entry must still be used. Only `kid` values that are not in `namedKeys` should be looked up through the fallback URL.
+
+== Issue Metadata
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/ELY-2911[ELY-2911] — JwtValidator: support public-key rotation when tokens have `kid` but no `jku`.
+* https://issues.redhat.com/browse/WFCORE-3966[WFCORE-3966] — prior feature that introduced `jku` and `kid` support.
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly-elytron[wildfly-elytron] — `auth/realm/token` module (`JwtValidator` builder and `resolvePublicKey`).
+* https://github.com/wildfly/wildfly-core[wildfly-core] — `elytron` subsystem: `TokenRealmDefinition` (new attribute declaration), the `PersistentResourceXMLDescription` mapping in `RealmParser`, and a new `wildfly-elytron_*.xsd` schema version.
+
+=== Other Interested Projects
+
+None identified.
+
+=== Relevant Installation Types
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+* A new optional attribute `jku-fallback-url` is added to the `token-realm` resource in the elytron subsystem. It is a `String`, has no default value, and is marked with `preview` stability. If it is not set, `JwtValidator` behaves the same as now.
+
+* When a JWT carries a `kid` but no `jku`, and the `kid` is not in `namedKeys`, and `jku-fallback-url` is set, the validator calls `JwkManager.getPublicKey(kid, jkuFallbackUrl)`. The configured URL stands in for the token's missing `jku` header.
+
+* When a JWT's `kid` matches an entry in `namedKeys`, that entry is used and the fallback URL is not consulted, even when one is configured. Existing `token-realm` configurations that use `namedKeys` continue to work exactly the same way.
+
+* The fallback URL has to be present in `allowed-jku-values`. If it is not, validation returns without fetching anything.
+
+* The fallback URL must use the `https` scheme. A non-HTTPS URL causes `setJkuFallbackUrl(...)` to throw `IllegalArgumentException`.
+
+* The realm needs a configured client SSL context. If the fallback URL is set but no SSL context is configured, the validator logs a debug message and returns null.
+
+* When `jku-fallback-url` is configured, the constructor time warning (`tokenRealmJwtWarnNoPublicKeyIgnoringSignatureCheck`) must not fire.
+
+* The early-return in `verifySignature` that skips verification when `defaultPublicKey`, `jwkManager`, and `namedKeys` are all empty must also check `jkuFallbackUrl`. If the fallback URL is the only thing configured, signature verification must still run rather than being skipped.
+
+* On a server whose stability level is below `preview`, the new attribute must not be registered on the management model, and any configuration that tries to use it must be rejected at boot.
+
+* All existing tests must continue to pass unchanged.
+
+=== Changed requirements
+
+Not applicable.
+
+=== Non-Requirements
+
+* No callback mechanism. The ELY-2911 reporter proposed two alternatives in the ticket: a callback mechanism for resolving keys by `kid`, or a `jku` fallback URI. This proposal ships the fallback URI only.
+
+* No JWKS auto-discovery from `.well-known/openid-configuration`. The admin has to configure the URL explicitly. Discovery is listed in Future Work.
+
+=== Future Work
+
+For promotion from preview to community stability, the feature team will need to add:
+
+* An integration test that runs the fallback URL end to end, including IdP-style key rotation, against a mock JWKS server.
+
+* A decision on whether to support automatic JWKS URL discovery from an OIDC issuer's `.well-known/openid-configuration` endpoint, either as a new attribute, or as an accepted value for `jku-fallback-url`.
+
+== Backwards Compatibility
+
+This feature is purely an addition. All configurations continue to behave identically.
+
+=== Default Configuration
+
+No default configuration changes.
+
+=== Importing Existing Configuration
+
+No impact on existing configurations.
+
+=== Deployments
+
+No change to deployment behavior.
+
+=== Interoperability
+
+No interoperability impact.
+
+== Implementation Plan
+
+The feature ships in two coordinated pieces.
+
+=== Piece 1 — Elytron library change (wildfly-elytron)
+
+This is the work on `auth/realm/token` in https://github.com/wildfly/wildfly-elytron[wildfly-elytron]. It is already drafted as the PR attached to ELY-2911.
+
+* `JwtValidator.Builder.setJkuFallbackUrl(String)` is added. The setter parses the input, rejects any non-HTTPS scheme with `IllegalArgumentException`, and stores the resulting `URL` on the builder.
+* The validator keeps the parsed URL as a new `jkuFallbackUrl` field.
+* `resolvePublicKey` is extended so that, when a token has `kid` but no `jku`, and the `kid` is not in `namedKeys`, the validator calls `JwkManager.getPublicKey(kid, jkuFallbackUrl)`.
+* `verifySignature` and the constructor-time warning are both updated to check `jkuFallbackUrl` alongside the existing `defaultPublicKey`, `jwkManager`, and `namedKeys` fields. Without this, a realm configured with only a fallback URL would skip signature verification and the warning would fire incorrectly.
+
+=== Piece 2 — wildfly-core subsystem change
+
+This piece is new work on the elytron subsystem in https://github.com/wildfly/wildfly-core[wildfly-core]. It depends on Piece 1 being released first, because the subsystem needs the new builder method on its classpath.
+
+* A new `SimpleAttributeDefinition` for `jku-fallback-url` is added to `TokenRealmDefinition.JwtValidatorAttributes` (at `elytron/src/main/java/org/wildfly/extension/elytron/TokenRealmDefinition.java`, in the inner class), marked with `preview` stability.
+* The attribute is registered by including it in the `ATTRIBUTES` array used by the resource definition.
+* In the token-realm resolver (same file, in the service installer around lines 261-341), the attribute value is read from the resolved `ModelNode` and, if present, passed to `jwtValidatorBuilder.setJkuFallbackUrl(...)` alongside the existing builder calls.
+* A new XSD version is added under `elytron/src/main/resources/schema/wildfly-elytron_*.xsd`, with the new attribute on `tokenRealmType`.
+* The `PersistentResourceXMLDescription` mapping for `token-realm` at `RealmParser.java:112-114` already calls `.addAttributes(TokenRealmDefinition.ATTRIBUTES)`, so XML parsing and marshalling are picked up automatically once the attribute is added to the array.
+* Subsystem model tests are added covering attribute registration at preview stability, XML round-trip, and the attribute being unavailable below preview.
+
+== Admin Clients
+
+The JBoss CLI discovers new attributes dynamically through `:read-resource-description`, so `jku-fallback-url` is automatically supported by the generic `:read-attribute` and `:write-attribute` operations on `/subsystem=elytron/token-realm=*`.
+
+== Security Considerations
+
+The fallback URL causes the server to fetch key material over HTTPS, so it reuses the same defenses the token's `jku` header path already has:
+
+* The URL must be listed in `allowed-jku-values`. If it isn't, the validator returns null before any outbound request. This keeps the existing SSRF protection in place.
+* The realm must have a client SSL context configured. Without one, the fallback path returns null.
+* The builder rejects any URL whose scheme is not `https` and throws `IllegalArgumentException`, so an `http://` URL cannot be used to turn off TLS.
+
+One change to existing code is security relevant: the early-return in `verifySignature` that returns `true` when `defaultPublicKey`, `jwkManager`, and `namedKeys` are all empty now also checks `jkuFallbackUrl` (line 189). Without this, a realm configured with only a fallback URL would skip signature verification, resulting in an authentication bypass.
+
+[[test_plan]]
+== Test Plan
+
+Six tests are added to `JwtSecurityRealmTest` in the `tests/base` module of wildfly-elytron:
+
+* `testJkuFallbackResolvesKidWithoutJkuHeader` — happy path: a token with `kid` but no `jku` is resolved via the fallback URL.
+* `testJkuFallbackRejectedWhenNotInAllowedJkuValues` — the fallback URL is not in `allowed-jku-values`, so validation fails closed.
+* `testNamedKeysTakePrecedenceOverJkuFallback` — when the `kid` matches a `namedKeys` entry, that entry is used and the fallback URL is not consulted.
+* `testJkuFallbackUsedWhenKidMissingFromNamedKeys` — when the `kid` is not in `namedKeys`, the fallback URL is used.
+* `testJkuFallbackWithoutSslIsRejected` — fallback URL is set but no SSL context; validation fails closed.
+* `testSetJkuFallbackUrlRejectsInvalidUrl` — builder rejects a non-HTTPS / malformed URL with `IllegalArgumentException`.
+
+Subsystem model tests will be added in wildfly-core once Piece 2 starts.
+
+No integration test with a live mock JWKS server is added at `preview`. That is listed in Future Work as a requirement for promotion to community.
+
+== Community Documentation
+
+Two updates are planned:
+
+* The attribute description in wildfly-core, alongside the existing `token-realm` attribute descriptions.
+* A short addition to https://github.com/wildfly/wildfly/blob/main/docs/src/main/asciidoc/_elytron/Using_the_Elytron_Subsystem.adoc[Using the Elytron Subsystem], covering when to set `jku-fallback-url`, its precedence versus `namedKeys`, and the `allowed-jku-values` requirement.
+
+== Release Note Content
+
+The Elytron `token-realm` gains a new `jku-fallback-url` attribute. When a JWT has a `kid` but no `jku`, the realm fetches keys from the configured URL, so signing-key rotation by OIDC providers no longer requires a server restart. Available at `preview` stability.
