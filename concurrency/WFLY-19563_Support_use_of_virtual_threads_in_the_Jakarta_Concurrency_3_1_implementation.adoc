@@ -41,7 +41,7 @@ This feature enhances WildFly's Jakarta Concurrency 3.1 implementation to suppor
 
 * https://issues.redhat.com/browse/WFLY-19564[WFLY-19564] - Epic: Virtual Threads support in WildFly
 * https://github.com/jakartaee/concurrency/issues/268[Jakarta Concurrency Issue #268] - Support Loom Virtual Threads
-
+* https://redhat.atlassian.net/browse/WFLY-22521[WFLY-22521] - Improve Jakarta Concurrency related documentation wrt virtual threads
 === Affected Projects or Components
 
 * WildFly EE subsystem (ee)
@@ -215,10 +215,10 @@ The `virtual` attribute does not introduce new security-sensitive configuration.
 
 == Community Documentation
 
-This feature will be documented in the WildFly documentation with the following additions:
+This feature will be documented in the WildFly documentation by WFLY-22521, with the following improvements:
 
-* **EE Subsystem Configuration Guide**: Document the new `virtual` attribute for all concurrency resources, including XML configuration examples and CLI commands
-* **Resource Definition Annotations**: Update examples to show the `virtual` attribute usage in `@ManagedExecutorDefinition`, `@ManagedScheduledExecutorDefinition`, and `@ManagedThreadFactoryDefinition`
+* **Admin Guide**: Improve the Jakarta Concurrency section by documenting the new `virtual` attribute for all Jakarta Concurrency resources, which configuration supports it, including XML configuration examples
+* **Developer Guide**: Improve the Jakarta Concurrency section by documenting the requirements for Virtual Threads creation and usage
 
 == Release Note Content
 
