@@ -1,0 +1,177 @@
+= Upgrade security quickstarts
+:author:            Farah Juma
+:email:             fjuma@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+WildFly 25 removed support for legacy security and updated the out of the box configuration so that Elytron
+resources were configured by default instead.
+
+This RFE is to track updates that are needed for the security quickstarts so that they no longer attempt to
+configure resources in the Elytron subsystem that are now present in the out of the box configuration.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-16195[WFLY-16195]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1914[EAP7-1914]
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+The following quickstarts require updates to their CLI scripts:
+
+* servlet-security
+** `configure-server.cli` has a command that adds a `role-decoder` that isn't needed since `Roles` is the default attribute.
+** `configure-server.cli` adds an `application-security-domain` mapping that makes use of an `http-authentication-factory`.
+The referenced `http-authentication-factory` can be removed and this mapping can be updated to reference the `security-domain`
+instead.
+
+* ejb-security-context-propagation
+** `configure-elytron.cli` has a redundant command that sets the `sasl-authentication-factory` in the `http-connector`.
+** Note that `configure-elytron.cli` also adds an `application-security-domain` mapping for "quickstart-domain" in the EJB subsystem.
+This extra configuration isn’t necessary anymore since there's a default `application-security-domain` mapping for "other"
+in the EJB subsystem so that could theoretically be used directly instead. However, we'll leave this as is since it's still useful
+for demonstrating how to use a security domain name other than the default "other".
+
+* helloworld-mutual-ssl
+** One-way SSL is already configured in the out of the box configuration now so some of the commands in `configure-ssl.cli`
+are no longer necessary. Only the commands needed to update the config to two-way SSL are needed.
+
+* helloworld-mutual-ssl-secured
+** One-way SSL is already configured in the default out of the box configuration so some of the commands in `configure-ssl.cli`
+are no longer necessary. Only the commands needed to update the config to two-way SSL and make use of `CLIENT_CERT` auth are needed.
+
+* helloworld-ssl
+** All of the commands in `configure-ssl.cli` are redundant. One-way SSL is already configured in the out of the box
+configuration so these commands aren't necessary. This quickstart will be removed via https://issues.redhat.com/browse/WFLY-16140[WFLY-16140].
+
+* ejb-security-programmatic-auth
+** `configure-elytron.cli` has one redundant command that sets the `sasl-authentication-factory` in the `http-connector`
+even though this is no longer necessary.
+** `configure-elytron.cli` also adds an `application-security-domain` mapping for "quickstart-domain" in the EJB subsystem.
+This extra configuration isn’t necessary anymore since there's a default `application-security-domain` mapping for "other"
+in the EJB subsystem. That could be used directly instead. However, we'll leave this as is since it's still useful
+for demonstrating how to use a security domain name other than the default "other".
+
+* ejb-security
+** The entire configure-elytron.cli script is now redundant. This quickstart will be removed via https://issues.redhat.com/browse/WFLY-16140[WFLY-16140].
+
+* jaxrs-jwt
+** A build issue needs to be fixed ("`dependencies.dependency.version` for `org.jboss.resteasy:resteasy-jaxrs:jar` is missing").
+** Deploying the application fails with the following error because the EJB and Undertow subsystems are mapping "other" to
+different Elytron security domains. This needs to be fixed.
+
+* security-domain-to-domain
+** `configure-server.cli` has a command that adds a `role-decoder` that isn't needed since `Roles` is the default attribute.
+** `configure-server.cli` adds an `application-security-domain` mapping that makes use of an `http-authentication-factory`.
+The referenced `http-authentication-factory` can be removed and this mapping can be updated to reference the `security-domain`
+instead.
+
+The following quickstarts require updates to their READMEs:
+
+* servlet-security
+** The "Review the Modified Server Configuration" section mentions legacy security. Those references need to be removed.
+** The "Server Log: Expected Warnings and Errors" section indicates that a warning will appear in the server log.
+This warning no longer appears so this can now be removed.
+
+* microprofile-jwt
+** In the "Starting from Scratch" section, `<version>${version.wildfly.maven.plugin}</version>` needs to be removed
+from the step that adds the `wildfly-maven-plugin` to the `pom.xml` in order to get the build to succeed.
+** In the "Activating MicroProfile JWT" section, it says to add the `LoginConfig` annotation. However, this is already
+added when creating `App.java` in the "JAX-RS Conversion" section so this step should be removed.
+
+* security-domain-to-domin
+** The README indicates that a warning will appear in the server log. This warning no longer appears so this section
+should be removed.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Backwards Compatibility
+
+// Does this enhancement affect backwards compatibility with previously released
+// versions of WildFly?
+// Can the identified incompatibility be avoided?
+
+=== Default Configuration
+
+=== Importing Existing Configuration
+
+=== Deployments
+
+=== Interoperability
+
+//== Implementation Plan
+////
+Delete if not needed. The intent is if you have a complex feature which can 
+not be delivered all in one go to suggest the strategy. If your feature falls 
+into this category, please mention the Release Coordinators on the pull 
+request so they are aware.
+////
+
+== Security Considerations
+
+////
+Identification if any security implications that may need to be considered with this feature
+or a confirmation that there are no security implications to consider.
+////
+
+== Test Plan
+
+On the engineering side, manual verification will be done by following
+the steps from the quickstart READMEs.
+
+== Community Documentation
+////
+Generally a feature should have documentation as part of the PR to wildfly master, or as a follow up PR if the feature is in wildfly-core. In some cases though the documentation belongs more in a component, or does not need any documentation. Indicate which of these will happen.
+////
+== Release Note Content
+////
+Draft verbiage for up to a few sentences on the feature for inclusion in the
+Release Note blog article for the release that first includes this feature. 
+Example article: http://wildfly.org/news/2018/08/30/WildFly14-Final-Released/.
+This content will be edited, so there is no need to make it perfect or discuss
+what release it appears in.  "See Overview" is acceptable if the overview is
+suitable. For simple features best covered as an item in a bullet-point list 
+of features containing a few words on each, use "Bullet point: <The few words>" 
+////
+The security related quickstarts have been updated to work properly with the new out of the box configuration.
