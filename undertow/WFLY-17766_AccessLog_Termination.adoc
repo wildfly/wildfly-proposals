@@ -1,0 +1,120 @@
+= [Preview] Add ability to configure access log termination schedule and delay
+:author:            Bartosz Baranowski
+:email:             bbaranow@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This RFE(https://issues.redhat.com/browse/WFLY-17766[WFLY-17766]) is part of bug fix for https://issues.redhat.com/browse/WFLY-13933[WFLY-13933] / https://issues.redhat.com/browse/JBEAP-20056[JBEAP-20056] . In order to avoid bad user experience and possible follow up, it would be
+good to allow configuration of write termination delay. Fix, in both issues is split into functional commit and second RFE commit - which adds functionality and model changes.
+
+Fix commit include only changes to allow graceful takeover of access log write operation. During runtime write ops are being handled by NIO thread. This thread on shutdown is terminated abruptly due to: https://issues.redhat.com/browse/WFCORE-1632[WFCORE-1632]
+To mitigate this problem first commit fix contractual requirements for access log classes and shifts burden of termination from NIO worker - just like other WFLY services that do async close.
+Async close will wait till aloted time( with interim checks ) runs off to take over agressively write OPs or until NIO worker yield. As is, in fix number of interim checks and wait period is fixed(interim_period*number_of_retries).
+
+RFE commits add changes to model and services in order to allow configuration of:
+ - number of retries between NIO worker state polls
+ - interim period
+ 
+NOTE: fix also slightly change how access log is being rotated. Previously it has been done on every write OP, which incurred overhead.
+
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-17766[WFLY-17766]
+* https://issues.redhat.com/browse/WFLY-13933[WFLY-13933]
+* https://issues.redhat.com/browse/JBEAP-20056[JBEAP-20056]
+* https://issues.redhat.com/browse/UNDERTOW-1794[UNDERTOW-1794]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/EAP7-1642[EAP7-1642]
+* 
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [X] Preview
+
+* [ ] Community
+
+* [ ] default
+
+=== Dev Contacts
+
+* mailto:{email}[{author}]
+
+=== QE Contacts
+
+* mailto:msvehla@redhat.com[Martin Svehla]
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE. 
+// Discuss with QE during the Kickoff state to decide this
+* [ ] Engineering
+
+* [x] QE
+
+=== Affected Projects or Components
+
+Undertow and WFLY
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+Allow configuration of number of retries and delay between each access log write operations are taken forcefuly from NIO thread worker.
+Parameters will be present in access-log element(for standalone: /subsystem=undertow/server=default-server/host=default-host/setting=access-log):
+* close-retry-count
+** Default: 150
+** Type: int
+** Description: number of times closing thread will poll state of NIO Worker thread for latter to cease operations
+* close-retry-delay
+** Default: 200
+** Type: int
+** Description: Delay in 'ms' between poll to NIO Worker thread
+
+Resource close will wait maximum of (close-retry-count*close-retry-delay)/1000 seconds before assuming faulty close and attempt to take over forcefuly.
+
+=== Nice-to-Have Requirements
+
+=== Non-Requirements
+
+== Implementation Plan
+
+Already done.
+
+== Test Plan
+ 
+Testing will only be possible with byteman or forced breakpoints as it is timing issue and can not be reliably reproduced in simple JUnit.
+
+== Community Documentation
+
+This will require documentation update on undertow access-log service( https://docs.wildfly.org/22/Admin_Guide.html#console-access-logging ? ) as RFE adds two new options. Both are described in undertow/src/main/resources/org/wildfly/extension/undertow/LocalDescriptions.properties under:
+- undertow.access-log.close-retry-count
+- undertow.access-log.close-retry-delay
+
+Furthermore it would be beneficial to detail that during runtime access-log write OPs are being handled by IO threads, which sadly are terminated as first. Thus during shutdown this particular IO is being taken over to allow continuity.
+ 
+ 
+== Release Note Content
+
+Ability to gracefully shutdown access log writes so no entries are lost, along with improvement to access log to obey Closeable contract.
