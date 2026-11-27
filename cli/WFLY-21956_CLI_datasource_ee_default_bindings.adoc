@@ -1,0 +1,198 @@
+---
+categories:
+  - cli
+  - jca
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/WFLY-21956
+feature-team:
+ developer: jfdenise
+ sme:
+  - TBD
+ outside-perspective:
+  - TBD
+---
+= CLI datasource commands: manage EE default-bindings in a single composite operation
+:author:            Jean-Francois Denise
+:email:             jfdenise@ibm.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+This proposal extends the WildFly CLI built-in datasource commands (`data-source` and
+`xa-data-source`) to allow users to manage the EE default datasource reference
+(`/subsystem=ee/service=default-bindings:datasource`) in the same atomic composite
+operation as adding or removing a datasource.
+
+Before this change, a user who wanted to designate a newly created datasource as the
+application server's default datasource — or who wanted to safely remove a datasource
+that was currently set as the default — had to issue two separate management operations.
+This is error-prone: the configuration can be left in an
+inconsistent state.
+
+== Issue Metadata
+
+=== Issue
+
+* https://issues.redhat.com/browse/WFLY-21956[WFLY-21956]
+
+=== Related Issues
+
+None.
+
+=== Affected Projects or Components
+
+* https://github.com/wildfly/wildfly-core[WildFly Core] project — CLI module.
+
+=== Other Interested Projects
+
+None.
+
+=== Relevant Installation Types
+
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [x] Managed domain
+
+* [x] OpenShift s2i
+
+* [x] Bootable jar
+
+== Requirements
+
+Users must be able to add or remove a datasource and manage its EE default datasource 
+reference (`/subsystem=ee/service=default-bindings:datasource`) in a single atomic operation.
+
+=== Hard Requirements
+
+* Add a `--set-default-datasource` flag to the `data-source add` composite command.
+  When set, a `write-attribute` step targeting
+  `/subsystem=ee/service=default-bindings:datasource` is appended to the existing
+  composite operation, writing the datasource's `jndi-name` as the new EE default.
+  The `--jndi-name` argument is required when `--set-default-datasource` is used. Any existing default datasource is overwritten.
++
+[source,shell]
+----
+data-source add --name=MyDS --jndi-name=java:/MyDS \
+    --driver-name=h2 --connection-url=jdbc:h2:mem:test \
+    --set-default-datasource
+----
+
+* Add a `--set-default-datasource` flag to the `xa-data-source add` composite command,
+  with the same behaviour as above for XA datasources.
+
+* Add a `--unset-if-default-datasource` flag to both the `data-source remove` and
+  `xa-data-source remove` commands. When set, the command:
+  1. Reads the current value of `/subsystem=ee/service=default-bindings:datasource`.
+  2. Reads the `jndi-name` of the datasource being removed.
+  3. If they match, prepends an `undefine-attribute` step for the
+     `datasource` attribute on `/subsystem=ee/service=default-bindings` before the
+     regular `remove` step, all within the same composite operation.
+  4. If the datasource being removed is _not_ the current EE default, or no default is
+     configured, the flag has no effect and the operation proceeds unchanged.
++
+[source,shell]
+----
+data-source remove --name=MyDS --unset-if-default-datasource
+----
+
+* The domain mode must be supported transparently: when the CLI is connected in domain
+  mode and the command is profile-aware, the EE default-bindings address is prefixed
+  with `/profile=<name>` as required.
+
+* No change to existing behaviour when the new flags are absent; full backwards
+  compatibility is preserved.
+
+=== Implementation Notes
+
+All changes are confined to the CLI module inside `wildfly-core`. The implementation
+follows the existing datasource command implementation structure.
+
+=== Non-Requirements
+
+* There is no requirement to manage the EE `jms-connection-factory`, `jta-data-source`
+  or other default-bindings attributes through these commands. Only `datasource` is in
+  scope.
+* There is no requirement to verify that the EE subsystem or
+  `/subsystem=ee/service=default-bindings` resource exists before issuing the composite.
+  If the resource is absent the composite step will fail and the whole composite will
+  roll back, which is the expected behaviour.
+
+=== Future Work
+
+* NONE
+
+== Backwards Compatibility
+
+The new flags are purely additive. No existing command syntax is changed. Scripts that
+do not use the new flags behave identically to before.
+
+=== Default Configuration
+
+No impact.
+
+=== Importing Existing Configuration
+
+No impact.
+
+=== Deployments
+
+No impact.
+
+=== Interoperability
+
+No impact.
+
+== Admin Clients
+
+The management CLI (`jboss-cli.sh` / `jboss-cli.bat`) is the only admin client affected.
+The HAL web console is not affected.
+
+== Security Considerations
+
+The new steps in the composite operation (a `write-attribute` or `undefine-attribute`
+on `/subsystem=ee/service=default-bindings`) are governed by the same RBAC rules as
+any other write to that resource. Users without write permission to the EE subsystem
+will receive the same `WFLYCTL0313` authorization failure they would get if they issued
+the management operation directly.
+
+== Test Plan
+
+New integration tests should be added to the WildFly testsuite covering:
+
+* `data-source add --set-default-datasource` — verify the EE default binding is set
+  after the composite succeeds.
+* `data-source add --set-default-datasource` without `--jndi-name` — verify the
+  `CommandFormatException` is thrown before the operation is sent.
+* `data-source remove --unset-if-default-datasource` where the datasource **is** the
+  current EE default — verify both the resource removal and the attribute undefinition
+  happen atomically.
+* `data-source remove --unset-if-default-datasource` where the datasource is **not**
+  the current EE default — verify only the `remove` step is executed.
+* `data-source remove --unset-if-default-datasource` where no EE default is configured —
+  verify the operation proceeds without error.
+* `xa-data-source add --set-default-datasource` and
+  `xa-data-source remove --unset-if-default-datasource` — same coverage as above for XA.
+* Domain mode — verify the EE default-bindings address is correctly prefixed with the
+  profile when running against a domain controller.
+
+== Community Documentation
+
+* The WildFly CLI User Guide section on datasource commands should be updated to
+  document the two new flags and include the example CLI invocations above.
+* The `--help` output of both `data-source` and `xa-data-source` commands is
+  automatically generated and will reflect the new flags without further documentation changes.
+
+== Release Note Content
+
+The WildFly CLI `data-source add` and `xa-data-source add` commands now accept a
+`--set-default-datasource` flag that designates the newly created datasource as the
+EE default datasource (`/subsystem=ee/service=default-bindings`) in a single atomic
+composite operation.
+
+The `data-source remove` and `xa-data-source remove` commands now accept a
+`--unset-if-default-datasource` flag that automatically clears the EE default
+datasource reference when removing a datasource that is currently set as the default,
+again in a single atomic composite operation.
