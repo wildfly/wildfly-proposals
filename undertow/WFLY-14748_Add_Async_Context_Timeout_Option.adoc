@@ -1,0 +1,174 @@
+---
+categories:
+ - undertow
+stability-level: preview
+issue: https://github.com/wildfly/wildfly-proposals/issues/672
+---
+= [WFLY-14748] Hard-coded timeout for asynchronous HTTP requests - add async context timeout undertow option
+:author:            Richard Opalka
+:email:             ropalka@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+At present the default asynchronous context timeout for Undertow asynchronous operations is hard coded.
+There is a high demand from users to make it configurable. To achieve this we need to
+add default asynchronous context timeout option for Servlet container in Undertow subsystem.
+
+== Issue
+
+* https://issues.redhat.com/browse/WFLY-14748[WFLY-14748]
+
+=== Stability Level
+// Choose the planned stability level for the proposed functionality
+* [ ] Experimental
+
+* [*] Preview
+
+* [ ] Community
+
+* [ ] Default
+
+=== Dev Contacts
+
+* mailto:ropalka@redhat.com[Richard Opalka]
+
+=== QE Contacts
+
+=== Testing By
+// Put an x in the relevant field to indicate if testing will be done by Engineering or QE.
+// Discuss with QE during the Kickoff state to decide this
+* [*] Engineering
+
+* [ ] QE
+
+=== Affected Projects or Components
+
+* WildFly
+
+=== Other Interested Projects
+
+N/A
+
+=== Relevant Installation Types
+// Remove the x next to the relevant field if the feature in question is not relevant
+// to that kind of WildFly installation
+* [x] Traditional standalone server (unzipped or provisioned by Galleon)
+
+* [ ] Managed domain
+
+* [ ] OpenShift s2i
+
+* [ ] Bootable jar
+
+== Requirements
+
+=== Hard Requirements
+
+Optional "default-async-context-timeout" attribute will be added to the
+<servlet-container/> element in the Undertow subsystem.
+If the attribute will not set it will default to "30000" miliseconds
+which is current hardcoded value.
+
+The resulting resource will look like:
+
+[source]
+----
+/subsystem=undertow/servlet-container=default:read-resource(include-defaults=true)
+{
+    "outcome" => "success",
+    "result" => {
+        "allow-non-standard-wrappers" => false,
+        "allow-orphan-session" => false,
+        "default-async-context-timeout" => 60000,
+        "default-buffer-cache" => "default",
+        "default-cookie-version" => 0,
+        "default-encoding" => undefined,
+        "default-session-timeout" => 30,
+        "directory-listing" => undefined,
+        "disable-caching-for-secured-pages" => true,
+        "disable-file-watch-service" => false,
+        "disable-session-id-reuse" => false,
+        "eager-filter-initialization" => false,
+        "file-cache-max-file-size" => 10485760,
+        "file-cache-metadata-size" => 100,
+        "file-cache-time-to-live" => undefined,
+        "ignore-flush" => false,
+        "max-sessions" => undefined,
+        "preserve-path-on-forward" => false,
+        "proactive-authentication" => true,
+        "session-id-length" => 30,
+        "stack-trace-on-error" => "local-only",
+        "use-listener-encoding" => false,
+        "mime-mapping" => undefined,
+        "setting" => {
+            "jsp" => undefined,
+            "websockets" => undefined
+        },
+        "welcome-file" => undefined
+    }
+}
+----
+
+When persisted to the configuration file the resulting XML will look like:
+
+[source,xml]
+----
+<servlet-container name="default" default-async-context-timeout="60000">
+    <jsp-config/>
+    <websockets/>
+</servlet-container>
+----
+
+=== Nice-to-Have Requirements
+
+N/A
+
+=== Non-Requirements
+
+N/A
+
+=== Future Work
+
+No future work is planned.
+
+== Backwards Compatibility
+
+=== Default Configuration
+
+There will be no changes in default server configs - default will apply.
+
+=== Importing Existing Configuration
+
+N/A
+
+=== Deployments
+
+N/A
+
+=== Interoperability
+
+N/A
+
+== Admin Clients
+
+New attribute in preview mode will be added in "servlet-container" management model.
+
+== Security Considerations
+
+This feature will not introduce new security issues.
+
+== Test Plan
+
+Single test will be created to test default and newly configured value and will check if asynchronous context timeout will be changed accordingly.
+
+== Community Documentation
+
+No additional documentation is needed. New attribute will be documented in Undertow subsystem schema document.
+
+== Release Note Content
+
+N/A
