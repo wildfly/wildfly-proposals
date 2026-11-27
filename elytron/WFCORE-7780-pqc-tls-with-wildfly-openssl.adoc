@@ -1,0 +1,1174 @@
+---
+categories:
+  - elytron
+  - security
+stability-level: default
+issue: https://github.com/wildfly/wildfly-proposals/issues/892
+feature-team:
+ developer: darranl
+ sme:
+  -
+ outside-perspective:
+  -
+promotes: []
+promoted-by: []
+follows-up-on: []
+followed-up-by: []
+---
+
+= Add PQC support for TLS using the WildFly OpenSSL Integration
+:author:            Darran Lofthouse
+:email:             darran.lofthouse@jboss.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+NOTE: This is a first draft. Sections that depend on decisions or investigations that have not yet been made are marked
+and collected in <<open-questions,Open Questions and Areas for Investigation>>.
+
+NOTE: This document uses many cryptography acronyms, and the same thing is often named differently by TLS, OpenSSL and
+Java. See the <<glossary,Glossary>> for the terms, and <<reading-cipher-suites,Reading cipher suite names>> for how to
+interpret a cipher suite string.
+
+== Overview
+
+Post-quantum cryptography (PQC) protects TLS connections against an attacker who records traffic today and decrypts it
+later using a quantum computer. In TLS 1.3 this affects two things. The first is key exchange, where hybrid groups such as
+`X25519MLKEM768` combine a classical elliptic curve exchange with the ML-KEM algorithm so that a connection remains
+protected if either algorithm is later broken. The second is authentication, where certificates signed with ML-DSA allow
+the identity of a peer to be verified without relying on RSA or elliptic curve signatures. Neither is selected through
+a TLS cipher suite; both are negotiated through the key exchange groups and signature algorithms that each peer offers.
+
+WildFly can delegate TLS to a native OpenSSL library using the WildFly OpenSSL integration, which is made available to
+Elytron as an alternative TLS provider. Support for these algorithms is therefore provided by the OpenSSL library in use
+(OpenSSL 3.5 and later) rather than by the JDK. This proposal covers the work needed so that WildFly OpenSSL can make
+use of those capabilities, can be configured to use them in a controlled way, and is tested to do so.
+
+Reviewing the current WildFly OpenSSL code shows several gaps that this work must address:
+
+* There is no way to configure the key exchange groups, or the signature algorithms, offered by an endpoint. Any hybrid
+  key exchange that happens today is purely a consequence of the defaults of the OpenSSL library that has been loaded.
+* Server certificates are loaded from the Java key manager only for the `RSA` and `DSA` key types. Keys of type `EC` are
+  not loaded at all, and the native certificate handling is organised around a small fixed set of key type slots, none of
+  which is intended for a post-quantum key type.
+* Peer certificates are handed back to Java as X.509 certificates and the trust decision is made by the configured Java
+  trust manager, so how certificates with post-quantum keys and signatures are parsed and verified needs to be understood.
+
+The pure Java TLS implementation provided by the JDK is a separate piece of work and is not covered here.
+
+=== User Stories
+
+* As an administrator using the OpenSSL TLS provider, I want connections between my server and capable peers to use a
+  hybrid post-quantum key exchange so that recorded traffic cannot be decrypted later.
+* As an administrator with a mixed population of clients, I want to enable post-quantum key exchange without breaking
+  clients that do not support it, and later change to a configuration that refuses to connect without it.
+* As an administrator, I want to be able to configure which key exchange groups my server and client contexts use, and to
+  be told clearly if the OpenSSL library installed on the machine cannot support what I have asked for.
+* As an administrator, I want my server to present an ML-DSA certificate, and optionally to present both a classical
+  certificate chain and an ML-DSA chain so that the right one is selected based on what each client supports.
+* As an application developer, I want outbound connections made with the OpenSSL provider to be able to accept a server
+  that presents an ML-DSA certificate.
+* As an administrator or tester, I want to be able to verify what was actually negotiated for a connection.
+
+== Issue Metadata
+
+=== Issue
+
+* https://redhat.atlassian.net/browse/WFCORE-7780[WFCORE-7780]
+
+=== Related Issues
+
+* https://issues.redhat.com/browse/WFCORE-4842[WFCORE-4842] - TLS 1.3 support when using the OpenSSL TLS provider.
+* https://issues.redhat.com/browse/WFLY-15274[WFLY-15274] - Support for OpenSSL 3.
+
+Further issues will be linked here as they are created, for example for the native library and test changes. The
+<<configuration-approach,Configuration Approach>> and the <<issues-to-create,Issues To Be Created>> table identify the
+issues that are known to be needed.
+
+=== Affected Projects or Components
+
+The set of affected projects is not yet confirmed; see the open questions.
+
+* https://github.com/wildfly-security/wildfly-openssl[wildfly-openssl]
+* https://github.com/wildfly-security/wildfly-openssl-natives[wildfly-openssl-natives]
+* https://github.com/wildfly/wildfly-core[wildfly-core] (Elytron subsystem)
+* https://github.com/wildfly-security/wildfly-elytron[wildfly-elytron] (SSL context creation and the authentication client)
+* https://github.com/wildfly-security/wildfly-security-testsuite[wildfly-security-testsuite] (configuration driven TLS
+  tests)
+* https://github.com/wildfly/wildfly[wildfly] (documentation)
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+The OpenSSL TLS provider is an optional provider that depends on a native library being available on the machine. The
+relevance of each installation type is to be confirmed.
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+The requirements below are proposed and still to be agreed.
+
+=== Hard Requirements
+
+* When the OpenSSL TLS provider is used, and the loaded OpenSSL library supports it, a TLS 1.3 connection between two
+  peers that both support a hybrid post-quantum group must be able to negotiate that group.
+* Connections with peers that do not support a post-quantum group must continue to work, falling back to a classical
+  group, unless the administrator has chosen a configuration that requires post-quantum key exchange.
+* An administrator must be able to choose, for server and client SSL contexts that use the OpenSSL provider, whether
+  post-quantum key exchange is not used, is preferred, or is required, and whether post-quantum signatures are not used,
+  are preferred or are required. A required value must have the same meaning on a server and on a client.
+* An administrator must be able to configure the key exchange groups, and their order of preference, used by server and
+  client SSL contexts that use the OpenSSL provider. The form of this configuration is described in the
+  <<configuration-approach,Configuration Approach>>.
+* When a required value is configured TLS 1.2 and earlier must not be used, and a warning must be logged when this is
+  applied. This applies whether the value came from the provider configuration or from a system property.
+* Where the provider cannot be given configuration, for example for clients configured outside the management model, an
+  administrator must still be able to set the policy for the whole JVM using system properties. Where both are present
+  the provider configuration takes precedence.
+* Server certificates with `EC` keys must be supported when using the OpenSSL provider. This is a pre-requisite for the
+  following items and is useful in its own right.
+* A server using the OpenSSL provider must be able to use a certificate with an ML-DSA key.
+* A server using the OpenSSL provider must be able to hold both a classical certificate chain and an ML-DSA certificate
+  chain at the same time and use the one that matches the signature algorithms offered by the client.
+* A client using the OpenSSL provider must be able to accept a server certificate with an ML-DSA key and signature.
+* Where the requested configuration depends on capabilities of the OpenSSL library that are missing from the version
+  loaded, this must be detected and reported clearly, and must not result in a silent loss of the requested protection.
+* The above must be usable with Java 17, 21 and 25. Because TLS is performed by OpenSSL the JDK does not need to provide
+  any post-quantum algorithms for the handshake itself, but how keys and certificates are held in, and obtained from,
+  a Java key store on each of these JDKs must be considered.
+
+=== Nice-to-Have Requirements
+
+* Enabling post-quantum key exchange automatically whenever the OpenSSL provider is in use, so that no configuration is
+  needed to obtain the default behaviour. See the open questions regarding compatibility.
+* Exposing the group and signature algorithm that were negotiated for a connection through the `SSLSession`.
+
+=== Non-Requirements
+
+* FIPS mode is not covered.
+* A pure Java (JSSE) implementation of post-quantum TLS is not covered; that depends on the JDK.
+* This proposal does not change which TLS provider is used by default.
+* Cipher suites do not need to change. The TLS 1.3 cipher suites in use are independent of the key exchange and signature
+  algorithms.
+
+=== Future Work
+
+* Support for post-quantum TLS using the JDK once the necessary JDK capabilities are available in the JDKs supported by
+  WildFly.
+* Any equivalent support in an alternative native binding (for example one using the Java Foreign Function and Memory
+  API) should be able to reuse the configuration model introduced here.
+
+[[configuration-approach]]
+== Configuration Approach
+
+This section describes how the post-quantum behaviour of the OpenSSL provider is configured: the settings, how they
+reach the provider, what each value means, and what happens when the requested behaviour cannot be provided.
+
+NOTE: The setting names and values are proposed and may change before implementation. Where the approach needs new code
+that is a piece of work in its own right, a callout marked *Issue to be created* identifies it. All of these are collected
+in <<issues-to-create,Issues To Be Created>>.
+
+=== Principles
+
+* *No new management model attributes.* The configuration is passed through the OpenSSL provider using the existing
+  `configuration` attribute of the Elytron `provider-loader` resource. An `ssl-context` selects the provider, and with
+  it the configuration, using its existing `providers` attribute.
+* *Two independent settings.* In TLS 1.3 the key exchange and the authentication are separate, so there is one setting
+  for the key exchange (the *key exchange policy*) and one for the signature algorithms (the *signature policy*). They
+  can be introduced and adopted independently.
+* *Named values describe categories, not algorithms.* New algorithms will appear, so the named values are defined by
+  category (classical, hybrid, pure post-quantum). The library resolves a value to the concrete groups and signature
+  algorithms that the OpenSSL library in use supports for that category. Explicit lists can also be configured where
+  precise control is needed.
+* *A JVM-wide fallback.* Every setting except `name` can also be set with a system property, which is used when the
+  provider is given no value for it. This covers clients and releases that cannot pass configuration to the provider.
+  The provider configuration takes precedence. See <<configuration-resolution,Resolving a setting>>.
+* *Fail rather than silently weaken.* If the OpenSSL library cannot provide something that has been configured as
+  post-quantum, that is always an error. The word "fallback" in this document means only negotiation fallback, where
+  the _peer_ does not support post-quantum algorithms.
+* *The same meaning on a client and a server.* A `required` value means that classical-only algorithms are neither
+  offered nor accepted, whichever role the context has. On a client this is what protects against a downgrade by an
+  attacker in the path.
+* *Visible.* Every message logged by the provider, and by the objects it creates, includes the provider name, and the
+  effective configuration is logged when the provider is configured.
+
+=== Passing the configuration to the provider
+
+Elytron creates the `SSLContext` itself and initialises it with its own key and trust managers, so there is no
+per-context channel through the JSSE API that WildFly controls. The provider is the one place where configuration can be
+supplied per `ssl-context` without changing Elytron or the management model.
+
+A `provider-loader` resource is loaded independently of any other, so several `provider-loader` resources that refer to
+the same module but have different `configuration` produce independent provider instances. Each `ssl-context` selects
+the instance it wants with `providers`, which gives a different policy for each `ssl-context`, for servers and clients.
+
+The provider accepts the configuration however Elytron delivers it. The same parser and validation is used for each:
+
+[cols="3,3,2",options="header"]
+|===
+| `provider-loader` form | How Elytron passes the configuration | Can the provider name be set?
+
+| `class-names` with `configuration` or `path`
+| Through a constructor taking an `InputStream`, tried first.
+| Yes
+
+| `class-names` with `configuration` or `path`, where there is no such constructor
+| Through `configure(String)`, which returns the provider to use.
+| Yes
+
+| `module` only (the form used today)
+| Through `load(InputStream)` after the provider has been discovered with the service loader.
+| No, the name stays `openssl`
+|===
+
+The provider name appears in all logging, so that the output of several instances can be told apart. This is only
+possible where the name can be set, so a deployment with more than one instance should use the `class-names` form.
+
+[IMPORTANT]
+.Issue to be created: I-1, provider configuration
+====
+`OpenSSLProvider` currently has only a no-argument constructor and ignores configuration. New code is needed in
+*wildfly-openssl* so that the provider:
+
+* accepts configuration through each of the three forms above and parses it with a single parser;
+* supports a configurable provider name;
+* rejects unknown keys and values when the configuration is loaded, so that a typo cannot silently weaken a `required`
+  configuration (Elytron fails the start of the resource that uses the provider);
+* does not merge the configuration into the provider's own property map, as the default `load` behaviour does;
+* passes the configuration to each `SSLContext` implementation it creates, so that the state belongs to the provider
+  instance and not to static fields; and
+* includes the provider name in all logging, and logs the effective configuration.
+====
+
+=== Settings
+
+Keys are written in lower case with dashes and contain no dots. Every key except `name` can also be given as a system
+property, see <<configuration-resolution,Resolving a setting>>.
+
+[cols="2,5",options="header"]
+|===
+| Key | Meaning
+
+| `name`
+| The provider name, which defaults to `openssl`. Only available where the provider is created with `class-names`.
+
+| `kex-policy`
+| The key exchange policy. See below.
+
+| `signature-policy`
+| The signature policy. See below. Delivered after the key exchange policy, with the ML-DSA certificate support.
+
+| `groups`
+| An ordered list of key exchange groups, using the OpenSSL names, for example `X25519MLKEM768:X25519`. Overrides the
+  groups that `kex-policy` would resolve to.
+
+| `signature-algorithms`
+| An ordered list of signature algorithms. Overrides the algorithms that `signature-policy` would resolve to.
+|===
+
+==== Key exchange policy
+
+[cols="2,4,2,2",options="header"]
+|===
+| `kex-policy` | Offers and accepts | Required capability | TLS 1.3 only
+
+| `classical`
+| Classical groups only. Post-quantum groups are not offered.
+| None
+| No
+
+| `hybrid-preferred`
+| Hybrid groups are offered first and classical groups are still accepted, so a peer without hybrid support is served
+  with a classical group (negotiation fallback). A TLS 1.2 connection stays classical, as TLS 1.2 cannot carry a
+  post-quantum exchange.
+| Hybrid key exchange
+| No
+
+| `hybrid-required`
+| Hybrid groups only. There is no negotiation fallback: the handshake fails if the peer has no hybrid group.
+| Hybrid key exchange
+| Yes
+
+| _name to be decided_ (for example `pqc-only`)
+| Hybrid is turned off. Only pure ML-KEM groups are offered and accepted.
+| Pure ML-KEM key exchange
+| Yes
+|===
+
+==== Signature policy
+
+[cols="2,4,2,2",options="header"]
+|===
+| `signature-policy` | Offers and accepts | Required capability | TLS 1.3 only
+
+| `classical`
+| Classical signature algorithms only.
+| None
+| No
+
+| `pqc-preferred`
+| ML-DSA is offered first and classical algorithms are still accepted, so that a server holding both a classical and an
+  ML-DSA certificate chain can serve whichever the client supports.
+| ML-DSA signatures
+| No
+
+| `pqc-required`
+| ML-DSA only. There is no negotiation fallback: the handshake fails if the peer does not support it.
+| ML-DSA signatures
+| Yes
+|===
+
+The two settings combine freely, for example `hybrid-required` key exchange with `classical` signatures while ML-DSA
+certificates are not yet available. A value that is not set resolves as described in
+<<configuration-resolution,Resolving a setting>>.
+
+A *category* resolves to a set of concrete groups or algorithms. A hybrid category must never include a classical-only
+entry, and a `required` value whose category resolves to an empty set is an error. Because what a category contains
+depends on the OpenSSL library in use, the resolved lists are logged with the provider name when the provider is
+configured. An explicit `groups` or `signature-algorithms` list gives behaviour that is pinned to exactly what was
+written.
+
+==== How `required` is enforced
+
+A `required` value is enforced by what is offered and accepted, identically on both sides, and no code that inspects
+the peer is needed:
+
+* The list of groups (and signature algorithms) contains no classical entries, and the minimum protocol is TLS 1.3.
+* A client therefore offers only post-quantum groups, so a peer, or an attacker in the path, cannot cause a classical
+  exchange to be used.
+* A server that is contacted by a client with no group in common fails the handshake.
+
+This relies on the OpenSSL library failing the handshake when there is no group in common, rather than retrying with
+another group. That is to be confirmed by test.
+
+[IMPORTANT]
+.Issue to be created: I-2, setting groups and signature algorithms
+====
+There is no way today to set the key exchange groups or the signature algorithms; no native method exists for either.
+New code is needed in *wildfly-openssl-natives* (a native method that applies the group list, and the signature
+algorithm list, to the SSL context) and in *wildfly-openssl* (the JNI declaration and its use from the `SSLContext` and
+`SSLEngine` implementations). This builds on the ongoing work to clean up the native interface.
+====
+
+[IMPORTANT]
+.Issue to be created: I-3, resolving a policy to groups and signature algorithms
+====
+New code is needed in *wildfly-openssl* to map each named value to the groups and signature algorithms, in its category,
+that the OpenSSL library in use supports; to apply explicit lists; to reject a `required` value that resolves to
+nothing; and to log the resolved lists.
+====
+
+==== Required values and TLS 1.2
+
+Post-quantum key exchange and signatures exist only in TLS 1.3, so any `required` value, and the strictest key exchange
+value, can only be honoured when TLS 1.3 is used. If an `ssl-context` also allowed TLS 1.2 then a peer could use it to
+avoid the post-quantum requirement.
+
+When a `required` value is in effect the provider therefore automatically disables TLS 1.2 and earlier and offers TLS 1.3
+only. This is done so that existing configurations continue to work without the administrator having to edit the
+`protocols` of every `ssl-context` that uses the provider. A *warning is logged when the provider is configured* whenever
+this applies, naming the provider, the value that caused it and the source of that value. For example:
+
+----
+WARN  Provider 'openssl-required': kex-policy 'hybrid-required' (provider configuration) requires TLS 1.3. TLS 1.2 and
+earlier are disabled for SSL contexts that use this provider.
+----
+
+The restriction is applied in two places, so that it cannot be bypassed:
+
+* The provider offers only the TLS 1.3 `SSLContext` implementation. Elytron selects an implementation from those that the
+  provider offers, so an `ssl-context` with no `protocols`, or with a list that includes TLS 1.3, ends up using TLS 1.3.
+* Each engine created from the provider refuses to enable any protocol earlier than TLS 1.3, whatever is requested through
+  the standard Java APIs.
+
+The consequences are:
+
+* A client that supports only TLS 1.2 cannot connect to a server that has a `required` value. This is the purpose of the
+  setting.
+* An `ssl-context` whose `protocols` allows only TLS 1.2 or earlier cannot be satisfied. It fails to start; it is not
+  silently weakened.
+* The provider is only able to log a warning when it is configured, because the `protocols` of the `ssl-context` are not
+  visible to it. The warning is therefore logged whenever a `required` value is configured, whether or not any
+  `ssl-context` that uses the provider would have enabled TLS 1.2.
+
+NOTE: The alternative that was considered was to reject an `ssl-context` that allows TLS 1.2 together with a `required`
+value, which requires the administrator to set `protocols` to TLS 1.3 explicitly. It makes the conflict explicit, but
+causes configurations to fail to start, and would depend on how Elytron orders its protocol selection. The automatic
+restriction with a warning was chosen as the compromise. Should it prove to hide mistakes in practice, the stricter
+behaviour could be offered as an option later.
+
+[IMPORTANT]
+.Issue to be created: I-4, TLS 1.3 only for required values
+====
+New code is needed in *wildfly-openssl* to offer only the TLS 1.3 `SSLContext` implementation, and to restrict the
+protocols that an engine can enable, when a `required` value is in effect, and to log the warning above. Elytron's
+protocol selection order, and the failure when no implementation matches the `protocols` of the `ssl-context`, need to be
+verified by test as part of it.
+
+If the failure message produced by Elytron when no implementation matches is not clear enough, a further issue is needed
+in *wildfly-elytron* or *wildfly-core* to improve it. Whether that is needed will be known after the verification.
+====
+
+=== Capability checking
+
+The native library reports the capabilities of the OpenSSL library that has been loaded: whether it supports hybrid key
+exchange, pure ML-KEM key exchange and ML-DSA signatures, and its version. A native function that is missing from an
+older OpenSSL release is handled in the same general way, and is not left to fail at the first call.
+
+If any configured value asks for post-quantum behaviour, including the `preferred` values and any explicit list that names
+a post-quantum entry, and the OpenSSL library does not have the capability, the provider fails. It does not degrade to a
+lower level. The failure message names the provider and the capability that is missing, and Elytron reports it as the
+failure of the `ssl-context` that uses the provider. An administrator who does not want post-quantum behaviour
+configures the `classical` value.
+
+[IMPORTANT]
+.Issue to be created: I-5, capability detection
+====
+New code is needed in *wildfly-openssl-natives* and *wildfly-openssl* to detect, and report to Java, the OpenSSL
+version and whether hybrid key exchange, pure ML-KEM key exchange and ML-DSA signatures are available, and to handle
+native functions that are missing from older OpenSSL releases.
+====
+
+[[configuration-resolution]]
+=== Resolving a setting
+
+Each setting is resolved independently, in this order:
+
+. The configuration passed to the provider.
+. A system property with the same key and values.
+. The library default, which is the behaviour of the OpenSSL library as it is today.
+
+So a provider that configures only `kex-policy` still uses a `signature-policy` set by a system property. The system
+property names are under the existing `org.wildfly.openssl` prefix, for example `org.wildfly.openssl.kex-policy`, and
+the names are to be confirmed. The same parser and validation apply, so an unrecognised value in a system property is
+an error in the same way as an unrecognised value in the provider configuration. The properties are read when the provider
+is configured and when an `SSLContext` is created, not for each connection.
+
+The system property provides a policy for the whole JVM where the provider cannot be given configuration: for example
+for clients that are configured outside the management model, or in releases where the library is upgraded without
+changing anything else. WildFly can set it with its existing generic `system-property` resource. As the provider
+configuration takes precedence, a provider may set a weaker policy than the property; the property is a default and not
+a minimum.
+
+The effective configuration logged when the provider is configured states where each value came from: the provider
+configuration, a system property or the default.
+
+[IMPORTANT]
+.Issue to be created: I-6, system property fallback
+====
+New code is needed in *wildfly-openssl* to read, validate and apply the system properties with the precedence above, and
+to record the source of each resolved value in the logging.
+====
+
+=== Examples
+
+Hybrid key exchange preferred for the `ssl-context` that uses the provider. Peers that do not support it are still
+served using a classical group. The `module` only form is used, so the provider keeps the name `openssl`:
+
+----
+/subsystem=elytron/provider-loader=openssl:add(module=org.wildfly.openssl, \
+    configuration={kex-policy=hybrid-preferred})
+/subsystem=elytron/server-ssl-context=pqc-optional:add(key-manager=server-km, providers=openssl)
+----
+
+Hybrid key exchange required, using a separately named provider instance so that it can be told apart in the log, and
+used alongside the instance above:
+
+----
+/subsystem=elytron/provider-loader=openssl-required:add(module=org.wildfly.openssl, \
+    class-names=[org.wildfly.openssl.OpenSSLProvider], \
+    configuration={name=openssl-required, kex-policy=hybrid-required})
+/subsystem=elytron/server-ssl-context=pqc-required:add(key-manager=server-km, providers=openssl-required)
+----
+
+The warning that TLS 1.2 is disabled is logged when `openssl-required` is configured. Clients are configured in the same
+way, using a `client-ssl-context` with the same `providers` attribute.
+
+A JVM-wide default, used by every provider instance that does not configure the setting itself:
+
+----
+-Dorg.wildfly.openssl.kex-policy=hybrid-preferred
+----
+
+=== Clients and earlier releases
+
+*Clients configured in the management model.* A `client-ssl-context` has the same `providers` and `provider-name`
+attributes as a `server-ssl-context`, so the provider configuration and the use of several instances work for them in the
+same way. `provider-name` also allows a specific instance to be selected by its configured name.
+
+*Clients configured outside the management model.* The Elytron client configuration (`wildfly-config.xml`) can only
+reference the global providers or the providers found by the service loader, and has no way to give a provider
+configuration or a name. A client of that kind uses the system property or the library default. A configured provider
+element is needed in the client configuration for such a client to select an instance with its own policy.
+
+[IMPORTANT]
+.Issue to be created: I-7, configured providers in the Elytron client configuration
+====
+New code is needed in *wildfly-elytron* (the authentication client: configuration parser, a new schema version, and
+the provider supplier classes) to declare a provider with a configuration, following the semantics of the
+`provider-loader` resource (module, class names, and `configuration`, `path` or `argument`) and its loading order, so that
+a client `ssl-context` can select it. Sharing the provider loading code with *wildfly-core* rather than duplicating it
+should be considered. This is expected to be delivered in a new release only, because an older client cannot read a
+newer schema version.
+====
+
+*Earlier releases.* The configuration needs no management model change, and all of the new behaviour is in the WildFly
+OpenSSL library. A release that has the `provider-loader` configuration attributes can therefore gain the feature by
+upgrading the library, and can use the system property for the cases the provider configuration cannot reach.
+
+*A library that predates the feature* ignores both the provider configuration and the system properties. A `required`
+value would then silently have no effect. This is a security relevant gap that needs a mitigation, or at least
+documentation, for example a version or feature indicator that administrators and tests can check.
+
+[IMPORTANT]
+.Issue to be created: I-8, detecting a library that ignores the configuration
+====
+A means for administrators and tests to confirm that the library in use understands the configuration needs to be
+designed and implemented in *wildfly-openssl*, together with the documentation of how to use it.
+====
+
+[[issues-to-create]]
+=== Issues To Be Created
+
+The new code identified above, and by the rest of this proposal, is to be tracked by separate issues. They will be linked
+from <<related-issues,Related Issues>> once they exist.
+
+[cols="1,4,3",options="header"]
+|===
+| Id | Work | Project
+
+| I-1
+| Provider configuration: accept, parse and validate the configuration in all three forms, provider name, per instance
+  state, and logging.
+| wildfly-openssl
+
+| I-2
+| Native methods to set the key exchange groups and the signature algorithms, and their use from Java.
+| wildfly-openssl-natives, wildfly-openssl
+
+| I-3
+| Resolve the named policy values to groups and signature algorithms, and apply explicit lists.
+| wildfly-openssl
+
+| I-4
+| TLS 1.3 only (and the warning) when a `required` value is in effect.
+| wildfly-openssl, possibly wildfly-elytron or wildfly-core
+
+| I-5
+| Detect and report the capabilities and version of the loaded OpenSSL library.
+| wildfly-openssl-natives, wildfly-openssl
+
+| I-6
+| System property fallback and precedence.
+| wildfly-openssl
+
+| I-7
+| Configured providers in the Elytron client configuration.
+| wildfly-elytron
+
+| I-8
+| Detecting a library that ignores the configuration.
+| wildfly-openssl
+
+| I-9
+| Support server certificates with `EC` keys, and make certificate and key loading independent of the key algorithm (stage
+  one of the <<implementation-plan,Implementation Plan>>).
+| wildfly-openssl, possibly wildfly-openssl-natives
+
+| I-10
+| ML-DSA certificates and dual certificate chains: native certificate indexing and the Java side loading (stage three).
+| wildfly-openssl-natives, wildfly-openssl
+
+| I-11
+| Key store and trust manager handling of ML-DSA keys and certificates.
+| wildfly-openssl, wildfly-elytron
+
+| I-12
+| Reporting of the negotiated group and signature algorithm (stage four, if feasible).
+| wildfly-openssl
+
+| I-13
+| Parameterised tests and continuous integration support for an OpenSSL library with the needed capabilities.
+| wildfly-openssl, wildfly-security-testsuite
+
+| I-14
+| Documentation.
+| wildfly
+|===
+
+
+[[open-questions]]
+== Open Questions and Areas for Investigation
+
+These are the points that have not yet been decided or verified and that need to be resolved to complete the analysis.
+
+. *Feature team.* The feature will be delivered at default stability, so the team is expected to include people with
+  Quality Engineering and documentation expertise as well as the usual subject matter expert and outside perspective
+  roles. The members have not yet been identified.
+. *Configuration details.* The overall approach is described in the <<configuration-approach,Configuration Approach>>.
+  The remaining points are:
+  * The name of the strictest key exchange value (pure ML-KEM only) and whether the signature values should follow the
+    same naming.
+  * Whether the group and signature algorithm lists accept only OpenSSL names or also the Java and IANA names, and what
+    happens when an explicit list contradicts a `required` policy.
+  * The names of the system properties.
+  * Whether the same settings can later be shared with the pure Java provider.
+. *Interaction with the `protocols` setting.* A `required` value restricts the provider to TLS 1.3. How the Elytron
+  protocol selection behaves when the `ssl-context` allows only older protocols, and whether the resulting failure
+  message is clear enough, needs to be verified by test.
+. *Silent ignoring of configuration.* A WildFly OpenSSL library that predates this feature ignores the configuration, so
+  a `required` value would have no effect. How administrators can detect this needs to be decided.
+. *Resumption.* Whether the key exchange used when a TLS 1.3 session is resumed is consistent with a `required` value
+  needs to be checked.
+. *Default behaviour.* What happens today when a sufficiently recent OpenSSL is loaded needs to be measured, and whether
+  enabling hybrid groups by default is acceptable given the larger handshake messages that may affect intermediaries.
+. *Required OpenSSL versions.* The minimum version for hybrid key exchange and, separately, for ML-DSA in TLS needs to be
+  confirmed. The versions used in testing, including how to obtain a suitable version on the continuous integration
+  runners, need to be decided. Compatibility with the newest OpenSSL release also needs to be checked.
+. *Capability detection.* How WildFly OpenSSL can determine that the loaded OpenSSL supports the requested groups and
+  certificate types, and how a native function that is not present in an older OpenSSL is handled generally.
+. *Certificate loading.* The Java side currently re-encodes the private key under an algorithm specific PEM header before
+  passing it to native code, and the native side tracks certificates by a small fixed set of indices. Whether OpenSSL
+  provides a slot for each of the post-quantum certificate types, and what changes are needed to hold a classical and an
+  ML-DSA chain together, needs to be investigated in the native library.
+. *Key stores.* How ML-DSA keys and certificates are stored and retrieved through Elytron key stores, and what is required
+  of the JDK or a JCE provider on Java 17, 21 and 25 for that to work.
+. *Certificate trust.* Peer certificates are currently presented to the Java trust manager as X.509 certificates. How
+  ML-DSA certificates are parsed and verified there, for server certificates accepted by a client and for any client
+  certificates accepted by a server, needs to be investigated.
+. *Reporting what was negotiated.* Whether the negotiated group and signature algorithm can be made available from the
+  `SSLSession` or by other means, so that tests and administrators can confirm that post-quantum protection was applied.
+. *Native platforms.* Which native platforms are affected, as this builds on the other ongoing work in the native
+  library.
+
+== Backwards Compatibility
+
+The intent is that existing configurations continue to behave as they do today. The one area of risk is the default
+behaviour discussed in the open questions: where an OpenSSL library with post-quantum groups is already loaded, the
+larger key exchange messages are already a possibility, and changing the groups offered by default could affect
+interoperability with older peers or intermediaries. Whether any change of default is acceptable is not yet decided.
+
+Because the feature is targeted at default stability, any addition to the management model must be at default
+stability, and must be handled by domain transformers so that a domain containing servers of an earlier version continues
+to work. The <<configuration-approach,Configuration Approach>> does not require any management model change, as it uses
+the existing `configuration` attribute of the `provider-loader` resource, so no transformer is expected to be needed.
+
+=== Default Configuration
+
+To be determined, depending on the outcome of the open question on defaults. The aim is no change to the default
+configuration of any existing attribute or Galleon layer.
+
+=== Importing Existing Configuration
+
+No impact is expected. Any new attributes are expected to be optional.
+
+=== Deployments
+
+Not applicable.
+
+=== Interoperability
+
+Interoperability with peers that do not support post-quantum algorithms must be retained unless an administrator
+requires otherwise. Interoperability with other TLS implementations will be tested using the `openssl s_client` and
+`openssl s_server` tools as independent peers.
+
+[[implementation-plan]]
+== Implementation Plan
+
+The work is expected to be delivered in stages so that each is useful and testable on its own. The ordering is
+provisional.
+
+. Support server certificates with `EC` keys. This is needed in its own right, and the changes to how certificates and keys
+  are loaded should make that code independent of any specific key algorithm so that the following stages do not add
+  further special cases.
+. Add the ability to configure key exchange groups, including the native call and the capability checks, and the
+  provider configuration, policy values and system property fallback described in the
+  <<configuration-approach,Configuration Approach>>. The issues needed for this stage are listed there.
+. Add support for ML-DSA certificates, including the dual chain case and client side acceptance of ML-DSA server
+  certificates, along with the key store and trust manager handling that is identified.
+. Add reporting of the negotiated parameters, if feasible.
+
+The work on the native library depends on other work in progress to improve its build and its interface to Java, and the
+ordering relative to that work will be coordinated.
+
+== Admin Clients
+
+No new attributes are proposed. The configuration is carried by the existing `configuration` attribute of the Elytron
+`provider-loader` resource, so the JBoss CLI can manage it using the existing generic support.
+
+Admin clients such as the JBoss CLI are affected at a second level as well. They are not only configuring the feature,
+they also establish their own TLS connections to the server, for example to the management interfaces. How those
+connections are affected depends on the client side TLS configuration and the TLS implementation the client uses, and
+this must be considered when deciding whether the client side configuration surface is in scope.
+
+== Security Considerations
+
+The purpose of the feature is to improve security by protecting traffic against future decryption. Hybrid key exchange is
+used so that protection is never weaker than the classical exchange it extends. If post-quantum key exchange is optional
+then a peer, or an attacker in the path, can cause a connection to use a classical group, which is the reason for also
+offering a mode in which it is required.
+
+Any new configuration is part of the SSL context configuration, so access control for it is expected to follow the
+existing treatment of that configuration. This will be confirmed once the form of the configuration is known.
+
+The larger certificates and key exchange messages also raise the cost and the risk of failures in handshakes, which the
+testing is intended to expose.
+
+The `required` values of the configuration are enforced by what each peer offers and accepts, identically for a server
+and a client, so that an attacker in the path cannot force a downgrade to a classical exchange. A configuration that
+cannot be honoured, because the loaded OpenSSL library lacks a capability, is always an error and is never silently
+weakened. A `required` value also disables TLS 1.2 and earlier, because those protocols cannot provide the protection; a
+warning is logged when this is applied so that the effect on the configuration is visible.
+
+A JVM-wide system property can be used to set a policy where the provider cannot be configured, but because the provider
+configuration takes precedence over it, it is a default and not a minimum that cannot be overridden.
+
+[[test_plan]]
+== Test Plan
+
+The testing approach is to define the TLS scenarios of interest once and run each across the permutations that matter,
+so that adding a new permutation, for example a key type or a group, is a small change. As the feature is targeted at
+default stability, the final test plan must be approved by a Quality Engineer with subject matter expertise, and the
+detail of the permutations is to be agreed with them.
+
+* *WildFly OpenSSL.* Parameterised tests that run the scenarios using TLS 1.2 and TLS 1.3 across the supported key types,
+  groups and certificate configurations, including the dual chain case, and cases where post-quantum is optional and
+  where it is required. Tests need to validate what was actually negotiated and not only that a connection succeeded.
+* *Configuration.* The scenarios include each policy value of the <<configuration-approach,Configuration Approach>> for
+  both the server and the client, with a peer that does and does not support post-quantum algorithms. This includes
+  confirming that a `required` value fails the handshake rather than falling back, that TLS 1.2 is not negotiated when a
+  `required` value is configured, that the warning is logged, that a missing capability is reported as an error, and
+  that provider configuration takes precedence over a system property.
+* *WildFly Security testsuite.* The same scenario approach using configuration driven tests: one-way TLS and client
+  certificate authentication with HTTPS offered by Undertow, outbound clients including those configured outside the
+  management model, and the other server services that use an `SSLContext`. This testsuite is the
+  https://github.com/wildfly-security/wildfly-security-testsuite[wildfly-security-testsuite] project.
+* *WildFly.* No permutation testing. Each place where the OpenSSL provider can be used by WildFly should have at least
+  one test that uses it. The list of such places is to be established.
+* *Independent peers.* The `openssl s_client` and `openssl s_server` tools are used as a peer for interoperability,
+  including forcing a classical group and restricting signature algorithms.
+
+Running these tests requires an OpenSSL library with the necessary support. How that is provided in continuous
+integration is an open question.
+
+== Community Documentation
+
+The OpenSSL section of the Elytron documentation will be updated to describe the post-quantum capabilities, the OpenSSL
+version required, the configuration, and how to verify what was negotiated.
+
+The documentation will include example configurations, each with a description of what it does and what it requires.
+These will call out the requirements on the certificates and keys in the key stores, because documentation about TLS
+rarely explains how the signature algorithm of a certificate affects what can be negotiated, and that is central to
+using post-quantum certificates and the dual chain case successfully.
+
+A "Getting started with PQC" guide will also be published on https://www.wildfly.org[wildfly.org] to help users adopt
+the feature.
+
+== Release Note Content
+
+The WildFly OpenSSL integration can now be used to take advantage of the post-quantum key exchange and certificate
+support provided by recent versions of OpenSSL, allowing connections to be protected against future decryption. The
+behaviour is configured using the existing `provider-loader` resource, and can be set so that post-quantum support is
+preferred or so that it is required. Existing configurations are unaffected.
+
+[[glossary]]
+== Glossary
+
+Cryptography and TLS documentation relies heavily on acronyms, and the same thing often has a different name in the TLS
+specification, in OpenSSL and in Java. This glossary expands the terms used in this document and calls out where the
+names differ. It will be extended as further terms are introduced.
+
+=== Terms and acronyms
+
+[cols="1,2,3,3",options="header"]
+|===
+| Term | Full name | Meaning | Name differences (OpenSSL / Java)
+
+| TLS
+| Transport Layer Security
+| The protocol that protects network connections. The successor to SSL.
+| Java and OpenSSL both still use "SSL" in many API names, for example `SSLContext`, `SSLEngine` and `SSL_CTX_*`, even
+  though only TLS is in practical use.
+
+| SSL
+| Secure Sockets Layer
+| The predecessor of TLS. No longer secure and not used.
+| See TLS.
+
+| JSSE
+| Java Secure Socket Extension
+| The JDK's built-in implementation of TLS (the pure Java TLS provider).
+| Not used for the handshake when the OpenSSL provider is selected.
+
+| JCA / JCE
+| Java Cryptography Architecture / Java Cryptography Extension
+| The JDK framework for cryptographic algorithms, with pluggable providers. Key stores, certificates, signatures and key
+  agreement are all obtained through it.
+| Algorithms are looked up by Java algorithm name, which is often not the standard or OpenSSL name (see the entries
+  below).
+
+| JNI
+| Java Native Interface
+| The mechanism WildFly OpenSSL uses to call the native OpenSSL library from Java.
+|
+
+| PQC
+| Post-Quantum Cryptography
+| Algorithms intended to remain secure against an attacker with a large quantum computer.
+|
+
+| Classical
+| (not an acronym)
+| Algorithms that are not post-quantum, such as RSA and elliptic curve cryptography.
+|
+
+| NIST
+| National Institute of Standards and Technology
+| The US body that standardised the post-quantum algorithms used here.
+|
+
+| KEX
+| Key Exchange
+| How the two peers agree on a shared secret used to encrypt the connection.
+| In TLS 1.3 the key exchange is negotiated through *groups*, not through the cipher suite.
+
+| KEM
+| Key Encapsulation Mechanism
+| The form of key exchange used by post-quantum algorithms: one peer generates a secret and sends it encrypted to the
+  other, instead of both peers combining values as in Diffie-Hellman.
+| Java has a `KEM` API (JDK 21 and later). Algorithm availability is separate and depends on the JDK and providers.
+
+| DH
+| Diffie-Hellman
+| A classical key exchange where each peer contributes a value and both derive the same secret.
+|
+
+| ECDH
+| Elliptic Curve Diffie-Hellman
+| Diffie-Hellman using an elliptic curve.
+| Java `KeyAgreement` algorithm name `ECDH`.
+
+| ECDHE
+| Elliptic Curve Diffie-Hellman Ephemeral
+| ECDH using a new key pair for every connection, so recorded traffic cannot be decrypted by a later key compromise
+  (forward secrecy). Appears in TLS 1.2 cipher suite names.
+| Not a distinct Java algorithm; Java uses `ECDH` for the operation.
+
+| X25519
+| (named for the curve Curve25519)
+| A widely used elliptic curve key exchange. Often the classical half of a hybrid group.
+| Java: `XDH` key algorithm with the parameter name `X25519`. In Java, TLS group names are lower case (`x25519`).
+
+| secp256r1, secp384r1
+| (curve names from the SEC 2 standard)
+| NIST elliptic curves P-256 and P-384.
+| The same curve is `P-256` / `NIST P-256` in standards, `prime256v1` and `secp256r1` in OpenSSL, `secp256r1` in Java
+  and `SecP256r1` inside hybrid group names such as `SecP256r1MLKEM768`.
+
+| Group
+| Named group (key exchange group)
+| The curve or algorithm used for key exchange in TLS 1.3. Each peer lists those it supports and they agree on one.
+| TLS: `supported_groups`. OpenSSL: "groups" (earlier "curves"; the `-groups` option and `SSL_set1_groups_list`). Java:
+  "named groups" (for example the `jdk.tls.namedGroups` system property). In TLS 1.2 these were called "elliptic curves".
+
+| Hybrid
+| Hybrid key exchange
+| A key exchange that runs a classical and a post-quantum exchange together and combines the results, so that the
+  connection stays protected if either is broken.
+| Hybrid groups have names that join the two parts, for example `X25519MLKEM768`. See <<reading-group-names>>.
+
+| ML-KEM
+| Module-Lattice-Based Key-Encapsulation Mechanism
+| The NIST post-quantum KEM, standardised in FIPS 203. Was previously known as CRYSTALS-Kyber, and some older material
+  and implementations still use the name Kyber. Comes in three sizes: ML-KEM-512, ML-KEM-768 and ML-KEM-1024.
+| TLS group names drop the hyphen: `MLKEM768`, `MLKEM1024`. OpenSSL algorithm name `ML-KEM-768`. Java `ML-KEM` /
+  `ML-KEM-768` (JDK 24 and later).
+
+| ML-DSA
+| Module-Lattice-Based Digital Signature Algorithm
+| The NIST post-quantum signature algorithm, standardised in FIPS 204. Was previously known as CRYSTALS-Dilithium. Comes
+  in ML-DSA-44, ML-DSA-65 and ML-DSA-87.
+| OpenSSL `ML-DSA-65`. Java `ML-DSA` / `ML-DSA-65` (JDK 24 and later). TLS signature scheme names drop the hyphens, for
+  example `mldsa65`.
+
+| FIPS
+| Federal Information Processing Standards
+| US government standards. FIPS 203 (ML-KEM) and FIPS 204 (ML-DSA) define the post-quantum algorithms. Separately, "FIPS
+  mode" means running only validated cryptographic modules, which is out of scope here.
+| Easy to confuse the two meanings: "FIPS 204" is a document, "FIPS mode" is an operating mode.
+
+| RSA
+| Rivest-Shamir-Adleman
+| A classical public key algorithm used for signatures (and formerly key exchange).
+| Key type `RSA` in Java and OpenSSL.
+
+| DSA
+| Digital Signature Algorithm
+| An older classical signature algorithm.
+|
+
+| EC
+| Elliptic Curve
+| The key type for keys based on elliptic curves. The type used when an EC certificate and key are held in a key store.
+| Java key algorithm `EC`. OpenSSL and the Apache mod_ssl heritage use "ECC" for the same thing (for example the
+  `SSL_AIDX_ECC` constant in WildFly OpenSSL).
+
+| ECC
+| Elliptic Curve Cryptography
+| The family of algorithms built on elliptic curves, including ECDH and ECDSA.
+| See EC.
+
+| ECDSA
+| Elliptic Curve Digital Signature Algorithm
+| The signature algorithm used with EC keys. The key type is `EC`; the signature algorithm is ECDSA.
+| Java signature names such as `SHA256withECDSA`. In TLS 1.3, `ecdsa_secp256r1_sha256`.
+
+| Signature algorithm
+| Signature scheme
+| The algorithm and hash used to sign and verify a certificate or handshake. Each peer lists those it accepts and this is
+  what decides which certificate chain a server can present.
+| TLS: `signature_algorithms`. OpenSSL: "sigalgs" (the `-sigalgs` option). Java: "signature schemes" (for example
+  `jdk.tls.client.SignatureSchemes`) and, for certificates, `SHA256withRSA` style names.
+
+| SHA
+| Secure Hash Algorithm
+| A family of hash functions. `SHA256` and `SHA384` are the 256 and 384 bit versions of SHA-2.
+| Java algorithm name `SHA-256`; names in signature algorithms and cipher suites are written `SHA256`.
+
+| HKDF
+| HMAC-based Key Derivation Function
+| How TLS 1.3 turns shared secrets into the keys actually used for encryption. The hash named in a TLS 1.3 cipher suite
+  is the one this uses.
+|
+
+| HMAC
+| Hash-based Message Authentication Code
+| A way to authenticate data using a hash and a secret key.
+|
+
+| AES
+| Advanced Encryption Standard
+| The symmetric cipher used to encrypt the data on a connection. `AES_128` and `AES_256` refer to the key size in bits.
+| OpenSSL cipher suite names write `AES128` / `AES256`; Java and the specification write `AES_128` / `AES_256`.
+
+| GCM
+| Galois/Counter Mode
+| A mode of operation for AES that both encrypts and authenticates the data.
+|
+
+| CBC
+| Cipher Block Chaining
+| An older mode of operation for AES that encrypts only; a separate HMAC is used to authenticate.
+|
+
+| AEAD
+| Authenticated Encryption with Associated Data
+| The class of cipher that encrypts and authenticates in one step, such as AES-GCM. All TLS 1.3 cipher suites are AEAD.
+|
+
+| X.509
+| (ITU-T standard number)
+| The standard format of public key certificates used in TLS.
+| Java `X509Certificate`, `CertificateFactory.getInstance("X.509")`, `X509TrustManager`, `X509KeyManager`.
+
+| CA
+| Certificate Authority
+| The party that signs a certificate to vouch for the identity in it.
+|
+
+| Certificate chain
+| (not an acronym)
+| A server certificate together with the certificates, up to a trusted CA, that vouch for it. The signature algorithms
+  used throughout the chain matter to what a peer can verify.
+|
+
+| PEM
+| Privacy-Enhanced Mail (format)
+| A text encoding of keys and certificates, in `-----BEGIN ...-----` blocks. The format passed to the native OpenSSL
+  library.
+| Headers such as `RSA PRIVATE KEY` name a specific algorithm; the generic `PRIVATE KEY` header is the PKCS#8 form.
+
+| DER
+| Distinguished Encoding Rules
+| The binary encoding underneath PEM and the form Java returns from `getEncoded()`.
+|
+
+| PKCS#8
+| Public-Key Cryptography Standard 8
+| The algorithm independent format for private keys. Java `PrivateKey.getEncoded()` returns this form, and its
+  `getFormat()` returns `PKCS#8`.
+|
+
+| PKCS#12
+| Public-Key Cryptography Standard 12
+| A key store file format. The default Java key store type.
+| Java key store type `PKCS12`.
+
+| JKS
+| Java KeyStore
+| An older Java specific key store format.
+| Java key store type `JKS`.
+
+| SNI
+| Server Name Indication
+| A TLS extension where the client states the host name it is connecting to.
+|
+
+| ALPN
+| Application-Layer Protocol Negotiation
+| A TLS extension used to agree the application protocol, for example HTTP/2.
+|
+
+| JPMS
+| Java Platform Module System
+| The Java module system.
+|
+
+| FFM
+| Foreign Function and Memory (API)
+| The Java API that is the alternative to JNI for calling native libraries.
+| Final in Java 22.
+
+| Provider
+| Java security provider (`java.security.Provider`)
+| A pluggable supplier of algorithms and services in Java, including `SSLContext` implementations. The OpenSSL TLS
+  integration is made available as a provider. In Elytron a provider is loaded by a `provider-loader` resource and
+  selected by an `ssl-context` using its `providers` attribute.
+| Not an OpenSSL concept. OpenSSL has its own, unrelated, "providers" (`OSSL_PROVIDER`) that supply algorithms inside the
+  library.
+
+| Downgrade
+| Downgrade attack
+| An attacker who can alter the traffic between two peers influences the negotiation so that a weaker option, for example
+  a classical key exchange, is used instead of a stronger one that both peers could have used.
+|
+
+| MITM
+| Man-in-the-middle
+| An attacker positioned between two peers who can observe and alter their traffic.
+|
+
+| Negotiation fallback
+| (not an acronym)
+| Where one peer does not support an option and the two peers agree on a less preferred one, for example a classical
+  group instead of a hybrid group. Distinct from a local capability gap, where the library in use cannot support what
+  was configured at all.
+|
+
+| Policy
+| Key exchange policy / signature policy
+| In this document, a named setting that states whether post-quantum algorithms are not used, preferred or required. See
+  <<configuration-approach,Configuration Approach>>.
+|
+
+| Capability
+| (not an acronym)
+| In this document, something the loaded OpenSSL library can or cannot do, for example hybrid key exchange, pure ML-KEM
+  key exchange or ML-DSA signatures.
+|
+
+|===
+
+[[reading-group-names]]
+=== Reading group names
+
+Hybrid group names are the two component names joined together, classical first (as written in OpenSSL):
+
+[cols="2,2,2,3",options="header"]
+|===
+| Group name | Classical part | Post-quantum part | Notes
+
+| `X25519MLKEM768`
+| X25519
+| ML-KEM-768
+| The most widely deployed hybrid group.
+
+| `SecP256r1MLKEM768`
+| secp256r1 (NIST P-256)
+| ML-KEM-768
+|
+
+| `SecP384r1MLKEM1024`
+| secp384r1 (NIST P-384)
+| ML-KEM-1024
+| The larger ML-KEM size is paired with the larger curve.
+
+| `MLKEM768`, `MLKEM1024`
+| none
+| ML-KEM-768 or ML-KEM-1024
+| Pure post-quantum key exchange without the classical part. Offered by OpenSSL but not a hybrid.
+|===
+
+The number is the ML-KEM parameter set, where a larger number is a higher security level and larger messages on the wire.
+
+NOTE: The order of the two parts inside the name does not always match the order in which the data is carried in the
+handshake, and the names an implementation uses can differ. Treat the name as an identifier and not as a description of
+the wire format.
+
+[[reading-cipher-suites]]
+=== Reading cipher suite names
+
+A cipher suite names the algorithms used to protect the data on a connection. How much the name says depends on the TLS
+version.
+
+*TLS 1.2 names* describe the key exchange, the authentication (the type of the server certificate), the encryption and
+the hash:
+
+[cols="2,2,2,3",options="header"]
+|===
+| Part | Example | OpenSSL form | Meaning
+
+| Protocol prefix
+| `TLS_`
+| (omitted)
+| Marks a TLS cipher suite name.
+
+| Key exchange
+| `ECDHE`
+| `ECDHE`
+| How the shared secret is agreed. Ephemeral elliptic curve Diffie-Hellman.
+
+| Authentication
+| `RSA` or `ECDSA`
+| `RSA` or `ECDSA`
+| The type of the server certificate key and of the signature that proves its identity. `ECDSA` needs an `EC`
+  certificate and `RSA` needs an `RSA` certificate.
+
+| `WITH`
+| `_WITH_`
+| (omitted)
+| Separates the key exchange and authentication from the data protection.
+
+| Encryption
+| `AES_256_GCM`
+| `AES256-GCM`
+| The cipher, key size and mode used to protect the data.
+
+| Hash
+| `SHA384`
+| `SHA384`
+| For GCM suites, the hash used when deriving keys. For CBC suites, the hash of the HMAC used to authenticate the data.
+|===
+
+So `TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384` (Java and the specification) is `ECDHE-ECDSA-AES256-GCM-SHA384` in OpenSSL:
+key exchange with ECDHE, an `EC` certificate signed with ECDSA, data protected with AES-256 in GCM mode, and SHA-384 for
+key derivation. WildFly OpenSSL translates between the Java and OpenSSL forms.
+
+*TLS 1.3 names* are shorter, for example `TLS_AES_256_GCM_SHA384`, because they say nothing about the key exchange or the
+authentication. Those are negotiated separately, through the groups and signature algorithms. A TLS 1.3 name contains only
+the encryption (`AES_256_GCM`) and the hash used by HKDF (`SHA384`).
+
+This is why post-quantum support does not involve cipher suites: `X25519MLKEM768` is a *group* and `ML-DSA-65` is a
+*signature algorithm*, and the same TLS 1.3 cipher suite is used with or without them. It also means that in TLS 1.2 the
+cipher suite constrains the type of certificate a server must hold, whereas in TLS 1.3 the signature algorithms the peers
+offer decide which certificate can be used. That difference is what the dual certificate chain requirement relies on.
+
+TLS 1.3 uses a different OpenSSL setting from TLS 1.2 and earlier for the list of cipher suites (`SSL_set_ciphersuites`
+compared with `SSL_set_cipher_list`), and WildFly OpenSSL separates the two lists by name.
+
