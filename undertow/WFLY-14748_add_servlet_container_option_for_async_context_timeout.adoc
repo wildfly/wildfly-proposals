@@ -1,0 +1,134 @@
+---
+# Add any category for this proposal as a YAML list, e.g.
+# - core
+# - undertow
+# If missing, add it to _data/wildfly-categories and use its id
+categories:
+ - core
+ - undertow
+# Specify the stability level of the feature.
+# Values can be one of: experimental, preview, community, or default
+stability-level: preview
+# Specify the Feature Development tracker issue for the feature.
+# This must be an issue tracked in https://github.com/orgs/wildfly/projects/7/views/1.
+# To create a Feature Development tracker issue, go to https://github.com/wildfly/wildfly-proposals/issues/new/choose
+# and select 'Feature Development'
+issue: https://github.com/wildfly/wildfly-proposals/issues/804
+# Provide the GitHub ids of the feature team members, organized by role.
+# Provide a single id for the 'assignee' role. Use a YAML list for the 'sme' and
+# 'outside-perspective' roles, even if there is only one person in a role.
+feature-team:
+ developer: Bartosz Baranowski
+ sme:
+  - Flavia Rainone
+ outside-perspective:
+  - Tomas Hofman
+# If this issue tracks the promotion of a previously completed feature to a higher stability level, provide the URL of
+# the original https://github.com/wildfly/wildfly-proposals/issues issue that was used to track the implementation of
+# that feature.
+promotes:
+# During initial development of a feature, this field should be left blank. If after the feature is completed and its
+# stability level is promoted via a later issue, the developer promoting the issue should return to this document ("this"
+# being the original analysis document for the feature). The field should be updated to point to the
+# https://github.com/wildfly/wildfly-proposals/issues issue that promotes it.
+# For example,
+#              | Implementation Issue (A) | Promotion Issue (B)
+# promotes:    |                          | https://github.com/.../A
+# promoted-by: | https://github.com/.../B |
+promoted-by:
+---
+
+= Introduce deployment option to control async context timeout
+:author:            Bartosz Baranowski
+:email:             bbaranow@redhat.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+== Overview
+
+Allow to configure default async timeout per servlet container.
+
+=== User Stories
+
+https://issues.redhat.com/browse/UNDERTOW-1870[UNDERTOW-1870]
+
+== Issue Metadata
+
+=== Related Issues
+
+=== Affected Projects or Components
+
+Undertow integration in WFLY.
+
+=== Other Interested Projects
+
+=== Relevant Installation Types
+
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+Add ability to configure default async context timeout per container. Most likely best place for this is: /subsystem=undertow/servlet-container=default
+/subsystem=undertow/servlet-container=default:write-attribute(name="async-context-timeout", value="30000")
+
+=== Changed requirements
+
+=== Non-Requirements
+
+=== Future Work
+
+__<Use this section to discuss requirements that are not addressed by this proposal but which may be addressed in later proposals.>__
+
+== Backwards Compatibility
+
+Not a problem. Default value will be the same as previously defined(30000ms), just as in previous versions of WFLY.
+
+=== Default Configuration
+
+Yes, this should work.
+
+=== Importing Existing Configuration
+
+Not affected.
+
+=== Deployments
+
+Not affected, defualt value will remain consistent with old versions.
+
+=== Interoperability
+
+Not affected.
+
+== Implementation Plan
+
+Done
+
+== Admin Clients
+
+Not affected. CLI depends on model, so does HAL - it labels attribute with relevant stability as side note.
+
+== Security Considerations
+
+NA.
+
+[[test_plan]]
+== Test Plan
+
+Unit tests included in PR should be enough.
+
+Two tests one for default one for changed value.
+
+== Community Documentation
+
+Async servlet context timeout can be set as part of servlet container configuration:
+/subsystem=undertow/servlet-container=default:write-attribute(name=default-async-context-timeout, value=350000)
+
+== Release Note Content
+
+New servlet-container configuration option allow to control default async-context timeout
