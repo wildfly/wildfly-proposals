@@ -96,6 +96,9 @@ categories:
   - name: OpenShift
     id: openshift
     description: Building and Running a WildFly application on OpenShift
+  - name: Operator
+    id: operator
+    description: WildFly Operator
   - name: POJO
     id: pojo
     description: Legacy JBoss Microcontainer support
