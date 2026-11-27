@@ -78,6 +78,9 @@ categories:
   - name: Messaging
     id: messaging
     description: Messaging, including Jakarta Messaging (JMS)
+  - name: MCP
+    id: mcp
+    description: Model Context Protocol
   - name: MicroProfile
     id: microprofile
     description: MicroProfile
