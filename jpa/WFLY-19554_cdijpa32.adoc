@@ -1,0 +1,123 @@
+---
+categories:
+ - persistence
+ - jpa
+ - ee
+stability-level: preview
+issue: https://issues.redhat.com/browse/WFLY-19554
+feature-team:
+ developer: Scott Marlow
+ sme:
+  - Gavin King
+  - Scott Stark
+ outside-perspective:
+  - 
+# If this issue tracks the promotion to a higher stability level of a previously
+# completed feature, provide the URL of the https://github.com/wildfly/wildfly-proposals/issues
+# issue that was used to track the previous feature.
+promotes:
+# This should be blank during initial development of a feature. It may be used
+# after the feature is completed if a subsequent issue is field to track promotion
+# of this feature to a higher stability level
+promoted-by:
+---
+= Jakarta Persistence 3.2 Jakarta Persistence CDI integration in standard WildFly + WildFly Preview
+:author:            Scott Marlow
+:email:             smarlow@redhat.com
+:email:             scott.marlow@ibm.com
+:email:             scott.marlow.opensource@gmail.com
+:toc:               left
+:icons:             font
+:idprefix:
+:idseparator:       -
+
+
+== Overview
+
+WildFly Preview can add https://issues.redhat.com/browse/WFLY-19554 support for CDI/Persistence integration (https://jakarta.ee/specifications/platform/11/jakarta-platform-spec-11.0#a441).  The same feature can be added for WildFly with `preview` stability support. This will allow a larger part of our user base to use the new CDI Persistence integration feature.
+
+A Jakarta EE 11 container must feature built-integration of Jakarta Persistence with the CDI bean manager, allowing injection of a container-managed entity manager factory using the annotation jakarta.inject.Inject.  
+
+=== User Stories
+
+I'm an application developer and I'd like to use CDI injection to obtain EntityManager + EntityManagerFactory instances in my application code in addition to continuing to use legacy (e.g. @PersistenceContext EntityManager + @PersistenceUnit EntityManagerFactory) Persistence container support.
+
+As an application developer I expect to access EntityManager CDI beans via my application defined qualifier class (specified in the persistence.xml).
+As an application developer I expect to access EntityManagerFactory CDI beans via my application defined qualifier class (specified in the persistence.xml).  I also expect my application to be able to @Inject @Named("persistence unit name") EntityManagerFactory as per http://jakarta.ee/specifications/platform/11/jakarta-platform-spec-11.0#a441
+TODO: validate that @Named is the portable (to different EE 11 implementations) way to access the EntityManagerFactory bean for each application defined persistence unit (via the persistence unit name).
+
+== Issue Metadata
+https://issues.redhat.com/browse/WFLY-19554
+
+=== Related Issues
+
+
+
+=== Affected Projects or Components
+
+https://github.com/wildfly/wildfly
+
+=== Other Interested Projects
+
+
+=== Relevant Installation Types
+
+
+* Traditional standalone server (unzipped or provisioned by Galleon)
+* Managed domain
+* OpenShift Source-to-Image (S2I)
+* Bootable jar
+
+== Requirements
+
+* `wildfly-preview` will pass the Jakarta EE 11 Persistence CDI tests contained in https://github.com/jakartaee/platform-tck/tree/11.0.x/tcks/apis/persistence/persistence-inside-container/platform-tests/src/main/java/ee/jakarta/tck/persistence/ee/cdi.
+* `wildfly` will continue to pass the Jakarta EE 10 Persistence tests.
+
+=== Non-Requirements
+
+* Any quickstart.
+* Testing beyond passing the Jakarta EE 10 + 11 TCKs.
+
+=== Future Work
+
+** Update a quickstart to use CDI injection to obtain a Persistence Unit.
+
+== Backwards Compatibility
+Ensure that applications with duplicate persistence unit definitions (e.g. contained in ear/lib + subdeployment) continue to deploy successfully on Jakarta EE 10 + 11.
+
+=== Default Configuration
+
+No incompatible changes; adds new functionality.
+
+=== Importing Existing Configuration
+
+No incompatible changes.
+
+=== Deployments
+
+No incompatible changes.
+
+=== Interoperability
+
+No impact on interoperability.
+
+== Admin Clients
+
+No impact.
+
+== Security Considerations
+
+None expected.
+
+[[test_plan]]
+== Test Plan
+
+The plan is to test this by passing the Jakarta EE 11 Persistence CDI tests contained in https://github.com/jakartaee/platform-tck/tree/11.0.x/tcks/apis/persistence/persistence-inside-container/platform-tests/src/main/java/ee/jakarta/tck/persistence/ee/cdi.
+
+== Community Documentation
+
+* Update the Developer Guide to describe Jakarta Persistence 3.2 Jakarta Persistence CDI integration in standard WildFly + WildFly Preview
+ 
+== Release Note Content
+
+Application developers can now use the Jakarta EE 11 Persistence CDI integration standard WildFly + WildFly Preview. This feature is provided at `preview` stability.
